@@ -169,6 +169,13 @@ describe('links', () => {
     expect(row.querySelector('a').getAttribute('href')).toBe('#/lifts/Bench%20Press');
     row.querySelector('a').click(); expect(router.go).toHaveBeenCalledWith('/lifts/Bench%20Press');
   });
+  it('shows default equivalents beside recent exercise records and gains', () => {
+    const row = recordRow(snapshot.trends.recent[0], { ...snapshot, exerciseUnits: { 'bench press': 'lb' } }, router);
+    expect(row.querySelector('.record-value').textContent).toBe('220.5 lb (100 kg)');
+    expect(row.querySelector('.record-sub').textContent).toContain('+5.5 lb (2.5 kg)');
+    const same = recordRow(snapshot.trends.recent[0], snapshot, router);
+    expect(same.querySelector('.record-value').textContent).toBe('100 kg');
+  });
   it('overview: tiles link to their pages, the last workout card to its detail, and deeds are buttons', async () => {
     const root = mount(); await renderOverview(root, { source, snapshot, router, nowMs: snapshot.builtAtMs });
     const tiles = [...root.querySelectorAll('.kpi')].map(k => [k.querySelector('.eyebrow').textContent, k.querySelector('a.kpi-link')?.getAttribute('href')]);

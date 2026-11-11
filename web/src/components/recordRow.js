@@ -1,6 +1,6 @@
 import { word } from '../i18n.js';
 import { artImg } from './artImg.js';
-import { exerciseUnit, formatLoad, splitLabel } from '../format.js';
+import { exerciseUnit, formatWeight, splitLabel } from '../format.js';
 import { node, displayDate, link } from './statCard.js';
 export function recordRow(record, snapshot, router) {
   const el = node('div', null, 'record-row is-link');
@@ -11,6 +11,6 @@ export function recordRow(record, snapshot, router) {
   const title = node('div');
   title.append(link(name, `/lifts/${encodeURIComponent(record.name)}`, router, 'stretch'));
   if (variation) title.append(node('span', ` · ${variation}`, 'accent-text'));
-  content.append(title, node('div', `e1RM · ${displayDate(record.atMs, snapshot.zone)} · +${formatLoad(record.gainKg, unit)} ${unit}`, 'muted record-sub'));
-  el.append(frame, content, node('b', word('PR', 'concept_peak_u'), 'pr-mark'), node('span', `${formatLoad(record.e1rmKg, unit)} ${unit}`, 'record-value')); return el;
+  content.append(title, node('div', `e1RM · ${displayDate(record.atMs, snapshot.zone)} · +${formatWeight(record.gainKg, unit, snapshot.unit ?? unit)}`, 'muted record-sub'));
+  el.append(frame, content, node('b', word('PR', 'concept_peak_u'), 'pr-mark'), node('span', formatWeight(record.e1rmKg, unit, snapshot.unit ?? unit), 'record-value')); return el;
 }

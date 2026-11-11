@@ -402,7 +402,9 @@ private fun AmendLoadDialog(
                 supportingText = if (parsed.isFailure) {
                     { Text(UiText.res(R.string.amend_load_error, Loads.ceilingText(MAX_LOAD_KG, unit), unit.label).asString()) }
                 } else {
-                    null
+                    parsed.getOrNull()?.takeIf { field.text.isNotBlank() }?.let { Units.equivalent(it, unit) }?.let { equivalent ->
+                        { Text(equivalent) }
+                    }
                 },
                 keyboardOptions = decimalKeyboard(),
                 colors = fieldColors(accent = IronvellumColors.SystemGreen),

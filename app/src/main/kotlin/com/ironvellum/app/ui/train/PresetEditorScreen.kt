@@ -522,6 +522,8 @@ internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, w
     val typedKg = kgOf(typed)
     val inSync = (typed.isBlank() && kgText.isBlank()) || (typed.isNotBlank() && typedKg == null) || typedKg == DecimalInput.parse(kgText)
     val shown = if (inSync) typed else lbText(kgText)
+    val equivalent = if (error || (unit == LoadUnit.LB && kgOf(shown) == null)) null
+        else DecimalInput.parse(kgText)?.let { Units.equivalent(it, unit) }
     if (worn != null) {
         // The kit's own blocks and belt plates, walked on the stored kg; the figure stays typeable in the lifter's unit.
         val kg = DecimalInput.parse(kgText) ?: 0.0
@@ -536,18 +538,18 @@ internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, w
             },
             onLess = { onKgText(worn.previousKg(kg, unit)?.let { formatSteppedFigure(it) } ?: "") },
             onMore = { onKgText(formatSteppedFigure(worn.nextKg(kg, unit) ?: kg)) },
-            emptyText = emptyText, caption = caption,
+            emptyText = emptyText, caption = caption, supportingText = equivalent,
         )
         return
     }
     if (unit == LoadUnit.KG) {
-        DecimalStepper(label, kgText, LoadUnit.KG.label, stringResource(R.string.preseteditor_load_less), stringResource(R.string.preseteditor_load_more), Progression.WEIGHT_STEP_KG, error, onGrid = true, emptyText = emptyText, caption = caption, onValue = onKgText)
+        DecimalStepper(label, kgText, LoadUnit.KG.label, stringResource(R.string.preseteditor_load_less), stringResource(R.string.preseteditor_load_more), Progression.WEIGHT_STEP_KG, error, onGrid = true, emptyText = emptyText, caption = caption, supportingText = equivalent, onValue = onKgText)
         return
     }
     // Keep partially typed lb text until the stored value changes independently.
     DecimalStepper(
         label, shown, LoadUnit.LB.label, stringResource(R.string.preseteditor_load_less), stringResource(R.string.preseteditor_load_more), gridLb, error,
-        max = Loads.toUnit(MAX_LOAD_KG, unit), onGrid = true, emptyText = emptyText, caption = caption,
+        max = Loads.toUnit(MAX_LOAD_KG, unit), onGrid = true, emptyText = emptyText, caption = caption, supportingText = equivalent,
     ) { lb ->
         typed = lb
         if (lb.isBlank()) onKgText("") else kgOf(lb)?.let { onKgText(formatSteppedFigure(it)) }

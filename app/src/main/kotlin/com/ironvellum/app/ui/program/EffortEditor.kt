@@ -75,6 +75,7 @@ internal fun EffortStepper(
     onMore: () -> Unit,
     lessEnabled: Boolean = true,
     moreEnabled: Boolean = true,
+    supportingText: String? = null,
 ) = StepperRow(
     label = label,
     value = value,
@@ -89,6 +90,7 @@ internal fun EffortStepper(
     onMore = onMore,
     lessEnabled = lessEnabled,
     moreEnabled = moreEnabled,
+    supportingText = supportingText,
 )
 
 /** A quiet 48dp text action. [description] says what it does when its label alone does not. */
@@ -191,6 +193,7 @@ internal fun EffortEntryEditor(
                 onMore = { if (enabled) onLoad(1) },
                 moreEnabled = enabled && (cap == null || load < cap - 1e-9) &&
                     wornFor(entry, equipment)?.let { it.nextKg(load, Units.forExercise(name)) != null } != false,
+                supportingText = Units.equivalent(load, Units.forExercise(name)),
             )
         }
         dumbbellNote(entry, equipment, capLabel)?.let { note ->

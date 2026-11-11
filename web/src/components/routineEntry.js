@@ -1,6 +1,6 @@
 import { node, link, liftPath } from './statCard.js';
 import { artImg } from './artImg.js';
-import { exerciseUnit, formatLoad } from '../format.js';
+import { exerciseUnit, formatWeight } from '../format.js';
 
 /**
  * One numbered entry of a routine, read-only, exactly as the snapshot carries it: the art, name and variation chip, the scheme line
@@ -20,6 +20,6 @@ export function routineEntry(entry, unit = 'kg', { snapshot, router } = {}) {
   text.append(title);
   if (entry.scheme) text.append(node('div', entry.scheme, 'muted routine-scheme'));
   text.append(node('div', entry.figure, 'routine-figure'));
-  row.append(node('span', String(entry.position + 1), 'routine-number'), art, text, node('span', entry.loadKg == null ? 'BW' : `${formatLoad(entry.loadKg, unit)} ${unit}`, 'routine-load'));
+  row.append(node('span', String(entry.position + 1), 'routine-number'), art, text, node('span', entry.loadKg == null ? 'BW' : formatWeight(entry.loadKg, unit, snapshot?.unit ?? unit), 'routine-load'));
   return row;
 }

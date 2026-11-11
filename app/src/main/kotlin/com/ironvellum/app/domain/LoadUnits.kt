@@ -60,15 +60,26 @@ object Loads {
         else -> format(kg, unit)
     }
 
-    /** "220.5 lb". */
-    fun withUnit(kg: Double, unit: LoadUnit): String = "${format(kg, unit)} ${unit.label}"
+    /** A chosen unit first, followed by the app-default equivalent only when it differs. */
+    fun withUnit(kg: Double, unit: LoadUnit, defaultUnit: LoadUnit = unit): String {
+        val primary = "${format(kg, unit)} ${unit.label}"
+        return defaultEquivalent(kg, unit, defaultUnit)?.let { "$primary $it" } ?: primary
+    }
+
+    fun defaultEquivalent(
+        kg: Double,
+        unit: LoadUnit,
+        defaultUnit: LoadUnit,
+        locale: java.util.Locale = java.util.Locale.getDefault(),
+    ): String? = if (unit == defaultUnit) null else "(${format(kg, defaultUnit, locale)} ${defaultUnit.label})"
 
     /**
      * "225 lb", or "BW" for no load. A [weighted] lift (a barbell, a dumbbell, a machine) has no bodyweight to fall
      * back on: with no load it reads "0 kg", never "BW", which would say the bar was not there.
      */
-    fun label(kg: Double?, unit: LoadUnit, weighted: Boolean = false): String =
-        kg?.takeIf { it > 0.0 }?.let { withUnit(it, unit) } ?: if (weighted) withUnit(0.0, unit) else bodyweight()
+    fun label(kg: Double?, unit: LoadUnit, weighted: Boolean = false, defaultUnit: LoadUnit = unit): String =
+        kg?.takeIf { it > 0.0 }?.let { withUnit(it, unit, defaultUnit) }
+            ?: if (weighted) withUnit(0.0, unit, defaultUnit) else bodyweight()
 
     /** "BW": the abbreviation for no external load. */
     fun bodyweight(): String = Words.text(UiText.res(R.string.load_bodyweight))

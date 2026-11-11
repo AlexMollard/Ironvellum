@@ -1,10 +1,10 @@
-import { exerciseUnit, formatLoad, splitLabel, isAssistedMachine } from '../format.js';
+import { exerciseUnit, formatWeight, splitLabel, isAssistedMachine } from '../format.js';
 import { word } from '../i18n.js';
 import { node } from './statCard.js';
 export function prTag(pr, unit = 'kg', snapshot) {
   unit = exerciseUnit(snapshot, splitLabel(pr.label)[0], unit);
   const parts = [splitLabel(pr.label).filter(Boolean).join(' · ')];
-  if (pr.weightKg != null) parts.push(`${formatLoad(pr.weightKg, unit)} ${unit}${isAssistedMachine(splitLabel(pr.label)[0]) ? ' assistance' : ''}`);
+  if (pr.weightKg != null) parts.push(`${formatWeight(pr.weightKg, unit, snapshot?.unit ?? unit)}${isAssistedMachine(splitLabel(pr.label)[0]) ? ' assistance' : ''}`);
   else if (pr.durationSec == null) parts.push(isAssistedMachine(splitLabel(pr.label)[0]) ? '—' : 'BW');
   if (pr.durationSec != null) parts.push(`${pr.durationSec} s`);
   else if (pr.reps != null) parts.push(`× ${pr.reps}`);

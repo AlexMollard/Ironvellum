@@ -181,6 +181,7 @@ internal fun DecimalStepper(
     onGrid: Boolean = false,
     emptyText: String = "–",
     caption: String? = null,
+    supportingText: String? = null,
     onValue: (String) -> Unit,
 ) = StepperRow(
     label = label,
@@ -196,6 +197,7 @@ internal fun DecimalStepper(
     onMore = { onValue(if (onGrid) stepOnGrid(value, 1, step, max) else stepDecimal(value, 1, step, max)) },
     emptyText = emptyText,
     caption = caption,
+    supportingText = supportingText,
 )
 
 /**
@@ -223,10 +225,16 @@ internal fun StepperRow(
     caption: String? = null,
     lessEnabled: Boolean = true,
     moreEnabled: Boolean = true,
+    supportingText: String? = null,
 ) {
     Row(Modifier.fillMaxWidth().heightIn(min = ROW_MIN_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
         RowLabel(label, caption, Modifier.weight(1f))
-        StepperGroup(label, StepperPart(value, less, more, onLess, onMore, onValue, maxDigits, lessEnabled, moreEnabled), unit, error, decimal, emptyText)
+        Column(horizontalAlignment = Alignment.End) {
+            StepperGroup(label, StepperPart(value, less, more, onLess, onMore, onValue, maxDigits, lessEnabled, moreEnabled), unit, error, decimal, emptyText)
+            if (supportingText != null) {
+                Text(supportingText, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+            }
+        }
     }
 }
 

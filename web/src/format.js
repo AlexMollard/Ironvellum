@@ -7,6 +7,11 @@ export function exerciseUnit(snapshot, exerciseName, fallback = 'kg') {
   const unit = snapshot?.exerciseUnits?.[String(exerciseName ?? '').trim().toLowerCase()];
   return unit === 'kg' || unit === 'lb' ? unit : (snapshot?.unit || fallback);
 }
+// Keep canonical kilograms as the source for both figures, never the rounded primary value.
+export function formatWeight(kg, unit = 'kg', defaultUnit = unit) {
+  const primary = `${formatLoad(kg, unit)} ${unit}`;
+  return unit === defaultUnit ? primary : `${primary} (${formatLoad(kg, defaultUnit)} ${defaultUnit})`;
+}
 export function formatVolume(kg, unit = 'kg') {
   const amount = unit === 'lb' ? kg / 0.45359237 : kg;
   const value = Math.round(amount / 100) / 10;
@@ -57,10 +62,10 @@ export function isAssistedMachine(name) {
   return ['assisted pull-up', 'assisted chin-up', 'assisted dip'].includes(String(name ?? '').trim().toLowerCase());
 }
 // Load of one set: bodyweight reads BW, an assisted set keeps its minus sign, and weight added to the body gets a plus.
-export function formatSetLoad(set, unit = 'kg', addsToBody = false) {
-  if (isAssistedMachine(set.exerciseName)) return set.weightKg == null ? '—' : `${formatLoad(set.weightKg, unit)} ${unit} assistance`;
+export function formatSetLoad(set, unit = 'kg', addsToBody = false, defaultUnit = unit) {
+  if (isAssistedMachine(set.exerciseName)) return set.weightKg == null ? '—' : `${formatWeight(set.weightKg, unit, defaultUnit)} assistance`;
   if (set.weightKg == null || set.weightKg === 0) return 'BW';
-  return `${addsToBody && set.weightKg > 0 ? '+' : ''}${formatLoad(set.weightKg, unit)} ${unit}`;
+  return `${addsToBody && set.weightKg > 0 ? '+' : ''}${formatWeight(set.weightKg, unit, defaultUnit)}`;
 }
 // Reps, hold time, distance and grade of one set, as the parts the set table joins with " · ".
 export function setPerformance(set) {

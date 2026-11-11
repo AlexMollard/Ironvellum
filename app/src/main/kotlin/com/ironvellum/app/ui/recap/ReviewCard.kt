@@ -99,19 +99,25 @@ object ReviewCard {
             val top = 817f + i * ROW
             canvas.drawRect(MARGIN, top, RIGHT, top + 2f, fill(palette.rune))
             val centre = top + 2f + (ROW - 2f) / 2f
-            val gainText = lift.gainKg?.let { "+" + Loads.fixed(it, Units.forExercise(lift.name), 1) } ?: context.getString(R.string.review_card_new)
+            val gainText = lift.gainKg?.let {
+                val unit = Units.forExercise(lift.name)
+                val figure = "+" + Loads.fixed(it, unit, 1)
+                Units.equivalent(it, unit)?.let { equivalent -> "$figure ${unit.label} $equivalent" } ?: figure
+            } ?: context.getString(R.string.review_card_new)
             val before = lift.beforeKg
             val changeText = if (before != null) {
                 UiText.res(R.string.review_lift_change, ReviewText.figure(before, lift.name), RecapText.load(lift.afterKg, lift.name)).resolved()
             } else {
                 UiText.res(R.string.review_lift_new_sub, RecapText.load(lift.afterKg, lift.name)).resolved()
             }
-            val changeRight = RIGHT - 150f - 24f
-            val room = changeRight - change.measureText(changeText) - 24f - MARGIN
-            canvas.drawText(TextUtils.ellipsize(lift.label, TextPaint(name), room, TextUtils.TruncateAt.END).toString(), MARGIN, centre + 14f, name)
-            canvas.drawText(changeText, changeRight, centre + 12f, change)
+            val twoLines = Units.forExercise(lift.name) != Units.current
+            val changeRight = if (twoLines) RIGHT else RIGHT - 150f - 24f
+            val room = (if (twoLines) RIGHT - gain.measureText(gainText) - 24f - MARGIN
+                else changeRight - change.measureText(changeText) - 24f - MARGIN).coerceAtLeast(0f)
+            canvas.drawText(TextUtils.ellipsize(lift.label, TextPaint(name), room, TextUtils.TruncateAt.END).toString(), MARGIN, centre + if (twoLines) -6f else 14f, name)
+            canvas.drawText(changeText, changeRight, centre + if (twoLines) 34f else 12f, change)
             gain.color = if (lift.isNew) palette.gold else palette.accentText
-            canvas.drawText(gainText, RIGHT, centre + 14f, gain)
+            canvas.drawText(gainText, RIGHT, centre + if (twoLines) -6f else 14f, gain)
         }
     }
 

@@ -15,7 +15,7 @@ export function groupSets(sets) {
 }
 // One set as a plain line: "load × reps", then its kind (when not a working set), its effort and a PR mark.
 function setLine(set, number, width, entry, snapshot) {
-  const unit = exerciseUnit(snapshot, set.exerciseName), performance = setPerformance(set), load = formatSetLoad(set, unit, addsToBody(snapshot, set.exerciseName));
+  const unit = exerciseUnit(snapshot, set.exerciseName), performance = setPerformance(set), load = formatSetLoad(set, unit, addsToBody(snapshot, set.exerciseName), snapshot?.unit ?? unit);
   const main = set.reps ? [`${load} × ${performance[0]}`, ...performance.slice(1)] : [...(load === 'BW' && performance.length ? [] : [load]), ...performance];
   const parts = [main.join(' · ') || '—'];
   if ((set.kind || 'working') !== 'working') parts.push(setKindName(set));

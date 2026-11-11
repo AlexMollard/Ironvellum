@@ -1870,7 +1870,9 @@ fun SessionScreen(
                     supportingText = if (parsed.isFailure) {
                         { Text(stringResource(R.string.session_load_error, Loads.ceilingText(MAX_LOAD_KG, unit), unit.label)) }
                     } else {
-                        null
+                        parsed.getOrNull()?.takeIf { field.text.isNotBlank() }?.let { kg ->
+                            Units.equivalent(kg, unit)?.let { equivalent -> { Text(equivalent) } }
+                        }
                     },
                     keyboardOptions = decimalKeyboard(),
                     colors = fieldColors(accent = IronvellumColors.SystemGreen),
@@ -2345,6 +2347,7 @@ private class Figure(
     val plus: SessionSet,
     /** A load held as a dumbbell in each hand: the figure is per dumbbell. */
     val each: Boolean = false,
+    val equivalent: String? = null,
 )
 
 private enum class RowState { DONE, WARMUP, EDITING, ACTIVE, UPCOMING }
@@ -2402,6 +2405,7 @@ private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolea
             minus = set.copy(weightKg = stepDownLoad(set.weightKg, set.exerciseName, unit, worn)),
             plus = set.copy(weightKg = stepUpKg(set.weightKg, unit, gridLb = loadGridLb(set.exerciseName), worn = worn)),
             each = each,
+            equivalent = kg?.let { Units.equivalent(it, unit) },
         )
     }
     fun minutes(): Figure {
@@ -3365,7 +3369,10 @@ private fun TrialSetRow(
                 .drawBehind { drawRect(IronvellumColors.Emerald, size = Size(2.dp.toPx(), size.height)) }
                 .padding(vertical = 4.dp),
         ) {
-            Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp),
+                verticalAlignment = if (figures.any { it.equivalent != null }) Alignment.Top else Alignment.CenterVertically,
+            ) {
                 SetNumberCell(
                     label = label,
                     kind = set.kind,
@@ -3529,8 +3536,6 @@ private fun TrialSetRow(
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = tone,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
             )
             if (stackTags) Row(verticalAlignment = Alignment.CenterVertically) { tags() }
         }
@@ -3613,41 +3618,43 @@ private fun FigureStepper(
     onType: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    // The glyphs hug the figure, and the group sits centred in its half: spread
-    // to the edges, one figure's + read as the next figure's −.
+    // Keep the equivalent outside the digit column so it cannot push the ± targets apart.
     val (decrease, increase, type) = figure.kind.stepperRes(figure.each)
-    Row(modifier, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-        StepButton("−", stringResource(decrease)) { onEdit(figure.minus) }
-        Column(
-            Modifier
-                .widthIn(min = FIGURE_WIDTH)
-                .heightIn(min = 48.dp)
-                .then(if (onType != null) Modifier.clickable(onClickLabel = stringResource(type), role = Role.Button, onClick = onType) else Modifier),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            // The rule sits right under the digits and is only as wide as they are: the mark of a field that can be typed, not only stepped.
-            Column(Modifier.width(IntrinsicSize.Min), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    figure.value,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    // A five-character figure ("102.5") steps down so it fits between the glyphs.
-                    fontSize = if (figure.value.length >= 5) 18.sp else 22.sp,
-                    color = IronvellumColors.Ink,
-                    maxLines = 1,
-                    softWrap = false,
-                )
-                if (onType != null) {
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(IronvellumColors.InkMuted.copy(alpha = 0.55f)))
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            StepButton("−", stringResource(decrease)) { onEdit(figure.minus) }
+            Column(
+                Modifier
+                    .widthIn(min = FIGURE_WIDTH)
+                    .heightIn(min = 48.dp)
+                    .then(if (onType != null) Modifier.clickable(onClickLabel = stringResource(type), role = Role.Button, onClick = onType) else Modifier),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Column(Modifier.width(IntrinsicSize.Min), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        figure.value,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = if (figure.value.length >= 5) 18.sp else 22.sp,
+                        color = IronvellumColors.Ink,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                    if (onType != null) {
+                        Box(Modifier.fillMaxWidth().height(1.dp).background(IronvellumColors.InkMuted.copy(alpha = 0.55f)))
+                    }
+                }
+                if (figure.unit.isNotEmpty()) {
+                    Text(figure.unit, style = MaterialTheme.typography.labelSmall, fontSize = 10.sp, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 2.dp))
                 }
             }
-            if (figure.unit.isNotEmpty()) {
-                Text(figure.unit, style = MaterialTheme.typography.labelSmall, fontSize = 10.sp, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 2.dp))
-            }
+            StepButton("+", stringResource(increase)) { onEdit(figure.plus) }
         }
-        StepButton("+", stringResource(increase)) { onEdit(figure.plus) }
+        figure.equivalent?.let {
+            Text(it, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, textAlign = TextAlign.Center)
+        }
     }
 }
 
@@ -4242,8 +4249,6 @@ private fun NextSetStrip(setNumber: Int, line: String, noRestYet: Boolean, onLog
                 line,
                 style = MaterialTheme.typography.bodyLarge,
                 color = IronvellumColors.Ink,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
         }
         Box(

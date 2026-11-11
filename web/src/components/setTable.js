@@ -1,5 +1,5 @@
 import { word } from '../i18n.js';
-import { addsToBody, exerciseUnit, formatLoad, formatSetLoad, setPerformance, setEffort, setKindName } from '../format.js';
+import { addsToBody, exerciseUnit, formatWeight, formatSetLoad, setPerformance, setEffort, setKindName } from '../format.js';
 import { node } from './statCard.js';
 export function setTable(sets, entry, snapshot) {
   const table = node('table', null, 'set-table');
@@ -10,10 +10,10 @@ export function setTable(sets, entry, snapshot) {
   for (const [position, set] of sets.entries()) {
     const key = `${set.exerciseName}#${set.setIndex}`; const row = node('tr', null, `kind-${set.kind || 'working'}`);
     const unit = exerciseUnit(snapshot, set.exerciseName);
-    const load = formatSetLoad(set, unit, addsToBody(snapshot, set.exerciseName)), performance = setPerformance(set).join(' · ') || '—', effort = setEffort(set, snapshot) ?? '—';
+    const load = formatSetLoad(set, unit, addsToBody(snapshot, set.exerciseName), snapshot?.unit ?? unit), performance = setPerformance(set).join(' · ') || '—', effort = setEffort(set, snapshot) ?? '—';
     const e1rm = entry?.e1rm?.[key], peak = entry?.peakSets?.includes(key);
     for (const value of [position + 1, setKindName(set), load, performance, effort]) row.append(node('td', value));
-    const last = node('td', null, 'e1rm-cell'); if (peak) last.append(node('b', word('PR', 'concept_peak_u'), 'pr-mark')); last.append(e1rm == null ? '' : `${formatLoad(e1rm, unit)} ${unit}`); row.append(last);
+    const last = node('td', null, 'e1rm-cell'); if (peak) last.append(node('b', word('PR', 'concept_peak_u'), 'pr-mark')); last.append(e1rm == null ? '' : formatWeight(e1rm, unit, snapshot?.unit ?? unit)); row.append(last);
     body.append(row);
   }
   table.append(body); return table;

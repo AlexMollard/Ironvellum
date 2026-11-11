@@ -95,6 +95,10 @@ object ReviewText {
     /** The weekly pace with one decimal: "3.7". */
     fun pace(review: PeriodReview, locale: Locale = Locale.getDefault()): String = String.format(locale, "%.1f", review.perWeek)
 
-    /** A lift's load as a plain figure in the lifter's unit, one decimal, no unit: "112.5". */
-    fun figure(kg: Double, exerciseName: String? = null): String = Loads.fixed(kg, exerciseName?.let { Units.forExercise(it) } ?: Units.current, 1)
+    /** A lift's load as a plain figure, adding units when the exercise differs from the default. */
+    fun figure(kg: Double, exerciseName: String? = null): String {
+        val unit = exerciseName?.let { Units.forExercise(it) } ?: Units.current
+        val figure = Loads.fixed(kg, unit, 1)
+        return Units.equivalent(kg, unit)?.let { "$figure ${unit.label} $it" } ?: figure
+    }
 }

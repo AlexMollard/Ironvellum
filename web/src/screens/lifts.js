@@ -2,7 +2,7 @@ import { artImg } from '../components/artImg.js';
 import { renderBodyMap } from '../components/bodyMap.js';
 import { renderLineChart } from '../components/lineChart.js';
 import { renderVariationTable, formatPeak } from '../components/variationTable.js';
-import { exerciseUnit, formatLoad, formatSets, formatVolume, isAssistedMachine } from '../format.js';
+import { exerciseUnit, formatLoad, formatWeight, formatSets, formatVolume, isAssistedMachine } from '../format.js';
 import { card, link } from '../components/statCard.js';
 import { roving, scrollToElement } from '../components/interact.js';
 import { t, word } from '../i18n.js';
@@ -42,7 +42,7 @@ function liftDetail(pane, lift, snapshot, router) {
   const frame = el('span', null, 'art-frame hero'); frame.append(artImg(lift.name, lift.art));
   const text = el('div', null, 'lift-intro'); const name = el('h2', lift.name, 'lift-name'); name.tabIndex = -1; text.append(name, el('p', `${lift.muscleSummary} · ${lift.variations.length} ${lift.variations.length === 1 ? 'variation' : 'variations'} logged`, 'muted'));
   const chips = el('div', null, 'chips');
-  for (const v of lift.variations) if (v.peak) { const chip = el('span', null, 'chip pr-tag'); chip.append(el('b', word('PR', 'concept_peak_u')), `${v.label} ${formatPeak(v.peak, liftUnit, lift.addsToBody, assisted)}`); chips.append(chip); }
+  for (const v of lift.variations) if (v.peak) { const chip = el('span', null, 'chip pr-tag'); chip.append(el('b', word('PR', 'concept_peak_u')), `${v.label} ${formatPeak(v.peak, liftUnit, lift.addsToBody, assisted, snapshot.unit ?? liftUnit)}`); chips.append(chip); }
   text.append(chips);
   const map = el('div', null, 'analytics-body-map body-map-pair');
   for (const view of ['front', 'back']) { const figure = el('div', null, 'body-map'); renderBodyMap(figure, { levels: lift.muscleLevels, figure: snapshot.profile?.figure, view, look: 'worked', names: snapshot.muscles }); map.append(figure); }
@@ -60,11 +60,11 @@ function liftDetail(pane, lift, snapshot, router) {
   const records = card(word('Records', 'concept_peak_cpl'), 'records-panel');
   for (const v of lift.variations) {
     const box = el('div', null, 'analytics-record'); box.append(el('h3', v.label)); const tiles = el('div', null, 'tiles');
-    if (v.peak?.e1rmKg != null) tiles.append(tile('Best est. 1RM', `${formatLoad(v.peak.e1rmKg, liftUnit)} ${liftUnit}`));
-    if (v.peak) tiles.append(tile('Best set', formatPeak(v.peak, liftUnit, lift.addsToBody, assisted)));
-    if (v.heaviest) tiles.append(tile(assisted ? 'Highest effective-load set' : 'Heaviest', formatPeak(v.heaviest, liftUnit, lift.addsToBody, assisted)));
-    for (const record of v.setRecords || []) tiles.append(tile('Set record', `Set ${record.position + 1}: ${lift.metric === 'hold' ? `${record.reps} s` : formatPeak(record, liftUnit, lift.addsToBody, assisted)}`));
-    if (v.volumeKg != null) tiles.append(tile('Volume', formatVolume(v.volumeKg, liftUnit)));
+    if (v.peak?.e1rmKg != null) tiles.append(tile('Best est. 1RM', formatWeight(v.peak.e1rmKg, liftUnit, snapshot.unit ?? liftUnit)));
+    if (v.peak) tiles.append(tile('Best set', formatPeak(v.peak, liftUnit, lift.addsToBody, assisted, snapshot.unit ?? liftUnit)));
+    if (v.heaviest) tiles.append(tile(assisted ? 'Highest effective-load set' : 'Heaviest', formatPeak(v.heaviest, liftUnit, lift.addsToBody, assisted, snapshot.unit ?? liftUnit)));
+    for (const record of v.setRecords || []) tiles.append(tile('Set record', `Set ${record.position + 1}: ${lift.metric === 'hold' ? `${record.reps} s` : formatPeak(record, liftUnit, lift.addsToBody, assisted, snapshot.unit ?? liftUnit)}`));
+    if (v.volumeKg != null) tiles.append(tile('Volume', formatVolume(v.volumeKg, liftUnit) + (snapshot.unit && snapshot.unit !== liftUnit ? ` (${formatVolume(v.volumeKg, snapshot.unit)})` : '')));
     if (v.perWeek != null) tiles.append(tile('Frequency', `${formatSets(v.perWeek)} a week`));
     tiles.append(tile('Sessions', `${v.sessions} ${t(v.sessions === 1 ? 'concept_trial_s' : 'concept_trial_pl')}`)); box.append(tiles); records.append(box);
   } pane.append(records);
@@ -78,14 +78,14 @@ function liftDetail(pane, lift, snapshot, router) {
       const unit = metric === 'e1rm' ? liftUnit : 'score';
       const formatValue = metric === 'e1rm' ? value => formatLoad(value, liftUnit) : String;
       const title = metric === 'e1rm' ? `Estimated 1RM per ${t('concept_trial_s')}` : `${t('acct_metric_strength')} per ${t('concept_trial_s')}`;
-      const series = matching.map(({ v, index }) => ({ index, name: v.label, points: v.points.filter(p => p[0] >= cutoff && (metric !== 'e1rm' || p[2] > 0)).map(p => [...p, date.format(p[0]), `${formatValue(p[2])} ${unit}`]) }));
+      const series = matching.map(({ v, index }) => ({ index, name: v.label, points: v.points.filter(p => p[0] >= cutoff && (metric !== 'e1rm' || p[2] > 0)).map(p => [...p, date.format(p[0]), metric === 'e1rm' ? formatWeight(p[2], liftUnit, snapshot.unit ?? liftUnit) : `${formatValue(p[2])} ${unit}`]) }));
       const panel = el('div', null, 'analytics-chart'); panel.append(el('h3', title, 'chart-title'));
       const plot = el('div'); panel.append(plot); chart.append(panel);
       if (series.reduce((n, s) => n + s.points.length, 0) < 2) plot.append(el('p', t('explorer_chart_one')));
       else renderLineChart(plot, { series, label: title, formatValue, unit, factor: metric === 'e1rm' && liftUnit === 'lb' ? 1 / 0.45359237 : 1 });
     }
     if (lift.variations.some(v => selected.has(v.key) && !((v.chartMetric === 'e1rm' && v.chartUnit === 'kg') || (v.chartMetric === 'strength' && v.chartUnit === 'score')))) chart.append(el('p', 'Sync the app to see chart metrics.'));
-    renderVariationTable(table, { variations: lift.variations, selected, unit: liftUnit, zone: snapshot.zone, builtAtMs: snapshot.builtAtMs, addsToBody: lift.addsToBody, assisted, onToggle(key) { if (selected.has(key)) { if (selected.size === 1) return; selected.delete(key); } else selected.add(key); draw(); } });
+    renderVariationTable(table, { variations: lift.variations, selected, unit: liftUnit, defaultUnit: snapshot.unit ?? liftUnit, zone: snapshot.zone, builtAtMs: snapshot.builtAtMs, addsToBody: lift.addsToBody, assisted, onToggle(key) { if (selected.has(key)) { if (selected.size === 1) return; selected.delete(key); } else selected.add(key); draw(); } });
   }
   select.addEventListener('change', () => { range = select.value; draw(); }); draw();
   return name;

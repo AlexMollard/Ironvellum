@@ -28,6 +28,16 @@ describe('weight added to the body', () => {
     }
     expect(formatSetLoad(set('Pull-up', { modifiers: 'Assisted', weightKg: -20 }))).toBe('-20 kg');
   });
+  it('shows both units in set and estimated record cells, including known zero assistance', () => {
+    const mixed = { ...snapshot, exerciseUnits: { 'barbell row': 'lb', 'assisted pull-up': 'lb' } };
+    const table = setTable([set('Barbell Row', { weightKg: 45.359237 }), set('Assisted Pull-up', { weightKg: 0, setIndex: 1 })],
+      { e1rm: { 'Barbell Row#0': 50 } }, mixed);
+    const rows = table.querySelectorAll('tbody tr');
+    expect(rows[0].children[2].textContent).toBe('100 lb (45.36 kg)');
+    expect(rows[0].textContent).toContain('110 lb (50 kg)');
+    expect(rows[1].children[2].textContent).toBe('0 lb (0 kg) assistance');
+    expect(setTable([set('Assisted Pull-up', { weightKg: null })], null, mixed).querySelector('tbody tr').children[2].textContent).toBe('—');
+  });
   for (const [name, s, load] of cases) {
     it(`shows ${name} as ${load} in the set table`, () => {
       expect(setTable([s], null, snapshot).querySelector('tbody tr').children[2].textContent).toBe(load);

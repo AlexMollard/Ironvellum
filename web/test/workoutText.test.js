@@ -33,9 +33,11 @@ describe('workout text', () => {
     const mixed = [set('Bench Press', 0, 0, { weightKg: 100 }), set('Leg Press', 1, 0, { weightKg: 100 })];
     const preferences = { ...snapshot, unit: 'lb', exerciseUnits: { 'bench press': 'kg', 'leg press': 'lb' } };
     const out = formatWorkoutText({ workout, entry, snapshot: preferences, sets: mixed });
-    expect(out).toContain('100 kg × 6'); expect(out).toContain('220.5 lb × 6'); expect(out).toContain('21.6 k lb');
+    expect(out).toContain('100 kg (220.5 lb) × 6'); expect(out).toContain('220.5 lb × 6'); expect(out).toContain('21.6 k lb');
     const legacy = formatWorkoutText({ workout, entry, snapshot: { ...snapshot, unit: 'lb' }, sets: mixed });
     expect(legacy.match(/220\.5 lb × 6/g)).toHaveLength(2);
+    const inverse = formatWorkoutText({ workout, entry, snapshot: { ...snapshot, exerciseUnits: { 'bench press': 'lb' } }, sets: [set('Bench Press', 0, 0, { weightKg: 45.359237 })] });
+    expect(inverse).toContain('100 lb (45.36 kg) × 6');
   });
   it('names warm-up and back-off sets, and holds and runs without reps', () => {
     const out = formatWorkoutText({ workout, entry, snapshot, sets: [set('Lift', 0, 0, { kind: 'warmup', weightKg: 40 }), set('Lift', 0, 1, { kind: 'backoff' }), set('Plank', 1, 0, { reps: 0, weightKg: null, durationSec: 45 }), set('Run', 2, 0, { reps: 0, weightKg: null, distanceM: 5000 })] });

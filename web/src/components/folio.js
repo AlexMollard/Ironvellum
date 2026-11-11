@@ -27,7 +27,8 @@ function workoutSets(body, workout, snapshot) {
   for (const exercise of workout.exercises) {
     const block = node('div', null, 'folio-exercise'); block.append(node('strong', exercise.name));
     for (const [index, set] of exercise.sets.entries()) {
-      const line = node('div', [`Set ${index + 1}`, formatSetLoad({ ...set, exerciseName: exercise.name }, exerciseUnit(snapshot, exercise.name)), setPerformance(set).join(' · ')].filter(Boolean).join(' · '), set.done ? 'folio-set' : 'folio-set muted'); block.append(line);
+      const unit = exerciseUnit(snapshot, exercise.name);
+      const line = node('div', [`Set ${index + 1}`, formatSetLoad({ ...set, exerciseName: exercise.name }, unit, false, snapshot?.unit ?? unit), setPerformance(set).join(' · ')].filter(Boolean).join(' · '), set.done ? 'folio-set' : 'folio-set muted'); block.append(line);
     }
     body.append(block);
   }

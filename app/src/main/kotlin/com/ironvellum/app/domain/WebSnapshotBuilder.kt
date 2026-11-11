@@ -233,7 +233,7 @@ object WebSnapshotBuilder {
                         // The variation chip is the rite row's own subline: the modifiers, one per segment.
                         label = entry.modifiers.split(",").map { it.trim() }.filter { it.isNotEmpty() }.joinToString(" · "),
                         sets = entry.targetSets, reps = entry.targetReps, loadKg = entry.targetWeightKg,
-                        figure = SchemeText.figure(entry.scheme, entry.targetSets, entry.targetReps, entry.targetWeightKg, { Loads.withUnit(it, input.exerciseUnits[entry.exerciseName.trim().lowercase(Locale.ROOT)] ?: input.unit) }, MovementDifficulty.isHoldByName(entry.exerciseName)),
+                        figure = SchemeText.figure(entry.scheme, entry.targetSets, entry.targetReps, entry.targetWeightKg, { Loads.withUnit(it, input.exerciseUnits[entry.exerciseName.trim().lowercase(Locale.ROOT)] ?: input.unit, input.unit) }, MovementDifficulty.isHoldByName(entry.exerciseName)),
                         scheme = SchemeText.summary(entry.scheme, entry.targetSets), modifiers = entry.modifiers,
                         supersetGroup = entry.supersetGroup, warmup = entry.warmup,
                     )

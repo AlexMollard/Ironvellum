@@ -51,21 +51,24 @@ object Units {
     private fun unitFor(exerciseName: String?): LoadUnit = exerciseName?.let(::forExercise) ?: current
     fun nameFor(exerciseName: String): String = forExercise(exerciseName).label
 
-    fun withUnit(kg: Double, exerciseName: String? = null): String = Loads.withUnit(kg, unitFor(exerciseName))
+    fun withUnit(kg: Double, exerciseName: String? = null): String = Loads.withUnit(kg, unitFor(exerciseName), current)
     fun format(kg: Double, exerciseName: String? = null): String = Loads.format(kg, unitFor(exerciseName))
     fun label(kg: Double?, weighted: Boolean = false, exerciseName: String? = null): String =
-        Loads.label(kg, unitFor(exerciseName), weighted)
+        Loads.label(kg, unitFor(exerciseName), weighted, current)
     fun amount(kg: Double, exerciseName: String? = null): Double = Loads.toUnit(kg, unitFor(exerciseName))
     fun fixed(kg: Double, decimals: Int, exerciseName: String? = null): String {
         val unit = unitFor(exerciseName)
-        return "${Loads.fixed(kg, unit, decimals)} ${unit.label}"
+        val primary = "${Loads.fixed(kg, unit, decimals)} ${unit.label}"
+        return equivalent(kg, unit)?.let { "$primary $it" } ?: primary
     }
     fun volume(kg: Double, exerciseName: String? = null): String {
         val unit = unitFor(exerciseName)
-        return "${"%,.0f".fmt(Loads.toUnit(kg, unit))} ${unit.label}"
+        val primary = "${"%,.0f".fmt(Loads.toUnit(kg, unit))} ${unit.label}"
+        return equivalent(kg, unit)?.let { "$primary $it" } ?: primary
     }
     fun whole(kg: Double, exerciseName: String? = null): Long = Math.round(amount(kg, exerciseName))
     val name: String get() = current.label
+    fun equivalent(kg: Double, unit: LoadUnit): String? = Loads.defaultEquivalent(kg, unit, current)
 
     fun set(context: Context, unit: LoadUnit) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putString(KEY, unit.name) }

@@ -147,12 +147,17 @@ object RecapCard {
                 val centre = top + 2f + (ROW - 2f) / 2f
                 glyph(canvas, Icons.Outlined.EmojiEvents, MARGIN, centre - 24f, 48f, palette.gold)
                 val setText = RecapText.set(record.set, record.addsToBody)
-                val setRight = RIGHT - 150f - 24f
+                val unit = Units.forExercise(record.name)
+                val figure = "+" + Loads.fixed(record.gainKg, unit, 1)
+                val gainText = Units.equivalent(record.gainKg, unit)?.let { "$figure ${unit.label} $it" } ?: figure
+                val twoLines = unit != Units.current
+                val setRight = if (twoLines) RIGHT else RIGHT - 150f - 24f
                 val nameLeft = MARGIN + 48f + 24f
-                val room = setRight - set.measureText(setText) - 24f - nameLeft
-                canvas.drawText(TextUtils.ellipsize(record.label, TextPaint(name), room, TextUtils.TruncateAt.END).toString(), nameLeft, centre + 14f, name)
-                canvas.drawText(setText, setRight, centre + 12f, set)
-                canvas.drawText("+" + Loads.fixed(record.gainKg, Units.forExercise(record.name), 1), RIGHT, centre + 14f, gain)
+                val room = (if (twoLines) RIGHT - gain.measureText(gainText) - 24f - nameLeft
+                    else setRight - set.measureText(setText) - 24f - nameLeft).coerceAtLeast(0f)
+                canvas.drawText(TextUtils.ellipsize(record.label, TextPaint(name), room, TextUtils.TruncateAt.END).toString(), nameLeft, centre + if (twoLines) -6f else 14f, name)
+                canvas.drawText(setText, setRight, centre + if (twoLines) 34f else 12f, set)
+                canvas.drawText(gainText, RIGHT, centre + if (twoLines) -6f else 14f, gain)
             }
         }
 

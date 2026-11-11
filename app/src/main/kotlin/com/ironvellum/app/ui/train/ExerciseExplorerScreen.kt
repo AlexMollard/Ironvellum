@@ -230,10 +230,15 @@ private fun holdSet(seconds: Int, load: String?): String = Words.text(
 )
 
 /** The short form for a line of sets: "100 × 5", "BW × 12", "45 s · 20". */
-internal fun compactSet(reps: Int, weightKg: Double?, hold: Boolean, assisted: Boolean, exerciseName: String? = null): String =
-    if (hold) holdSet(reps, weightKg?.let { Units.format(it, exerciseName) })
-    else (if (assisted) weightKg?.let { Units.format(it, exerciseName) } ?: Words.text(UiText.res(R.string.assistance_unknown))
-    else weightKg?.takeIf { it > 0.0 }?.let { Units.format(it, exerciseName) } ?: Loads.bodyweight()) + " × $reps"
+internal fun compactSet(reps: Int, weightKg: Double?, hold: Boolean, assisted: Boolean, exerciseName: String? = null): String {
+    fun figure(kg: Double): String {
+        val unit = exerciseName?.let { Units.forExercise(it) } ?: Units.current
+        return if (unit == Units.current) Units.format(kg, exerciseName) else Loads.withUnit(kg, unit, Units.current)
+    }
+    return if (hold) holdSet(reps, weightKg?.let(::figure))
+    else (if (assisted) weightKg?.let(::figure) ?: Words.text(UiText.res(R.string.assistance_unknown))
+    else weightKg?.takeIf { it > 0.0 }?.let(::figure) ?: Loads.bodyweight()) + " × $reps"
+}
 
 /**
  * Trials per week over the span from the first trial to [nowMs], never shorter than a

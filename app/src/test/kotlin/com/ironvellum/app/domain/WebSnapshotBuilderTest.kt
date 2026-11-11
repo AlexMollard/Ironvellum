@@ -436,6 +436,15 @@ class WebSnapshotBuilderTest {
         assertEquals("4 × 6 @" + Loads.withUnit(80.0, LoadUnit.LB), figure)
         assertTrue(figure, figure.contains("lb"))
     }
+    @Test fun routineFigureIncludesDefaultEquivalentForExerciseOverride() = plain {
+        val input = WebSnapshotFixtures.input()
+        val pounds = routines(input.copy(exerciseUnits = mapOf("back squat" to LoadUnit.LB)))
+            .presets.first { it.name == "Lower A" }.entries[0].figure
+        assertTrue(pounds, pounds.contains("176.5 lb (80 kg)"))
+        val kilograms = routines(input.copy(unit = LoadUnit.LB, exerciseUnits = mapOf("back squat" to LoadUnit.KG)))
+            .presets.first { it.name == "Lower A" }.entries[0].figure
+        assertTrue(kilograms, kilograms.contains("80 kg (176.5 lb)"))
+    }
     @Test fun holdRepsReadAsSeconds() = plain {
         val plank = routines().presets.first { it.name == "Lower A" }.entries[1]
         assertEquals(SchemeText.figure(SetScheme(), 3, 40, null, null, hold = MovementDifficulty.isHoldByName("Plank")), plank.figure)

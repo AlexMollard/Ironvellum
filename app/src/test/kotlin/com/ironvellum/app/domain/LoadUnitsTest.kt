@@ -11,6 +11,16 @@ class LoadUnitsTest {
     private val lb = LoadUnit.LB
     private val kg = LoadUnit.KG
 
+    @Test fun `different units show the default equivalent from canonical kilograms`() {
+        assertEquals("100 lb (45.36 kg)", Loads.withUnit(45.359, lb, kg))
+        assertEquals("50 kg (110 lb)", Loads.withUnit(50.0, kg, lb))
+        assertEquals("220.5 lb (100 kg)", Loads.withUnit(100.0, lb, kg))
+        assertEquals("50 kg", Loads.withUnit(50.0, kg, kg))
+        assertEquals("0 lb (0 kg)", Loads.withUnit(0.0, lb, kg))
+        assertEquals("BW", Loads.label(null, lb, defaultUnit = kg))
+        assertEquals("(100,33 kg)", Loads.defaultEquivalent(100.33, lb, kg, java.util.Locale.GERMANY))
+    }
+
     @Test
     fun `lb displays to the nearest half pound`() {
         // The approved mock's own figures.

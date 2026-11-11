@@ -123,12 +123,24 @@ class WorkoutShareTest {
         val catalogue = listOf(bench, leg).associateBy { it.id }
         val mixed = WorkoutShare.format(session(), sets, catalogue, zone, unit = LoadUnit.LB,
             exerciseUnits = mapOf("bench press" to LoadUnit.KG, "leg press" to LoadUnit.LB))
-        assertTrue(mixed, "100kg" in mixed)
-        assertTrue(mixed, "220.5lb" in mixed)
+        assertTrue(mixed, "100kg (220.5 lb)" in mixed)
+        assertTrue(mixed, "220.5lb\n" in mixed)
         val legacy = WorkoutShare.format(session(), sets, catalogue, zone, unit = LoadUnit.LB)
         assertFalse(legacy, "100kg" in legacy)
         assertEquals(2, "220.5lb".toRegex().findAll(legacy).count())
         assertTrue(sets.all { it.weightKg == 100.0 })
+        val inverse = WorkoutShare.format(session(), listOf(set(1, "Bench Press", 0, 5, 45.359237)), catalogue, zone,
+            unit = LoadUnit.KG, exerciseUnits = mapOf("bench press" to LoadUnit.LB))
+        assertTrue(inverse, "100lb (45.36 kg)" in inverse)
+    }
+
+    @Test
+    fun `mixed unit assistance distinguishes zero from unknown`() {
+        val machine = exercise(1, "Assisted Pull-up", weighted = true)
+        fun share(weight: Double?) = WorkoutShare.format(session(), listOf(set(1, machine.name, 0, 5, weight)),
+            mapOf(1L to machine), zone, unit = LoadUnit.KG, exerciseUnits = mapOf("assisted pull-up" to LoadUnit.LB))
+        assertTrue(share(0.0), "0lb (0 kg) assistance" in share(0.0))
+        assertFalse(share(null), "assistance" in share(null))
     }
 
     @Test

@@ -84,6 +84,9 @@ object RecapText {
 
     /** The load of a set: "82.5 kg", or "+12.5 kg" when it is added to the body. */
     private fun setLoad(set: SessionSet, addsToBody: Boolean): String {
+        if (set.weightKg == null && com.ironvellum.app.domain.BodyShare.isAssisted(set.exerciseName)) {
+            return Words.text(UiText.res(R.string.assistance_unknown))
+        }
         val figure = Units.withUnit(set.weightKg ?: 0.0, set.exerciseName)
         return if (addsToBody) "+$figure" else figure
     }

@@ -475,7 +475,16 @@ private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long, onOpenLift:
         records.forEachIndexed { i, record ->
             if (i > 0) InkDivider()
             // The board is a glance; the lift's whole history is on Exercises.
-            val change = record.deltaKg?.let { stringResource(R.string.stats_change_90d, Ledger.signed(Units.amount(it, record.name), Units.nameFor(record.name))) }
+            val change = record.deltaKg?.let {
+                val signed = Ledger.signed(Units.amount(it, record.name), Units.nameFor(record.name))
+                val equivalent = Units.equivalent(it, Units.forExercise(record.name))?.let { text ->
+                    when {
+                        signed.startsWith("+") -> text.replaceFirst("(", "(+")
+                        else -> text.replaceFirst("(-", "(\u2212")
+                    }
+                }
+                stringResource(R.string.stats_change_90d, if (equivalent == null) signed else "$signed $equivalent")
+            }
             val fresh = LiftRecords.isFresh(record, nowMs)
             ListRow(
                 label = record.label,

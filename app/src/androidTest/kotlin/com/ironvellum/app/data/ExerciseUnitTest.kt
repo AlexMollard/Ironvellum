@@ -47,6 +47,26 @@ class ExerciseUnitTest {
         Units.init(realContext)
     }
 
+    @Test fun weightsShowTheDefaultEquivalentButNumericInputsDoNot() {
+        Units.set(context, LoadUnit.KG)
+        Units.setExercise(context, "Leg Press", LoadUnit.LB)
+        Units.setExercise(context, "Bench Press", LoadUnit.KG)
+        assertEquals("100 lb (45.36 kg)", Units.withUnit(45.359, "Leg Press"))
+        assertEquals("220.5 lb (100 kg)", Units.fixed(100.0, 1, "Leg Press"))
+        assertEquals("100", Units.format(45.359, "Leg Press"))
+        assertEquals("50 kg", Units.withUnit(50.0, "Bench Press"))
+        Units.set(context, LoadUnit.LB)
+        assertEquals("100 lb", Units.withUnit(45.359, "Leg Press"))
+        assertEquals("50 kg (110 lb)", Units.withUnit(50.0, "Bench Press"))
+        assertEquals("50", Units.format(50.0, "Bench Press"))
+        Units.setExercise(context, "Assisted Pull-up", LoadUnit.KG)
+        val unknown = com.ironvellum.app.domain.SessionSet(exerciseId = 7, exerciseName = "Assisted Pull-up", setIndex = 0, reps = 6)
+        val unknownText = com.ironvellum.app.ui.recap.RecapText.set(unknown, false)
+        assertTrue(unknownText.contains(context.getString(com.ironvellum.app.R.string.assistance_unknown)))
+        assertFalse(unknownText.contains("(0 lb)"))
+        assertTrue(com.ironvellum.app.ui.recap.RecapText.set(unknown.copy(weightKg = 0.0), false).contains("0 kg (0 lb)"))
+    }
+
     @Test fun explicitUnitsPersistAndResetToFollowingTheGlobalUnit() {
         Units.set(context, LoadUnit.KG)
         Units.setExercise(context, " Leg Press ", LoadUnit.LB)

@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
 import com.ironvellum.app.data.EffortSetting
+import com.ironvellum.app.data.Units
 import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.domain.EffortScale
@@ -486,7 +487,7 @@ private fun backoffCaption(topKg: Double?, scheme: SetScheme, lift: LiftLoading)
     val kg = planned.weightKg
     return when {
         kg != null -> {
-            val figure = (if (lift.bodyweightLift) "+" else "") + Loads.withUnit(kg, lift.unit)
+            val figure = (if (lift.bodyweightLift) "+" else "") + Loads.withUnit(kg, lift.unit, Units.current)
             when (planned.rounding) {
                 Rounding.VEST_BLOCKS -> UiText.res(R.string.setssheet_backoff_rounded_vest, figure)
                 Rounding.BELT_PLATES -> UiText.res(R.string.setssheet_backoff_rounded_belt, figure)
@@ -795,7 +796,7 @@ private fun YoullDo(scheme: SetScheme, sets: Int, reps: Int, kg: Double?, lift: 
     fun height(i: Int): Float = (if (heaviest > 0.0) (totals[i] / heaviest).let { it * it }.toFloat() else levels.getOrNull(i) ?: 0.8f).coerceIn(0.25f, 1f)
     fun figure(set: PlannedSet, withUnit: Boolean): String {
         val repsText = set.range?.let { SchemeText.reps(it) } ?: set.reps.toString()
-        val load = set.weightKg?.let { (if (lift.bodyweightLift) "+" else "") + (if (withUnit) Loads.withUnit(it, lift.unit) else Loads.format(it, lift.unit)) }
+        val load = set.weightKg?.let { (if (lift.bodyweightLift) "+" else "") + (if (withUnit) Loads.withUnit(it, lift.unit, Units.current) else Loads.format(it, lift.unit)) }
             ?: if (lift.bodyweightLift) "BW" else null
         return if (load == null) repsText else "$repsText × $load"
     }
@@ -826,7 +827,7 @@ private fun YoullDo(scheme: SetScheme, sets: Int, reps: Int, kg: Double?, lift: 
             Text(UiText.res(R.string.setssheet_youll_minutes, SessionClock.minutes(seconds)).asString(), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
         }
         if (scheme.warmupRamp) Text(stringResource(R.string.setssheet_youll_ramp_first), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
-        if (planned.size <= DRAWN_SETS_MAX) {
+        if (planned.size <= DRAWN_SETS_MAX && lift.unit == Units.current) {
             val narrow = planned.size > 3
             Row(Modifier.fillMaxWidth().height(BAR_AREA + if (narrow) 66.dp else 46.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
                 planned.forEachIndexed { i, set ->

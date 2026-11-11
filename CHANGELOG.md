@@ -9,6 +9,7 @@ store listing; this is the whole list.
 - Choose App default, kg or lb from an exercise's About page or its unit dropdown while logging a workout.
 - Keep each exercise's choice across variations, workouts, app restarts and local or cloud backup restores. Explicit kg or lb stays pinned when the app's default changes.
 - Use the chosen unit for load entry, plate steps, plans, history, records, workout sharing and the web viewer. Recorded kilograms, scores and XP stay unchanged; workout totals still use the app default.
+- Show the app-default equivalent beside exercise weights whenever their chosen unit differs, such as 100 lb (45.36 kg), without adding conversions to numeric inputs or duplicating matching units.
 
 ## 1.10
 
