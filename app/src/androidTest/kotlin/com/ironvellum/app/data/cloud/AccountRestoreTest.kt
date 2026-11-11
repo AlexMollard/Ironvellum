@@ -1,6 +1,9 @@
 package com.ironvellum.app.data.cloud
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.data.AppearanceStore
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.MemorySessionManager
 import io.github.jan.supabase.auth.SessionManager
@@ -24,6 +27,8 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -67,6 +72,114 @@ class AccountRestoreTest {
             assertEquals("Test Ally", accounts.account.value?.displayName)
             assertTrue(checkNotNull(accounts.account.value).profileLoaded)
             assertEquals(USER, client.auth.currentUserOrNull()?.id)
+        } finally {
+            client.close()
+        }
+    }
+
+    @OptIn(io.github.jan.supabase.annotations.SupabaseInternal::class)
+    @Test fun firstStorageFailureThenSdkPauseStillAllowsBackgroundRecovery() = runTest {
+        val sdkReadStarted = CompletableDeferred<Unit>()
+        val releaseSdkRead = CompletableDeferred<Unit>()
+        val memory = MemorySessionManager(session().copy(expiresAt = Clock.System.now() + 1.seconds))
+        var reads = 0
+        val storage = object : SessionManager by memory {
+            override suspend fun loadSession(): UserSession {
+                when (++reads) {
+                    1 -> {
+                        sdkReadStarted.complete(Unit)
+                        releaseSdkRead.await()
+                    }
+                    2 -> throw IOException("app startup read failed")
+                }
+                return memory.loadSession()
+            }
+        }
+        var profiles = 0
+        val engine = MockEngine { request ->
+            when {
+                request.url.encodedPath.endsWith("/my_inbox") -> respond(
+                    """[{"kind":"request","occurred_at":"2026-10-01T18:00:00Z","actor_id":"ally","actor_name":"Test Ally"}]""",
+                    HttpStatusCode.OK, JSON_HEADERS,
+                )
+                request.url.encodedPath.endsWith("/inbox_seen") -> respond("[]", HttpStatusCode.OK, JSON_HEADERS)
+                request.url.encodedPath.endsWith("/token") -> respond(SESSION, HttpStatusCode.OK, JSON_HEADERS)
+                request.url.encodedPath.endsWith("/profiles") -> {
+                    profiles++
+                    respond(PROFILE, HttpStatusCode.OK, JSON_HEADERS)
+                }
+                else -> error("Unexpected request ${request.url}")
+            }
+        }
+        val client = createSupabaseClient("https://account-test.invalid", "test-key") {
+            coroutineDispatcher = StandardTestDispatcher(testScheduler)
+            install(Auth) {
+                sessionManager = storage
+                autoLoadFromStorage = true
+                alwaysAutoRefresh = true
+                enableLifecycleCallbacks = true
+            }
+            install(Postgrest)
+            httpEngine = engine
+        }
+        try {
+            testScheduler.runCurrent()
+            sdkReadStarted.await()
+            val accounts = AccountRepository(client)
+            assertTrue(accounts.restore().isFailure)
+            val genuinelyInitializing = async(start = CoroutineStart.UNDISPATCHED) { accounts.restore() }
+            assertFalse(genuinelyInitializing.isCompleted)
+            assertEquals(0, profiles)
+            genuinelyInitializing.cancelAndJoin()
+            releaseSdkRead.complete(Unit)
+            testScheduler.runCurrent()
+            assertNotNull("SDK refresh must have started after its initial import", client.auth.autoRefreshInformation())
+            client.auth.stopAutoRefreshForCurrentSession()
+            client.auth.setSessionStatus(io.github.jan.supabase.auth.status.SessionStatus.Initializing)
+            accounts.restore().getOrThrow()
+            assertEquals(USER, accounts.account.value?.userId)
+            assertEquals("Test Ally", accounts.account.value?.displayName)
+            assertEquals(1, profiles)
+            assertFalse("background recovery must not restart refresh", client.auth.isAutoRefreshRunning)
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val sync = CloudSync((context.applicationContext as IronvellumApp).repository, accounts, client, AppearanceStore(context), checkNotNull(accounts.account.value))
+            assertEquals(1, sync.inbox(force = true).getOrThrow().unread)
+        } finally {
+            releaseSdkRead.complete(Unit)
+            client.close()
+        }
+    }
+
+    @OptIn(io.github.jan.supabase.annotations.SupabaseInternal::class)
+    @Test fun setupPublicationCannotBeConflatedWithImmediatePause() = runTest {
+        val memory = MemorySessionManager(session())
+        var firstRead = true
+        val storage = object : SessionManager by memory {
+            override suspend fun loadSession(): UserSession {
+                if (firstRead) {
+                    firstRead = false
+                    throw IOException("startup read failed")
+                }
+                return memory.loadSession()
+            }
+        }
+        val engine = MockEngine { request ->
+            check(request.url.encodedPath.endsWith("/profiles"))
+            respond(PROFILE, HttpStatusCode.OK, JSON_HEADERS)
+        }
+        val client = client(storage, engine, StandardTestDispatcher(testScheduler))
+        try {
+            val accounts = AccountRepository(client)
+            assertTrue(accounts.restore().isFailure)
+            // Publish and pause without allowing the test dispatcher a turn.
+            client.auth.importSession(session(), autoRefresh = false)
+            client.auth.setSessionStatus(io.github.jan.supabase.auth.status.SessionStatus.Initializing)
+            val restoring = async(start = CoroutineStart.UNDISPATCHED) { accounts.restore() }
+            assertEquals("restore must pass the remembered setup before dispatch", USER, client.auth.currentUserOrNull()?.id)
+            testScheduler.runCurrent()
+            restoring.await().getOrThrow()
+            assertEquals("Test Ally", accounts.account.value?.displayName)
+            assertFalse(client.auth.isAutoRefreshRunning)
         } finally {
             client.close()
         }
@@ -629,6 +742,47 @@ class AccountRestoreTest {
                 assertTrue(accounts.account.value!!.profileLoaded)
             } finally {
                 release.complete(Unit)
+                client.close()
+            }
+        }
+    }
+
+    @Test fun retryableProfileFailureKeepsNewSessionAndCanRefreshWithoutCredentials() = runBlocking {
+        for (serverFailure in listOf(false, true)) {
+            val storage = MemorySessionManager(session())
+            var profileReads = 0
+            var tokenRequests = 0
+            var profileUnavailable = true
+            val engine = MockEngine { request ->
+                when {
+                    request.url.encodedPath.endsWith("/token") -> {
+                        tokenRequests++
+                        respond(SECOND_SESSION, HttpStatusCode.OK, JSON_HEADERS)
+                    }
+                    request.url.encodedPath.endsWith("/profiles") -> when (++profileReads) {
+                        1 -> respond(PROFILE, HttpStatusCode.OK, JSON_HEADERS)
+                        else -> if (!profileUnavailable) respond(SECOND_PROFILE, HttpStatusCode.OK, JSON_HEADERS)
+                            else if (serverFailure) respond("{}", HttpStatusCode.ServiceUnavailable, JSON_HEADERS)
+                            else throw IOException("profile temporarily unavailable")
+                    }
+                    else -> error("Unexpected request ${request.url}")
+                }
+            }
+            val client = client(storage, engine)
+            try {
+                val accounts = AccountRepository(client)
+                accounts.restore().getOrThrow()
+                val signedIn = accounts.signIn("second@example.invalid", "password").getOrThrow()
+                assertEquals(SECOND_USER, signedIn.userId)
+                assertFalse(signedIn.profileLoaded)
+                assertEquals("", signedIn.displayName)
+                assertEquals(SECOND_USER, storage.loadSession().user?.id)
+                profileUnavailable = false
+                accounts.refreshProfile().getOrThrow()
+                assertEquals("Second Ally", accounts.account.value?.displayName)
+                assertTrue(accounts.account.value!!.profileLoaded)
+                assertEquals(1, tokenRequests)
+            } finally {
                 client.close()
             }
         }

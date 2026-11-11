@@ -9,6 +9,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.ironvellum.app.data.cloud.InboxPollThrottle
 import com.ironvellum.app.data.cloud.Inbox
 import com.ironvellum.app.data.cloud.InboxItem
 import org.junit.After
@@ -79,6 +80,29 @@ class InboxDeliveryTest {
         NotificationTray.clear(realContext, Notifications.ID_ALLIES)
         deliver(inbox(200))
         assertNull("a duplicate read must not repost a dismissed alert", posted())
+    }
+
+    @Test fun sameAccountResignInImmediatelyBaselinesThenDeliversNewActivity() {
+        val throttle = InboxPollThrottle()
+        val client = Any()
+        var reads = 0
+        fun poll(at: Long, now: Long) {
+            val generation = InboxNotifier.generation()
+            if (throttle.shouldSkip("account-a", client, generation, now, true)) return
+            reads++
+            deliver(inbox(at))
+            throttle.record("account-a", client, generation, now, true)
+        }
+
+        poll(100, 1_000)
+        assertNull(posted())
+        InboxNotifier.reset(context)
+        poll(200, 2_000)
+        assertEquals("new generation must read immediately", 2, reads)
+        assertNull("history at the new baseline stays silent", posted())
+        poll(300, 32_001)
+        assertEquals(3, reads)
+        assertNotNull("activity after the new baseline remains eligible", awaitPosted())
     }
 
     @Test fun permissionRecoveryDeliversThePendingComment() {

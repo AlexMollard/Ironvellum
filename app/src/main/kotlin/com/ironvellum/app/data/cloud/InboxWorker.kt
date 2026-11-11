@@ -24,13 +24,30 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+internal class InboxPollThrottle {
+    private var lastUser: String? = null
+    private var lastClient: Any? = null
+    private var lastGeneration: Long? = null
+    private var lastCheck = 0L
+    private var lastCanNotify = false
+
+    fun shouldSkip(user: String, client: Any, generation: Long, now: Long, canNotify: Boolean): Boolean =
+        lastUser == user && lastClient === client && lastGeneration == generation &&
+            now - lastCheck < 30_000L && !(canNotify && !lastCanNotify)
+
+    fun record(user: String, client: Any, generation: Long, now: Long, canNotify: Boolean) {
+        lastUser = user
+        lastClient = client
+        lastGeneration = generation
+        lastCheck = now
+        lastCanNotify = canNotify
+    }
+}
+
 /** One delivery lane for foreground and background reads; server timestamps remain the only cursor. */
 object InboxPolling {
     private val lock = Mutex()
-    private var lastUser: String? = null
-    private var lastClient: Any? = null
-    private var lastCheck = 0L
-    private var lastCanNotify = false
+    private val throttleState = InboxPollThrottle()
     private var restoreSettled = false
 
     suspend fun check(app: IronvellumApp, throttle: Boolean): Result<Unit> = lock.withLock {
@@ -49,8 +66,7 @@ object InboxPolling {
             val generation = InboxNotifier.generation()
             val canNotify = InboxNotifier.canNotify(app)
             val now = SystemClock.elapsedRealtime()
-            if (throttle && lastUser == account.userId && lastClient === client &&
-                now - lastCheck < 30_000L && !(canNotify && !lastCanNotify)
+            if (throttle && throttleState.shouldSkip(account.userId, client, generation, now, canNotify)
             ) return@withLock Result.success(Unit)
             val current = {
                 InboxNotifier.generation() == generation &&
@@ -60,10 +76,7 @@ object InboxPolling {
             val inbox = app.cloudSync.inbox(force = true).getOrThrow()
             if (!current()) return@withLock Result.success(Unit)
             InboxNotifier.onInbox(app, account.userId, inbox, config.url, current)
-            lastUser = account.userId
-            lastClient = client
-            lastCheck = now
-            lastCanNotify = canNotify
+            throttleState.record(account.userId, client, generation, now, canNotify)
             Result.success(Unit)
         } catch (error: CancellationException) {
             throw error

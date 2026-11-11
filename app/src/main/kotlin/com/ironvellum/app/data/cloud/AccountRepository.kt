@@ -16,6 +16,13 @@ import io.github.jan.supabase.auth.exception.NoSessionFoundException
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.currentCoroutineContext
@@ -27,7 +34,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -65,7 +71,8 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
     private var completedAuthentication = 0L
     private var identityGeneration = 0L
     private var identityClient: SupabaseClient? = null
-    private var initializedClient: SupabaseClient? = null
+    private var setupClient: SupabaseClient? = null
+    private var setupObservation: Deferred<Unit>? = null
 
     private fun newTransition(): Long = synchronized(_account) { ++transition }
 
@@ -76,14 +83,36 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
         null
     }
 
-    /** SDK Initializing also means background-paused; wait for initial setup only once per client. */
+    /**
+     * Observe the SDK's first non-Initializing status before the app reads
+     * storage. The SDK may complete that transition and pause after a failed
+     * read; the observer belongs to the client, not the individual restore.
+     * Resume inline so StateFlow cannot conflate the first publication with
+     * the SDK's subsequent Android background pause.
+     */
+    @OptIn(io.github.jan.supabase.annotations.SupabaseInternal::class)
+    private fun observeClientSetup(client: SupabaseClient): Deferred<Unit> {
+        if (setupClient === client) return checkNotNull(setupObservation)
+        setupObservation?.cancel()
+        setupClient = client
+        return client.auth.authScope.async(Dispatchers.Unconfined, start = CoroutineStart.UNDISPATCHED) {
+            coroutineScope {
+                val backendWatch = launch(start = CoroutineStart.UNDISPATCHED) {
+                    Cloud.config.first { requireClient().getOrNull() !== client }
+                    this@coroutineScope.cancel("Account backend changed")
+                }
+                try {
+                    client.auth.sessionStatus.first { it !is SessionStatus.Initializing }
+                } finally {
+                    backendWatch.cancel()
+                }
+            }
+            Unit
+        }.also { setupObservation = it }
+    }
+
     private suspend fun awaitClientSetup(client: SupabaseClient) {
-        if (initializedClient === client) return
-        combine(client.auth.sessionStatus, Cloud.config) { status, _ ->
-            if (requireClient().getOrNull() !== client) throw CancellationException("Account backend changed")
-            status
-        }.first { it !is SessionStatus.Initializing }
-        initializedClient = client
+        observeClientSetup(client).await()
     }
 
     private suspend fun importStoredSession(client: SupabaseClient, session: UserSession) {
@@ -234,6 +263,7 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
     suspend fun restore(): Result<Unit> = sessionLock.withLock {
         if (!automaticRestoreAllowed) return@withLock Result.success(Unit)
         val client = requireClient().getOrElse { return@withLock failure(it) }
+        observeClientSetup(client)
         val alreadyLoaded = synchronized(_account) {
             val current = _account.value
             current != null && current.profileLoaded && identityClient === client &&
@@ -384,11 +414,7 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
                 this.nonce = rawNonce
             }
             authAttempt.imported = true
-            val user = client.auth.currentUserOrNull()
-                ?: throw MessageException(UiText.res(R.string.cloud_account_google_no_user))
-            // The server seeded a neutral Lifter#### handle for a new Google
-            // user (never the legal name); ALLIES offers to claim a real one.
-            loadAccount(client, user.id, user.email ?: "")?.also { publishIfCurrent(client, authAttempt.token, it) }
+            loadSignedInAccount(client, "", authAttempt.token)
                 ?: throw MessageException(UiText.res(R.string.cloud_account_google_no_profile))
         } }.recoverCatching { error ->
             explainAuthFailure(error)
@@ -544,18 +570,26 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
     }
 
     private suspend fun loadSignedInAccount(client: SupabaseClient, fallbackEmail: String, token: Long): Account? {
-        val userId = client.auth.currentUserOrNull()?.id ?: return null
-        return loadAccount(client, userId, fallbackEmail)?.also { publishIfCurrent(client, token, it) }
+        val user = client.auth.currentUserOrNull() ?: return null
+        val email = fallbackEmail.ifBlank { user.email ?: "" }
+        val account = try {
+            loadAccount(client, user.id, email, propagateRetryable = true)
+        } catch (error: Exception) {
+            if (!InboxPolling.transient(error)) throw error
+            Account(user.id, email, "", "friends", profileLoaded = false)
+        }
+        return account?.also { publishIfCurrent(client, token, it) }
     }
 
     /** Profiles are readable per RLS; a missing row (Google signup) returns null. */
-    private suspend fun loadAccount(client: SupabaseClient, userId: String, email: String): Account? {
+    private suspend fun loadAccount(client: SupabaseClient, userId: String, email: String, propagateRetryable: Boolean = false): Account? {
         return attempt {
             client.postgrest.from("profiles").select {
                 filter { eq("id", userId) }
             }.decodeSingleOrNull<ProfileDto>()
         }.getOrElse { error ->
             if (error is CancellationException) throw error
+            if (propagateRetryable && InboxPolling.transient(error)) throw error
             null
         }?.let { row ->
             Account(
