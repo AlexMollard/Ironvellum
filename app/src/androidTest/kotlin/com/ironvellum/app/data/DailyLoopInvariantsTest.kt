@@ -135,14 +135,50 @@ class DailyLoopInvariantsTest {
     }
 
     @Test
-    fun theIdleClockStartsOnTheFirstLook() = runBlocking {
-        val now = System.currentTimeMillis()
-        // The seeded row carries lastCollectedAtMs = 0, which the curve reads
-        // as "nothing earned" so the epoch cannot pay a 56-year absence. The
-        // baseline was then never written, so essence never moved again.
-        assertEquals("nothing is owed before the clock starts", 0L, repo.collectIdle(now))
-        assertTrue("the first look must stamp a baseline", db.idleDao().get()!!.lastCollectedAtMs > 0L)
-        assertTrue("six hours after the baseline must pay something", repo.collectIdle(now + 6 * 3_600_000L) > 0L)
+    fun theIdleClockStartsBeforeTheVeilIsOpened() = runBlocking {
+        val snapshot = repo.observeIdleSnapshot().first()
+        assertTrue("startup must start the home preview's clock", snapshot.state.lastCollectedAtMs > 0L)
+        assertEquals(0L, snapshot.state.essence)
+        val later = snapshot.state.lastCollectedAtMs + 6 * 3_600_000L
+        assertTrue("Today must preview earnings without opening or collecting the Veil",
+            com.ironvellum.app.domain.Idle.collect(snapshot.state, snapshot.rate, later).essence > 0L)
+        assertEquals("previewing must not bank currency", 0L, db.idleDao().get()!!.essence)
+    }
+
+    @Test
+    fun startupPreservesAnExistingAwayIntervalAndBalance() = runBlocking {
+        val original = com.ironvellum.app.data.db.IdleStateEntity(
+            essence = 42, lifetimeEssence = 100, shadows = 3, relicMultiplier = 1.25,
+            lastCollectedAtMs = System.currentTimeMillis() - 30 * 3_600_000L,
+        )
+        db.idleDao().upsert(original)
+        repo.ensureSeeded()
+        repo.ensureSeeded()
+        assertEquals("startup must not collect, reset tapering or lose the away report", original, db.idleDao().get())
+        assertTrue(repo.collectIdle(System.currentTimeMillis()) > 0L)
+    }
+
+    @Test
+    fun startupRepairsAnUnstartedLegacyClockWithoutChangingItsBank() = runBlocking {
+        val original = com.ironvellum.app.data.db.IdleStateEntity(
+            essence = 42, lifetimeEssence = 100, shadows = 3, relicMultiplier = 1.25,
+        )
+        db.idleDao().upsert(original)
+        repo.ensureSeeded()
+        val repaired = db.idleDao().get()!!
+        assertTrue(repaired.lastCollectedAtMs > 0L)
+        assertEquals(original, repaired.copy(lastCollectedAtMs = 0L))
+    }
+
+    @Test
+    fun restoringAnUnstartedClockStartsHomeAccrualWithoutAnEpochPayout() = runBlocking {
+        db.idleDao().upsert(com.ironvellum.app.data.db.IdleStateEntity(essence = 42, lifetimeEssence = 100))
+        val archive = repo.exportArchive().json
+        assertTrue(repo.importArchive(archive).isSuccess)
+        val restored = db.idleDao().get()!!
+        assertTrue(restored.lastCollectedAtMs > 0L)
+        assertEquals(42L, restored.essence)
+        assertEquals(100L, restored.lifetimeEssence)
     }
 
     @Test

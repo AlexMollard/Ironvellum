@@ -296,6 +296,14 @@ class Repository(
         if (profileDao.get() == null) {
             profileDao.upsert(ProfileEntity(name = "Ironbound", totalXp = 0, currentTitleId = null))
         }
+        // Today previews accrual before the Veil is opened. Start only a missing clock; collecting here
+        // would consume the away interval and reset the full-strength bar on every app launch.
+        db.withTransaction {
+            val idle = idleDao.get() ?: IdleStateEntity()
+            if (idle.lastCollectedAtMs <= 0L) {
+                idleDao.upsert(idle.copy(lastCollectedAtMs = System.currentTimeMillis()))
+            }
+        }
         val existingNames = exerciseDao.observeAll().first().syncCustomExercises().map { it.name }.toSet()
         val missing = Seed.exercises.filterNot { it.name in existingNames }
         if (missing.isNotEmpty()) {
@@ -4183,7 +4191,7 @@ class Repository(
                                 essence = essence,
                                 shadows = it.shadows.coerceAtLeast(0),
                                 relicMultiplier = Relics.effectiveMultiplier(restoredRelics.map { r -> r.multiplier }),
-                                lastCollectedAtMs = it.lastCollectedAtMs,
+                                lastCollectedAtMs = it.lastCollectedAtMs.takeIf { at -> at > 0L } ?: System.currentTimeMillis(),
                                 lifetimeEssence = maxOf(it.lifetimeEssence, essence),
                             ),
                         )
@@ -4527,11 +4535,7 @@ class Repository(
      */
     suspend fun collectIdle(nowMs: Long): Long = db.withTransaction {
         val current = idleDao.get() ?: IdleStateEntity()
-        // No baseline yet. The seeded row carries lastCollectedAtMs = 0, which
-        // Idle.accruedExact deliberately reads as "nothing earned" (the epoch
-        // would otherwise pay a 56-year absence). Nothing else ever wrote the
-        // timestamp, so `gained > 0` never held and a brand new lifter accrued
-        // zero essence forever. Start the clock instead of banking nothing.
+        // Legacy state can still lack a baseline. Start its clock without paying for time since the epoch.
         if (current.lastCollectedAtMs <= 0L) {
             idleDao.upsert(current.copy(lastCollectedAtMs = nowMs))
             return@withTransaction 0L

@@ -11,6 +11,10 @@ store listing; this is the whole list.
 - Use the chosen unit for load entry, plate steps, plans, history, records, workout sharing and the web viewer. Recorded kilograms, scores and XP stay unchanged; workout totals still use the app default.
 - Show the app-default equivalent beside exercise weights whenever their chosen unit differs, such as 100 lb (45.36 kg), without adding conversions to numeric inputs or duplicating matching units.
 
+### The Veil
+- Start the Veil's accrual clock at app startup, so the home bar and essence can update without first opening the Veil.
+- Repair missing clocks on older installs and restored backups without collecting rewards, resetting an existing away interval or changing banked essence.
+
 ## 1.10
 
 ### Warmups, stretches and cooldowns

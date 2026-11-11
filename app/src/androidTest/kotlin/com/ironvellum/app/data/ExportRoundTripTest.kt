@@ -250,7 +250,6 @@ class ExportRoundTripTest {
         try {
             freshRepo.ensureSeeded()
             assertTrue("the fresh install must start without the custom movement", freshDb.exerciseDao().byName(custom) == null)
-            assertTrue("the fresh install must start without idle state", freshDb.idleDao().get() == null)
 
             val result = freshRepo.importArchive(export.json)
             assertTrue("import failed: ${result.exceptionOrNull()?.message}", result.isSuccess)
