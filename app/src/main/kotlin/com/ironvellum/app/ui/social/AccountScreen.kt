@@ -161,15 +161,14 @@ class AccountViewModel(
 
     private val _ui = MutableStateFlow(AccountUi(account = accountRepo.account.value))
     val ui = _ui.asStateFlow()
+    private var busyCalls = 0
 
     init {
         // Resume a stored session (if any) without blocking the first frame.
-        viewModelScope.launch {
-            setBusy(true)
+        launchBusy {
             // A failed restore must not look like "signed out": surface the
             // real reason or the panel sits blank with no explanation.
             accountRepo.restore().onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
-            setBusy(false)
         }
         // Keep the UI in step with the repository's own session state.
         viewModelScope.launch {
@@ -186,26 +185,30 @@ class AccountViewModel(
         }
     }
 
-    private fun setBusy(busy: Boolean) {
-        _ui.value = _ui.value.copy(busy = busy)
+    private inline fun launchBusy(crossinline block: suspend () -> Unit) = viewModelScope.launch {
+        busyCalls++
+        _ui.value = _ui.value.copy(busy = true)
+        try {
+            block()
+        } finally {
+            busyCalls--
+            _ui.value = _ui.value.copy(busy = busyCalls > 0)
+        }
     }
 
     /** Extract the genuine reason from a Result failure — shown verbatim. */
     private fun Throwable.reason(): UiText = reasonText(UiText.res(R.string.acct_failure_unknown))
 
     fun signIn(email: String, password: String) {
-        viewModelScope.launch {
-            setBusy(true)
+        launchBusy {
             _ui.value = _ui.value.copy(error = null, notice = null)
             accountRepo.signIn(email, password)
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
-            setBusy(false)
         }
     }
 
     fun signUp(email: String, password: String, displayName: String) {
-        viewModelScope.launch {
-            setBusy(true)
+        launchBusy {
             _ui.value = _ui.value.copy(error = null, notice = null)
             accountRepo.signUp(email, password, displayName)
                 .onSuccess { outcome ->
@@ -216,14 +219,12 @@ class AccountViewModel(
                     }
                 }
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
-            setBusy(false)
         }
     }
 
 
     fun sendResetCode(email: String) {
-        viewModelScope.launch {
-            setBusy(true)
+        launchBusy {
             _ui.value = _ui.value.copy(error = null, notice = null)
             accountRepo.sendPasswordReset(email)
                 .onSuccess {
@@ -233,35 +234,29 @@ class AccountViewModel(
                     )
                 }
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
-            setBusy(false)
         }
     }
 
     fun resetPassword(email: String, code: String, newPassword: String) {
-        viewModelScope.launch {
-            setBusy(true)
+        launchBusy {
             _ui.value = _ui.value.copy(error = null, notice = null)
             accountRepo.resetPassword(email, code, newPassword)
                 .onSuccess { _ui.value = _ui.value.copy(resetCodeSentTo = null) }
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
-            setBusy(false)
         }
     }
 
     /** Google sign-in: the credential layer already exchanged the ID token; hand it and the raw nonce to the repository. */
     fun signInWithGoogle(idToken: String, rawNonce: String) {
-        viewModelScope.launch {
-            setBusy(true)
+        launchBusy {
             _ui.value = _ui.value.copy(error = null)
             accountRepo.signInWithGoogle(idToken, rawNonce)
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
-            setBusy(false)
         }
     }
 
     fun signOut() {
-        viewModelScope.launch {
-            setBusy(true)
+        launchBusy {
             _ui.value = _ui.value.copy(error = null)
             accountRepo.signOut()
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
@@ -271,13 +266,11 @@ class AccountViewModel(
                 .onSuccess {
                     _ui.value = _ui.value.copy(lastSync = null, friends = emptyList(), blocked = emptyList())
                 }
-            setBusy(false)
         }
     }
 
     fun deleteCloudData() {
-        viewModelScope.launch {
-            setBusy(true)
+        launchBusy {
             _ui.value = _ui.value.copy(error = null)
             accountRepo.deleteCloudData()
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
@@ -290,7 +283,6 @@ class AccountViewModel(
                     cloudSync.forgetPushedState()
                     _ui.value = _ui.value.copy(lastSync = null, friends = emptyList(), blocked = emptyList())
                 }
-            setBusy(false)
         }
     }
 
@@ -305,11 +297,14 @@ class AccountViewModel(
     fun claimName(raw: String) {
         viewModelScope.launch {
             _ui.value = _ui.value.copy(claimBusy = true, claimError = null)
-            accountRepo.updateDisplayName(raw)
-                // Local state update happens inside the repository, so every
-                // surface flips to the claimed name with the cloud write.
-                .onFailure { _ui.value = _ui.value.copy(claimError = it.reason()) }
-            _ui.value = _ui.value.copy(claimBusy = false)
+            try {
+                accountRepo.updateDisplayName(raw)
+                    // Local state update happens inside the repository, so every
+                    // surface flips to the claimed name with the cloud write.
+                    .onFailure { _ui.value = _ui.value.copy(claimError = it.reason()) }
+            } finally {
+                _ui.value = _ui.value.copy(claimBusy = false)
+            }
         }
     }
 
@@ -318,8 +313,7 @@ class AccountViewModel(
     }
 
     fun syncNow() {
-        viewModelScope.launch {
-            setBusy(true)
+        launchBusy {
             _ui.value = _ui.value.copy(error = null)
             cloudSync.push()
                 .onSuccess { _ui.value = _ui.value.copy(lastSync = it) }
@@ -328,7 +322,6 @@ class AccountViewModel(
                     Log.w("AccountSync", "Sync failed", it)
                     _ui.value = _ui.value.copy(error = it.reason())
                 }
-            setBusy(false)
         }
     }
 
@@ -337,13 +330,11 @@ class AccountViewModel(
      * omits private notes — the device promise holds even in a full backup.
      */
     fun backUpNow() {
-        viewModelScope.launch {
-            setBusy(true)
+        launchBusy {
             _ui.value = _ui.value.copy(backupError = null)
             cloudSync.backupArchive()
                 .onSuccess { _ui.value = _ui.value.copy(lastBackup = it, backupError = null) }
                 .onFailure { _ui.value = _ui.value.copy(backupError = it.reason()) }
-            setBusy(false)
         }
     }
 
@@ -353,13 +344,11 @@ class AccountViewModel(
      * already named the consequence.
      */
     fun restoreFromCloud() {
-        viewModelScope.launch {
-            setBusy(true)
+        launchBusy {
             _ui.value = _ui.value.copy(backupError = null)
             cloudSync.restoreArchive()
                 .onSuccess { _ui.value = _ui.value.copy(lastRestore = it, backupError = null) }
                 .onFailure { _ui.value = _ui.value.copy(backupError = it.reason()) }
-            setBusy(false)
         }
     }
 

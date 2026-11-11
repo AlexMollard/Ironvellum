@@ -22,6 +22,8 @@ store listing; this is the whole list.
 - Catch up a due weekly recap after returning or granting notification permission, within its existing 24-hour window, without duplicate alerts.
 - Retry failed evening reminders and weekly recaps twice with exponential backoff, while preserving cancellation and the next scheduled occurrence.
 - Keep valid social events available when an inbox row contains an invalid or out-of-range timestamp.
+- Keep sign-in, restored profiles and privacy changes tied to the current account; cancellation and overlapping requests no longer leave account controls stuck busy or revive a signed-out session.
+- Wait for authentication startup before importing saved sessions or signing in, preventing a startup race from making restored accounts disappear.
 
 ## 1.10
 

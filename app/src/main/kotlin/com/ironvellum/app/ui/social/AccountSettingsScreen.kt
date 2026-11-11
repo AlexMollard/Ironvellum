@@ -162,11 +162,11 @@ fun AccountSettingsScreen(
                         "friends" to UiText.themed(R.string.acct_visibility_friends, R.string.acct_visibility_friends__t).asString(),
                         "private" to stringResource(R.string.acct_visibility_private),
                     ),
-                    selected = acct.visibility,
+                    selected = if (acct.profileLoaded) acct.visibility else "",
                     onPick = viewModel::setVisibility,
                 )
                 Spacer(Modifier.height(8.dp))
-                Text(
+                if (acct.profileLoaded) Text(
                     when (acct.visibility) {
                         "public" -> UiText.themed(R.string.acct_visibility_public_caption, R.string.acct_visibility_public_caption__t).asString()
                         "friends" -> UiText.themed(R.string.acct_visibility_friends_caption, R.string.acct_visibility_friends_caption__t).asString()

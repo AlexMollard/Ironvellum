@@ -13,8 +13,13 @@ import io.github.jan.supabase.auth.providers.builtin.IDToken
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -47,12 +52,115 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
 
     private val _account = MutableStateFlow<Account?>(null)
     private val sessionLock = Mutex()
+    private val activeQueries = mutableSetOf<Job>()
     @Volatile private var automaticRestoreAllowed = true
+    private var transition = 0L
+    private var completedAuthentication = 0L
+    private var identityGeneration = 0L
+    private var identityClient: SupabaseClient? = null
+
+    private fun newTransition(): Long = synchronized(_account) { ++transition }
+
+    internal suspend fun <T> withAccount(userId: String, block: suspend () -> T): T {
+        val job = checkNotNull(currentCoroutineContext()[Job])
+        sessionLock.withLock {
+            val client = requireClient().getOrNull()
+            synchronized(_account) {
+                if (client == null || identityClient !== client || _account.value?.userId != userId ||
+                    client.auth.currentUserOrNull()?.id != userId
+                ) throw CancellationException("Account transition superseded")
+            }
+            synchronized(activeQueries) { activeQueries.add(job) }
+        }
+        try {
+            return block()
+        } finally {
+            synchronized(activeQueries) { activeQueries.remove(job) }
+        }
+    }
+
+    private suspend fun cancelQueries() {
+        val current = currentCoroutineContext()[Job]
+        val jobs = synchronized(activeQueries) { activeQueries.filter { it !== current } }
+        jobs.forEach { it.cancel() }
+        jobs.forEach { it.cancelAndJoin() }
+    }
+
+    private fun accountSnapshot(): Pair<Account, Long>? = synchronized(_account) {
+        _account.value?.let { it to identityGeneration }
+    }
+
+    private fun publishProfile(client: SupabaseClient, generation: Long, account: Account) {
+        synchronized(_account) {
+            if (requireClient().getOrNull() !== client || identityClient !== client || identityGeneration != generation || _account.value?.userId != account.userId) {
+                throw CancellationException("Account identity changed")
+            }
+            _account.value = account
+        }
+    }
+
+    private fun publishIfCurrent(client: SupabaseClient, token: Long, account: Account) {
+        synchronized(_account) {
+            if (requireClient().getOrNull() !== client || transition != token) throw CancellationException("Account transition superseded")
+            identityGeneration++
+            identityClient = client
+            _account.value = account
+        }
+    }
+
+    private class AuthAttempt(val token: Long) {
+        var imported = false
+    }
+
+    private suspend fun <T> authenticate(client: SupabaseClient, block: suspend (AuthAttempt) -> T): T {
+        val token = newTransition()
+        return sessionLock.withLock {
+            synchronized(_account) {
+                if (transition != token || requireClient().getOrNull() !== client) throw CancellationException("Account transition superseded")
+            }
+            client.auth.awaitInitialization()
+            cancelQueries()
+            synchronized(_account) {
+                if (transition != token || requireClient().getOrNull() !== client) throw CancellationException("Account transition superseded")
+            }
+            val previousUserId = client.auth.currentUserOrNull()?.id
+            val authAttempt = AuthAttempt(token)
+            try {
+                val result = block(authAttempt)
+                synchronized(_account) {
+                    if (transition != token || requireClient().getOrNull() !== client) throw CancellationException("Account transition superseded")
+                    completedAuthentication = token
+                }
+                result
+            } catch (error: Exception) {
+                if (authAttempt.imported || client.auth.currentUserOrNull()?.id != previousUserId) {
+                    synchronized(_account) {
+                        _account.value = null
+                        identityClient = null
+                        identityGeneration++
+                    }
+                    withContext(NonCancellable) {
+                        try {
+                            runCatching { client.auth.signOut() }
+                        } finally {
+                            runCatching { client.auth.clearSession() }
+                        }
+                    }
+                }
+                throw error
+            }
+        }
+    }
+
+    private fun explainAuthFailure(error: Throwable): Nothing {
+        if (error is CancellationException) throw error
+        throw MessageException(Cloud.explain(error))
+    }
 
     /** The signed-in account, or null while signed out / cloud unconfigured. */
     val account: StateFlow<Account?> = _account.asStateFlow()
 
-    private suspend fun requireClient(): Result<SupabaseClient> = clientOverride?.let { Result.success(it) } ?: Cloud.requireConfigured
+    private fun requireClient(): Result<SupabaseClient> = clientOverride?.let { Result.success(it) } ?: Cloud.requireConfigured
 
     /** Resume a persisted session on app start. Quiet success when signed out;
      *  a failed import surfaces as a Result — silently swallowing it left the
@@ -60,31 +168,47 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
     suspend fun restore(): Result<Unit> = sessionLock.withLock {
         if (!automaticRestoreAllowed) return@withLock Result.success(Unit)
         val client = requireClient().getOrElse { return@withLock failure(it) }
+        val alreadyLoaded = synchronized(_account) {
+            val current = _account.value
+            current != null && current.profileLoaded && identityClient === client &&
+                client.auth.currentUserOrNull()?.id == current.userId
+        }
+        if (alreadyLoaded) return@withLock Result.success(Unit)
         // supabase-kt persists the session in its SessionManager but does not
         // import it automatically: load then import (refreshing if stale).
-        val session = runCatching { client.auth.sessionManager.loadSessionOrNull() }.getOrNull()
+        val session = attempt { client.auth.sessionManager.loadSessionOrNull() }.getOrElse {
+            if (it is CancellationException) throw it
+            null
+        }
             ?: return@withLock Result.success(Unit)
-        runCatching {
+        attempt {
+            cancelQueries()
+            client.auth.awaitInitialization()
+            if (requireClient().getOrNull() !== client) throw CancellationException("Account transition superseded")
             client.auth.importSession(session)
             val user = client.auth.currentUserOrNull()
             // Statement, not an expression: a trailing `?.let` inferred the
             // lambda as Unit? and the function no longer returned Result<Unit>.
             if (user != null) {
                 val email = user.email ?: ""
-                // A failed profiles round trip must not erase a valid session:
-                // offline restores used to read as signed OUT on every social
-                // tab. Keep the identity with a blank name and retry the row
-                // on the next social read (see [refreshProfile]).
-                val profile = loadAccount(user.id, email)
-                synchronized(_account) {
-                    if (automaticRestoreAllowed) _account.value = profile ?: Account(
-                        userId = user.id,
-                        email = email,
-                        displayName = "",
-                        // The sign-up default; replaced once the row is readable.
-                        visibility = "friends",
-                        profileLoaded = false,
-                    )
+                val generation = synchronized(_account) {
+                    if (!automaticRestoreAllowed || requireClient().getOrNull() !== client) null else {
+                        identityClient = client
+                        _account.value = Account(
+                            userId = user.id,
+                            email = email,
+                            displayName = "",
+                            visibility = "friends",
+                            profileLoaded = false,
+                        )
+                        ++identityGeneration
+                    }
+                }
+                val profile = loadAccount(client, user.id, email)
+                if (generation != null && profile != null) {
+                    synchronized(_account) {
+                        if (automaticRestoreAllowed && requireClient().getOrNull() === client && identityClient === client && identityGeneration == generation) _account.value = profile
+                    }
                 }
             }
         }.recoverCatching { error ->
@@ -103,7 +227,7 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
         val name = displayName.trim()
         trueNameProblem(name)?.let { return Result.failure(MessageException(it)) }
         val client = requireClient().getOrElse { return failure(it) }
-        return runCatching {
+        return attempt { authenticate(client) { authAttempt ->
             // Asked first: on a taken name the server quietly seeds a
             // Lifter#### handle instead of failing the sign-up.
             val free = client.postgrest.rpc(
@@ -111,12 +235,14 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
                 buildJsonObject { put("name", name) },
             ).data.trim() == "true"
             if (!free) throw NameTakenException()
+            val previousUserId = client.auth.currentUserOrNull()?.id
             val user = client.auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
                 data = buildJsonObject { put("display_name", name) }
             }
-            if (client.auth.currentSessionOrNull() == null) {
+            val session = client.auth.currentSessionOrNull()
+            if (user == null || session?.user?.id != user.id || user.id == previousUserId) {
                 // With email confirmation on, an address that is already
                 // registered gets a fake success (a user with no identities)
                 // so the server never reveals which emails have accounts.
@@ -124,28 +250,30 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
                 if (user?.identities?.isEmpty() == true) throw EmailTakenException()
                 SignUpOutcome.ConfirmEmail
             } else {
+                authAttempt.imported = true
                 SignUpOutcome.SignedIn(
-                    loadSignedInAccount(email)
+                    loadSignedInAccount(client, email, authAttempt.token)
                         ?: throw MessageException(UiText.res(R.string.cloud_account_signup_no_profile)),
                 )
             }
-        }.recoverCatching { error ->
+        } }.recoverCatching { error ->
             if (error is NameTakenException || error is EmailTakenException) throw error
-            throw MessageException(Cloud.explain(error))
+            explainAuthFailure(error)
         }
     }
 
     suspend fun signIn(email: String, password: String): Result<Account> {
         val client = requireClient().getOrElse { return failure(it) }
-        return runCatching {
+        return attempt { authenticate(client) { authAttempt ->
             client.auth.signInWith(Email) {
                 this.email = email
                 this.password = password
             }
-            loadSignedInAccount(email)
+            authAttempt.imported = true
+            loadSignedInAccount(client, email, authAttempt.token)
                 ?: throw MessageException(UiText.res(R.string.cloud_account_signin_no_profile))
-        }.recoverCatching { error ->
-            throw MessageException(Cloud.explain(error))
+        } }.recoverCatching { error ->
+            explainAuthFailure(error)
         }
     }
 
@@ -157,23 +285,24 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
      */
     suspend fun sendPasswordReset(email: String): Result<Unit> {
         val client = requireClient().getOrElse { return failure(it) }
-        return runCatching {
+        return attempt {
             client.auth.resetPasswordForEmail(email, redirectUrl = null)
         }.recoverCatching { error ->
-            throw MessageException(Cloud.explain(error))
+            explainAuthFailure(error)
         }
     }
 
     /** The emailed code signs the lifter in; the new password is then set on that session. */
     suspend fun resetPassword(email: String, code: String, newPassword: String): Result<Account> {
         val client = requireClient().getOrElse { return failure(it) }
-        return runCatching {
+        return attempt { authenticate(client) { authAttempt ->
             client.auth.verifyEmailOtp(type = OtpType.Email.RECOVERY, email = email, token = code)
+            authAttempt.imported = true
             client.auth.updateUser { password = newPassword }
-            loadSignedInAccount(email)
+            loadSignedInAccount(client, email, authAttempt.token)
                 ?: throw MessageException(UiText.res(R.string.cloud_account_reset_no_profile))
-        }.recoverCatching { error ->
-            throw MessageException(Cloud.explain(error))
+        } }.recoverCatching { error ->
+            explainAuthFailure(error)
         }
     }
 
@@ -184,20 +313,21 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
      */
     suspend fun signInWithGoogle(idToken: String, rawNonce: String?): Result<Account> {
         val client = requireClient().getOrElse { return failure(it) }
-        return runCatching {
+        return attempt { authenticate(client) { authAttempt ->
             client.auth.signInWith(IDToken) {
                 this.idToken = idToken
                 provider = Google
                 this.nonce = rawNonce
             }
+            authAttempt.imported = true
             val user = client.auth.currentUserOrNull()
                 ?: throw MessageException(UiText.res(R.string.cloud_account_google_no_user))
             // The server seeded a neutral Lifter#### handle for a new Google
             // user (never the legal name); ALLIES offers to claim a real one.
-            loadAccount(user.id, user.email ?: "")?.also { _account.value = it }
+            loadAccount(client, user.id, user.email ?: "")?.also { publishIfCurrent(client, authAttempt.token, it) }
                 ?: throw MessageException(UiText.res(R.string.cloud_account_google_no_profile))
-        }.recoverCatching { error ->
-            throw MessageException(Cloud.explain(error))
+        } }.recoverCatching { error ->
+            explainAuthFailure(error)
         }
     }
 
@@ -217,12 +347,13 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
      * update fails explicitly with house copy instead of retrying a suffix.
      */
     suspend fun updateDisplayName(raw: String): Result<Unit> {
-        val current = _account.value
+        val (current, generation) = accountSnapshot()
             ?: return Result.failure(MessageException(UiText.themed(R.string.cloud_account_claim_signed_out, R.string.cloud_account_claim_signed_out__t)))
         val client = requireClient().getOrElse { return failure(it) }
         trueNameProblem(raw)?.let { return Result.failure(MessageException(it)) }
         val name = sanitizeHandle(raw)
-        return runCatching {
+        return attempt { sessionLock.withLock {
+            val latest = currentProfile(client, current.userId, generation)
             client.postgrest.from("profiles").update(
                 {
                     set("display_name", name)
@@ -230,8 +361,9 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
             ) {
                 filter { eq("id", current.userId) }
             }
-            _account.value = current.copy(displayName = name)
-        }.recoverCatching { error ->
+            publishProfile(client, generation, latest.copy(displayName = name))
+        } }.recoverCatching { error ->
+            if (error is CancellationException) throw error
             val taken = error is io.github.jan.supabase.postgrest.exception.PostgrestRestException &&
                 error.code == "23505"
             throw MessageException(
@@ -261,7 +393,12 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
             // The server session died with the user; a failed sign-out call
             // must not report the deletion itself as failed.
             runCatching { client.auth.signOut() }
-            _account.value = null
+            synchronized(_account) {
+                _account.value = null
+                identityClient = null
+                identityGeneration++
+            }
+            Unit
         }.recoverCatching { error ->
             throw MessageException(Cloud.explain(error))
         }
@@ -269,15 +406,18 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
 
     /** One retry of the profiles row for a session that restored offline. */
     suspend fun refreshProfile(): Result<Unit> {
-        val current = _account.value ?: return Result.success(Unit)
+        val (current, generation) = accountSnapshot() ?: return Result.success(Unit)
         if (current.profileLoaded) return Result.success(Unit)
         val client = requireClient().getOrElse { return failure(it) }
-        return runCatching {
-            val profile = loadAccount(current.userId, current.email)
-                ?: throw MessageException(UiText.res(R.string.cloud_account_no_profile))
-            _account.value = profile
-        }.recoverCatching { error ->
-            throw MessageException(Cloud.explain(error))
+        return attempt { sessionLock.withLock {
+            val latest = currentProfile(client, current.userId, generation)
+            if (!latest.profileLoaded) {
+                val profile = loadAccount(client, latest.userId, latest.email)
+                    ?: throw MessageException(UiText.res(R.string.cloud_account_no_profile))
+                publishProfile(client, generation, profile)
+            }
+        } }.recoverCatching { error ->
+            explainAuthFailure(error)
         }
     }
 
@@ -285,24 +425,35 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
         // Local state clears first: client.auth.signOut() is a network
         // revocation, and treating it as a precondition stranded the lifter
         // signed in with no connectivity and no way out.
-        synchronized(_account) {
+        val token = synchronized(_account) {
             automaticRestoreAllowed = false
             _account.value = null
+            identityClient = null
+            identityGeneration++
+            ++transition
         }
         // A restore already importing a token must finish before logout clears the SDK's stored session.
-        sessionLock.withLock {
-            requireClient().onSuccess { client ->
-                runCatching { client.auth.signOut() }
+        withContext(NonCancellable) { sessionLock.withLock {
+            if (synchronized(_account) { completedAuthentication <= token }) {
+                cancelQueries()
+                requireClient().onSuccess { client ->
+                    try {
+                        runCatching { client.auth.signOut() }
+                    } finally {
+                        runCatching { client.auth.clearSession() }
+                    }
+                }
             }
-        }
+        } }
         return Result.success(Unit)
     }
 
     suspend fun setVisibility(visibility: String): Result<Unit> {
-        val current = _account.value
+        val (current, generation) = accountSnapshot()
             ?: return Result.failure(MessageException(UiText.res(R.string.cloud_account_visibility_signed_out)))
         val client = requireClient().getOrElse { return failure(it) }
-        return runCatching {
+        return attempt { sessionLock.withLock {
+            val latest = currentProfile(client, current.userId, generation)
             client.postgrest.from("profiles").update(
                 {
                     set("visibility", visibility)
@@ -310,26 +461,35 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
             ) {
                 filter { eq("id", current.userId) }
             }
-            _account.value = current.copy(visibility = visibility)
-        }.recoverCatching { error ->
-            throw MessageException(Cloud.explain(error))
+            publishProfile(client, generation, latest.copy(visibility = visibility))
+        } }.recoverCatching { error ->
+            explainAuthFailure(error)
         }
     }
 
-    private suspend fun loadSignedInAccount(fallbackEmail: String): Account? {
-        val client = requireClient().getOrThrow()
+    private fun currentProfile(client: SupabaseClient, userId: String, generation: Long): Account = synchronized(_account) {
+        val current = _account.value ?: throw CancellationException("Account identity changed")
+        if (requireClient().getOrNull() !== client || identityClient !== client || identityGeneration != generation || current.userId != userId ||
+            client.auth.currentUserOrNull()?.id != userId
+        ) throw CancellationException("Account identity changed")
+        current
+    }
+
+    private suspend fun loadSignedInAccount(client: SupabaseClient, fallbackEmail: String, token: Long): Account? {
         val userId = client.auth.currentUserOrNull()?.id ?: return null
-        return loadAccount(userId, fallbackEmail)?.also { _account.value = it }
+        return loadAccount(client, userId, fallbackEmail)?.also { publishIfCurrent(client, token, it) }
     }
 
     /** Profiles are readable per RLS; a missing row (Google signup) returns null. */
-    private suspend fun loadAccount(userId: String, email: String): Account? {
-        val client = requireClient().getOrThrow()
-        return runCatching {
+    private suspend fun loadAccount(client: SupabaseClient, userId: String, email: String): Account? {
+        return attempt {
             client.postgrest.from("profiles").select {
                 filter { eq("id", userId) }
             }.decodeSingleOrNull<ProfileDto>()
-        }.getOrNull()?.let { row ->
+        }.getOrElse { error ->
+            if (error is CancellationException) throw error
+            null
+        }?.let { row ->
             Account(
                 userId = row.id,
                 email = email,
