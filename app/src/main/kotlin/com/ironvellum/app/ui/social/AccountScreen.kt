@@ -117,6 +117,8 @@ import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.DecimalInput
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /** One honest snapshot of the account state: which panel to show and why. */
@@ -154,14 +156,89 @@ data class AccountUi(
     val blocked: List<BlockedLifter> = emptyList(),
 )
 
-class AccountViewModel(
+internal interface AccountCloudGateway {
+    val owners: kotlinx.coroutines.flow.Flow<SocialOwner>
+    fun owner(): SocialOwner
+    suspend fun forgetPushedState()
+    suspend fun push(): Result<SyncOutcome>
+    suspend fun backupArchive(): Result<CloudSync.BackupInfo>
+    suspend fun restoreArchive(): Result<Repository.ImportResult>
+    suspend fun latestBackup(): Result<CloudSync.BackupInfo?>
+    suspend fun friends(): Result<List<FriendRow>>
+    suspend fun blocked(force: Boolean): Result<List<BlockedLifter>>
+    suspend fun acceptFriend(userId: String): Result<Unit>
+    suspend fun requestFriend(name: String): Result<Unit>
+    suspend fun removeFriend(userId: String): Result<Unit>
+    suspend fun unblock(userId: String): Result<Unit>
+}
+
+private class RealAccountCloudGateway(private val cloud: CloudSync, private val account: AccountRepository) : AccountCloudGateway {
+    override val owners = socialOwners(account.account.map { it?.userId }, { account.account.value?.userId })
+    override fun owner() = currentSocialOwner(account.account.value?.userId)
+    override suspend fun forgetPushedState() { cloud.forgetPushedState() }
+    override suspend fun push() = cloud.push()
+    override suspend fun backupArchive() = cloud.backupArchive()
+    override suspend fun restoreArchive() = cloud.restoreArchive()
+    override suspend fun latestBackup() = cloud.latestBackup()
+    override suspend fun friends() = cloud.friends()
+    override suspend fun blocked(force: Boolean) = cloud.blocked(force)
+    override suspend fun acceptFriend(userId: String) = cloud.acceptFriend(userId)
+    override suspend fun requestFriend(name: String) = cloud.requestFriend(name)
+    override suspend fun removeFriend(userId: String) = cloud.removeFriend(userId)
+    override suspend fun unblock(userId: String) = cloud.unblock(userId)
+}
+
+class AccountViewModel internal constructor(
     private val accountRepo: AccountRepository,
-    private val cloudSync: CloudSync,
+    private val cloudSync: AccountCloudGateway,
 ) : ViewModel() {
+    constructor(accountRepo: AccountRepository, cloudSync: CloudSync) :
+        this(accountRepo, RealAccountCloudGateway(cloudSync, accountRepo))
 
     private val _ui = MutableStateFlow(AccountUi(account = accountRepo.account.value))
     val ui = _ui.asStateFlow()
     private var busyCalls = 0
+    private var owner = cloudSync.owner()
+    private fun requestScope() = kotlinx.coroutines.CoroutineScope(
+        viewModelScope.coroutineContext + kotlinx.coroutines.SupervisorJob(viewModelScope.coroutineContext[kotlinx.coroutines.Job]),
+    )
+    private var requests = requestScope()
+    private fun current(expected: SocialOwner, scope: kotlinx.coroutines.CoroutineScope) =
+        owner == expected && requests === scope && cloudSync.owner() == expected
+
+    private fun refreshOwner(): Boolean {
+        val next = cloudSync.owner()
+        if (owner == next) return false
+        owner = next
+        requests.coroutineContext[kotlinx.coroutines.Job]?.cancel()
+        requests = requestScope()
+        _ui.value = _ui.value.copy(
+            friends = emptyList(), blocked = emptyList(), friendsLoading = false,
+            lastBackup = null, backupError = null, lastRestore = null, lastSync = null,
+            claimError = null, claimBusy = false, claimSkipped = false, error = null,
+        )
+        return true
+    }
+
+    private fun prepareSocialAction(): Boolean {
+        if (!refreshOwner()) return owner.userId != null
+        if (owner.userId != null) {
+            refreshFriends()
+            refreshBlocked()
+            refreshBackup()
+        }
+        return false
+    }
+
+    private fun socialRequest(action: Boolean = false, block: suspend (SocialOwner, kotlinx.coroutines.CoroutineScope) -> Unit) {
+        if (action) {
+            if (!prepareSocialAction()) return
+        } else refreshOwner()
+        if (owner.userId == null) return
+        val expected = owner
+        val scope = requests
+        scope.launch { if (current(expected, scope)) block(expected, scope) }
+    }
 
     init {
         // Resume a stored session (if any) without blocking the first frame.
@@ -170,17 +247,22 @@ class AccountViewModel(
             // real reason or the panel sits blank with no explanation.
             accountRepo.restore().onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
         }
-        // Keep the UI in step with the repository's own session state.
         viewModelScope.launch {
-            accountRepo.account.collect { acct ->
-                _ui.value = _ui.value.copy(account = acct)
-                if (acct != null) {
+            accountRepo.account.collect { acct -> _ui.value = _ui.value.copy(account = acct) }
+        }
+        viewModelScope.launch {
+            var first = true
+            var observed = owner
+            cloudSync.owners.collect {
+                val changed = it != observed
+                observed = it
+                refreshOwner()
+                if ((first || changed) && owner.userId != null) {
                     refreshFriends()
                     refreshBlocked()
-                    // The panel must show backup freshness the moment it
-                    // appears, not only after a first manual backup.
                     refreshBackup()
                 }
+                first = false
             }
         }
     }
@@ -287,23 +369,21 @@ class AccountViewModel(
     }
 
     fun setVisibility(visibility: String) {
-        viewModelScope.launch {
+        socialRequest(action = true) { expected, scope ->
             _ui.value = _ui.value.copy(error = null)
             accountRepo.setVisibility(visibility)
-                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+                .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(error = it.reason()) }
         }
     }
 
     fun claimName(raw: String) {
-        viewModelScope.launch {
+        socialRequest(action = true) { expected, scope ->
             _ui.value = _ui.value.copy(claimBusy = true, claimError = null)
             try {
                 accountRepo.updateDisplayName(raw)
-                    // Local state update happens inside the repository, so every
-                    // surface flips to the claimed name with the cloud write.
-                    .onFailure { _ui.value = _ui.value.copy(claimError = it.reason()) }
+                    .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(claimError = it.reason()) }
             } finally {
-                _ui.value = _ui.value.copy(claimBusy = false)
+                if (current(expected, scope)) _ui.value = _ui.value.copy(claimBusy = false)
             }
         }
     }
@@ -313,14 +393,18 @@ class AccountViewModel(
     }
 
     fun syncNow() {
+        if (!prepareSocialAction()) return
         launchBusy {
+            val expected = owner
+            val scope = requests
+            if (!current(expected, scope)) return@launchBusy
             _ui.value = _ui.value.copy(error = null)
             cloudSync.push()
-                .onSuccess { _ui.value = _ui.value.copy(lastSync = it) }
+                .onSuccess { if (current(expected, scope)) _ui.value = _ui.value.copy(lastSync = it) }
                 .onFailure {
                     // The lifter sees one sentence; the code and the server's own words go to logcat.
                     Log.w("AccountSync", "Sync failed", it)
-                    _ui.value = _ui.value.copy(error = it.reason())
+                    if (current(expected, scope)) _ui.value = _ui.value.copy(error = it.reason())
                 }
         }
     }
@@ -330,11 +414,15 @@ class AccountViewModel(
      * omits private notes — the device promise holds even in a full backup.
      */
     fun backUpNow() {
+        if (!prepareSocialAction()) return
         launchBusy {
+            val expected = owner
+            val scope = requests
+            if (!current(expected, scope)) return@launchBusy
             _ui.value = _ui.value.copy(backupError = null)
             cloudSync.backupArchive()
-                .onSuccess { _ui.value = _ui.value.copy(lastBackup = it, backupError = null) }
-                .onFailure { _ui.value = _ui.value.copy(backupError = it.reason()) }
+                .onSuccess { if (current(expected, scope)) _ui.value = _ui.value.copy(lastBackup = it, backupError = null) }
+                .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(backupError = it.reason()) }
         }
     }
 
@@ -344,75 +432,81 @@ class AccountViewModel(
      * already named the consequence.
      */
     fun restoreFromCloud() {
+        if (!prepareSocialAction()) return
         launchBusy {
+            val expected = owner
+            val scope = requests
+            if (!current(expected, scope)) return@launchBusy
             _ui.value = _ui.value.copy(backupError = null)
             cloudSync.restoreArchive()
-                .onSuccess { _ui.value = _ui.value.copy(lastRestore = it, backupError = null) }
-                .onFailure { _ui.value = _ui.value.copy(backupError = it.reason()) }
+                .onSuccess { if (current(expected, scope)) _ui.value = _ui.value.copy(lastRestore = it, backupError = null) }
+                .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(backupError = it.reason()) }
         }
     }
 
     /** Null result is real information: no archive exists yet in the cloud. */
     private fun refreshBackup() {
-        viewModelScope.launch {
+        socialRequest { expected, scope ->
             cloudSync.latestBackup()
-                .onSuccess { _ui.value = _ui.value.copy(lastBackup = it) }
-                .onFailure { _ui.value = _ui.value.copy(backupError = it.reason()) }
+                .onSuccess { if (current(expected, scope)) _ui.value = _ui.value.copy(lastBackup = it) }
+                .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(backupError = it.reason()) }
         }
     }
 
     fun refreshFriends() {
-        viewModelScope.launch {
+        socialRequest { expected, scope ->
             _ui.value = _ui.value.copy(friendsLoading = true)
-            cloudSync.friends()
-                .onSuccess { _ui.value = _ui.value.copy(friends = it) }
-                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
-            _ui.value = _ui.value.copy(friendsLoading = false)
+            try {
+                cloudSync.friends()
+                    .onSuccess { if (current(expected, scope)) _ui.value = _ui.value.copy(friends = it) }
+                    .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(error = it.reason()) }
+            } finally {
+                if (current(expected, scope)) _ui.value = _ui.value.copy(friendsLoading = false)
+            }
         }
     }
 
     fun acceptFriend(userId: String) {
-        viewModelScope.launch {
+        socialRequest(action = true) { expected, scope ->
             _ui.value = _ui.value.copy(error = null)
             cloudSync.acceptFriend(userId)
-                .onSuccess { refreshFriends() }
-                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+                .onSuccess { if (current(expected, scope)) refreshFriends() }
+                .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(error = it.reason()) }
         }
     }
 
     fun requestFriend(displayName: String) {
-        viewModelScope.launch {
+        socialRequest(action = true) { expected, scope ->
             _ui.value = _ui.value.copy(error = null)
             cloudSync.requestFriend(displayName)
-                .onSuccess { refreshFriends() }
-                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+                .onSuccess { if (current(expected, scope)) refreshFriends() }
+                .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(error = it.reason()) }
         }
     }
 
-    /** Ends an alliance; the row leaves the list only once the server confirms. */
     fun removeFriend(userId: String) {
-        viewModelScope.launch {
+        socialRequest(action = true) { expected, scope ->
             _ui.value = _ui.value.copy(error = null)
             cloudSync.removeFriend(userId)
-                .onSuccess { _ui.value = _ui.value.copy(friends = _ui.value.friends.filter { it.userId != userId }) }
-                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+                .onSuccess { if (current(expected, scope)) _ui.value = _ui.value.copy(friends = _ui.value.friends.filter { it.userId != userId }) }
+                .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(error = it.reason()) }
         }
     }
 
     fun refreshBlocked(force: Boolean = false) {
-        viewModelScope.launch {
+        socialRequest { expected, scope ->
             cloudSync.blocked(force = force)
-                .onSuccess { _ui.value = _ui.value.copy(blocked = it) }
-                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+                .onSuccess { if (current(expected, scope)) _ui.value = _ui.value.copy(blocked = it) }
+                .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(error = it.reason()) }
         }
     }
 
     fun unblock(userId: String) {
-        viewModelScope.launch {
+        socialRequest(action = true) { expected, scope ->
             _ui.value = _ui.value.copy(error = null)
             cloudSync.unblock(userId)
-                .onSuccess { _ui.value = _ui.value.copy(blocked = _ui.value.blocked.filter { it.userId != userId }) }
-                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+                .onSuccess { if (current(expected, scope)) _ui.value = _ui.value.copy(blocked = _ui.value.blocked.filter { it.userId != userId }) }
+                .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(error = it.reason()) }
         }
     }
 }

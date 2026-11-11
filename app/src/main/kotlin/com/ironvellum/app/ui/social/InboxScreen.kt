@@ -88,22 +88,21 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.isActive
 
-internal data class InboxOwner(val userId: String?, val backend: Any?)
 
 internal interface InboxGateway {
-    val owners: Flow<InboxOwner>
-    fun owner(): InboxOwner
+    val owners: Flow<SocialOwner>
+    fun owner(): SocialOwner
     suspend fun read(force: Boolean): Result<Inbox>
-    suspend fun markSeen(owner: InboxOwner): Result<Unit>
+    suspend fun markSeen(owner: SocialOwner): Result<Unit>
     suspend fun accept(userId: String): Result<Unit>
     suspend fun decline(userId: String): Result<Unit>
 }
 
 private class CloudInboxGateway(private val cloud: CloudSync, private val accounts: AccountRepository) : InboxGateway {
-    override fun owner() = InboxOwner(accounts.account.value?.userId, if (Cloud.config.value != null) Cloud.client() else null)
+    override fun owner() = currentSocialOwner(accounts.account.value?.userId)
     override val owners = combine(accounts.account, Cloud.config) { _, _ -> owner() }.distinctUntilChanged()
     override suspend fun read(force: Boolean) = cloud.inbox(force)
-    override suspend fun markSeen(owner: InboxOwner): Result<Unit> {
+    override suspend fun markSeen(owner: SocialOwner): Result<Unit> {
         val userId = owner.userId ?: return Result.success(Unit)
         val client = owner.backend as? SupabaseClient ?: return Result.success(Unit)
         return cloud.markInboxSeen(userId, client)
@@ -116,7 +115,7 @@ private class CloudInboxGateway(private val cloud: CloudSync, private val accoun
 internal enum class RequestAnswer { ACCEPTED, DECLINED }
 
 internal data class InboxUi(
-    val owner: InboxOwner = InboxOwner(null, null),
+    val owner: SocialOwner = SocialOwner(null, null),
     val loading: Boolean = false,
     /** True once one fetch answered, so an empty list reads as "clear", not "loading". */
     val loaded: Boolean = false,
@@ -160,7 +159,7 @@ internal class InboxViewModel(private val gateway: InboxGateway) : ViewModel() {
         _ui.value = InboxUi(owner = current)
     }
 
-    private fun current(expected: InboxOwner, scope: CoroutineScope): Boolean =
+    private fun current(expected: SocialOwner, scope: CoroutineScope): Boolean =
         requests === scope && owner == expected && gateway.owner() == expected
 
     init {

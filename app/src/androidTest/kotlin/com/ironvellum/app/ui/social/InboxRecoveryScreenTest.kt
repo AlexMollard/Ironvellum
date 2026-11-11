@@ -40,14 +40,14 @@ class InboxRecoveryScreenTest {
 
     @Test fun cancelledFirstLoadOffersAWorkingRetryInsteadOfAnEndlessLoadingPanel() {
         val gateway = object : InboxGateway {
-            override val owners = MutableStateFlow(InboxOwner("me", "isolated"))
+            override val owners = MutableStateFlow(SocialOwner("me", "isolated"))
             override fun owner() = owners.value
             private var first = true
             override suspend fun read(force: Boolean): Result<Inbox> {
                 if (first) { first = false; return Result.failure(CancellationException("shared producer cancelled")) }
                 return Result.success(Inbox(listOf(InboxItem.FriendRequest(200, "ally", "Ready Ally")), null))
             }
-            override suspend fun markSeen(owner: InboxOwner) = Result.success(Unit)
+            override suspend fun markSeen(owner: SocialOwner) = Result.success(Unit)
             override suspend fun accept(userId: String) = Result.success(Unit)
             override suspend fun decline(userId: String) = Result.success(Unit)
         }

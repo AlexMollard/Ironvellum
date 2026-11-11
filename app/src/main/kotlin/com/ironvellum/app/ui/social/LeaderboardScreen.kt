@@ -92,6 +92,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -182,14 +184,57 @@ private fun sortRows(rows: List<LeaderboardRow>, metric: BoardMetric): List<Lead
 private fun wornTitle(currentTitleId: String?): String? =
     Titles.displayName(currentTitleId)
 
-class LeaderboardViewModel(
-    private val cloudSync: CloudSync,
-    private val accountRepo: com.ironvellum.app.data.cloud.AccountRepository,
-    private val repo: Repository,
-) : ViewModel() {
+internal interface LeaderboardGateway {
+    val owners: kotlinx.coroutines.flow.Flow<SocialOwner>
+    fun owner(): SocialOwner
+    val frames: kotlinx.coroutines.flow.Flow<String?>
+    suspend fun training(): Result<List<LeaderboardRow>>
+    suspend fun muster(force: Boolean): Result<List<ShadowBoardRow>>
+    suspend fun lifts(force: Boolean): Result<List<LiftBoardRow>>
+}
 
+private class CloudLeaderboardGateway(
+    private val cloud: CloudSync,
+    private val account: com.ironvellum.app.data.cloud.AccountRepository,
+    repo: Repository,
+) : LeaderboardGateway {
+    override val owners = socialOwners(account.account.map { it?.userId }, { account.account.value?.userId })
+    override fun owner() = currentSocialOwner(account.account.value?.userId)
+    override val frames = repo.observeEquippedFrame()
+    override suspend fun training() = cloud.leaderboard()
+    override suspend fun muster(force: Boolean) = cloud.shadowBoard(force)
+    override suspend fun lifts(force: Boolean) = cloud.liftBoard(force)
+}
+
+class LeaderboardViewModel internal constructor(
+    private val gateway: LeaderboardGateway,
+    private val accountRepo: com.ironvellum.app.data.cloud.AccountRepository,
+) : ViewModel() {
+    constructor(cloudSync: CloudSync, accountRepo: com.ironvellum.app.data.cloud.AccountRepository, repo: Repository) :
+        this(CloudLeaderboardGateway(cloudSync, accountRepo, repo), accountRepo)
+
+    private var owner = gateway.owner()
+    private var liftsRequested = false
+    private fun requestScope() = kotlinx.coroutines.CoroutineScope(
+        viewModelScope.coroutineContext + kotlinx.coroutines.SupervisorJob(viewModelScope.coroutineContext[kotlinx.coroutines.Job]),
+    )
+    private var requests = requestScope()
+    private fun current(expected: SocialOwner, scope: kotlinx.coroutines.CoroutineScope) =
+        owner == expected && requests === scope && gateway.owner() == expected
+
+    private fun refreshOwner(): Boolean {
+        val next = gateway.owner()
+        if (next == owner) return false
+        owner = next
+        requests.coroutineContext[kotlinx.coroutines.Job]?.cancel()
+        requests = requestScope()
+        _ui.value = LeaderboardUi(signedIn = next.userId != null, myUserId = next.userId)
+        _muster.value = MusterBoardUi()
+        _lifts.value = LiftsBoardUi()
+        return true
+    }
     private val _ui = MutableStateFlow(
-        LeaderboardUi(signedIn = accountRepo.account.value != null, myUserId = accountRepo.account.value?.userId),
+        LeaderboardUi(signedIn = owner.userId != null, myUserId = owner.userId),
     )
     val ui = _ui.asStateFlow()
 
@@ -200,23 +245,23 @@ class LeaderboardViewModel(
     val muster = _muster.asStateFlow()
 
     fun loadMuster(force: Boolean = false) {
-        if (_muster.value.loading) return
-        if (_muster.value.loaded && !force) return
-        viewModelScope.launch {
-            _muster.value = _muster.value.copy(loading = true, error = null)
-            cloudSync.shadowBoard(force)
-                .onSuccess { _muster.value = MusterBoardUi(rows = it, loaded = true) }
-                .onFailure { error ->
-                    _muster.value = _muster.value.copy(
-                        loaded = true,
-                        error = error.reason(),
-                        // Distinguish "the cloud has no such board" from a
-                        // transient network failure: only the former retires
-                        // the picker, a dropped connection must stay retryable.
-                        available = !Cloud.isNotSetUp(error),
-                    )
-                }
-            _muster.value = _muster.value.copy(loading = false)
+        refreshOwner()
+        if (_muster.value.loading || (_muster.value.loaded && !force)) return
+        val expected = owner
+        val scope = requests
+        _muster.value = _muster.value.copy(loading = true, error = null)
+        scope.launch {
+            try {
+                gateway.muster(force)
+                    .onSuccess { if (current(expected, scope)) _muster.value = MusterBoardUi(rows = it, loaded = true) }
+                    .onFailure { error ->
+                        if (current(expected, scope)) _muster.value = _muster.value.copy(
+                            loaded = true, error = error.reason(), available = !Cloud.isNotSetUp(error),
+                        )
+                    }
+            } finally {
+                if (current(expected, scope)) _muster.value = _muster.value.copy(loading = false)
+            }
         }
     }
 
@@ -227,37 +272,48 @@ class LeaderboardViewModel(
     val lifts = _lifts.asStateFlow()
 
     fun loadLifts(force: Boolean = false) {
-        if (_lifts.value.loading) return
-        if (_lifts.value.loaded && !force) return
-        viewModelScope.launch {
-            _lifts.value = _lifts.value.copy(loading = true, error = null)
-            cloudSync.liftBoard(force)
-                .onSuccess { _lifts.value = LiftsBoardUi(rows = it, loaded = true) }
-                // Not marked loaded: a server below schema 20 (or a dropped
-                // connection) must retry on the next visit, not stay refused.
-                .onFailure { _lifts.value = _lifts.value.copy(error = it.reason()) }
-            _lifts.value = _lifts.value.copy(loading = false)
+        liftsRequested = true
+        refreshOwner()
+        if (_lifts.value.loading || (_lifts.value.loaded && !force)) return
+        val expected = owner
+        val scope = requests
+        _lifts.value = _lifts.value.copy(loading = true, error = null)
+        scope.launch {
+            try {
+                gateway.lifts(force)
+                    .onSuccess { if (current(expected, scope)) _lifts.value = LiftsBoardUi(rows = it, loaded = true) }
+                    .onFailure { if (current(expected, scope)) _lifts.value = _lifts.value.copy(error = it.reason()) }
+            } finally {
+                if (current(expected, scope)) _lifts.value = _lifts.value.copy(loading = false)
+            }
         }
     }
 
     // Device-local equipped crest frame; only this lifter's own avatar ever wears it.
-    val equippedFrame: StateFlow<String?> = repo.observeEquippedFrame()
+    val equippedFrame: StateFlow<String?> = gateway.frames
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     init {
-        // One probe at construction decides whether MUSTER ROLL is offered at
-        // all. Without it the player's first tap is the discovery mechanism,
-        // and that tap looks like a board that cannot connect.
         loadMuster()
         viewModelScope.launch {
+            var first = true
+            var observed = owner
+            gateway.owners.collect {
+                refreshOwner()
+                val changed = owner != observed
+                observed = owner
+                if (first || changed) {
+                    loadMuster()
+                    if (owner.userId != null) {
+                        load()
+                        if (liftsRequested) loadLifts()
+                    }
+                }
+                first = false
+            }
+        }
+        viewModelScope.launch {
             accountRepo.account.collect { acct ->
-                _ui.value = _ui.value.copy(
-                    signedIn = acct != null,
-                    myUserId = acct?.userId,
-                )
-                if (acct != null && _ui.value.rows.isEmpty()) load()
-                // Restored offline: identity without the profiles row — retry
-                // it on this social read.
                 if (acct?.profileLoaded == false) {
                     viewModelScope.launch { accountRepo.refreshProfile() }
                 }
@@ -268,12 +324,18 @@ class LeaderboardViewModel(
     private fun Throwable.reason(): UiText = reasonText(UiText.res(R.string.acct_failure_unknown))
 
     fun load() {
-        viewModelScope.launch {
-            _ui.value = _ui.value.copy(loading = true, error = null)
-            cloudSync.leaderboard()
-                .onSuccess { _ui.value = _ui.value.copy(rows = it) }
-                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
-            _ui.value = _ui.value.copy(loading = false)
+        refreshOwner()
+        val expected = owner
+        val scope = requests
+        _ui.value = _ui.value.copy(loading = true, error = null)
+        scope.launch {
+            try {
+                gateway.training()
+                    .onSuccess { if (current(expected, scope)) _ui.value = _ui.value.copy(rows = it) }
+                    .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(error = it.reason()) }
+            } finally {
+                if (current(expected, scope)) _ui.value = _ui.value.copy(loading = false)
+            }
         }
     }
 

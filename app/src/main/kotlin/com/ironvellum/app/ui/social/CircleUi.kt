@@ -108,6 +108,7 @@ import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 /**
@@ -135,9 +136,33 @@ data class CircleUiState(
     val paid: CircleBonusPaid? = null,
 )
 
-class CircleViewModel(
+class CircleViewModel internal constructor(
     private val gateway: CircleGateway,
+    private val owners: kotlinx.coroutines.flow.Flow<SocialOwner>,
+    private val liveOwner: () -> SocialOwner,
 ) : ViewModel() {
+    constructor(gateway: CircleGateway) : this(
+        gateway, socialOwners(gateway.userId, gateway::currentUserId),
+        { currentSocialOwner(gateway.currentUserId()) },
+    )
+
+    private var owner = liveOwner()
+    private fun requestScope() = kotlinx.coroutines.CoroutineScope(
+        viewModelScope.coroutineContext + kotlinx.coroutines.SupervisorJob(viewModelScope.coroutineContext[kotlinx.coroutines.Job]),
+    )
+    private var requests = requestScope()
+    private fun current(expected: SocialOwner, scope: kotlinx.coroutines.CoroutineScope) =
+        owner == expected && requests === scope && liveOwner() == expected
+
+    private fun refreshOwner(): Boolean {
+        val next = liveOwner()
+        if (next == owner) return false
+        owner = next
+        requests.coroutineContext[kotlinx.coroutines.Job]?.cancel()
+        requests = requestScope()
+        _ui.value = CircleUiState(signedIn = next.userId != null, myUserId = next.userId)
+        return true
+    }
 
     private val _ui = MutableStateFlow(CircleUiState(signedIn = gateway.currentUserId() != null, myUserId = gateway.currentUserId()))
     val ui = _ui.asStateFlow()
@@ -145,20 +170,16 @@ class CircleViewModel(
     private fun Throwable.reason(): UiText = reasonText(UiText.res(R.string.circle_unknown_failure))
 
     init {
-        // Signing in happens on a sibling tab after this view model may already
-        // exist, so a one-shot read of the account would strand the section;
-        // observe and load the moment a session appears.
         viewModelScope.launch {
-            gateway.userId.collect { userId ->
-                val was = _ui.value.signedIn
-                _ui.value = _ui.value.copy(signedIn = userId != null, myUserId = userId)
-                when {
-                    userId != null && !was -> load()
-                    userId == null -> _ui.value = CircleUiState(signedIn = false)
-                }
+            var observed = owner
+            owners.collect {
+                val changed = it != observed
+                observed = it
+                refreshOwner()
+                if (changed && owner.userId != null) load()
             }
         }
-        if (_ui.value.signedIn) load()
+        if (owner.userId != null) load()
     }
 
     /**
@@ -167,20 +188,23 @@ class CircleViewModel(
      * first load. A read already in flight is not doubled up.
      */
     fun load(force: Boolean = false) {
-        if (_ui.value.loading) return
+        if (refreshOwner() && owner.userId == null) return
+        if (owner.userId == null || _ui.value.loading) return
+        val expected = owner
+        val scope = requests
         _ui.value = _ui.value.copy(loading = true, error = null)
-        viewModelScope.launch {
-            gateway.read(force)
-                .onSuccess { read -> onRead(read) }
-                .onFailure { failure ->
-                    // Over a circle already on screen a failed reload must say so:
-                    // the roster is then the last good read, not the current one.
-                    _ui.value = _ui.value.copy(
-                        error = failure.reason(),
-                        refreshFailed = _ui.value.circle != null,
-                    )
-                }
-            _ui.value = _ui.value.copy(loading = false)
+        scope.launch {
+            try {
+                gateway.read(force)
+                    .onSuccess { if (current(expected, scope)) onRead(it) }
+                    .onFailure { failure ->
+                        if (current(expected, scope)) _ui.value = _ui.value.copy(
+                            error = failure.reason(), refreshFailed = _ui.value.circle != null,
+                        )
+                    }
+            } finally {
+                if (current(expected, scope)) _ui.value = _ui.value.copy(loading = false)
+            }
         }
     }
 
@@ -217,28 +241,32 @@ class CircleViewModel(
     // [onDone] runs only when the server accepted the action, so a dialog
     // stays open, with its inline error, when the answer is a refusal.
     private fun act(onDone: () -> Unit = {}, call: suspend () -> Result<*>) {
-        if (_ui.value.actionBusy) return
+        if (refreshOwner()) {
+            if (owner.userId != null) load()
+            return
+        }
+        if (owner.userId == null || _ui.value.actionBusy) return
+        val expected = owner
+        val scope = requests
         _ui.value = _ui.value.copy(actionBusy = true, actionError = null)
-        viewModelScope.launch {
-            call()
-                .onSuccess {
-                    onDone()
-                    // The server's answer is the truth: the refetch reconciles
-                    // membership (and ownership after a handover) exactly. A
-                    // failed refetch must not leave the pre-action roster up
-                    // as if the action never happened.
-                    gateway.read(force = true)
-                        .onSuccess { read -> onRead(read) }
-                        .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
-                }
-                .onFailure { failure ->
-                    _ui.value = _ui.value.copy(actionError = failure.reason())
-                    // A refusal usually means the roster on screen is behind: the
-                    // keys were passed on, or the member already left. Read it again
-                    // so the screen shows what the server holds; the refusal stays.
-                    gateway.read(force = true).onSuccess { read -> onRead(read) }
-                }
-            _ui.value = _ui.value.copy(actionBusy = false)
+        scope.launch {
+            try {
+                if (!current(expected, scope)) return@launch
+                val result = call()
+                if (!current(expected, scope)) return@launch
+                result.onSuccess { onDone() }
+                    .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
+                if (!current(expected, scope)) return@launch
+                gateway.read(force = true)
+                    .onSuccess { if (current(expected, scope)) onRead(it) }
+                    .onFailure {
+                        if (current(expected, scope) && result.isSuccess) {
+                            _ui.value = _ui.value.copy(actionError = it.reason())
+                        }
+                    }
+            } finally {
+                if (current(expected, scope)) _ui.value = _ui.value.copy(actionBusy = false)
+            }
         }
     }
 

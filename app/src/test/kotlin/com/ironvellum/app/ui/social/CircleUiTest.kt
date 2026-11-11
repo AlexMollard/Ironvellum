@@ -8,6 +8,9 @@ import com.ironvellum.app.domain.UiText
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,20 +40,28 @@ class CircleUiTest {
         var readError: Throwable? = null
         var actionError: Throwable? = null
         val reads = mutableListOf<Boolean>()
+        var delayedRead: CompletableDeferred<Result<CircleRead>>? = null
+        var delayedAction: CompletableDeferred<Result<Unit>>? = null
         val calls = mutableListOf<String>()
+        var onAccepted: (String) -> Unit = {}
 
         override suspend fun read(force: Boolean): Result<CircleRead> {
             reads += force
+            delayedRead?.let { pending ->
+                delayedRead = null
+                return withContext(NonCancellable) { pending.await() }
+            }
             readError?.let { return Result.failure(it) }
             return Result.success(CircleRead(circle, paid.also { paid = null }))
         }
 
         private fun act(name: String): Result<Unit> {
             calls += name
-            return actionError?.let { Result.failure(it) } ?: Result.success(Unit)
+            return actionError?.let { Result.failure(it) } ?: Result.success(Unit).also { onAccepted(name) }
         }
 
-        override suspend fun create(name: String) = act("create:$name")
+        override suspend fun create(name: String): Result<Unit> =
+            delayedAction?.let { withContext(NonCancellable) { it.await() } } ?: act("create:$name")
         override suspend fun join(code: String) = act("join:$code")
         override suspend fun leave() = act("leave")
         override suspend fun setGoal(perMember: Int) = act("goal:$perMember")
@@ -106,11 +117,12 @@ class CircleUiTest {
     }
 
     @Test
-    fun `a forced reload reaches the gateway as forced`() {
+    fun `a forced reload replaces the roster`() {
         val gateway = FakeGateway().apply { circle = circle() }
         val vm = CircleViewModel(gateway)
+        gateway.circle = circle("New")
         vm.load(force = true)
-        assertEquals(listOf(false, true), gateway.reads)
+        assertEquals("New", vm.ui.value.circle?.name)
     }
 
     @Test
@@ -176,6 +188,59 @@ class CircleUiTest {
         vm.newCode()
         vm.remove("u2")
         assertEquals(listOf("rename:Gate House", "rotate", "remove:u2"), gateway.calls)
+    }
+
+    @Test
+    fun `owner switch clears roster even when old read completes after new failure`() {
+        val gateway = FakeGateway().apply { circle = circle() }
+        val backend = Any()
+        val owners = MutableStateFlow(SocialOwner("me", backend))
+        val vm = CircleViewModel(gateway, owners) { owners.value }
+        val late = CompletableDeferred<Result<CircleRead>>()
+        gateway.delayedRead = late
+        vm.load(force = true)
+        gateway.readError = IllegalStateException("offline")
+        owners.value = SocialOwner("other", backend)
+        assertNull(vm.ui.value.circle)
+        assertNotNull(vm.ui.value.error)
+        late.complete(Result.success(CircleRead(circle("Old"), CircleBonusPaid(4, "Old"))))
+        assertNull(vm.ui.value.circle)
+        assertNull(vm.ui.value.paid)
+        owners.value = SocialOwner("other", Any())
+        assertNull(vm.ui.value.circle)
+        assertNotNull(vm.ui.value.error)
+    }
+
+    @Test
+    fun `old action cannot close new owner dialog or replace payout`() {
+        val gateway = FakeGateway().apply { circle = circle() }
+        val owners = MutableStateFlow(SocialOwner("me", Any()))
+        val vm = CircleViewModel(gateway, owners) { owners.value }
+        val late = CompletableDeferred<Result<Unit>>()
+        gateway.delayedAction = late
+        var done = false
+        vm.create("Old") { done = true }
+        gateway.paid = CircleBonusPaid(8, "New")
+        owners.value = SocialOwner("other", Any())
+        late.complete(Result.success(Unit))
+        assertFalse(done)
+        assertEquals(CircleBonusPaid(8, "New"), vm.ui.value.paid)
+        assertFalse(vm.ui.value.actionBusy)
+    }
+
+    @Test
+    fun `an action from the old roster cannot leave the new circle before its flow emission`() {
+        val gateway = FakeGateway().apply { circle = circle("Old") }
+        var liveOwner = SocialOwner("me", Any())
+        val owners = MutableStateFlow(liveOwner)
+        val vm = CircleViewModel(gateway, owners) { liveOwner }
+        gateway.circle = circle("New").copy(ownerId = "other")
+        gateway.onAccepted = { if (it == "leave") gateway.circle = null }
+        liveOwner = SocialOwner("other", Any())
+        vm.leave()
+        assertEquals("New", vm.ui.value.circle?.name)
+        assertEquals("other", vm.ui.value.myUserId)
+        assertFalse(vm.ui.value.actionBusy)
     }
 
     @Test
