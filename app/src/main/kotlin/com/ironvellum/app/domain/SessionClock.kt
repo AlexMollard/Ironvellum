@@ -130,14 +130,14 @@ object SessionClock {
      * not one pace set. A prescribed rest is the READY end of the movement's
      * [RestRules] window, as [ProgramRules.sessionSeconds] prices it.
      */
-    fun setSeconds(set: SessionSet, metric: ExerciseMetric?, focus: TrainingFocus, paceSeconds: Int? = null, restPreferences: RestRules.Preferences = RestRules.EMPTY_PREFERENCES): Int {
+    fun setSeconds(set: SessionSet, metric: ExerciseMetric?, focus: TrainingFocus, paceSeconds: Int? = null, restPreferences: RestRules.Preferences = RestRules.EMPTY_PREFERENCES, topRestSeconds: Int? = null): Int {
         val timedActivity = (metric == ExerciseMetric.DURATION || metric == ExerciseMetric.DISTANCE_TIME) &&
             (set.durationSec ?: 0) > 0
         val hold = MovementDifficulty.isHoldSet(metric, set.exerciseName, set.modifiers)
         val weighted = set.weightKg != null
         if (!hold && !timedActivity && paceSeconds != null) return paceSeconds
         val rest = paceSeconds?.let { (it - ProgramRules.SET_WORK_SECONDS).coerceAtLeast(0) }
-            ?: RestRules.resolved(set.exerciseName, focus, metric, weighted, restPreferences).ready
+            ?: topRestSeconds ?: RestRules.resolved(set.exerciseName, focus, metric, weighted, restPreferences).ready
         if (!hold && !timedActivity) {
             val sides = if (MuscleMap.profile(set.exerciseName)?.unilateral == true) 2 else 1
             return rest + sides * ProgramRules.SET_WORK_SECONDS
@@ -160,7 +160,10 @@ object SessionClock {
         focus: TrainingFocus,
         paceSeconds: Int? = null,
         restPreferences: (String) -> RestRules.Preferences = { RestRules.EMPTY_PREFERENCES },
-    ): Int = sets.filter { it.isPending }.sumOf { setSeconds(it, metricOf(it.exerciseId), focus, paceSeconds, restPreferences(it.exerciseName)) }
+        topRest: (BlockKey) -> Int = { SchemePlan.restAfterTop(null) },
+    ): Int = sets.filter { it.isPending }.sumOf {
+        setSeconds(it, metricOf(it.exerciseId), focus, paceSeconds, restPreferences(it.exerciseName), if (it.kind == SetKind.TOP) topRest(it.blockKey) else null)
+    }
 
     /** Whole minutes, rounded up: a set still ahead never reads as zero. */
     fun minutes(seconds: Int): Int = (seconds.coerceAtLeast(0) + 59) / 60

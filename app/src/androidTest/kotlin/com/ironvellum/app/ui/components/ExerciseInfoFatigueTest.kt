@@ -1,5 +1,14 @@
 package com.ironvellum.app.ui.components
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.test.platform.app.InstrumentationRegistry
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Units
+import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.ui.ShotRecorder
+import com.ironvellum.app.domain.ExerciseMetric
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
@@ -91,6 +100,32 @@ class ExerciseInfoFatigueTest {
         compose.onNode(hasText("Quads")).assertExists()
         assertEquals(0, compose.onAllNodes(hasText("Stretch-heavy", ignoreCase = true)).fetchSemanticsNodes().size)
         compose.onNode(hasText("Nothing about this lift", substring = true)).assertExists()
+    }
+
+    @Test
+    fun weightedDurationOffersUnitsButUnweightedDurationDoesNot() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val name = "Weighted Skipping"
+        val previous = Units.overrideFor(name)
+        var exercise by mutableStateOf(Exercise(name = name, muscleGroup = MuscleGroup.LEGS, isWeighted = true, metric = ExerciseMetric.DURATION))
+        try {
+            Units.setExercise(context, name, null)
+            compose.setContent {
+                IronvellumTheme { ExerciseInfoSheet(exercise = exercise, lastLine = null, onDismiss = {}, onPick = null) }
+            }
+            val title = context.getString(R.string.exercise_unit_title)
+            compose.onNodeWithText(title).performClick()
+            compose.onNodeWithText(LoadUnit.LB.label).performClick()
+            assertEquals(LoadUnit.LB, Units.overrideFor(name))
+            ShotRecorder.take(compose, "weighted-duration-exercise-units")
+            compose.mainClock.autoAdvance = true
+            compose.runOnIdle {
+                exercise = Exercise(name = "Yoga", muscleGroup = MuscleGroup.LEGS, isWeighted = false, metric = ExerciseMetric.DURATION)
+            }
+            compose.onNodeWithText(title).assertDoesNotExist()
+        } finally {
+            Units.setExercise(context, name, previous)
+        }
     }
 
     private fun assertEquals(expected: Any?, actual: Any?) = org.junit.Assert.assertEquals(expected, actual)

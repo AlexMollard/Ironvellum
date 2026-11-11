@@ -33,6 +33,7 @@ import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.isStrength
 import com.ironvellum.app.domain.ExerciseGuides
 import com.ironvellum.app.domain.ExerciseWhy
 import com.ironvellum.app.domain.ExerciseWhys
@@ -145,7 +146,7 @@ private fun AboutTop(exercise: Exercise, lastLine: String?, onUnit: () -> Unit) 
                 if (gear != null) Box(Modifier.weight(1f)) { AboutFact(Words.armoury.u, gear) }
             }
         }
-        if (exercise.metric == ExerciseMetric.REPS || exercise.metric == ExerciseMetric.HOLD) {
+        if (exercise.metric.isStrength || (exercise.metric == ExerciseMetric.DURATION && exercise.isWeighted)) {
             Column {
                 InkDivider()
                 ListRow(

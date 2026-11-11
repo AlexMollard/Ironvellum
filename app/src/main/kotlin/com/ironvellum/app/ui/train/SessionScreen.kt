@@ -187,6 +187,7 @@ import com.ironvellum.app.domain.RestAlert
 import com.ironvellum.app.domain.SetClock
 import com.ironvellum.app.domain.LiftLoading
 import com.ironvellum.app.domain.SchemeText
+import com.ironvellum.app.domain.SchemePlan
 import com.ironvellum.app.domain.SchemeType
 import com.ironvellum.app.domain.SetScheme
 import com.ironvellum.app.domain.TopMark
@@ -1292,9 +1293,9 @@ fun SessionScreen(
 
     val signedIn = (LocalContext.current.applicationContext as com.ironvellum.app.IronvellumApp)
         .accountRepository.account.collectAsStateWithLifecycle().value != null
-    val minutesLeft = remember(ui.sets, exercises, focus, pace, restSettingsRevision) {
+    val minutesLeft = remember(ui.sets, exercises, focus, pace, restSettingsRevision, schemes) {
         val metrics = exercises.associate { it.id to it.metric }
-        SessionClock.remainingSeconds(ui.sets, { metrics[it] }, focus, pace, trialPrefs::restPreferences)
+        SessionClock.remainingSeconds(ui.sets, { metrics[it] }, focus, pace, trialPrefs::restPreferences) { block -> SchemePlan.restAfterTop(schemes[block]) }
             .takeIf { it > 0 }?.let { SessionClock.minutes(it) }
     }
     val scroll = rememberScrollState()
@@ -2873,7 +2874,7 @@ internal fun OpenExerciseCard(
                     onClick = it,
                 )
             }
-            if (metric.isStrength) {
+            if (metric.isStrength || (metric == ExerciseMetric.DURATION && weighted)) {
                 Row(
                     Modifier.widthIn(min = 48.dp).heightIn(min = 48.dp)
                         .clickable(onClickLabel = stringResource(R.string.exercise_unit_choose_description, first.exerciseName), role = Role.Button) { choosingUnit = true }

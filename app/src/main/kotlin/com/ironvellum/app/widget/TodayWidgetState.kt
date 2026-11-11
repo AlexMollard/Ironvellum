@@ -286,6 +286,8 @@ internal suspend fun loadWidgetState(context: android.content.Context, repo: Rep
     }
     // Today's duration figure needs the lifter's pace: the newest few sealed trials with their sets.
     val rite = presets.firstOrNull { it.scheduledDay == today.dayOfWeek.value }
+    val catalogue = repo.observeExercises().first()
+    val metricsByName = catalogue.associate { it.name to it.metric }
     var estimate: (WorkoutPreset) -> Int? = { null }
     if (rite != null && live == null) {
         val focus = SessionClock.focusFor(
@@ -297,10 +299,9 @@ internal suspend fun loadWidgetState(context: android.content.Context, repo: Rep
             .mapNotNull { s -> (sets[s.id] ?: repo.observeWorkout(s.id).first()?.second)?.let { s to it } }
         val pace = SessionClock.pace(recent)
         estimate = { preset ->
-            SessionClock.minutes(SessionClock.planSeconds(preset.toPlanned().entries, focus, pace.secondsPerSet(preset), com.ironvellum.app.data.TrialPrefs(context)::restPreferences))
+            SessionClock.minutes(SessionClock.planSeconds(preset.toPlanned().entries, focus, pace.secondsPerSet(preset), com.ironvellum.app.data.TrialPrefs(context)::restPreferences) { metricsByName[it.exerciseName] })
         }
     }
-    val catalogue = repo.observeExercises().first()
     val weighted = catalogue.associate { it.id to it.isWeighted }
     val metrics = catalogue.associate { it.id to it.metric }
     // A day with no plan offers the latest workouts; a sealed day judges its sets against the whole history.

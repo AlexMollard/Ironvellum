@@ -109,6 +109,7 @@ data class TrainUi(
     val priorities: Set<com.ironvellum.app.domain.Muscle> = emptySet(),
     /** The lifter's own seconds per set; times the card estimates. */
     val pace: SessionClock.Pace = SessionClock.Pace(),
+    val exercises: List<com.ironvellum.app.domain.Exercise> = emptyList(),
 )
 
 class PresetsViewModel(
@@ -134,7 +135,8 @@ class PresetsViewModel(
         repo.observeHistory(),
         repo.observeProfile(),
         tierFlow,
-    ) { presets, history, profile, tier ->
+        repo.observeExercises(),
+    ) { presets, history, profile, tier, exercises ->
         // The coverage card maps the ROUTINE: scheduled days when they exist,
         // the whole board when nothing is scheduled.
         val routine = presets.filter { it.scheduledDay != null }.ifEmpty { presets }
@@ -146,6 +148,7 @@ class PresetsViewModel(
             focus = SessionClock.focusFor(savedAnswers?.focus, profile?.trainingMode),
             priorities = savedAnswers?.priorities.orEmpty().flatMap { it.muscles }.toSet(),
             pace = SessionClock.pace(history),
+            exercises = exercises,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TrainUi())
 
@@ -463,7 +466,7 @@ internal fun WeekPlanRows(
                             isToday && live -> stringResource(R.string.presets_row_under_way)
                             isToday -> stringResource(R.string.presets_row_today)
                             // "~54 min": the tail of the rite's plan line.
-                            else -> SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset), com.ironvellum.app.data.TrialPrefs(androidx.compose.ui.platform.LocalContext.current)::restPreferences)
+                            else -> SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset), com.ironvellum.app.data.TrialPrefs(androidx.compose.ui.platform.LocalContext.current)::restPreferences) { entry -> ui.exercises.firstOrNull { it.name == entry.exerciseName }?.metric }
                                 .substringAfterLast(" · ").lowercase()
                         },
                         style = MaterialTheme.typography.bodySmall,

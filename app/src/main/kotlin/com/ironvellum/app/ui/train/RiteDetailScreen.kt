@@ -121,7 +121,7 @@ fun RiteDetailScreen(
                     preset.scheduledDay?.let { dayLabel(it).lowercase().replaceFirstChar { c -> c.uppercase() } },
                     // A warm-up exercise is not one of the rite's exercises: it is listed apart, under its own heading.
                     UiText.plural(R.plurals.common_exercises_count, preset.working.size).asString(),
-                    SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset), com.ironvellum.app.data.TrialPrefs(androidx.compose.ui.platform.LocalContext.current)::restPreferences)
+                    SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset), com.ironvellum.app.data.TrialPrefs(androidx.compose.ui.platform.LocalContext.current)::restPreferences) { entry -> exercises.firstOrNull { it.name == entry.exerciseName }?.metric }
                         .substringAfterLast(" · ").lowercase(),
                 ).joinToString(" · ")
                 Text(

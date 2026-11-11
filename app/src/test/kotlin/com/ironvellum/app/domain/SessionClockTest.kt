@@ -281,4 +281,22 @@ class SessionClockTest {
         // Without a metric the name rule still recognises the hold.
         assertEquals("1 EXERCISE · 3 SETS · ~13 MIN", SessionClock.planLine(hang, TrainingFocus.MUSCLE, 225))
     }
+    @Test
+    fun `top rests follow each block scheme while backoffs follow ordinary preferences`() {
+        val top = deadlift().copy(kind = SetKind.TOP)
+        val backoffs = listOf(top.copy(kind = SetKind.BACKOFF, setIndex = 1), top.copy(kind = SetKind.BACKOFF, setIndex = 2))
+        val other = top.copy(exercisePosition = 1)
+        val schemes = mapOf(top.blockKey to SetScheme(type = SchemeType.TOP_BACKOFF, restAfterTopSec = 180),
+            other.blockKey to SetScheme(type = SchemeType.TOP_BACKOFF, restAfterTopSec = 240))
+        fun remaining(sets: List<SessionSet>, ordinary: Int, pace: Int? = null) =
+            SessionClock.remainingSeconds(sets, metricOf, TrainingFocus.MUSCLE, pace, { RestRules.Preferences(exercise = ordinary) }) {
+                SchemePlan.restAfterTop(schemes[it])
+            }
+        assertEquals(1500, remaining(listOf(top) + backoffs, 600))
+        assertEquals(500, remaining(listOf(top) + backoffs, 100))
+        assertEquals(220 + 280, remaining(listOf(top, other), 600))
+        assertEquals(220, remaining(listOf(top.copy(exercisePosition = 2)), 600))
+        assertEquals(3 * 225, remaining(listOf(top) + backoffs, 600, 225))
+    }
+
 }

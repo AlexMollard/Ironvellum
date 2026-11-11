@@ -1,5 +1,9 @@
 package com.ironvellum.app.ui
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -10,10 +14,14 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.domain.LiftLoading
+import com.ironvellum.app.domain.LoadKit
+import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.SchemeType
 import com.ironvellum.app.domain.SetScheme
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import com.ironvellum.app.ui.train.EditorEntry
+import com.ironvellum.app.ui.train.LoadTargetStepper
 import com.ironvellum.app.ui.train.SetsSheet
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -144,5 +152,21 @@ class SetsSheetTest {
         show(entry.copy(supersetGroup = 1), inSuperset = true)
         compose.onNodeWithText("Not inside a superset").performScrollTo().assertExists()
         compose.onNodeWithText("Drops").assertIsNotEnabled()
+    }
+    @Test
+    fun wornPoundsRejectOutOfRangePasteAndAcceptValidReplacement() {
+        var kg by mutableStateOf("9.072")
+        compose.setContent {
+            IronvellumTheme {
+                LoadTargetStepper(kg, 5.0, false, LoadKit(vestMaxKg = 20.0), unit = LoadUnit.LB) { kg = it }
+            }
+        }
+        compose.onNodeWithText("20").performTextReplacement("2000")
+        compose.onNodeWithText("20").assertExists()
+        assertEquals(9.072, kg.toDouble(), 0.001)
+        compose.onNodeWithText("20").performTextReplacement("30.")
+        compose.onNodeWithText("30.").assertExists()
+        assertEquals(Loads.parse("30", LoadUnit.LB, 500.0).getOrThrow(), kg.toDouble(), 0.001)
+        ShotRecorder.take(compose, "worn_lb_valid_replacement")
     }
 }

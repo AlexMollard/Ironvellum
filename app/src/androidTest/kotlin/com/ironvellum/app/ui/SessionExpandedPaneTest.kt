@@ -7,6 +7,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
@@ -26,6 +29,8 @@ import com.ironvellum.app.data.IronvellumDatabase
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.SeededDb
 import com.ironvellum.app.data.TrialPrefs
+import com.ironvellum.app.data.Units
+import com.ironvellum.app.domain.LoadUnit
 import com.ironvellum.app.domain.EffortScale
 import com.ironvellum.app.domain.ExerciseGuides
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -133,6 +138,30 @@ class SessionExpandedPaneTest {
         compose.onNodeWithText("Skip").assertIsDisplayed().performClick()
         compose.onNodeWithContentDescription("Log set 2").assertIsDisplayed()
         assertEquals(1, runBlocking { db.sessionDao().setsFor(sessionId).count { it.done } })
+    }
+
+    @Test
+    fun weightedDurationUnitCanBePinnedWithoutChangingItsLoad() {
+        val name = "Weighted Skipping"
+        val previous = Units.overrideFor(name)
+        val setId = runBlocking {
+            repo.addExtraSet(sessionId, requireNotNull(repo.exerciseIdByName(name)), 0, 10.0, "")
+        }
+        try {
+            Units.setExercise(context, name, null)
+            showSession(400f)
+            compose.onNodeWithText(name).performScrollTo().performClick()
+            val unitAction = context.getString(R.string.exercise_unit_choose_description, name)
+            compose.onNode(SemanticsMatcher("exercise unit action") {
+                it.config.getOrNull(SemanticsActions.OnClick)?.label == unitAction
+            }).performClick()
+            compose.onNodeWithText(LoadUnit.LB.label).performClick()
+            assertEquals(LoadUnit.LB, Units.overrideFor(name))
+            assertEquals(10.0, runBlocking { db.sessionDao().setById(setId) }!!.weightKg!!, 0.0)
+            ShotRecorder.take(compose, "weighted-duration-session-units")
+        } finally {
+            Units.setExercise(context, name, previous)
+        }
     }
 
     @Test

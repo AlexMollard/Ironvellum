@@ -533,8 +533,15 @@ internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, w
             less = stringResource(R.string.preseteditor_load_less), more = stringResource(R.string.preseteditor_load_more), error = error, decimal = true, maxDigits = 0,
             onValue = { value ->
                 if (unit == LoadUnit.KG) onKgText(value) else {
-                    typed = value
-                    if (value.isBlank()) onKgText("") else kgOf(value)?.let { onKgText(formatSteppedFigure(it)) }
+                    if (value.isBlank()) {
+                        typed = value
+                        onKgText("")
+                    } else {
+                        kgOf(value)?.let { kgValue ->
+                            typed = value
+                            onKgText(formatSteppedFigure(kgValue))
+                        }
+                    }
                 }
             },
             onLess = { onKgText(worn.previousKg(kg, unit)?.let { formatSteppedFigure(it) } ?: "") },
