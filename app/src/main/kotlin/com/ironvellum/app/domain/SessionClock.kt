@@ -130,15 +130,18 @@ object SessionClock {
      * not one pace set. A prescribed rest is the READY end of the movement's
      * [RestRules] window, as [ProgramRules.sessionSeconds] prices it.
      */
-    fun setSeconds(set: SessionSet, metric: ExerciseMetric?, focus: TrainingFocus, paceSeconds: Int? = null): Int {
+    fun setSeconds(set: SessionSet, metric: ExerciseMetric?, focus: TrainingFocus, paceSeconds: Int? = null, restPreferences: RestRules.Preferences = RestRules.EMPTY_PREFERENCES): Int {
         val timedActivity = (metric == ExerciseMetric.DURATION || metric == ExerciseMetric.DISTANCE_TIME) &&
             (set.durationSec ?: 0) > 0
         val hold = MovementDifficulty.isHoldSet(metric, set.exerciseName, set.modifiers)
         val weighted = set.weightKg != null
-        if (!hold && !timedActivity) return paceSeconds ?: ProgramRules.setSeconds(focus, set.exerciseName, metric, weighted)
+        if (!hold && !timedActivity && paceSeconds != null) return paceSeconds
         val rest = paceSeconds?.let { (it - ProgramRules.SET_WORK_SECONDS).coerceAtLeast(0) }
-            ?: RestRules.readySeconds(set.exerciseName, focus, metric, weighted)
-        // An archive from before HOLD existed keeps a hold's seconds in reps.
+            ?: RestRules.resolved(set.exerciseName, focus, metric, weighted, restPreferences).ready
+        if (!hold && !timedActivity) {
+            val sides = if (MuscleMap.profile(set.exerciseName)?.unilateral == true) 2 else 1
+            return rest + sides * ProgramRules.SET_WORK_SECONDS
+        }
         return rest + (set.durationSec ?: set.reps).coerceAtLeast(0)
     }
 
@@ -156,7 +159,8 @@ object SessionClock {
         metricOf: (Long) -> ExerciseMetric?,
         focus: TrainingFocus,
         paceSeconds: Int? = null,
-    ): Int = sets.filter { it.isPending }.sumOf { setSeconds(it, metricOf(it.exerciseId), focus, paceSeconds) }
+        restPreferences: (String) -> RestRules.Preferences = { RestRules.EMPTY_PREFERENCES },
+    ): Int = sets.filter { it.isPending }.sumOf { setSeconds(it, metricOf(it.exerciseId), focus, paceSeconds, restPreferences(it.exerciseName)) }
 
     /** Whole minutes, rounded up: a set still ahead never reads as zero. */
     fun minutes(seconds: Int): Int = (seconds.coerceAtLeast(0) + 59) / 60
@@ -172,6 +176,7 @@ object SessionClock {
         entries: List<PlannedEntry>,
         focus: TrainingFocus,
         paceSeconds: Int? = null,
+        restPreferences: (String) -> RestRules.Preferences = { RestRules.EMPTY_PREFERENCES },
         metricOf: (PlannedEntry) -> ExerciseMetric? = { null },
     ): Int = entries.sumOf { entry ->
         val set = SessionSet(
@@ -181,7 +186,7 @@ object SessionClock {
             reps = entry.reps,
             modifiers = entry.modifiers,
         )
-        entry.sets * setSeconds(set, metricOf(entry), focus, paceSeconds)
+        entry.sets * setSeconds(set, metricOf(entry), focus, paceSeconds, restPreferences(entry.exerciseName))
     }
 
     /**
@@ -194,10 +199,11 @@ object SessionClock {
         entries: List<PlannedEntry>,
         focus: TrainingFocus,
         paceSeconds: Int? = null,
+        restPreferences: (String) -> RestRules.Preferences = { RestRules.EMPTY_PREFERENCES },
         metricOf: (PlannedEntry) -> ExerciseMetric? = { null },
     ): String {
         val sets = entries.sumOf { it.sets }
-        val seconds = planSeconds(entries, focus, paceSeconds, metricOf)
+        val seconds = planSeconds(entries, focus, paceSeconds, restPreferences, metricOf)
         return Words.text(
             UiText.res(
                 R.string.session_plan_line,
@@ -213,13 +219,14 @@ object SessionClock {
         entries: List<PlannedEntry>,
         focus: TrainingFocus,
         paceSeconds: Int? = null,
+        restPreferences: (String) -> RestRules.Preferences = { RestRules.EMPTY_PREFERENCES },
         metricOf: (PlannedEntry) -> ExerciseMetric? = { null },
     ): String = Words.text(
         UiText.res(
             R.string.session_plan_line_sentence,
             UiText.plural(R.plurals.session_plan_exercises_sentence, entries.size),
             UiText.plural(R.plurals.session_plan_sets_sentence, entries.sumOf { it.sets }),
-            minutes(planSeconds(entries, focus, paceSeconds, metricOf)),
+            minutes(planSeconds(entries, focus, paceSeconds, restPreferences, metricOf)),
         ),
     )
 

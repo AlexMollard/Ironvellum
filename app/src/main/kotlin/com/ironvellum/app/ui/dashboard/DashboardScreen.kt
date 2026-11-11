@@ -1119,7 +1119,7 @@ private fun TodayDayBody(
                         narrator = narratorLine(kind, daysKept = daysKept),
                         meta = AnnotatedString(
                             (if (isTodaySelected) UiText.themed(R.string.today_meta_todays, R.string.today_meta_todays__t).asString() else dayLong(selectedDay)) + " · " +
-                                SessionClock.planSentence(rite.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(rite)),
+                                SessionClock.planSentence(rite.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(rite), com.ironvellum.app.data.TrialPrefs(androidx.compose.ui.platform.LocalContext.current)::restPreferences),
                         ),
                         corner = { RiteGlyph(glyphSets, fit = true) },
                         cornerFits = true,

@@ -58,6 +58,46 @@ class LiveTrialActionsTest {
     }
 
     private suspend fun row(id: Long) = db.sessionDao().setById(id)!!
+    @Test
+    fun customRestPersistsAndResetsByNormalizedExerciseName() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val storage = context.getSharedPreferences("rest_preferences_test", android.content.Context.MODE_PRIVATE)
+        storage.edit().clear().commit()
+        try {
+            TrialPrefs(storage).apply {
+                compoundRest = 120
+                isolationRest = 60
+                setExerciseRest(" Bench Press ", 150)
+            }
+            val reopened = TrialPrefs(storage)
+            assertEquals(120, reopened.compoundRest)
+            assertEquals(60, reopened.isolationRest)
+            assertEquals(150, reopened.exerciseRest("bench press"))
+            reopened.setExerciseRest("BENCH PRESS", null)
+            assertNull(reopened.exerciseRest("bench press"))
+            reopened.compoundRest = null
+            assertNull(TrialPrefs(storage).compoundRest)
+        } finally {
+            storage.edit().clear().commit()
+        }
+    }
+
+    @Test
+    fun configuredRestIsSharedByScreenAndNotificationTicks() = runBlocking {
+        val first = repo.observeSessionSets(sessionId).first().first { it.id == sets[0] }
+        val previous = prefs.exerciseRest(first.exerciseName)
+        try {
+            prefs.setExerciseRest(first.exerciseName, 135)
+            actions.commit(first.copy(done = true), ExerciseMetric.REPS)
+            assertEquals(135_000L, RestClock.timer.value!!.totalMs)
+            RestClock.cancel(sessionId)
+            assertTrue(actions.tickNext())
+            assertEquals(135_000L, RestClock.timer.value!!.totalMs)
+        } finally {
+            prefs.setExerciseRest(first.exerciseName, previous)
+        }
+    }
+
 
     @Test
     fun setDoneTicksTheNextSetWithItsShownFiguresAndStartsTheRest() = runBlocking {

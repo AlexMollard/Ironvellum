@@ -8,6 +8,17 @@ import org.junit.Test
 /** A setting this build cannot read is dropped and named; it never throws, so it can never fail a training restore. */
 class ArchiveSettingsSanitizeTest {
 
+    @Test fun customRestsRejectOutOfRangeAndMalformedArchives() {
+        val result = ArchiveSettings.sanitize(mapOf("trial_prefs" to mapOf(
+            "rest_seconds.compound" to "i:120",
+            "rest_seconds.isolation" to "i:601",
+            "rest_seconds.exercise.bench press" to "i:75",
+            "rest_seconds.exercise." to "i:90",
+        )))
+        assertEquals(mapOf("rest_seconds.compound" to "i:120", "rest_seconds.exercise.bench press" to "i:75"), result.accepted["trial_prefs"])
+        assertEquals(setOf("trial_prefs/rest_seconds.isolation", "trial_prefs/rest_seconds.exercise."), result.dropped.toSet())
+    }
+
     @Test fun exerciseUnitsRejectUnknownValuesAndMalformedNames() {
         val result = ArchiveSettings.sanitize(mapOf("appearance" to mapOf(
             "exerciseLoadUnit.leg press" to "s:LB",

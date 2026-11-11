@@ -101,7 +101,8 @@ class ArchiveSettings(
                 "rest_off", "keep_screen_on", "live_update", "lifts_on_lock", "convert_card_done" -> "b"
                 "rest_alert" -> "s"
                 "rest_off_movements", "twin_kept" -> "ss"
-                else -> null
+                else -> if (key == TrialPrefs.KEY_COMPOUND || key == TrialPrefs.KEY_ISOLATION ||
+                    (key.startsWith(TrialPrefs.EXERCISE_PREFIX) && Units.validExerciseKey(key.removePrefix(TrialPrefs.EXERCISE_PREFIX)))) "i" else null
             }
             "trial" -> when (key) { "asked_post_notifications" -> "b"; "post_notifications_not_now" -> "i"; else -> null }
             "onboarding" -> if (key in setOf("welcome_seen", "preferences_seen", "veil_intro_seen", "veil_terms_seen", "sex_unset", "dismissed", "term_seen_rank_titles", "term_seen_bmi_ffmi", "term_seen_deeds", "term_seen_skill_tiers")) "b" else null
@@ -176,6 +177,7 @@ class ArchiveSettings(
                 "b" -> when (raw) { "true" -> true; "false" -> false; else -> error("Invalid boolean: $file/$key") }
                 "i" -> raw.toInt().also {
                     require(when {
+                        file == "trial_prefs" && key.startsWith("rest_seconds.") -> it in com.ironvellum.app.domain.RestRules.CUSTOM_SECONDS
                         key == "daysPerWeek" -> it in 1..6
                         key == "maxExercises" -> it in ProgramRules.MAX_EXERCISES_RANGE
                         key == "sessionMinutes" -> it in ProgramRules.SESSION_MINUTES_OPTIONS

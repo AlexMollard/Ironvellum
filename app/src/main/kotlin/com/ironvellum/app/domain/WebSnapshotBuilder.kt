@@ -21,6 +21,7 @@ data class SnapshotInput(
     /** The focus a routine's minutes are priced at (the phone's [SessionClock.focusFor]); the generator's default when unknown. */
     val focus: TrainingFocus = TrainingFocus.MUSCLE,
     val exerciseUnits: Map<String, LoadUnit> = emptyMap(),
+    val restPreferences: Map<String, RestRules.Preferences> = emptyMap(),
 )
 
 object WebSnapshotBuilder {
@@ -224,7 +225,7 @@ object WebSnapshotBuilder {
             val credit = ProgramRules.weeklyVolume(listOf(planned))
             WebSnapshot.RoutinePreset(
                 id = preset.id, name = preset.name, note = preset.note, day = preset.scheduledDay,
-                minutes = SessionClock.minutes(SessionClock.planSeconds(planned.entries, input.focus, pace.secondsPerSet(preset)) { metrics[it.exerciseName] }),
+                minutes = SessionClock.minutes(SessionClock.planSeconds(planned.entries, input.focus, pace.secondsPerSet(preset), { input.restPreferences[it] ?: RestRules.EMPTY_PREFERENCES }) { metrics[it.exerciseName] }),
                 hardSets = planned.entries.sumOf { it.sets },
                 levels = credit.filterValues { it > 0 }.mapKeys { it.key.name }.mapValues { FeedCardJson.level(it.value) },
                 entries = preset.entries.mapIndexed { index, entry ->

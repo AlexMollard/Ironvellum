@@ -119,6 +119,7 @@ import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.ModifierChipGrid
 import com.ironvellum.app.ui.components.PushedHeader
+import com.ironvellum.app.ui.components.RestDurationControl
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.SettingsSwitchRow
 import com.ironvellum.app.ui.components.StepperRow
@@ -1203,6 +1204,11 @@ private fun EntryItem(
                     prefs.setRestOffFor(entry.exerciseName, it)
                 },
             )
+            var customRest by remember(entry.exerciseName) { mutableStateOf(prefs.exerciseRest(entry.exerciseName)) }
+            RestDurationControl(stringResource(R.string.rest_exercise_label), customRest) {
+                customRest = it
+                prefs.setExerciseRest(entry.exerciseName, it)
+            }
         }
         // The same chips the live trial offers: only what fits the movement, "weighted" left to the load, and a
         // token already on the entry that does not fit shown flagged so it can be removed, never dropped.

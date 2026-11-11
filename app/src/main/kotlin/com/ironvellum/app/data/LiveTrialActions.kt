@@ -75,6 +75,7 @@ class LiveTrialActions(
             metric = exercise?.metric,
             weighted = exercise?.isWeighted,
             restOff = prefs.restIsOff(set.exerciseName),
+            preferences = prefs.restPreferences(set.exerciseName),
         ) ?: return
         // After a top set the rest is the long one the lift's scheme suggests (3:00 by default), and its ceiling at least that.
         if (set.kind == SetKind.TOP) {

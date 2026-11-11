@@ -463,7 +463,7 @@ internal fun WeekPlanRows(
                             isToday && live -> stringResource(R.string.presets_row_under_way)
                             isToday -> stringResource(R.string.presets_row_today)
                             // "~54 min": the tail of the rite's plan line.
-                            else -> SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset))
+                            else -> SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset), com.ironvellum.app.data.TrialPrefs(androidx.compose.ui.platform.LocalContext.current)::restPreferences)
                                 .substringAfterLast(" · ").lowercase()
                         },
                         style = MaterialTheme.typography.bodySmall,

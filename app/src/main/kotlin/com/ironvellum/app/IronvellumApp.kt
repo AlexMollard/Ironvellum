@@ -58,6 +58,7 @@ class IronvellumApp : Application() {
             twinKept = { com.ironvellum.app.data.TrialPrefs(this).twinKept },
             photoStore = com.ironvellum.app.data.PhotoStore(this),
             warmupStore = com.ironvellum.app.data.WarmupStore(this),
+            trialPrefs = com.ironvellum.app.data.TrialPrefs(this),
             archiveSettings = com.ironvellum.app.data.ArchiveSettings(this, permitted = { file ->
                 // A restored switch is only a wish: it turns on once this device has granted what it needs.
                 when (file) {
@@ -115,7 +116,7 @@ class IronvellumApp : Application() {
      * would mean two sessions and a sign-in that only half the app can see.
      */
     val accountRepository: AccountRepository by lazy { AccountRepository() }
-    val cloudSync: CloudSync by lazy { CloudSync(repository, accountRepository, appearanceStore) }
+    val cloudSync: CloudSync by lazy { CloudSync(repository, accountRepository, appearanceStore, com.ironvellum.app.data.TrialPrefs(this)::restPreferences) }
 
     /** Every circle read goes through this, so the weekly bonus is settled wherever the circle is read. */
     val circleBonus: CircleBonus by lazy {

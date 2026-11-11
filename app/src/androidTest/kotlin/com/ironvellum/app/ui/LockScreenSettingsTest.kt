@@ -80,4 +80,34 @@ class LockScreenSettingsTest {
         advance()
         compose.onNodeWithText("WHEN A REST ENDS").assertIsDisplayed()
     }
+
+    @Test fun restDefaultsCanBeSetAndReset() {
+        openPage()
+        compose.onNode(hasText("Rest alert") and hasClickAction()).performClick()
+        advance()
+        compose.mainClock.autoAdvance = true
+        compose.onNodeWithText("Custom compound rest").performScrollTo().performClick()
+        advance()
+        val compound = requireNotNull(prefs.compoundRest)
+        compose.onNodeWithContentDescription("Increase rest duration").performScrollTo().performClick()
+        assertTrue(prefs.compoundRest == compound + 15)
+        compose.onNodeWithContentDescription("Decrease rest duration").performScrollTo().performClick()
+        assertTrue(prefs.compoundRest == compound)
+        ShotRecorder.take(compose, "rest-category-defaults")
+        compose.mainClock.autoAdvance = true
+        compose.onNodeWithText("Custom compound rest").performScrollTo().performClick()
+        assertTrue(prefs.compoundRest == null)
+        assertTrue(com.ironvellum.app.domain.RestRules.resolved("Bench Press", com.ironvellum.app.domain.TrainingFocus.MUSCLE, preferences = prefs.restPreferences("Bench Press")) ==
+            com.ironvellum.app.domain.RestRules.window("Bench Press", com.ironvellum.app.domain.TrainingFocus.MUSCLE))
+        compose.onNodeWithText("Custom isolation rest").performScrollTo().performClick()
+        val isolation = requireNotNull(prefs.isolationRest)
+        compose.onNodeWithContentDescription("Increase rest duration").performScrollTo().performClick()
+        assertTrue(prefs.isolationRest == isolation + 15)
+        compose.onNodeWithContentDescription("Decrease rest duration").performScrollTo().performClick()
+        assertTrue(prefs.isolationRest == isolation)
+        compose.onNodeWithText("Custom isolation rest").performScrollTo().performClick()
+        assertTrue(prefs.isolationRest == null)
+        assertTrue(com.ironvellum.app.domain.RestRules.resolved("Lateral Raise", com.ironvellum.app.domain.TrainingFocus.MUSCLE, preferences = prefs.restPreferences("Lateral Raise")) ==
+            com.ironvellum.app.domain.RestRules.window("Lateral Raise", com.ironvellum.app.domain.TrainingFocus.MUSCLE))
+    }
 }

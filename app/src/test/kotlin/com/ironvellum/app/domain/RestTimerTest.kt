@@ -11,6 +11,29 @@ class RestTimerTest {
     private fun set(id: Long, done: Boolean) = SessionSet(id = id, exerciseId = 1, exerciseName = "Bench Press", setIndex = id.toInt(), reps = 8, done = done)
 
     @Test
+    fun `custom rest resolves exercise before category and preserves tick gates`() {
+        val sets = listOf(set(1, false), set(2, false))
+        val defaults = RestRules.Preferences(compound = 75, isolation = 45)
+        fun after(prefs: RestRules.Preferences, done: Boolean = true, off: Boolean = false) =
+            RestTimer.restAfterTick(sets, 1, done, TrainingFocus.STRENGTH, ExerciseMetric.REPS, true, off, prefs)
+        assertEquals(RestRules.Window(75, 0), after(defaults))
+        assertEquals(RestRules.Window(135, 0), after(defaults.copy(exercise = 135)))
+        assertEquals(RestRules.Window(45, 0), RestRules.resolved("Lateral Raise", TrainingFocus.MUSCLE, preferences = defaults))
+        assertEquals(RestRules.window("Bench Press", TrainingFocus.STRENGTH), after(RestRules.Preferences()))
+        assertNull(after(defaults, done = false))
+        assertNull(after(defaults, off = true))
+        assertTrue(RestRules.resolved("Running", TrainingFocus.MUSCLE, ExerciseMetric.DURATION, preferences = defaults).isNone)
+    }
+
+    @Test
+    fun `rule based estimates use custom rest but measured pace stays observed`() {
+        val movement = set(1, false)
+        val preferences = RestRules.Preferences(exercise = 75)
+        assertEquals(75 + ProgramRules.SET_WORK_SECONDS, SessionClock.setSeconds(movement, ExerciseMetric.REPS, TrainingFocus.STRENGTH, restPreferences = preferences))
+        assertEquals(240, SessionClock.setSeconds(movement, ExerciseMetric.REPS, TrainingFocus.STRENGTH, 240, preferences))
+    }
+
+    @Test
     fun `a rest counts down on the monotonic clock and ends`() {
         val t = RestTimer.start(sessionId = 7, seconds = 90, nowMs = 1_000)
         assertEquals(90_000, t.remainingMs(1_000))

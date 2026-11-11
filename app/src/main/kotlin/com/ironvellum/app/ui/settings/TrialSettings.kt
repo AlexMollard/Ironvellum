@@ -17,6 +17,7 @@ import com.ironvellum.app.domain.RestAlert
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkSegmented
+import com.ironvellum.app.ui.components.RestDurationControl
 import com.ironvellum.app.ui.components.SettingsCaption
 import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.components.SettingsSwitchRow
@@ -35,6 +36,8 @@ internal fun TrialSettings(onBack: () -> Unit, onOpenLockScreen: () -> Unit) {
     var restOn by remember { mutableStateOf(!prefs.restOff) }
     var alert by remember { mutableStateOf(prefs.restAlert) }
     var awake by remember { mutableStateOf(prefs.keepScreenOn) }
+    var compoundRest by remember { mutableStateOf(prefs.compoundRest) }
+    var isolationRest by remember { mutableStateOf(prefs.isolationRest) }
     SettingsPage(SettingsSection.DURING_TRIAL.title, onBack) {
         SettingsGroup(null, topSpace = 12.dp) {
             SettingsSwitchRow(
@@ -46,6 +49,16 @@ internal fun TrialSettings(onBack: () -> Unit, onOpenLockScreen: () -> Unit) {
                     prefs.restOff = !it
                 },
             )
+        }
+        SettingsGroup(stringResource(R.string.rest_defaults_title), topSpace = 10.dp) {
+            RestDurationControl(stringResource(R.string.rest_compound_label), compoundRest) {
+                compoundRest = it
+                prefs.compoundRest = it
+            }
+            RestDurationControl(stringResource(R.string.rest_isolation_label), isolationRest) {
+                isolationRest = it
+                prefs.isolationRest = it
+            }
         }
         SettingsGroup(stringResource(R.string.settings_trial_alert_title), topSpace = 10.dp) {
             InkSegmented(

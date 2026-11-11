@@ -801,7 +801,10 @@ private fun YoullDo(scheme: SetScheme, sets: Int, reps: Int, kg: Double?, lift: 
         return if (load == null) repsText else "$repsText × $load"
     }
     // shortcut: priced at the general rest windows; read the lifter's training mode (SessionClock.focusFor) if this must match the trial's estimate.
-    val setSeconds = ProgramRules.setSeconds(TrainingFocus.GENERAL, exerciseName, null, kg != null && kg > 0.0)
+    val restPrefs = com.ironvellum.app.data.TrialPrefs(androidx.compose.ui.platform.LocalContext.current)
+    val automaticRest = com.ironvellum.app.domain.RestRules.readySeconds(exerciseName, TrainingFocus.GENERAL, weighted = kg != null && kg > 0.0)
+    val configuredRest = com.ironvellum.app.domain.RestRules.resolved(exerciseName, TrainingFocus.GENERAL, weighted = kg != null && kg > 0.0, preferences = restPrefs.restPreferences(exerciseName)).ready
+    val setSeconds = ProgramRules.setSeconds(TrainingFocus.GENERAL, exerciseName, null, kg != null && kg > 0.0) - automaticRest + configuredRest
     val seconds = planned.sumOf {
         when (it.kind) {
             SetKind.TOP -> ProgramRules.SET_WORK_SECONDS + SchemePlan.restAfterTop(normalised)

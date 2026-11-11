@@ -8,6 +8,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -131,6 +133,30 @@ class SessionExpandedPaneTest {
         compose.onNodeWithText("Skip").assertIsDisplayed().performClick()
         compose.onNodeWithContentDescription("Log set 2").assertIsDisplayed()
         assertEquals(1, runBlocking { db.sessionDao().setsFor(sessionId).count { it.done } })
+    }
+
+    @Test
+    fun exerciseRestIsEditableFromTheWorkoutMenu() {
+        val prefs = TrialPrefs(context)
+        val previous = prefs.exerciseRest("Dip")
+        try {
+            prefs.setExerciseRest("Dip", null)
+            showSession(400f)
+            compose.onNodeWithContentDescription("More for Dip").performClick()
+            compose.onNodeWithText("Custom rest for this exercise").performClick()
+            compose.onNode(hasText("Custom rest for this exercise") and hasClickAction()).performClick()
+            val initial = requireNotNull(prefs.exerciseRest("Dip"))
+            compose.onNodeWithContentDescription("Increase rest duration").performClick()
+            assertEquals(initial + 15, prefs.exerciseRest("Dip"))
+            compose.onNodeWithContentDescription("Decrease rest duration").performClick()
+            assertEquals(initial, prefs.exerciseRest("Dip"))
+            ShotRecorder.take(compose, "rest-exercise-workout")
+            compose.mainClock.autoAdvance = true
+            compose.onNode(hasText("Custom rest for this exercise") and hasClickAction()).performClick()
+            assertEquals(null, prefs.exerciseRest("Dip"))
+        } finally {
+            prefs.setExerciseRest("Dip", previous)
+        }
     }
 
     @Test

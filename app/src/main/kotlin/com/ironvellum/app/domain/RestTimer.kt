@@ -80,10 +80,11 @@ data class RestTimer(
             metric: ExerciseMetric?,
             weighted: Boolean?,
             restOff: Boolean,
+            preferences: RestRules.Preferences = RestRules.EMPTY_PREFERENCES,
         ): RestRules.Window? {
             if (restOff || !startsRest(before, setId, nowDone)) return null
             val set = before.first { it.id == setId }
-            return window(set.exerciseName, focus, metric, weighted).takeUnless { it.isNone }
+            return RestRules.resolved(set.exerciseName, focus, metric, weighted, preferences).takeUnless { it.isNone }
         }
 
         /**

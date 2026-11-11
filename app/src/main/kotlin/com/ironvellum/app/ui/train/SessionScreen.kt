@@ -986,6 +986,7 @@ fun SessionScreen(
     val keepAwake = remember { trialPrefs.keepScreenOn }
     if (keepAwake) Box(Modifier.keepScreenOn())
     var restOffMovements by remember { mutableStateOf(trialPrefs.restOffNames()) }
+    var restSettingsRevision by remember { mutableIntStateOf(0) }
     val restAccess = rememberNotificationAccess(Notifications.restChannel(trialPrefs.restAlert))
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         // Re-announce so the service posts now, not at the next ticked set.
@@ -1291,9 +1292,9 @@ fun SessionScreen(
 
     val signedIn = (LocalContext.current.applicationContext as com.ironvellum.app.IronvellumApp)
         .accountRepository.account.collectAsStateWithLifecycle().value != null
-    val minutesLeft = remember(ui.sets, exercises, focus, pace) {
+    val minutesLeft = remember(ui.sets, exercises, focus, pace, restSettingsRevision) {
         val metrics = exercises.associate { it.id to it.metric }
-        SessionClock.remainingSeconds(ui.sets, { metrics[it] }, focus, pace)
+        SessionClock.remainingSeconds(ui.sets, { metrics[it] }, focus, pace, trialPrefs::restPreferences)
             .takeIf { it > 0 }?.let { SessionClock.minutes(it) }
     }
     val scroll = rememberScrollState()
@@ -1471,6 +1472,7 @@ fun SessionScreen(
                                     // Turning it off mid-rest ends the rest that is running.
                                     if (off) viewModel.skipRest()
                                 },
+                                onRestChanged = { restSettingsRevision++ },
                                 onAddSet = {
                                     // A duplicate carries the block's own figure: a hold's
                                     // seconds, an activity's duration — a copy of a Yoga set
@@ -2762,6 +2764,7 @@ internal fun OpenExerciseCard(
     /** This movement's rest switch (null where none applies, as in an amendment or for an activity). */
     restOff: Boolean?,
     onRestOff: (Boolean) -> Unit,
+    onRestChanged: () -> Unit = {},
     onAddSet: () -> Unit,
     onRemoveSet: (SessionSet) -> Unit,
     onRemoveExercise: () -> Unit,
@@ -2897,6 +2900,7 @@ internal fun OpenExerciseCard(
                 onRemoveExercise = onRemoveExercise,
                 restOff = restOff.takeIf { !amend },
                 onRestOff = onRestOff,
+                onRestChanged = onRestChanged,
                 supersetWith = supersetWith.takeIf { !amend },
                 onSuperset = onSuperset.takeIf { !amend },
                 onMakeTopSet = onMakeTopSet.takeIf { !amend },
@@ -3269,6 +3273,7 @@ private fun ExerciseMenu(
     /** The movement's own rest switch: whether its rest is off, and flipping it; null for an activity. */
     restOff: Boolean? = null,
     onRestOff: (Boolean) -> Unit = {},
+    onRestChanged: () -> Unit = {},
     /** "Superset with <supersetWith>", when the next exercise can be linked. */
     supersetWith: String? = null,
     onSuperset: (() -> Unit)? = null,
@@ -3277,6 +3282,10 @@ private fun ExerciseMenu(
     onAddDrop: (() -> Unit)? = null,
 ) {
     var open by remember { mutableStateOf(false) }
+    var editingRest by remember { mutableStateOf(false) }
+    val restContext = LocalContext.current
+    val restPrefs = remember(restContext) { TrialPrefs(restContext) }
+    var customRest by remember(name) { mutableStateOf(restPrefs.exerciseRest(name)) }
     Box {
         InkIconButton(onClick = { open = true }, modifier = Modifier.size(48.dp)) {
             Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.session_menu_description, name), tint = IronvellumColors.InkMuted)
@@ -3318,6 +3327,7 @@ private fun ExerciseMenu(
                 restOff?.let { off ->
                     item(stringResource(if (off) R.string.session_menu_rest_on else R.string.session_menu_rest_off)) { onRestOff(!off) }
                 }
+                restOff?.let { item(stringResource(R.string.rest_exercise_label)) { editingRest = true } }
             }
             if (onMoveUp != null || onMoveDown != null || (supersetWith != null && onSuperset != null)) group {
                 onMoveUp?.let { item(stringResource(R.string.session_menu_move_up), action = it) }
@@ -3328,6 +3338,20 @@ private fun ExerciseMenu(
             }
             group { item(stringResource(R.string.session_menu_remove_exercise), IronvellumColors.DangerRed, onRemoveExercise) }
         }
+    }
+    if (editingRest) {
+        IronvellumDialog(
+            onDismissRequest = { editingRest = false },
+            title = { Text(stringResource(R.string.rest_exercise_label)) },
+            text = {
+                com.ironvellum.app.ui.components.RestDurationControl(stringResource(R.string.rest_exercise_label), customRest) {
+                    customRest = it
+                    restPrefs.setExerciseRest(name, it)
+                    onRestChanged()
+                }
+            },
+            confirmButton = { IronvellumButton(stringResource(R.string.common_done), onClick = { editingRest = false }) },
+        )
     }
 }
 

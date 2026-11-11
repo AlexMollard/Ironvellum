@@ -7387,4 +7387,12 @@
     <string name="exercise_unit_lb_hint">Always use pounds for this exercise</string>
     <string name="exercise_unit_scope">Used for this exercise in every workout. Your recorded weights stay the same.</string>
     <string name="exercise_unit_choose_description">Weight unit for %1$s</string>
+    <string name="rest_defaults_title">Default rest times</string>
+    <string name="rest_compound_label">Custom compound rest</string>
+    <string name="rest_isolation_label">Custom isolation rest</string>
+    <string name="rest_exercise_label">Custom rest for this exercise</string>
+    <string name="rest_custom_caption">Exercise settings override category defaults. Top-set rest remains separate.</string>
+    <string name="rest_duration_label">Rest duration</string>
+    <string name="rest_duration_less">Decrease rest duration</string>
+    <string name="rest_duration_more">Increase rest duration</string>
 </resources>

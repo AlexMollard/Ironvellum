@@ -268,6 +268,8 @@ class Repository(
     photoStore: PhotoStore? = null,
     /** Device legacy answers are imported by whichever operation first snapshots an upgraded live session. */
     warmupStore: WarmupStore? = null,
+    /** Per-exercise rest follows successful custom-exercise renames and deletes. */
+    private val trialPrefs: TrialPrefs? = null,
 ) {
 
     val preparations: PreparationRepository = PreparationRepository(db, warmupStore)
@@ -494,7 +496,10 @@ class Repository(
             previousName = before.name
             CustomSave.Saved(row.toDomain())
         }
-        if (result is CustomSave.Saved) previousName?.let { Units.renameExercise(it, result.exercise.name) }
+        if (result is CustomSave.Saved) previousName?.let {
+            Units.renameExercise(it, result.exercise.name)
+            trialPrefs?.renameExerciseRest(it, result.exercise.name)
+        }
         return result
     }
 
@@ -512,7 +517,10 @@ class Repository(
             exerciseDao.observeAll().first().syncCustomExercises()
             removed
         }
-        deletedName?.let(Units::removeExercise)
+        deletedName?.let {
+            Units.removeExercise(it)
+            trialPrefs?.removeExerciseRest(it)
+        }
         return deleted
     }
 

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.ironvellum.app.domain.RestAlert
+import com.ironvellum.app.domain.RestRules
 
 /**
  * The live trial's device settings: whether a rest runs between sets (for every
@@ -52,6 +53,47 @@ class TrialPrefs(private val prefs: SharedPreferences) {
     /** Whether ticking a set of [exerciseName] starts no rest: the global switch or the movement's own. */
     fun restIsOff(exerciseName: String): Boolean = restOff || restOffFor(exerciseName)
 
+    var compoundRest: Int?
+        get() = seconds(KEY_COMPOUND)
+        set(value) = setSeconds(KEY_COMPOUND, value)
+    var isolationRest: Int?
+        get() = seconds(KEY_ISOLATION)
+        set(value) = setSeconds(KEY_ISOLATION, value)
+    fun exerciseRest(name: String): Int? = seconds(EXERCISE_PREFIX + key(name))
+    fun setExerciseRest(name: String, value: Int?) {
+        if (key(name).isNotEmpty()) setSeconds(EXERCISE_PREFIX + key(name), value)
+    }
+    /** Move only this exercise's override after a successful custom-exercise rename. */
+    internal fun renameExerciseRest(oldName: String, newName: String) {
+        val old = EXERCISE_PREFIX + key(oldName)
+        val new = EXERCISE_PREFIX + key(newName)
+        if (old == new) return
+        val value = seconds(old)
+        prefs.edit {
+            remove(old)
+            if (value == null) remove(new) else putInt(new, value)
+        }
+    }
+
+    /** Forget an override only after the custom exercise was actually deleted. */
+    internal fun removeExerciseRest(name: String) {
+        prefs.edit { remove(EXERCISE_PREFIX + key(name)) }
+    }
+
+    fun restPreferences(name: String): RestRules.Preferences {
+        val compound = compoundRest
+        val isolation = isolationRest
+        val exercise = exerciseRest(name)
+        return if (compound == null && isolation == null && exercise == null) RestRules.EMPTY_PREFERENCES
+        else RestRules.Preferences(compound, isolation, exercise)
+    }
+
+    private fun seconds(key: String): Int? = if (prefs.contains(key)) prefs.getInt(key, 0).takeIf { it in RestRules.CUSTOM_SECONDS } else null
+    private fun setSeconds(key: String, value: Int?) {
+        require(value == null || value in RestRules.CUSTOM_SECONDS)
+        prefs.edit { if (value == null) remove(key) else putInt(key, value) }
+    }
+
     // A copy: the set the preferences hand back must never be edited in place.
     private fun movements(): Set<String> = prefs.getStringSet(KEY_OFF_MOVEMENTS, emptySet())?.toSet().orEmpty()
 
@@ -69,7 +111,10 @@ class TrialPrefs(private val prefs: SharedPreferences) {
 
     private fun key(name: String) = name.trim().lowercase()
 
-    private companion object {
+    companion object {
+        const val EXERCISE_PREFIX = "rest_seconds.exercise."
+        const val KEY_COMPOUND = "rest_seconds.compound"
+        const val KEY_ISOLATION = "rest_seconds.isolation"
         const val KEY_REST_OFF = "rest_off"
         const val KEY_ALERT = "rest_alert"
         const val KEY_KEEP_AWAKE = "keep_screen_on"

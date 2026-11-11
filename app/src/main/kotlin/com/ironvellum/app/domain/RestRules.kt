@@ -24,6 +24,23 @@ object RestRules {
         val isNone: Boolean get() = ready <= 0
     }
 
+    /** A deliberately wide range, from a brief pause to ten minutes. */
+    val CUSTOM_SECONDS = 15..600
+
+    data class Preferences(val compound: Int? = null, val isolation: Int? = null, val exercise: Int? = null)
+    val EMPTY_PREFERENCES = Preferences()
+
+    /** Activities remain timer-free; custom seconds replace the window without implying a scientific ceiling. */
+    fun resolved(name: String, focus: TrainingFocus, metric: ExerciseMetric? = null, weighted: Boolean? = null, preferences: Preferences = EMPTY_PREFERENCES): Window {
+        val automatic = window(name, focus, metric, weighted)
+        if (automatic.isNone) return automatic
+        val compound = MuscleMap.profile(name)?.compound ?: true
+        val seconds = preferences.exercise?.takeIf { it in CUSTOM_SECONDS }
+            ?: (if (compound) preferences.compound else preferences.isolation)?.takeIf { it in CUSTOM_SECONDS }
+            ?: return automatic
+        return Window(seconds, 0)
+    }
+
     /** A category's two columns. [skill] marks the skill categories a SKILL focus reads from the strength column. */
     class Windows(val muscle: Window, val strength: Window, val skill: Boolean = false) {
         constructor(ready: Int, max: Int) : this(Window(ready, max), Window(ready, max))

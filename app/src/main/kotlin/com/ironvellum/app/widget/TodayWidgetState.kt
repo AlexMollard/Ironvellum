@@ -297,7 +297,7 @@ internal suspend fun loadWidgetState(context: android.content.Context, repo: Rep
             .mapNotNull { s -> (sets[s.id] ?: repo.observeWorkout(s.id).first()?.second)?.let { s to it } }
         val pace = SessionClock.pace(recent)
         estimate = { preset ->
-            SessionClock.minutes(SessionClock.planSeconds(preset.toPlanned().entries, focus, pace.secondsPerSet(preset)))
+            SessionClock.minutes(SessionClock.planSeconds(preset.toPlanned().entries, focus, pace.secondsPerSet(preset), com.ironvellum.app.data.TrialPrefs(context)::restPreferences))
         }
     }
     val catalogue = repo.observeExercises().first()

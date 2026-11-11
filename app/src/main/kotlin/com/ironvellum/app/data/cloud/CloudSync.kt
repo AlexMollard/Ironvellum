@@ -136,9 +136,10 @@ class CloudSync private constructor(
     private val appearance: AppearanceStore,
     private val pushClientOverride: io.github.jan.supabase.SupabaseClient?,
     private val pushAccountOverride: Account?,
+    private val restPreferences: (String) -> com.ironvellum.app.domain.RestRules.Preferences,
 ) {
-    constructor(repo: Repository, account: AccountRepository, appearance: AppearanceStore) :
-        this(repo, account, appearance, null, null)
+    constructor(repo: Repository, account: AccountRepository, appearance: AppearanceStore, restPreferences: (String) -> com.ironvellum.app.domain.RestRules.Preferences = { com.ironvellum.app.domain.RestRules.EMPTY_PREFERENCES }) :
+        this(repo, account, appearance, null, null, restPreferences)
 
     // Overrides are initialized before the scope observer, so isolated clients cannot scope real pending deletions.
     internal constructor(
@@ -147,7 +148,7 @@ class CloudSync private constructor(
         client: io.github.jan.supabase.SupabaseClient,
         appearance: AppearanceStore,
         identity: Account,
-    ) : this(repo, account, appearance, client, identity)
+    ) : this(repo, account, appearance, client, identity, { com.ironvellum.app.domain.RestRules.EMPTY_PREFERENCES })
 
     internal var snapshotClock: () -> Long = System::currentTimeMillis
     internal var snapshotJsonForTest: ((String) -> String)? = null
@@ -738,6 +739,8 @@ class CloudSync private constructor(
                                     fatigueText = WebFatigueText, displayName = me.displayName,
                                     figure = figure, crestId = wornCrest, builtAtMs = now, focus = focus,
                                     exerciseUnits = Units.exerciseOverrides,
+                                    restPreferences = presets.asSequence().flatMap { it.entries.asSequence() }
+                                        .filterNot { it.warmup }.map { it.exerciseName }.distinct().associateWith(restPreferences),
                                 )
                                 WebSnapshotJson.write(WebSnapshotBuilder.build(input))
                             }

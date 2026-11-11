@@ -5,11 +5,19 @@ store listing; this is the whole list.
 
 ## 1.11
 
+### Rest times
+- Set compound and isolation rest defaults or override an exercise in its workout settings; turn a custom value off to use the underlying default again. Top-set rest remains separate.
+- Use custom rest in rule-based workout estimates; estimates based on your measured pace still reflect that history.
+- Keep an exercise's rest override when renaming a custom exercise; remove it when the unused exercise is deleted.
+
 ### Weight units per exercise
 - Choose App default, kg or lb from an exercise's About page or its unit dropdown while logging a workout.
 - Keep each exercise's choice across variations, workouts, app restarts and local or cloud backup restores. Explicit kg or lb stays pinned when the app's default changes.
 - Use the chosen unit for load entry, plate steps, plans, history, records, workout sharing and the web viewer. Recorded kilograms, scores and XP stay unchanged; workout totals still use the app default.
 - Show the app-default equivalent beside exercise weights whenever their chosen unit differs, such as 100 lb (45.36 kg), without adding conversions to numeric inputs or duplicating matching units.
+
+### Exercise details
+- Open a custom exercise's About page from the picker without a crash, then use Edit to change or delete it. Exercises already in use remain protected to preserve their history.
 
 ### The Veil
 - Start the Veil's accrual clock at app startup, so the home bar and essence can update without first opening the Veil.

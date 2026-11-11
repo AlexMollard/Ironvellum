@@ -137,6 +137,39 @@ class CustomExerciseRepositoryTest {
     }
 
     @Test
+    fun customRestFollowsSuccessfulRenameAndDeleteOnly() = runTest {
+        val storage = context.getSharedPreferences("custom_rest_lifecycle_test", Context.MODE_PRIVATE)
+        storage.edit().clear().commit()
+        val prefs = TrialPrefs(storage)
+        repo = Repository(db, trialPrefs = prefs)
+        try {
+            val used = create(spec("Rest lifecycle used"))
+            val unused = create(spec("Rest lifecycle unused"))
+            prefs.compoundRest = 105
+            prefs.setExerciseRest(used.name, 135)
+            prefs.setExerciseRest(unused.name, 75)
+            prefs.setExerciseRest("Rest lifecycle renamed", 45)
+
+            assertTrue(repo.updateCustomExercise(used.id, spec("Back Squat")) is CustomSave.Rejected)
+            assertEquals(135, prefs.exerciseRest(used.name))
+            assertTrue(repo.updateCustomExercise(used.id, spec("Rest lifecycle renamed")) is CustomSave.Saved)
+            assertNull(prefs.exerciseRest(used.name))
+            assertEquals(135, TrialPrefs(storage).exerciseRest("REST LIFECYCLE RENAMED"))
+            assertTrue(repo.updateCustomExercise(used.id, spec("REST LIFECYCLE RENAMED")) is CustomSave.Saved)
+            assertEquals(135, prefs.exerciseRest("Rest lifecycle renamed"))
+
+            logSet(used.id)
+            assertFalse(repo.deleteCustomExercise(used.id))
+            assertEquals(135, prefs.exerciseRest("Rest lifecycle renamed"))
+            assertTrue(repo.deleteCustomExercise(unused.id))
+            assertNull(TrialPrefs(storage).exerciseRest(unused.name))
+            assertEquals(105, prefs.compoundRest)
+        } finally {
+            storage.edit().clear().commit()
+        }
+    }
+
+    @Test
     fun anExportRestoresAnUnusedCustomExerciseWithItsMusclesAndGear() = runTest {
         val made = create()
         val archive = repo.exportJson()
