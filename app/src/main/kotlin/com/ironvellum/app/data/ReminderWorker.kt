@@ -1,6 +1,7 @@
 package com.ironvellum.app.data
 
 import android.content.Context
+import android.util.Log
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.domain.Summons
 import androidx.work.CoroutineWorker
@@ -15,14 +16,17 @@ import java.time.LocalTime
 class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val app = applicationContext as? IronvellumApp ?: return Result.success()
-        // A run held until the next morning (phone off overnight) has missed
-        // its evening; it only books the next one.
-        if (Summons.isSummonsHour(LocalTime.now())) {
-            runCatching { Reminders.notifyIfWanted(app, app.repository) }
-        }
-        // Last, because REPLACE under this work's own name cancels this run:
-        // nothing may follow it.
-        Reminders.reschedule(app)
-        return Result.success()
+        return notificationDelivery(
+            attempt = runAttemptCount,
+            deliver = {
+                // A run held until morning missed its evening; only book the next one.
+                if (Summons.isSummonsHour(LocalTime.now())) {
+                    app.awaitRepositoryReady()
+                    Reminders.notifyIfWanted(app, app.repository)
+                }
+            },
+            failed = { Log.e("ReminderWorker", "Summons delivery failed (attempt ${runAttemptCount + 1})", it) },
+            scheduleNext = { Reminders.reschedule(app) },
+        )
     }
 }

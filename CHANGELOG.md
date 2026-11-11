@@ -20,6 +20,7 @@ store listing; this is the whole list.
 - Keep pending social alerts when permission is denied or posting fails; retry temporary connection failures without repeating already-delivered activity.
 - Ignore replies from a previous account or backend, and keep existing inbox history silent when first establishing a notification baseline.
 - Catch up a due weekly recap after returning or granting notification permission, within its existing 24-hour window, without duplicate alerts.
+- Retry failed evening reminders and weekly recaps twice with exponential backoff, while preserving cancellation and the next scheduled occurrence.
 
 ## 1.10
 

@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.edit
 import androidx.core.app.NotificationManagerCompat
+import androidx.work.BackoffPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -99,6 +100,7 @@ object Reminders {
         val delay = Summons.delayUntilNext(ZonedDateTime.now(), minLead = Summons.MIN_LEAD)
         val request = OneTimeWorkRequestBuilder<ReminderWorker>()
             .setInitialDelay(delay.toMillis(), TimeUnit.MILLISECONDS)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 1, TimeUnit.MINUTES)
             .addTag(WORK_NAME)
             .build()
         work.enqueueUniqueWork(WORK_NAME, policy, request)

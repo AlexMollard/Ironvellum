@@ -1,6 +1,7 @@
 package com.ironvellum.app.data
 
 import android.content.Context
+import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.ironvellum.app.IronvellumApp
@@ -12,9 +13,14 @@ import com.ironvellum.app.IronvellumApp
 class RecapWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val app = applicationContext as? IronvellumApp ?: return Result.success()
-        runCatching { WeeklyRecaps.deliverIfDue(app, app.repository) }
-        // Last, because REPLACE under this work's own name cancels this run: nothing may follow it.
-        WeeklyRecaps.reschedule(app)
-        return Result.success()
+        return notificationDelivery(
+            attempt = runAttemptCount,
+            deliver = {
+                app.awaitRepositoryReady()
+                WeeklyRecaps.deliverIfDue(app, app.repository)
+            },
+            failed = { Log.e("RecapWorker", "Weekly recap delivery failed (attempt ${runAttemptCount + 1})", it) },
+            scheduleNext = { WeeklyRecaps.reschedule(app) },
+        )
     }
 }

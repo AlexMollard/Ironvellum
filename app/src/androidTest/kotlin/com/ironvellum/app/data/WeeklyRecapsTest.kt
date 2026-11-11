@@ -91,11 +91,20 @@ class WeeklyRecapsTest {
     private fun posted(): android.service.notification.StatusBarNotification? =
         manager.activeNotifications.firstOrNull { it.id == Notifications.ID_RECAP }
 
+    private fun awaitPosted(): android.service.notification.StatusBarNotification? {
+        val until = android.os.SystemClock.elapsedRealtime() + 5_000
+        while (android.os.SystemClock.elapsedRealtime() < until) {
+            posted()?.let { return it }
+            Thread.sleep(20)
+        }
+        return posted()
+    }
+
     @Test
     fun sundayAtNineteenDeliversTheWeekOnItsOwnChannel() = runBlocking {
         val verdict = WeeklyRecaps.deliverIfDue(context, repo, at(week.plusDays(6), 19, 2))
         assertEquals(RecapSchedule.Verdict.Deliver(week), verdict)
-        val shown = checkNotNull(posted()) { "the recap is in the tray" }
+        val shown = checkNotNull(awaitPosted()) { "the recap is in the tray" }
         assertEquals(Notifications.CHANNEL_RECAP, shown.notification.channelId)
         assertEquals(week, WeeklyRecaps.lastDelivered(context))
         val extras = shown.notification.extras
@@ -109,7 +118,7 @@ class WeeklyRecapsTest {
     @Test
     fun theLockScreenVersionSaysOnlyThatTheRecapIsReady() = runBlocking {
         WeeklyRecaps.deliverIfDue(context, repo, at(week.plusDays(6), 19, 2))
-        val notification = checkNotNull(posted()).notification
+        val notification = checkNotNull(awaitPosted()).notification
         assertEquals(Notification.VISIBILITY_PRIVATE, notification.visibility)
         val public = checkNotNull(notification.publicVersion) { "a private notification needs a public version" }
         val title = public.extras.getCharSequence(Notification.EXTRA_TITLE).toString()
@@ -144,7 +153,7 @@ class WeeklyRecapsTest {
         assertNull(posted())
         assertEquals(RecapSchedule.Verdict.Deliver(week), WeeklyRecaps.deliverIfDue(context, repo, now.plusHours(1)))
         assertEquals(week, WeeklyRecaps.lastDelivered(context))
-        assertNotNull(posted())
+        assertNotNull(awaitPosted())
     }
 
     @Test
@@ -162,7 +171,7 @@ class WeeklyRecapsTest {
         assertEquals(1, verdicts.count { it == RecapSchedule.Verdict.Deliver(week) })
         assertEquals(3, verdicts.count { it == RecapSchedule.Verdict.AlreadyDelivered(week) })
         assertEquals(week, WeeklyRecaps.lastDelivered(context))
-        assertNotNull(posted())
+        assertNotNull(awaitPosted())
     }
 
     @Test
