@@ -91,6 +91,14 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -123,168 +131,226 @@ data class FeedUi(
     val reactionErrors: Map<String, UiText> = emptyMap(),
 )
 
-class FeedViewModel(
-    private val cloudSync: CloudSync,
-    private val accountRepo: com.ironvellum.app.data.cloud.AccountRepository,
-    private val repo: Repository,
+internal interface FeedGateway {
+    val owners: Flow<SocialOwner>
+    fun owner(): SocialOwner
+    suspend fun feed(limit: Int, beforeMs: Long? = null, force: Boolean = false): Result<List<FeedEntry>>
+    suspend fun friends(force: Boolean): Result<List<FriendRow>>
+    suspend fun react(sessionId: String, reaction: Reaction?): Result<Unit>
+    suspend fun requestFriendById(userId: String): Result<Unit>
+}
+
+private class CloudFeedGateway(
+    private val cloud: CloudSync,
+    private val accounts: com.ironvellum.app.data.cloud.AccountRepository,
+) : FeedGateway {
+    override fun owner() = currentSocialOwner(accounts.account.value?.userId)
+    override val owners = socialOwners(accounts.account.map { it?.userId }) { accounts.account.value?.userId }
+    override suspend fun feed(limit: Int, beforeMs: Long?, force: Boolean) = cloud.feed(limit, beforeMs, force)
+    override suspend fun friends(force: Boolean) = cloud.friends(force)
+    override suspend fun react(sessionId: String, reaction: Reaction?) = cloud.react(sessionId, reaction)
+    override suspend fun requestFriendById(userId: String) = cloud.requestFriendById(userId)
+}
+
+class FeedViewModel internal constructor(
+    private val gateway: FeedGateway,
+    frame: Flow<String?>,
     private val pageSize: Int = 50,
 ) : ViewModel() {
-
-    private val _ui = MutableStateFlow(
-        FeedUi(signedIn = accountRepo.account.value != null, myUserId = accountRepo.account.value?.userId),
-    )
-    val ui = _ui.asStateFlow()
-
-    // Device-local equipped crest frame; only the signed-in lifter's own card wears it.
-    val equippedFrame: StateFlow<String?> = repo.observeEquippedFrame()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-
-    /** Oldest completedAtMs seen — the cursor for the next page. */
-    private var oldestMs: Long? = null
-
-    /** Workouts with a reaction call in flight; blocks the double-tap re-fire that drifts the count. */
-    private val reactionCallsInFlight = mutableSetOf<String>()
-
-    private fun Throwable.reason(): UiText = reasonText(UiText.res(R.string.feed_unknown_failure))
-
-    init {
-        // Sign-in happens on a sibling tab AFTER this view model exists, so a
-        // one-shot read of account.value strands the feed on "sign in" forever.
-        // Observe it instead and load the moment a session appears.
+    constructor(
+        cloudSync: CloudSync,
+        accountRepo: com.ironvellum.app.data.cloud.AccountRepository,
+        repo: Repository,
+        pageSize: Int = 50,
+    ) : this(CloudFeedGateway(cloudSync, accountRepo), repo.observeEquippedFrame(), pageSize) {
         viewModelScope.launch {
             accountRepo.account.collect { account ->
-                val wasSignedIn = _ui.value.signedIn
-                _ui.value = _ui.value.copy(
-                    signedIn = account != null,
-                    myUserId = account?.userId,
-                )
-                when {
-                    account != null && !wasSignedIn -> load()
-                    account == null -> _ui.value = _ui.value.copy(entries = emptyList())
-                    // Restored offline: the identity came back but the profiles
-                    // row never did — retry it on this social read.
-                    !account.profileLoaded -> viewModelScope.launch { accountRepo.refreshProfile() }
-                }
+                if (account != null && !account.profileLoaded) accountRepo.refreshProfile()
             }
         }
-        load()
     }
 
-    /**
-     * [force] is true only from pull-to-refresh: the backing reads are cached,
-     * so routine recomposition and paging never re-hit the server.
-     */
-    fun load(force: Boolean = false) {
+    val equippedFrame: StateFlow<String?> = frame.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    private var owner = gateway.owner()
+    private var requests = requestScope()
+    private val _ui = MutableStateFlow(initialUi(owner))
+    val ui = _ui.asStateFlow()
+    private var oldestMs: Long? = null
+    private var generation = 0L
+    private var pageJob: Job? = null
+    private val reactionCallsInFlight = mutableSetOf<String>()
+    private val reactionOverrides = mutableMapOf<String, Reaction?>()
+
+    private fun initialUi(owner: SocialOwner) = FeedUi(
+        configured = owner.backend != null, signedIn = owner.userId != null, myUserId = owner.userId,
+    )
+    private fun requestScope() = CoroutineScope(
+        viewModelScope.coroutineContext + SupervisorJob(viewModelScope.coroutineContext[Job]),
+    )
+    private fun current(expected: SocialOwner, scope: CoroutineScope) =
+        requests === scope && owner == expected && gateway.owner() == expected
+    private fun Throwable.reason(): UiText = reasonText(UiText.res(R.string.feed_unknown_failure))
+
+    private fun refreshOwner(): Boolean {
+        val next = gateway.owner()
+        if (next == owner) return false
+        owner = next
+        requests.cancel()
+        requests = requestScope()
+        generation++
+        pageJob = null
+        oldestMs = null
+        reactionCallsInFlight.clear()
+        reactionOverrides.clear()
+        _ui.value = initialUi(next)
+        return true
+    }
+
+    init {
         viewModelScope.launch {
-            _ui.value = _ui.value.copy(loading = true, error = null, pagingError = null, exhausted = false)
-            cloudSync.feed(limit = pageSize)
-                .onSuccess { page ->
-                    oldestMs = page.mapNotNull { it.completedAtMs }.minOrNull()
-                    _ui.value = _ui.value.copy(entries = page)
+            gateway.owners.collect {
+                if (refreshOwner() && owner.userId != null) load()
+            }
+        }
+        if (owner.userId != null) load()
+    }
+
+    fun load(force: Boolean = false) {
+        refreshOwner()
+        if (owner.userId == null) return
+        val expected = owner
+        val scope = requests
+        val readGeneration = ++generation
+        pageJob?.cancel()
+        pageJob = null
+        reactionOverrides.keys.retainAll(reactionCallsInFlight)
+        _ui.value = _ui.value.copy(loading = true, loadingMore = false, error = null, pagingError = null)
+        scope.launch {
+            try {
+                val page = gateway.feed(limit = pageSize, force = force).getOrThrow()
+                if (!current(expected, scope) || generation != readGeneration) return@launch
+                oldestMs = page.mapNotNull { it.completedAtMs }.minOrNull()
+                val entries = if (reactionOverrides.isEmpty()) page else page.map { entry ->
+                    if (reactionOverrides.containsKey(entry.sessionId)) entry.withReaction(reactionOverrides[entry.sessionId]) else entry
                 }
-                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
-            _ui.value = _ui.value.copy(loading = false)
-            // Ally rows ride along on the same refresh: one cached friends read
-            // covers every card's ADD ALLY button.
-            cloudSync.friends(force = force).onSuccess { rows ->
-                _ui.value = _ui.value.copy(friends = rows.associateBy { it.userId })
+                _ui.value = _ui.value.copy(entries = entries, exhausted = page.size < pageSize)
+                _ui.value = _ui.value.copy(loading = false)
+                gateway.friends(force).onSuccess { rows ->
+                    if (current(expected, scope) && generation == readGeneration) {
+                        _ui.value = _ui.value.copy(friends = rows.associateBy { it.userId })
+                    }
+                }
+            } catch (error: CancellationException) {
+                if (current(expected, scope) && generation == readGeneration && scope.isActive)
+                    _ui.value = _ui.value.copy(error = UiText.res(R.string.feed_unknown_failure))
+                throw error
+            } catch (error: Exception) {
+                if (current(expected, scope) && generation == readGeneration) _ui.value = _ui.value.copy(error = error.reason())
+            } finally {
+                if (current(expected, scope) && generation == readGeneration) _ui.value = _ui.value.copy(loading = false)
             }
         }
     }
 
-    /**
-     * Optimistic reaction: chip and counts move now, the network call
-     * reconciles. [reaction] null removes the lifter's reaction.
-     */
     fun react(entry: FeedEntry, reaction: Reaction?) {
-        // One wire call per workout at a time: a second pick before the first
-        // answers would compute its delta from a state that may still roll
-        // back, drifting the total by one for a single reaction.
-        if (entry.sessionId in reactionCallsInFlight) return
-        // Decide from current state, not the possibly-stale entry copy.
-        val before = _ui.value.entries.firstOrNull { it.sessionId == entry.sessionId } ?: entry
+        if (refreshOwner()) { load(); return }
+        if (owner.userId == null || entry.sessionId in reactionCallsInFlight) return
+        val before = _ui.value.entries.firstOrNull { it.sessionId == entry.sessionId } ?: return
         if (before.myReaction == reaction) return
+        val expected = owner
+        val scope = requests
         reactionCallsInFlight += entry.sessionId
+        reactionOverrides[entry.sessionId] = reaction
         _ui.value = _ui.value.copy(reactionErrors = _ui.value.reactionErrors - entry.sessionId)
         replaceEntry(entry.sessionId) { it.withReaction(reaction) }
-        viewModelScope.launch {
-            cloudSync.react(entry.sessionId, reaction).onFailure {
-                // Roll back so a refused write never leaves a phantom reaction,
-                // and tell the lifter — a silent rollback reads as a dead button.
-                replaceEntry(entry.sessionId) { current ->
-                    current.copy(
-                        likedByMe = before.likedByMe,
-                        likeCount = before.likeCount,
-                        reactions = before.reactions,
-                        myReaction = before.myReaction,
-                    )
+        scope.launch {
+            try {
+                gateway.react(entry.sessionId, reaction).getOrThrow()
+            } catch (error: CancellationException) {
+                if (current(expected, scope) && scope.isActive) {
+                    reactionOverrides[entry.sessionId] = before.myReaction
+                    replaceEntry(entry.sessionId) { it.withReaction(before.myReaction) }
+                    _ui.value = _ui.value.copy(reactionErrors = _ui.value.reactionErrors + (entry.sessionId to UiText.res(R.string.feed_unknown_failure)))
                 }
-                _ui.value = _ui.value.copy(reactionErrors = _ui.value.reactionErrors + (entry.sessionId to it.reason()))
+                throw error
+            } catch (error: Exception) {
+                if (current(expected, scope)) {
+                    reactionOverrides[entry.sessionId] = before.myReaction
+                    replaceEntry(entry.sessionId) { it.withReaction(before.myReaction) }
+                    _ui.value = _ui.value.copy(reactionErrors = _ui.value.reactionErrors + (entry.sessionId to error.reason()))
+                }
+            } finally {
+                if (current(expected, scope)) reactionCallsInFlight -= entry.sessionId
             }
-            reactionCallsInFlight -= entry.sessionId
         }
     }
 
     private fun replaceEntry(sessionId: String, change: (FeedEntry) -> FeedEntry) {
-        _ui.value = _ui.value.copy(
-            entries = _ui.value.entries.map { if (it.sessionId == sessionId) change(it) else it },
-        )
+        _ui.value = _ui.value.copy(entries = _ui.value.entries.map { if (it.sessionId == sessionId) change(it) else it })
     }
 
-    /** Send an ally request from a feed card; optimistic pending, then settled from server truth. */
     fun addAlly(userId: String) {
-        // Any existing row means already requested, incoming, or allies — a second
-        // tap must never fire another insert.
-        if (userId in _ui.value.friends || userId in _ui.value.requestedAlly) return
+        if (refreshOwner()) { load(); return }
+        if (owner.userId == null || userId in _ui.value.friends || userId in _ui.value.requestedAlly) return
+        val expected = owner
+        val scope = requests
         _ui.value = _ui.value.copy(requestedAlly = _ui.value.requestedAlly + userId, allyError = null)
-        viewModelScope.launch {
-            cloudSync.requestFriendById(userId)
-                .onSuccess {
-                    cloudSync.friends(force = true).onSuccess { rows ->
-                        _ui.value = _ui.value.copy(friends = rows.associateBy { it.userId })
-                    }
+        scope.launch {
+            try {
+                gateway.requestFriendById(userId).getOrThrow()
+                if (!current(expected, scope)) return@launch
+                gateway.friends(true).onSuccess { rows ->
+                    if (current(expected, scope)) _ui.value = _ui.value.copy(friends = rows.associateBy { it.userId })
                 }
-                .onFailure {
-                    // The optimistic revert used to be the whole story: the row
-                    // snapped back and nothing said why.
-                    _ui.value = _ui.value.copy(
-                        requestedAlly = _ui.value.requestedAlly - userId,
-                        allyError = it.reason(),
-                    )
-                }
+            } catch (error: CancellationException) {
+                if (current(expected, scope) && scope.isActive) _ui.value = _ui.value.copy(
+                    requestedAlly = _ui.value.requestedAlly - userId,
+                    allyError = UiText.res(R.string.feed_unknown_failure),
+                )
+                throw error
+            } catch (error: Exception) {
+                if (current(expected, scope)) _ui.value = _ui.value.copy(
+                    requestedAlly = _ui.value.requestedAlly - userId, allyError = error.reason(),
+                )
+            }
         }
     }
 
-    /**
-     * Fetch the next older page. Guards keep the request one-shot: a page in
-     * flight, a board already at its end, or an unchanged cursor (nothing new
-     * was fetched since) each short-circuit, so the same window is never
-     * re-requested by repeated end-of-list triggers.
-     */
     fun loadMore() {
-        val current = _ui.value
-        // A stale pagingError must not block the next attempt: the error is
-        // cleared here and re-set only if this page fails too, so one flaky
-        // page never wedges infinite scroll until a full refresh.
-        if (current.loading || current.loadingMore || current.exhausted) return
+        if (refreshOwner()) { load(); return }
+        val currentUi = _ui.value
+        if (owner.userId == null || currentUi.loading || currentUi.loadingMore || currentUi.exhausted) return
         val cursor = oldestMs ?: return
-        _ui.value = current.copy(loadingMore = true, pagingError = null)
-        viewModelScope.launch {
-            cloudSync.feed(limit = pageSize, beforeMs = cursor)
-                .onSuccess { page ->
-                    // Nothing arrived means the cursor covers everything left.
-                    if (page.isEmpty() || page.size < pageSize) {
-                        _ui.value = _ui.value.copy(exhausted = true)
-                    }
-                    val known = _ui.value.entries.map { it.sessionId }.toSet()
-                    _ui.value = _ui.value.copy(entries = _ui.value.entries + page.filter { it.sessionId !in known })
-                    page.mapNotNull { it.completedAtMs }.minOrNull()?.let { newest ->
-                        // Only advance the cursor; re-requesting the window would duplicate work.
-                        if (oldestMs == null || newest < oldestMs!!) oldestMs = newest
+        val expected = owner
+        val scope = requests
+        val readGeneration = generation
+        _ui.value = currentUi.copy(loadingMore = true, pagingError = null)
+        pageJob = scope.launch {
+            try {
+                val page = gateway.feed(limit = pageSize, beforeMs = cursor).getOrThrow()
+                if (!current(expected, scope) || generation != readGeneration) return@launch
+                val known = _ui.value.entries.map { it.sessionId }.toSet()
+                val additions = page.mapNotNull { entry ->
+                    when {
+                        entry.sessionId in known -> null
+                        reactionOverrides.containsKey(entry.sessionId) -> entry.withReaction(reactionOverrides[entry.sessionId])
+                        else -> entry
                     }
                 }
-                .onFailure { _ui.value = _ui.value.copy(pagingError = it.reason()) }
-            _ui.value = _ui.value.copy(loadingMore = false)
+                _ui.value = _ui.value.copy(
+                    entries = _ui.value.entries + additions,
+                    exhausted = page.size < pageSize,
+                )
+                page.mapNotNull { it.completedAtMs }.minOrNull()?.let { oldestMs = it }
+            } catch (error: CancellationException) {
+                if (current(expected, scope) && generation == readGeneration && scope.isActive)
+                    _ui.value = _ui.value.copy(pagingError = UiText.res(R.string.feed_unknown_failure))
+                throw error
+            } catch (error: Exception) {
+                if (current(expected, scope) && generation == readGeneration) _ui.value = _ui.value.copy(pagingError = error.reason())
+            } finally {
+                if (current(expected, scope) && generation == readGeneration) _ui.value = _ui.value.copy(loadingMore = false)
+            }
         }
     }
 }
