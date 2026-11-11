@@ -45,6 +45,7 @@ class ReminderChainTest {
         assertEquals("the tray must match the day", summonsWanted(context), posted)
         val manager = context.getSystemService(NotificationManager::class.java)
         if (posted) {
+            NotificationTray.awaitPosted(context, Notifications.ID_SUMMONS)
             assertTrue(
                 "the posted Summons must be live in the tray",
                 manager.activeNotifications.any { it.notification.channelId == Notifications.CHANNEL_SUMMONS },
@@ -52,6 +53,7 @@ class ReminderChainTest {
         }
 
         Reminders.disable(context)
+        NotificationTray.awaitAbsent(context, Notifications.ID_SUMMONS)
         assertTrue("disable must clear the opt-in", !Reminders.enabled(context))
         assertEquals("a disabled Summons must post nothing", false, Reminders.notifyIfWanted(context, repo))
     }

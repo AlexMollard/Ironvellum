@@ -53,7 +53,7 @@ class WeeklyRecapsTest {
         Notifications.ensureChannels(context)
         Words.setThemed(app, false)
         context.getSharedPreferences("weekly_recap", Context.MODE_PRIVATE).edit().clear().commit()
-        manager.cancel(Notifications.ID_RECAP)
+        NotificationTray.clear(context, Notifications.ID_RECAP)
         SeededDb.fresh(context, TEST_DB)
         db = IronvellumDatabase.create(context, TEST_DB)
         repo = Repository(db)
@@ -70,7 +70,7 @@ class WeeklyRecapsTest {
     fun tearDown() {
         db.close()
         context.deleteDatabase(TEST_DB)
-        manager.cancel(Notifications.ID_RECAP)
+        NotificationTray.clear(context, Notifications.ID_RECAP)
         context.getSharedPreferences("weekly_recap", Context.MODE_PRIVATE).edit().clear().commit()
         Words.setThemed(app, true)
     }
@@ -91,14 +91,7 @@ class WeeklyRecapsTest {
     private fun posted(): android.service.notification.StatusBarNotification? =
         manager.activeNotifications.firstOrNull { it.id == Notifications.ID_RECAP }
 
-    private fun awaitPosted(): android.service.notification.StatusBarNotification? {
-        val until = android.os.SystemClock.elapsedRealtime() + 5_000
-        while (android.os.SystemClock.elapsedRealtime() < until) {
-            posted()?.let { return it }
-            Thread.sleep(20)
-        }
-        return posted()
-    }
+    private fun awaitPosted() = NotificationTray.awaitPosted(context, Notifications.ID_RECAP)
 
     @Test
     fun sundayAtNineteenDeliversTheWeekOnItsOwnChannel() = runBlocking {
@@ -133,7 +126,7 @@ class WeeklyRecapsTest {
     fun theSameWeekIsNeverPostedTwice() = runBlocking {
         val now = at(week.plusDays(6), 19, 2)
         assertEquals(RecapSchedule.Verdict.Deliver(week), WeeklyRecaps.deliverIfDue(context, repo, now))
-        manager.cancel(Notifications.ID_RECAP)
+        NotificationTray.clear(context, Notifications.ID_RECAP)
         // A retry, and the catch-up run on Monday morning: the marker holds.
         assertEquals(RecapSchedule.Verdict.AlreadyDelivered(week), WeeklyRecaps.deliverIfDue(context, repo, now.plusMinutes(5)))
         assertEquals(RecapSchedule.Verdict.AlreadyDelivered(week), WeeklyRecaps.deliverIfDue(context, repo, at(week.plusDays(7), 7)))

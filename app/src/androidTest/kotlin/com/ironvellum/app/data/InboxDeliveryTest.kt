@@ -31,7 +31,7 @@ class InboxDeliveryTest {
         InstrumentationRegistry.getInstrumentation().uiAutomation.grantRuntimePermission(realContext.packageName, Manifest.permission.POST_NOTIFICATIONS)
         Notifications.ensureChannels(realContext)
         preferences.edit().clear().commit()
-        manager.cancel(Notifications.ID_ALLIES)
+        NotificationTray.clear(realContext, Notifications.ID_ALLIES)
         context = object : ContextWrapper(realContext) {
             override fun getSharedPreferences(name: String, mode: Int): SharedPreferences =
                 if (name == "inbox_notifier") preferences else super.getSharedPreferences(name, mode)
@@ -48,7 +48,7 @@ class InboxDeliveryTest {
     }
 
     @After fun tearDown() {
-        manager.cancel(Notifications.ID_ALLIES)
+        NotificationTray.clear(realContext, Notifications.ID_ALLIES)
         preferences.edit().clear().commit()
     }
 
@@ -62,14 +62,7 @@ class InboxDeliveryTest {
 
     private fun posted() = manager.activeNotifications.firstOrNull { it.id == Notifications.ID_ALLIES }
 
-    private fun awaitPosted(): android.service.notification.StatusBarNotification? {
-        val until = android.os.SystemClock.elapsedRealtime() + 5_000
-        while (android.os.SystemClock.elapsedRealtime() < until) {
-            posted()?.let { return it }
-            Thread.sleep(20)
-        }
-        return posted()
-    }
+    private fun awaitPosted() = NotificationTray.awaitPosted(realContext, Notifications.ID_ALLIES)
 
     @Test fun existingBacklogIsSilentButLaterActivityPostsOnlyOnce() {
         deliver(inbox(100))
@@ -83,7 +76,7 @@ class InboxDeliveryTest {
         assertFalse(public.extras.toString().contains("Test Ally"))
         assertFalse(public.extras.toString().contains("Ready for the next workout"))
         captureTray()
-        manager.cancel(Notifications.ID_ALLIES)
+        NotificationTray.clear(realContext, Notifications.ID_ALLIES)
         deliver(inbox(200))
         assertNull("a duplicate read must not repost a dismissed alert", posted())
     }
@@ -107,7 +100,7 @@ class InboxDeliveryTest {
         permissionGranted = true
         deliver(Inbox(listOf(reaction), null))
         assertNotNull("blocked reactions must not be recorded as already announced", awaitPosted())
-        manager.cancel(Notifications.ID_ALLIES)
+        NotificationTray.clear(realContext, Notifications.ID_ALLIES)
         deliver(Inbox(listOf(reaction.copy(occurredAtMs = 300)), null))
         assertNull("toggling the same reaction must not ring the phone again", posted())
     }
@@ -150,6 +143,7 @@ class InboxDeliveryTest {
         deliver(inbox(200))
         assertNotNull(awaitPosted())
         deliver(inbox(300).copy(seenAtMs = 300))
+        NotificationTray.awaitAbsent(realContext, Notifications.ID_ALLIES)
         assertNull(posted())
         deliver(inbox(300).copy(seenAtMs = 300))
         assertNull(posted())
