@@ -1,6 +1,7 @@
 package com.ironvellum.app.domain
 
 import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.double
 import kotlinx.serialization.json.jsonPrimitive
@@ -268,6 +269,24 @@ class WebSnapshotBuilderTest {
         assertEquals(Variation.label("Pull-up", Variation.key("Weighted")), tag.label)
         assertEquals(6, tag.reps)
         assertEquals(12.5, tag.weightKg!!, 0.0)
+    }
+    @Test fun snapshotPrKeepsFullBaseIdentityForPlainAndVariation() {
+        for (name in listOf("Cable · Curl", "Cable . Curl")) for (modifiers in listOf("", "deficit")) {
+            val exercise = Exercise(10, name, MuscleGroup.PULL, true)
+            fun row(weight: Double) = SessionSet(exerciseId = 10, exerciseName = name, setIndex = 0,
+                reps = 5, weightKg = weight, modifiers = modifiers, done = true)
+            val input = single(emptyList(), listOf(exercise))
+            val earlier = WorkoutSession(id = 1, label = "Earlier", startedAtMs = input.nowMs - 172_800_000)
+            val later = WorkoutSession(id = 2, label = "Later", startedAtMs = input.nowMs - 86_400_000)
+            val history = listOf(earlier to listOf(row(40.0)), later to listOf(row(45.359237)))
+            val tag = WebSnapshotBuilder.sessionEntries(input.copy(history = history)).getValue(2).prs.single()
+            assertEquals(name, tag.exerciseName)
+            assertEquals(Variation.label(name, Variation.key(modifiers)), tag.label)
+            val snapshot = WebSnapshotBuilder.build(input.copy(history = history))
+            val encoded = kotlinx.serialization.json.Json.parseToJsonElement(WebSnapshotJson.write(snapshot)).jsonObject
+                .getValue("sessions").jsonObject.getValue("2").jsonObject.getValue("prs").jsonArray.single().jsonObject
+            assertEquals(name, encoded.getValue("exerciseName").jsonPrimitive.content)
+        }
     }
     @Test fun monthEntryCountsWorkoutsAndTopLifts() {
         val october = WebSnapshotBuilder.monthEntries(WebSnapshotFixtures.input()).getValue("2026-10")

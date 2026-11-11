@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderShell } from '../src/shell.js';
 import { renderOverview } from '../src/screens/overview.js';
 import { renderWorkouts } from '../src/screens/workouts.js';
+import { renderWorkoutDetail } from '../src/screens/workoutDetail.js';
 import { lastWorkoutCard } from '../src/components/lastWorkoutCard.js';
 import { muscleStrip } from '../src/components/muscleStrip.js';
 import { renderLineChart } from '../src/components/lineChart.js';
@@ -57,6 +58,26 @@ describe('overview', () => {
     expect(last.textContent).toContain('07:12 · 58 min');
     expect(root.querySelector('.deeds-card').textContent).toContain('1 of 121');
   });
+  it('renders full exercise identities in PRs on overview, workouts and plain workout detail', async () => {
+    for (const name of ['Cable · Curl', 'Cable . Curl']) for (const variation of ['', 'deficit']) {
+      const label = variation ? `${name} · ${variation}` : name;
+      const pr = { label, exerciseName: name, weightKg: 45.359237, reps: 5 };
+      const mixed = { ...snapshot, exerciseUnits: { [name.toLowerCase()]: 'lb', cable: 'kg' },
+        sessions: { 1: { ...snapshot.sessions[1], prs: [pr] } } };
+      const data = { ...source, getSets: async () => [{ exerciseName: name, modifiers: variation, reps: 5, weightKg: 45.359237 }] };
+      const overview = document.createElement('main');
+      await renderOverview(overview, { source: data, snapshot: mixed, router, nowMs: Date.UTC(2026, 9, 27) });
+      expect(overview.querySelector('.pr-tag').textContent).toContain('100 lb (45.36 kg)');
+      const workouts = document.createElement('main');
+      await renderWorkouts(workouts, { source: data, snapshot: mixed, router, nowMs: Date.UTC(2026, 9, 27) });
+      expect(workouts.querySelector('.pr-tag').textContent).toContain('100 lb (45.36 kg)');
+      if (!variation) {
+        const detail = document.createElement('main');
+        await renderWorkoutDetail(detail, { source: data, snapshot: mixed, router }, 'synced', 'a');
+        expect(detail.querySelector('.pr-tag').textContent).toContain('100 lb (45.36 kg)');
+      }
+    }
+  });
   it('draws the female figure for a female snapshot', async () => {
     const root = document.createElement('main'); await renderOverview(root, { source, snapshot, router, nowMs: Date.UTC(2026, 9, 27) });
     const outline = svgRoot => svgRoot.querySelector('.body-outline').getAttribute('points');
@@ -90,6 +111,11 @@ describe('components', () => {
   it('a record chip reads BW for an unloaded set and seconds for a hold', () => {
     expect(prTag({ label: 'Pull-up . Archer', reps: 5 }).textContent).toBe('PRPull-up · Archer BW × 5');
     expect(prTag({ label: 'Plank', durationSec: 45 }).textContent).toBe('PRPlank 45 s');
+  });
+  it('uses the global unit for ambiguous legacy PR labels rather than a guessed override', () => {
+    const mixed = { unit: 'kg', exerciseUnits: { cable: 'lb', 'cable · curl': 'lb' } };
+    expect(prTag({ label: 'Cable · Curl · deficit', weightKg: 45.359237, reps: 5 }, 'kg', mixed).textContent).toContain('45.36 kg');
+    expect(prTag({ label: 'Cable', weightKg: 45.359237, reps: 5 }, 'kg', mixed).textContent).toContain('100 lb (45.36 kg)');
   });
   it('the chart axis rounds out to nice bounds, draws a grid line per step and gold diamonds for records', () => {
     const root = document.createElement('div');

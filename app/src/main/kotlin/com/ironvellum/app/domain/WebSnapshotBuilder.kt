@@ -293,7 +293,7 @@ object WebSnapshotBuilder {
 
     internal fun prTags(sets: List<SessionSet>, book: RepBook, exercises: Map<Long, Exercise>): List<WebSnapshot.PrTag> =
         SessionPeaks.of(sets, book, null) { exercises[it.exerciseId] }.take(6).map {
-            WebSnapshot.PrTag(it.label, if (it.isHold) 0 else it.figure, it.weightKg, if (it.isHold) it.figure else null)
+            WebSnapshot.PrTag(it.label, if (it.isHold) 0 else it.figure, it.weightKg, if (it.isHold) it.figure else null, it.exerciseName)
         }
 
     internal fun sessionEntries(input: SnapshotInput): Map<Long, WebSnapshot.SessionEntry> {
@@ -341,7 +341,7 @@ object WebSnapshotBuilder {
                 hardSets = hard, volumeKg = WorkoutShare.totals(sets, input.exercises).movedKg.toDouble(),
                 peaks = peaks.sumOf { it.count }, xp = session.xpAwarded, strength = session.strengthScore,
                 muscleLevels = muscleLevels, groupLevels = groups,
-                prs = peaks.take(6).map { WebSnapshot.PrTag(it.label, if (it.isHold) 0 else it.figure, it.weightKg, if (it.isHold) it.figure else null) },
+                prs = peaks.take(6).map { WebSnapshot.PrTag(it.label, if (it.isHold) 0 else it.figure, it.weightKg, if (it.isHold) it.figure else null, it.exerciseName) },
                 peakSets = peakKeys, e1rm = estimates,
             )
         }.toMap()

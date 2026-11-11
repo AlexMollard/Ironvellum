@@ -43,10 +43,22 @@ class FeedCardTest {
     @Test
     fun cardHasOnlyFriendSafeKeys() {
         val parsed = Json.parseToJsonElement(FeedCardJson.write(card()!!)).jsonObject
-        assertEquals(listOf("v", "hardSets", "volumeKg", "prs", "levels"), parsed.keys.toList())
+        assertEquals(setOf("v", "hardSets", "volumeKg", "prs", "levels"), parsed.keys)
         val prs = parsed.getValue("prs").jsonArray
-        assertTrue(prs.isNotEmpty())
-        for (pr in prs) assertEquals(listOf("label", "reps", "weightKg", "durationSec"), pr.jsonObject.keys.toList())
+        for (pr in prs) assertEquals(setOf("label", "reps", "weightKg", "durationSec", "exerciseName"), pr.jsonObject.keys)
+    }
+
+    @Test
+    fun feedPrKeepsBaseNameFromRealPeak() {
+        val exercise = Exercise(10, "Cable · Curl", MuscleGroup.PULL, true)
+        fun set(weight: Double) = SessionSet(exerciseId = 10, exerciseName = exercise.name, setIndex = 0,
+            reps = 5, weightKg = weight, modifiers = "deficit", done = true)
+        val before = session(1) to listOf(set(40.0))
+        val after = session(2).copy(startedAtMs = 1_000_000 + day, completedAtMs = 1_000_000 + day + 60_000) to listOf(set(45.359237))
+        val card = FeedCardJson.cards(listOf(before, after), mapOf(10L to exercise)).getValue(2)
+        val pr = Json.parseToJsonElement(FeedCardJson.write(card)).jsonObject.getValue("prs").jsonArray.single().jsonObject
+        assertEquals(exercise.name, pr.getValue("exerciseName").jsonPrimitive.content)
+        assertEquals(Variation.label(exercise.name, Variation.key("deficit")), pr.getValue("label").jsonPrimitive.content)
     }
 
     @Test

@@ -40,7 +40,10 @@ data class WebSnapshot(
     @Serializable data class SessionEntry(val origin: String, val min: Int, val exercises: Int, val hardSets: Int, val volumeKg: Double, val peaks: Int,
         val xp: Int, val strength: Int, val muscleLevels: Map<String, Int>, val groupLevels: Map<String, Int>,
         val prs: List<PrTag>, val peakSets: List<String>, val e1rm: Map<String, Double>)
-    @Serializable data class PrTag(val label: String, val reps: Int, val weightKg: Double?, val durationSec: Int?)
+    @Serializable data class PrTag(val label: String, val reps: Int, val weightKg: Double?, val durationSec: Int?,
+        @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+        @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+        val exerciseName: String? = null)
     @Serializable data class Lift(val name: String, val art: String?, val metric: String, val addsToBody: Boolean,
         val byE1rm: Boolean, val muscleSummary: String, val muscleLevels: Map<String, Int>, val variations: List<LiftVariation>)
     @Serializable data class LiftVariation(val key: String, val label: String, val sessions: Int, val sets: Int, val lastMs: Long?,

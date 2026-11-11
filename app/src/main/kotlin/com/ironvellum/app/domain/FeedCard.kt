@@ -48,6 +48,7 @@ object FeedCardJson {
                 put("reps", JsonPrimitive(pr.reps))
                 put("weightKg", pr.weightKg?.let { JsonPrimitive(it) } ?: JsonNull)
                 put("durationSec", pr.durationSec?.let { JsonPrimitive(it) } ?: JsonNull)
+                pr.exerciseName?.let { put("exerciseName", JsonPrimitive(it)) }
             }
         }))
         put("levels", buildJsonObject {
