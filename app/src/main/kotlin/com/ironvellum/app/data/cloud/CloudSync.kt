@@ -50,11 +50,13 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -128,25 +130,24 @@ internal fun tombstonesToDrop(owner: String?, signedIn: String, pending: List<Lo
  * measurements (StatEntry) and HealthDay rows — the cloud schema has no table
  * for them on purpose.
  */
-class CloudSync(
+class CloudSync private constructor(
     private val repo: Repository,
     private val account: AccountRepository,
     private val appearance: AppearanceStore,
+    private val pushClientOverride: io.github.jan.supabase.SupabaseClient?,
+    private val pushAccountOverride: Account?,
 ) {
-    // Instrumented transport tests inject an isolated client and identity.
-    private var pushClientOverride: io.github.jan.supabase.SupabaseClient? = null
-    private var pushAccountOverride: Account? = null
+    constructor(repo: Repository, account: AccountRepository, appearance: AppearanceStore) :
+        this(repo, account, appearance, null, null)
 
+    // Overrides are initialized before the scope observer, so isolated clients cannot scope real pending deletions.
     internal constructor(
         repo: Repository,
         account: AccountRepository,
         client: io.github.jan.supabase.SupabaseClient,
         appearance: AppearanceStore,
         identity: Account,
-    ) : this(repo, account, appearance) {
-        pushClientOverride = client
-        pushAccountOverride = identity
-    }
+    ) : this(repo, account, appearance, client, identity)
 
     internal var snapshotClock: () -> Long = System::currentTimeMillis
     internal var snapshotJsonForTest: ((String) -> String)? = null
@@ -162,7 +163,45 @@ class CloudSync(
     private var knownSchema: Triple<String, String, Int>? = null
     // Push watermark lives in Room (`sync_state`), read per push below.
 
+    private class InboxSnapshot(val userId: String, val client: io.github.jan.supabase.SupabaseClient) {
+        var nextRead = 0L
+        var publishedRead = 0L
+        var seenAtMs: Long? = null
+        var items: List<InboxItem> = emptyList()
+    }
+
+    private val inboxStateLock = Any()
+    private var inboxSnapshot: InboxSnapshot? = null
     private val _inboxUnread = MutableStateFlow(0)
+
+    private fun inboxClient() = pushClientOverride?.let { Result.success(it) } ?: Cloud.requireConfigured
+
+    private fun currentInboxScope(userId: String?, client: io.github.jan.supabase.SupabaseClient?): Boolean =
+        account.account.value?.userId == userId && inboxClient().getOrNull() === client
+
+    /** Called under inboxStateLock; a scope's observed server seen-time never moves backwards. */
+    private fun observeSeen(state: InboxSnapshot, seenAtMs: Long?) {
+        val previous = state.seenAtMs
+        if (seenAtMs != null && (previous == null || seenAtMs > previous)) state.seenAtMs = seenAtMs
+    }
+
+    private fun inboxState(userId: String, client: io.github.jan.supabase.SupabaseClient): InboxSnapshot {
+        if (!currentInboxScope(userId, client)) throw CancellationException("Inbox scope changed")
+        return inboxSnapshot?.takeIf { it.userId == userId && it.client === client }
+            ?: InboxSnapshot(userId, client).also { inboxSnapshot = it; _inboxUnread.value = 0 }
+    }
+
+    private fun publishInboxCount(state: InboxSnapshot) {
+        if (inboxSnapshot === state && currentInboxScope(state.userId, state.client)) {
+            val seenAt = state.seenAtMs
+            _inboxUnread.value = if (seenAt == null) state.items.size else state.items.count { it.occurredAtMs > seenAt }
+        }
+    }
+
+    private suspend fun inboxSeenAt(client: io.github.jan.supabase.SupabaseClient, userId: String): Long? =
+        client.postgrest.from("inbox_seen").select(Columns.raw("seen_at")) {
+            filter { eq("user_id", userId) }
+        }.decodeList<InboxSeenDto>().firstOrNull()?.let { Instant.parse(it.seenAt).toEpochMilli() }
 
     /**
      * Unread inbox items for the Allies nav dot. Kept current by [inbox] and
@@ -175,9 +214,19 @@ class CloudSync(
         // the count: the next lifter on this phone must not see the previous
         // one's dot. CloudSync lives as long as the app, so does this scope.
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
-            account.account.map { it?.userId }.distinctUntilChanged().collect { userId ->
-                _inboxUnread.value = 0
-                if (userId != null) runCatching { scopeTombstonesTo(userId) }
+            combine(account.account.map { it?.userId }, Cloud.config) { userId, config -> userId to config }
+                .distinctUntilChanged().collect { (userId, config) ->
+                synchronized(inboxStateLock) {
+                    // A delayed collector emission must not erase a newer scope's already-published count.
+                    if (account.account.value?.userId == userId && Cloud.config.value == config) {
+                        val client = inboxClient().getOrNull()
+                        if (inboxSnapshot?.userId != userId || inboxSnapshot?.client !== client) {
+                            inboxSnapshot = null
+                            _inboxUnread.value = 0
+                        }
+                    }
+                }
+                if (userId != null && pushClientOverride == null) runCatching { scopeTombstonesTo(userId) }
             }
         }
     }
@@ -854,6 +903,7 @@ class CloudSync(
                 ttlMs = 60_000,
                 force = force,
                 userId = account.account.value?.userId,
+                backend = client,
             ) {
                 client.postgrest.from("leaderboard").select {
                     order("total_xp", Order.DESCENDING)
@@ -892,6 +942,7 @@ class CloudSync(
                 ttlMs = 60_000,
                 force = force,
                 userId = account.account.value?.userId,
+                backend = client,
             ) {
                 client.postgrest.from("lift_board").select()
                     .decodeList<LiftBoardDto>()
@@ -917,6 +968,7 @@ class CloudSync(
                 ttlMs = 15_000,
                 force = force,
                 userId = account.account.value?.userId,
+                backend = client,
             ) {
                 val session = client.postgrest.from("sessions").select(
                     Columns.list(
@@ -992,6 +1044,7 @@ class CloudSync(
                 ttlMs = 60_000,
                 force = force,
                 userId = account.account.value?.userId,
+                backend = client,
             ) {
                 client.postgrest.from("shadow_board").select {
                     order("shadow_essence", Order.DESCENDING)
@@ -1029,6 +1082,7 @@ class CloudSync(
                 ttlMs = 30_000,
                 force = force,
                 userId = me.userId,
+                backend = client,
             ) {
                 // RLS already shows only rows where we are a party; the
                 // or-filter just keeps the decode explicit.
@@ -1104,6 +1158,7 @@ class CloudSync(
                 ttlMs = 30_000,
                 force = force,
                 userId = me.userId,
+                backend = client,
             ) {
                 fetchCircle(client)
             }
@@ -1397,6 +1452,7 @@ class CloudSync(
                     ttlMs = 20_000,
                     force = force,
                     userId = me?.userId,
+                    backend = client,
                     fetch = fetch,
                 )
             } else {
@@ -1463,6 +1519,7 @@ class CloudSync(
                 ttlMs = 30_000,
                 force = false,
                 userId = account.account.value?.userId,
+                backend = client,
             ) {
                 client.postgrest.from("session_likes").select(
                     Columns.raw("user_id, kind, created_at, profiles(display_name)"),
@@ -1505,6 +1562,7 @@ class CloudSync(
                 ttlMs = 15_000,
                 force = force,
                 userId = account.account.value?.userId,
+                backend = client,
             ) {
                 client.postgrest.from("session_comments").select(
                     Columns.raw(COMMENT_COLUMNS),
@@ -1586,43 +1644,59 @@ class CloudSync(
      */
     suspend fun inbox(force: Boolean = false): Result<Inbox> {
         val me = requireAccount(account).getOrElse { return failure(it) }
-        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
-        return runCatching {
-            cache.getOrFetch(
-                key = CloudReadCache.KEY_INBOX,
-                ttlMs = 30_000,
-                force = force,
-                userId = me.userId,
-            ) {
-                val items = client.postgrest.rpc(RPC_MY_INBOX)
-                    .decodeList<InboxRowDto>()
-                    .mapNotNull { it.toInboxItem() }
-                val seenAt = client.postgrest.from("inbox_seen").select(Columns.raw("seen_at")) {
-                    filter { eq("user_id", me.userId) }
-                }.decodeList<InboxSeenDto>().firstOrNull()?.let { Instant.parse(it.seenAt).toEpochMilli() }
-                Inbox(items = items, seenAtMs = seenAt)
+        val client = inboxClient().getOrElse { return failure(it) }
+        return attempt {
+            account.withAccount(me.userId) {
+                var sequence = 0L
+                val state = synchronized(inboxStateLock) {
+                    inboxState(me.userId, client).also {
+                        sequence = ++it.nextRead
+                    }
+                }
+                val inbox = cache.getOrFetch(
+                    key = CloudReadCache.KEY_INBOX,
+                    ttlMs = 30_000,
+                    force = force,
+                    userId = me.userId,
+                    backend = client,
+                ) {
+                    val items = client.postgrest.rpc(RPC_MY_INBOX).decodeList<InboxRowDto>().mapNotNull { it.toInboxItem() }
+                    Inbox(items, inboxSeenAt(client, me.userId))
+                }
+                synchronized(inboxStateLock) {
+                    if (inboxSnapshot !== state || !currentInboxScope(me.userId, client)) return@synchronized inbox
+                    observeSeen(state, inbox.seenAtMs)
+                    // Only a successful newer read supersedes an older successful response.
+                    if (sequence >= state.publishedRead) {
+                        state.publishedRead = sequence
+                        state.items = inbox.items
+                    }
+                    publishInboxCount(state)
+                    if (state.seenAtMs == inbox.seenAtMs) inbox else inbox.copy(seenAtMs = state.seenAtMs)
+                }
             }
-        }.onSuccess { inbox ->
-            // A fetch that outlived its account must not light the next
-            // lifter's dot.
-            if (account.account.value?.userId == me.userId) _inboxUnread.value = inbox.unread
         }.recoverCatching { error ->
             throw MessageException(Cloud.explain(error), error)
         }
     }
 
-    suspend fun markInboxSeen(): Result<Unit> {
-        val me = requireAccount(account).getOrElse { return failure(it) }
-        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
-        return runCatching {
-            // Server time, not ours: seen_at is compared with server-stamped
-            // occurred_at, and a phone clock running behind would leave items
-            // unread forever.
-            client.postgrest.rpc(RPC_MARK_INBOX_SEEN)
-            Unit
-        }.onSuccess {
-            cache.invalidate(CloudReadCache.KEY_INBOX)
-            if (account.account.value?.userId == me.userId) _inboxUnread.value = 0
+    suspend fun markInboxSeen(
+        expectedUserId: String,
+        expectedClient: io.github.jan.supabase.SupabaseClient,
+    ): Result<Unit> {
+        return attempt {
+            account.withAccount(expectedUserId) {
+                val state = synchronized(inboxStateLock) { inboxState(expectedUserId, expectedClient) }
+                expectedClient.postgrest.rpc(RPC_MARK_INBOX_SEEN)
+                if (!currentInboxScope(expectedUserId, expectedClient)) throw CancellationException("Inbox scope changed")
+                withContext(NonCancellable) { cache.invalidate(CloudReadCache.KEY_INBOX) }
+                // The RPC returns no timestamp. Read its server watermark rather than erasing a newer event's count.
+                val seenAt = checkNotNull(inboxSeenAt(expectedClient, expectedUserId)) { "Inbox seen watermark missing" }
+                synchronized(inboxStateLock) {
+                    observeSeen(state, seenAt)
+                    publishInboxCount(state)
+                }
+            }
         }.recoverCatching { error ->
             throw MessageException(Cloud.explain(error), error)
         }
@@ -1671,6 +1745,7 @@ class CloudSync(
                 ttlMs = 30_000,
                 force = force,
                 userId = me.userId,
+                backend = client,
             ) {
                 client.postgrest.from("blocks").select(Columns.raw("blocked_id, blocked_name")) {
                     filter { eq("blocker_id", me.userId) }
@@ -1739,6 +1814,7 @@ class CloudSync(
                 ttlMs = 30_000,
                 force = force,
                 userId = me.userId,
+                backend = client,
             ) {
                 client.postgrest.from("mutes").select(Columns.raw("muted_id")) {
                     filter { eq("muter_id", me.userId) }
@@ -2035,6 +2111,7 @@ class CloudSync(
     }
 }
 
+
 /**
  * In-memory TTL cache with single-flight for the social reads. Deliberately
  * process-local and tiny: it exists to stop the UI spamming PostgREST on
@@ -2045,7 +2122,7 @@ class CloudSync(
  * deferred, so a paging trigger and a re-entry share ONE request instead of
  * issuing N. A forced (pull-to-refresh) caller never joins — see [getOrFetch].
  */
-private class CloudReadCache {
+internal class CloudReadCache {
     companion object {
         const val KEY_LEADERBOARD = "leaderboard"
         const val KEY_SHADOW_BOARD = "shadow_board"
@@ -2066,26 +2143,28 @@ private class CloudReadCache {
     private val lock = Mutex()
     // Any = Entry (settled) or CompletableDeferred<Any?> (in flight).
     private val slots = HashMap<String, Any>()
-    // The account the current slots were minted under. RLS answers are
-    // user-scoped, so a different (or signed-out) account must never see them.
+    // RLS answers and optimistic reactions belong to both identity and client.
     private var ownerUserId: String? = null
+    private var ownerBackend: Any? = null
 
     suspend fun <T> getOrFetch(
         key: String,
         ttlMs: Long,
         force: Boolean,
         userId: String?,
+        backend: Any,
         fetch: suspend () -> T,
     ): T {
         var joined: CompletableDeferred<Any?>? = null
         val mine: CompletableDeferred<Any?> = lock.withLock {
-            if (ownerUserId != userId) {
-                // Account changed (sign-in/sign-out/switch): wipe everything.
+            if (ownerUserId != userId || ownerBackend !== backend) {
+                // Account or backend changed: wipe everything.
                 // The reaction overlay is user-scoped optimism too — a
                 // switched account must not inherit the previous one's taps.
                 reactionOverlay.clear()
                 slots.clear()
                 ownerUserId = userId
+                ownerBackend = backend
             }
             val existing = slots[key]
             when {
@@ -2127,7 +2206,9 @@ private class CloudReadCache {
             value
         } catch (error: Throwable) {
             mine.completeExceptionally(error)
-            lock.withLock { if (slots[key] === mine) slots.remove(key) }
+            withContext(NonCancellable) {
+                lock.withLock { if (slots[key] === mine) slots.remove(key) }
+            }
             throw error
         }
     }

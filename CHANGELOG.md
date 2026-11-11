@@ -24,6 +24,7 @@ store listing; this is the whole list.
 - Keep valid social events available when an inbox row contains an invalid or out-of-range timestamp.
 - Keep sign-in, restored profiles and privacy changes tied to the current account; cancellation and overlapping requests no longer leave account controls stuck busy or revive a signed-out session.
 - Wait for authentication startup before importing saved sessions or signing in, preventing a startup race from making restored accounts disappear.
+- Keep inbox unread counts accurate when refreshes and read acknowledgements overlap; isolate cached social data by account and backend, and recover cancelled inbox loads with a working retry.
 
 ## 1.10
 

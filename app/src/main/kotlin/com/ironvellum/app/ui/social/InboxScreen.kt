@@ -60,6 +60,9 @@ import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.data.cloud.AccountRepository
 import com.ironvellum.app.data.cloud.CloudSync
+import com.ironvellum.app.data.cloud.Cloud
+import com.ironvellum.app.data.cloud.Inbox
+import io.github.jan.supabase.SupabaseClient
 import com.ironvellum.app.data.cloud.CircleChange
 import com.ironvellum.app.data.cloud.InboxItem
 import com.ironvellum.app.ui.components.InkChip
@@ -71,17 +74,49 @@ import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.IronvellumColors
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
+
+internal data class InboxOwner(val userId: String?, val backend: Any?)
+
+internal interface InboxGateway {
+    val owners: Flow<InboxOwner>
+    fun owner(): InboxOwner
+    suspend fun read(force: Boolean): Result<Inbox>
+    suspend fun markSeen(owner: InboxOwner): Result<Unit>
+    suspend fun accept(userId: String): Result<Unit>
+    suspend fun decline(userId: String): Result<Unit>
+}
+
+private class CloudInboxGateway(private val cloud: CloudSync, private val accounts: AccountRepository) : InboxGateway {
+    override fun owner() = InboxOwner(accounts.account.value?.userId, if (Cloud.config.value != null) Cloud.client() else null)
+    override val owners = combine(accounts.account, Cloud.config) { _, _ -> owner() }.distinctUntilChanged()
+    override suspend fun read(force: Boolean) = cloud.inbox(force)
+    override suspend fun markSeen(owner: InboxOwner): Result<Unit> {
+        val userId = owner.userId ?: return Result.success(Unit)
+        val client = owner.backend as? SupabaseClient ?: return Result.success(Unit)
+        return cloud.markInboxSeen(userId, client)
+    }
+    override suspend fun accept(userId: String) = cloud.acceptFriend(userId)
+    override suspend fun decline(userId: String) = cloud.removeFriend(userId)
+}
 
 /** How an ally request was answered from the inbox row itself. */
 internal enum class RequestAnswer { ACCEPTED, DECLINED }
 
 internal data class InboxUi(
-    val signedIn: Boolean = false,
-    val myUserId: String? = null,
+    val owner: InboxOwner = InboxOwner(null, null),
     val loading: Boolean = false,
     /** True once one fetch answered, so an empty list reads as "clear", not "loading". */
     val loaded: Boolean = false,
@@ -100,49 +135,61 @@ internal data class InboxUi(
     val answered: Map<String, RequestAnswer> = emptyMap(),
     /** A decline waiting out its Undo window: (actor id, name). The server call fires when it closes. */
     val pendingDecline: Pair<String, String>? = null,
-)
+) {
+    val signedIn: Boolean get() = owner.userId != null
+}
 
-internal class InboxViewModel(
-    private val cloud: CloudSync,
-    accountRepo: AccountRepository,
-) : ViewModel() {
-
-    private val _ui = MutableStateFlow(
-        InboxUi(signedIn = accountRepo.account.value != null, myUserId = accountRepo.account.value?.userId),
-    )
+internal class InboxViewModel(private val gateway: InboxGateway) : ViewModel() {
+    private var owner = gateway.owner()
+    private var requests = requestScope()
+    private val _ui = MutableStateFlow(InboxUi(owner = owner))
     val ui: StateFlow<InboxUi> = _ui.asStateFlow()
 
     private fun Throwable.reason(): UiText = reasonText(UiText.res(R.string.inbox_unknown_failure))
 
-    init {
-        viewModelScope.launch {
-            accountRepo.account.collect { account ->
-                val switched = account?.userId != _ui.value.myUserId
-                _ui.value = if (switched) {
-                    // A different lifter (or none): nothing of the last one's inbox may linger.
-                    InboxUi(signedIn = account != null, myUserId = account?.userId)
-                } else {
-                    _ui.value.copy(signedIn = account != null)
-                }
-            }
-        }
+    private fun requestScope() = CoroutineScope(
+        viewModelScope.coroutineContext + SupervisorJob(viewModelScope.coroutineContext[Job]),
+    )
+
+    private fun refreshOwner() {
+        val current = gateway.owner()
+        if (current == owner) return
+        owner = current
+        requests.cancel()
+        requests = requestScope()
+        _ui.value = InboxUi(owner = current)
     }
 
-    /**
-     * Fetch, then mark seen. The order matters: marking first would move
-     * seen_at past every item and nothing would ever show as new.
-     */
+    private fun current(expected: InboxOwner, scope: CoroutineScope): Boolean =
+        requests === scope && owner == expected && gateway.owner() == expected
+
+    init {
+        viewModelScope.launch { gateway.owners.collect { refreshOwner() } }
+    }
+
+    /** Read first, then acknowledge only for the account/backend that opened this visit. */
     fun open(force: Boolean = false) {
+        refreshOwner()
         if (!_ui.value.signedIn || _ui.value.loading) return
+        val expected = owner
+        val scope = requests
         _ui.value = _ui.value.copy(loading = true, error = null)
-        viewModelScope.launch {
-            cloud.inbox(force = force)
-                .onSuccess { inbox ->
-                    _ui.value = _ui.value.copy(items = inbox.items, seenAtMs = inbox.seenAtMs, loaded = true)
-                    if (inbox.unread > 0) cloud.markInboxSeen()
+        scope.launch {
+            try {
+                val inbox = gateway.read(force).getOrThrow()
+                if (!current(expected, scope)) return@launch
+                _ui.value = _ui.value.copy(items = inbox.items, seenAtMs = inbox.seenAtMs, loaded = true)
+                if (inbox.unread > 0) gateway.markSeen(expected).getOrThrow()
+            } catch (error: CancellationException) {
+                if (current(expected, scope) && scope.isActive) {
+                    _ui.value = _ui.value.copy(loaded = true, error = UiText.res(R.string.inbox_unknown_failure))
                 }
-                .onFailure { _ui.value = _ui.value.copy(error = it.reason(), loaded = true) }
-            _ui.value = _ui.value.copy(loading = false)
+                throw error
+            } catch (error: Exception) {
+                if (current(expected, scope)) _ui.value = _ui.value.copy(error = error.reason(), loaded = true)
+            } finally {
+                if (current(expected, scope)) _ui.value = _ui.value.copy(loading = false)
+            }
         }
     }
 
@@ -153,6 +200,7 @@ internal class InboxViewModel(
      * since a declined request cannot be put back from here. A second decline commits the first.
      */
     fun decline(userId: String, name: String) {
+        refreshOwner()
         if (userId in _ui.value.answering || userId in _ui.value.answered) return
         commitDecline()
         _ui.value = _ui.value.copy(pendingDecline = userId to name)
@@ -164,24 +212,32 @@ internal class InboxViewModel(
 
     /** Send the waiting decline now: its window closed, another decline began, or the tab was left. */
     fun commitDecline() {
+        refreshOwner()
         val (userId, _) = _ui.value.pendingDecline ?: return
         _ui.value = _ui.value.copy(pendingDecline = null)
         answer(userId, RequestAnswer.DECLINED)
     }
 
     private fun answer(userId: String, answer: RequestAnswer) {
-        if (userId in _ui.value.answering || userId in _ui.value.answered) return
+        refreshOwner()
+        if (!_ui.value.signedIn || userId in _ui.value.answering || userId in _ui.value.answered) return
+        val expected = owner
+        val scope = requests
         _ui.value = _ui.value.copy(answering = _ui.value.answering + userId, actionError = null)
-        viewModelScope.launch {
-            val call = when (answer) {
-                RequestAnswer.ACCEPTED -> cloud.acceptFriend(userId)
-                // Declining deletes the pending row, the same call that ends an alliance.
-                RequestAnswer.DECLINED -> cloud.removeFriend(userId)
+        scope.launch {
+            try {
+                when (answer) {
+                    RequestAnswer.ACCEPTED -> gateway.accept(userId)
+                    RequestAnswer.DECLINED -> gateway.decline(userId)
+                }.getOrThrow()
+                if (current(expected, scope)) _ui.value = _ui.value.copy(answered = _ui.value.answered + (userId to answer))
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                if (current(expected, scope)) _ui.value = _ui.value.copy(actionError = error.reason())
+            } finally {
+                if (current(expected, scope)) _ui.value = _ui.value.copy(answering = _ui.value.answering - userId)
             }
-            call
-                .onSuccess { _ui.value = _ui.value.copy(answered = _ui.value.answered + (userId to answer)) }
-                .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
-            _ui.value = _ui.value.copy(answering = _ui.value.answering - userId)
         }
     }
 }
@@ -200,12 +256,12 @@ internal fun InboxScreen(
     /** False while the page is only peeking in during a swipe: reading the inbox waits for the visit. */
     active: Boolean = true,
     viewModel: InboxViewModel = viewModel(
-        factory = viewModelFactory { initializer { InboxViewModel(ironvellumCloudSync(), ironvellumAccount()) } },
+        factory = viewModelFactory { initializer { InboxViewModel(CloudInboxGateway(ironvellumCloudSync(), ironvellumAccount())) } },
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     // Every visit to the tab reads the inbox and clears the nav dot.
-    LaunchedEffect(ui.signedIn, active) {
+    LaunchedEffect(ui.owner, active) {
         if (ui.signedIn && active) viewModel.open()
     }
     // Leaving the tab (a swipe or navigation) lets a waiting decline go through.
@@ -282,7 +338,7 @@ internal fun InboxScreen(
                                                 // it opens with no owner, and the thread reads the real
                                                 // one off the trial, rather than lending the caller the
                                                 // owner's moderation for a moment.
-                                                ui.myUserId?.let { me -> onOpenComments(sessionId, if (mine) me else "", headline) }
+                                                ui.owner.userId?.let { me -> onOpenComments(sessionId, if (mine) me else "", headline) }
                                             },
                                             onAccept = { viewModel.accept(item.actorId) },
                                             onDecline = { viewModel.decline(item.actorId, item.actorName.ifBlank { "${Words.lifter.cat}" }) },
