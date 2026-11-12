@@ -36,6 +36,7 @@ More in `docs/`:
 - [docs/GLOSSARY.md](GLOSSARY.md) - every word the app shows
 - [docs/RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) - what ships before a release
 - [docs/TODO.md](TODO.md) - outstanding work
+- [Wear OS companion plan](superpowers/plans/2026-11-13-fdroid-wear-os-companion.md) - F-Droid-compatible live workout controls, transport feasibility, timers and verification gates
 - [docs/open-source/](open-source/README.md) - open-sourcing, funding and self-hosting plans
 - [COSTS.md](../COSTS.md) - what the shared cloud costs
 - [AGENTS.md](../AGENTS.md) - standing rules for agents working in the repo
