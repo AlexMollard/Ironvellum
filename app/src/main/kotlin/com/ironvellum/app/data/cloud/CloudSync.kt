@@ -781,6 +781,7 @@ class CloudSync private constructor(
             // Our own aggregates just changed; cached leaderboard/feed rows
             // would now show stale level/xp/title for this lifter.
             cache.invalidate(CloudReadCache.KEY_LEADERBOARD)
+            cache.invalidate(CloudReadCache.KEY_WORKOUT_XP_LEADERBOARD)
             cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
             cache.invalidate(CloudReadCache.KEY_LIFT_BOARD)
         }.recoverCatching { error ->
@@ -929,6 +930,46 @@ class CloudSync private constructor(
             }
         }.recoverCatching { error ->
             throw MessageException(Cloud.explain(error), error)
+        }
+    }
+
+    /** Rank the visible rolling-window population, not the lifetime board's top 100. */
+    suspend fun workoutXpLeaderboard(force: Boolean = false): Result<List<LeaderboardRow>> {
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return attempt {
+            cache.getOrFetch(
+                key = CloudReadCache.KEY_WORKOUT_XP_LEADERBOARD,
+                ttlMs = 60_000,
+                force = force,
+                userId = account.account.value?.userId,
+                backend = client,
+            ) {
+                client.postgrest.from("workout_xp_leaderboard").select {
+                    order("workout_xp_last_7d", Order.DESCENDING)
+                    order("display_name", Order.ASCENDING)
+                    order("id", Order.ASCENDING)
+                    limit(100)
+                }.decodeList<WorkoutXpLeaderboardDto>().map {
+                    LeaderboardRow(
+                        userId = it.id,
+                        displayName = it.displayName,
+                        level = it.level,
+                        totalXp = it.totalXp,
+                        streakDays = it.streakDays,
+                        titlesCount = it.titlesCount,
+                        lifetimeStrength = it.lifetimeStrength,
+                        sessionsLast7d = it.sessionsLast7d,
+                        currentTitleId = it.currentTitleId,
+                        crestId = it.currentCrestId,
+                        workoutXpLast7d = it.workoutXpLast7d,
+                    )
+                }
+            }
+        }.recoverCatching { error ->
+            val message = if (Cloud.isNotSetUp(error)) {
+                cloudThemed(R.string.cloud_workout_xp_needs_schema, R.string.cloud_workout_xp_needs_schema__t)
+            } else Cloud.explain(error)
+            throw MessageException(message, error)
         }
     }
 
@@ -1731,8 +1772,7 @@ class CloudSync private constructor(
             Unit
         }.onSuccess {
             // Friends-only workouts of theirs leave our feed with the alliance.
-            cache.invalidate(CloudReadCache.KEY_FRIENDS)
-            cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
+            invalidateSocialReads()
         }.recoverCatching { error ->
             throw MessageException(Cloud.explain(error), error)
         }
@@ -1912,6 +1952,8 @@ class CloudSync private constructor(
         cache.invalidate(CloudReadCache.KEY_FRIENDS)
         cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
         cache.invalidate(CloudReadCache.KEY_INBOX)
+        cache.invalidate(CloudReadCache.KEY_LEADERBOARD)
+        cache.invalidate(CloudReadCache.KEY_WORKOUT_XP_LEADERBOARD)
         cache.invalidatePrefix("${CloudReadCache.KEY_COMMENTS}:")
         cache.invalidatePrefix("${CloudReadCache.KEY_LIKERS}:")
         cache.invalidate(CloudReadCache.KEY_LIFT_BOARD)
@@ -2128,6 +2170,7 @@ class CloudSync private constructor(
 internal class CloudReadCache {
     companion object {
         const val KEY_LEADERBOARD = "leaderboard"
+        const val KEY_WORKOUT_XP_LEADERBOARD = "workout_xp_leaderboard"
         const val KEY_SHADOW_BOARD = "shadow_board"
         const val KEY_FRIENDS = "friends"
         const val KEY_CIRCLE = "circle"

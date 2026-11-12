@@ -2,8 +2,8 @@
 --
 -- For the already-deployed project only; a fresh project gets all of this from
 -- supabase/migrations/0001_baseline.sql, which stays the source of truth (every
--- definition below is cut verbatim from it, and HostedPatchTest fails the unit
--- gate if one drifts). Paste this file into the SQL editor once. It is
+-- definition below is cut verbatim from it, and the backend gate reapplies the
+-- patches and asserts their database behavior). Paste this file into the SQL editor once. It is
 -- idempotent: a second run, or a run on a project that already has it, changes
 -- nothing and touches no rows. One transaction: it all lands or none of it does.
 --

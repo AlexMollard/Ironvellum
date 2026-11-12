@@ -29,6 +29,21 @@ class BoardRankingTest {
         assertEquals(listOf("b", "c", "a"), BoardRanking.sort(rows, BoardRanking.Metric.Streak).map { it.userId })
     }
 
+    @Test fun workoutXpUsesRecentValuesAndNameThenIdInsteadOfLifetimeXp() {
+        val recent = listOf(
+            row("z", "alex", xp = 9000).copy(workoutXpLast7d = 20),
+            row("b", "Alex", xp = 100).copy(workoutXpLast7d = 20),
+            row("c", "Newcomer", xp = 1).copy(workoutXpLast7d = 30),
+        )
+        assertEquals(30L, BoardRanking.value(BoardRanking.Metric.WorkoutXp, recent[2]))
+        assertEquals(listOf("c", "b", "z"), BoardRanking.sort(recent, BoardRanking.Metric.WorkoutXp).map { it.userId })
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun workoutXpRejectsRowsWithoutRecentPayload() {
+        BoardRanking.value(BoardRanking.Metric.WorkoutXp, rows.first())
+    }
+
     @Test fun anEmptyBoardSortsToNothing() {
         assertEquals(emptyList<LeaderboardRow>(), BoardRanking.sort(emptyList(), BoardRanking.Metric.Xp))
     }

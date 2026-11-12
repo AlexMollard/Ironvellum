@@ -32,8 +32,8 @@ import java.io.IOException
 
 /**
  * The oldest backend schema the app works against: below it the app says "Outdated" and stops syncing.
- * The baseline may be AHEAD of it (schema 32 adds the optional friend-safe feed card, gated by
- * [CloudSync.feedReady]), so raise this only when the app cannot work without the newer schema.
+ * The baseline may be ahead of it: optional feed cards and rolling workout rankings need newer schemas.
+ * Raise this only when the app cannot work without the newer schema.
  */
 const val NEEDED_SCHEMA_VERSION = 31
 

@@ -307,6 +307,22 @@ data class LeaderboardDto(
     @SerialName("current_crest_id") val currentCrestId: String? = null,
 )
 
+/** Separate wire shape: a missing recent award must fail decoding, not become a ranked zero. */
+@Serializable
+data class WorkoutXpLeaderboardDto(
+    @SerialName("id") val id: String,
+    @SerialName("display_name") val displayName: String,
+    @SerialName("level") val level: Int,
+    @SerialName("total_xp") val totalXp: Long,
+    @SerialName("streak_days") val streakDays: Int,
+    @SerialName("titles_count") val titlesCount: Int,
+    @SerialName("lifetime_strength") val lifetimeStrength: Long,
+    @SerialName("sessions_last_7d") val sessionsLast7d: Int,
+    @SerialName("workout_xp_last_7d") val workoutXpLast7d: Long,
+    @SerialName("current_title_id") val currentTitleId: String? = null,
+    @SerialName("current_crest_id") val currentCrestId: String? = null,
+)
+
 @Serializable
 data class FriendshipDto(
     @SerialName("requester_id") val requesterId: String,
@@ -483,6 +499,8 @@ data class LeaderboardRow(
     val sessionsLast7d: Int,
     val currentTitleId: String?,
     val crestId: String? = null,
+    /** Null on the lifetime board; never replace [totalXp] with a different time window. */
+    val workoutXpLast7d: Long? = null,
 )
 
 data class FriendRow(

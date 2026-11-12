@@ -4790,6 +4790,8 @@
     <string name="cloud_sync_web_snapshot_failed">Web-Statistiken wurden nicht synchronisiert: %1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">Web-Statistiken sind zu groß zum Synchronisieren (%1$d Bytes).</string>
     <string name="cloud_sync_tiers_failed">Übungsstufen wurden nicht synchronisiert: %1$s</string>
+    <string name="cloud_workout_xp_needs_schema">Rollierende Trainings-XP benötigen Cloud-Schema 33. Wende das neueste Datenbank-Update an; die Gesamt-XP-Rangliste funktioniert weiterhin.</string>
+    <string name="cloud_workout_xp_needs_schema__t">Rollierende Prüfungs-XP benötigen Cloud-Schema 33. Wende das neueste Datenbank-Update an; die Gesamt-XP-Rangliste funktioniert weiterhin.</string>
     <string name="cloud_sync_tiers_failed__t">Übungsrangstufen wurden nicht synchronisiert: %1$s</string>
     <string name="cloud_sync_trial_hidden">Dieses Training ist für dich nicht sichtbar</string>
     <string name="cloud_sync_trial_hidden__t">Diese Prüfung ist für dich nicht sichtbar</string>
@@ -4995,7 +4997,15 @@
     <string name="acct_boards_glance_failed">Laden fehlgeschlagen. Öffnen zum Wiederholen.</string>
     <string name="acct_boards_glance_empty">Noch keine Platzierungen</string>
     <string name="acct_boards_open_description">Rangliste %1$s öffnen</string>
-    <string name="acct_metric_xp">XP</string>
+    <string name="acct_metric_xp">Gesamt-XP</string>
+    <string name="acct_metric_workout_xp">Trainings-XP</string>
+    <string name="acct_metric_workout_xp__t">Prüfungs-XP</string>
+    <string name="acct_workout_xp_caption">XP aus sichtbaren Trainings der letzten 7 Tage, nach Abschlusszeit. XP aus Fähigkeiten, Kreisboni und importierte Trainings zählen nicht.</string>
+    <string name="acct_workout_xp_caption__t">XP aus sichtbaren Prüfungen der letzten 7 Tage, nach Abschlusszeit. XP aus Künsten, Kreisboni und importierte Prüfungen zählen nicht.</string>
+    <string name="acct_workout_xp_board_label">7-Tage-Trainings-XP</string>
+    <string name="acct_workout_xp_board_label__t">7-Tage-Prüfungs-XP</string>
+    <string name="acct_workout_xp_empty">Keine sichtbaren Trainings-XP in den letzten 7 Tagen. Schließe ein Training ab und synchronisiere es, um teilzunehmen.</string>
+    <string name="acct_workout_xp_empty__t">Keine sichtbaren Prüfungs-XP in den letzten 7 Tagen. Besiegle eine Prüfung und synchronisiere sie, um teilzunehmen.</string>
     <string name="acct_metric_level">Level</string>
     <string name="acct_metric_strength">Kraftwertung</string>
     <string name="acct_metric_last7">Letzte 7 Tage</string>

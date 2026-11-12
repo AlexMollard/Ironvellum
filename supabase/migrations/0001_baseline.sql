@@ -7,10 +7,10 @@
 -- that already carries this exact schema is a no-op. It does NOT upgrade an
 -- older shape: it replaces the eighteen incremental migrations this project
 -- used to carry, and the cloud is disposable debug data (the device's Room
--- database is the record), so a schema change is made by editing THIS file,
--- bumping the schema_version() literal at the bottom together with
--- app/src/main/kotlin/com/ironvellum/app/data/cloud/Cloud.kt
--- (NEEDED_SCHEMA_VERSION), and running reset.sql + this file again.
+-- database is the record), so a schema change is made by editing THIS file
+-- and bumping schema_version(). Raise Cloud.kt's NEEDED_SCHEMA_VERSION only
+-- for changes required by the whole app; optional boards can report an
+-- upgrade requirement while older features keep working.
 --
 -- Privacy model, deliberately narrow:
 --   * Body measurements (weight, height, body fat, BMI/FFMI) NEVER leave the
@@ -1707,6 +1707,38 @@ select
     p.current_crest_id
 from profiles p;
 
+-- A separate population from lifetime XP: inactivity must not reserve the top
+-- places forever. Both profiles and session awards remain caller-RLS filtered.
+-- Hours, not calendar days, keep this an elapsed seven-day window through DST.
+create or replace view workout_xp_leaderboard with (security_invoker = true) as
+select
+    p.id,
+    p.display_name,
+    p.level,
+    p.total_xp,
+    p.streak_days,
+    p.titles_count,
+    p.lifetime_strength,
+    recent.sessions_last_7d,
+    p.current_title_id,
+    p.current_crest_id,
+    recent.workout_xp_last_7d
+from profiles p
+join (
+    select
+        s.user_id,
+        count(*) as sessions_last_7d,
+        sum(s.xp_awarded)::bigint as workout_xp_last_7d
+    from sessions s
+    where s.completed_at > now() - interval '168 hours'
+      and s.completed_at <= now()
+    group by s.user_id
+    having sum(s.xp_awarded) > 0
+) recent on recent.user_id = p.id;
+
+revoke all on public.workout_xp_leaderboard from public, anon, authenticated;
+grant select on public.workout_xp_leaderboard to authenticated;
+
 -- The Shadow Army board: same visibility rules as every other social surface.
 create or replace view shadow_board with (security_invoker = true) as
 select
@@ -2884,10 +2916,10 @@ grant execute on function public.circle_bonuses() to authenticated;
 -- The version beacon. The app probes schema_version() as anon before pointing a
 -- lifter's training at a custom backend (Settings -> CLOUD, TEST), so a
 -- half-set-up project is reported before any data is sent to it. The anon
--- grant is load-bearing. EVERY SCHEMA CHANGE BUMPS THIS LITERAL and
--- Cloud.kt's NEEDED_SCHEMA_VERSION with it.
+-- grant is load-bearing. Every schema change bumps this literal; the app's
+-- minimum is raised only when older schemas cannot support its core features.
 create or replace function public.schema_version() returns int
-language sql stable as $$ select 32 $$;
+language sql stable as $$ select 33 $$;
 revoke execute on function public.schema_version() from public;
 grant execute on function public.schema_version() to anon, authenticated;
 

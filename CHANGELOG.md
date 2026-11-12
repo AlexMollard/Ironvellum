@@ -5,6 +5,12 @@ store listing; this is the whole list.
 
 ## 1.11
 
+### Rolling workout XP
+- Rank the Training board by workout XP earned in the rolling last seven days, with Lifetime XP still available in the metric picker.
+- Count completed, visible workouts by completion time, including workouts synced later. Skill claims, circle bonuses and imported workouts do not count toward this board.
+- Keep recent and lifetime standings separate when changing metrics, accounts or backends; refresh retained standings and invalidate visibility-sensitive caches after relationship changes.
+- Require the optional schema 33 hosted update for recent rankings; existing sync and lifetime rankings remain available on older supported backends.
+
 ### Rest times
 - Set compound and isolation rest defaults or override an exercise in its workout settings; turn a custom value off to use the underlying default again. Top-set rest remains separate.
 - Use custom rest in rule-based workout estimates; estimates based on your measured pace still reflect that history.

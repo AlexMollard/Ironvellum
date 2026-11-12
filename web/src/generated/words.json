@@ -151,9 +151,13 @@
         "plain": "STR %1$s",
         "themed": "STR %1$s"
     },
+    "acct_metric_workout_xp": {
+        "plain": "Workout XP",
+        "themed": "Trial XP"
+    },
     "acct_metric_xp": {
-        "plain": "XP",
-        "themed": "XP"
+        "plain": "Lifetime XP",
+        "themed": "Lifetime XP"
     },
     "acct_metric_xp_value": {
         "plain": "%1$s XP",
@@ -167,6 +171,10 @@
         "plain": "%1$.1f/h",
         "themed": "%1$.1f/h"
     },
+    "acct_retry_link": {
+        "plain": "Try again",
+        "themed": "Try again"
+    },
     "acct_unblock_button": {
         "plain": "Unblock",
         "themed": "Unblock"
@@ -178,6 +186,14 @@
     "acct_window_week": {
         "plain": "Week",
         "themed": "Week"
+    },
+    "acct_workout_xp_caption": {
+        "plain": "Workout XP visible to you, completed in the rolling last 7 days. Skill claims, circle bonuses and imported workouts do not count.",
+        "themed": "Trial XP visible to you, sealed in the rolling last 7 days. Technique claims, circle bonuses and imported trials do not count."
+    },
+    "acct_workout_xp_empty": {
+        "plain": "No visible workout XP in the last 7 days. Complete a workout and sync to join this board.",
+        "themed": "No visible trial XP in the last 7 days. Seal a trial and sync to join this board."
     },
     "always_acct_essence_value": {
         "plain": "%1$s essence",
@@ -718,6 +734,10 @@
     "cloud_sync_trial_hidden": {
         "plain": "This workout is not visible to you",
         "themed": "This trial is not visible to you"
+    },
+    "cloud_workout_xp_needs_schema": {
+        "plain": "Rolling workout XP needs cloud schema 33. Apply the latest hosted update; lifetime rankings still work.",
+        "themed": "Rolling trial XP needs cloud schema 33. Apply the latest hosted update; lifetime rankings still work."
     },
     "comments_delete_body": {
         "plain": "It disappears for everyone. This can't be undone.",

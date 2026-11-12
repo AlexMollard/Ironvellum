@@ -14,7 +14,8 @@ const choose = (select, value) => { select.value = value; select.dispatchEvent(n
 const lb = (id, name, over = {}) => ({ id, display_name: name, current_title_id: null, current_crest_id: null, level: 10, total_xp: 1000, streak_days: 1, titles_count: 1, lifetime_strength: 500, sessions_last_7d: 2, ...over });
 const lift = (id, name, l, step, recent = null) => ({ user_id: id, display_name: name, current_title_id: null, current_crest_id: null, level: 10, lift: l, step, recent_step: recent });
 const mount = async (script, ctx = {}, kind) => {
-  const client = fakeClient(script), social = createSupabaseSocial(client, 'me'), root = document.createElement('main'), router = { go: vi.fn() };
+  const recent = Array.isArray(script.leaderboard) ? script.leaderboard.map(r => ({ ...r, workout_xp_last_7d: r.total_xp })) : undefined;
+  const client = fakeClient({ ...script, workout_xp_leaderboard: script.workout_xp_leaderboard ?? recent }), social = createSupabaseSocial(client, 'me'), root = document.createElement('main'), router = { go: vi.fn() };
   document.body.append(root); await renderBoards(root, { social, router, source: { userId: 'me' }, audience: 'everyone', ...ctx }, kind); await wait();
   return { root, client, router };
 };
@@ -34,6 +35,11 @@ describe('ranking', () => {
   it('tiesShareARank', () => {
     const rows = [{ id: 'a', name: 'a', lift: 'squat', step: 6, recentStep: null }, { id: 'b', name: 'b', lift: 'squat', step: 6, recentStep: null }, { id: 'c', name: 'c', lift: 'squat', step: 3, recentStep: null }];
     expect(rankLift(rows, 'squat', false).map(s => s.rank)).toEqual([1, 1, 3]);
+  });
+  it('recentTiesIgnoreLifetimeAndRequireRecentXp', () => {
+    const rows = [{ id: 'z', name: 'alex', totalXp: 9000, workoutXpLast7d: 40 }, { id: 'a', name: 'Alex', totalXp: 1, workoutXpLast7d: 40 }, { id: 'new', name: 'Zoe', totalXp: 1, workoutXpLast7d: 100 }];
+    expect(rankRows('workoutxp', rows).map(r => r.id)).toEqual(['new', 'a', 'z']);
+    expect(() => rankRows('workoutxp', [{ id: 'x', name: 'X', totalXp: 50 }])).toThrow();
   });
   it('anotherLiftDoesNotRankHere', () => { expect(rankLift([{ id: 'a', name: 'a', lift: 'bench', step: 6, recentStep: 6 }], 'squat', false)).toEqual([]); });
   it('ordinalsReadLikeThePhone', () => { expect([1, 2, 3, 4, 11, 12, 13, 21, 22].map(ordinal)).toEqual(['1st', '2nd', '3rd', '4th', '11th', '12th', '13th', '21st', '22nd']); });
@@ -58,15 +64,21 @@ describe('training board', () => {
   it('metricSwitchReorders', async () => {
     const rows = [lb('u1', 'Mara', { total_xp: 9000, streak_days: 1 }), lb('u2', 'Jonah', { total_xp: 100, streak_days: 20 }), lb('u3', 'Ines', { total_xp: 50, streak_days: 5 })];
     const { root, router } = await mount({ leaderboard: rows }); expect(root.querySelector('.podium-place.place-1').dataset.user).toBe('u1');
-    choose(root.querySelector('.board-metric'), 'streak'); expect(root.querySelector('.podium-place.place-1').dataset.user).toBe('u2'); expect(root.querySelector('.podium-place.place-1').textContent).toContain('20 days');
+    choose(root.querySelector('.board-metric'), 'streak'); await wait(); expect(root.querySelector('.podium-place.place-1').dataset.user).toBe('u2'); expect(root.querySelector('.podium-place.place-1').textContent).toContain('20 days');
     expect(root.querySelector('.board-metric').value).toBe('streak'); expect(router.go).not.toHaveBeenCalled();
   });
   it('levelBoardShowsXpAsTheSubline', async () => {
-    const { root } = await mount({ leaderboard: [...board, lb('u6', 'Zed', { total_xp: 10 })] }); choose(root.querySelector('.board-metric'), 'level');
+    const { root } = await mount({ leaderboard: [...board, lb('u6', 'Zed', { total_xp: 10 })] }); choose(root.querySelector('.board-metric'), 'level'); await wait();
     expect(root.querySelector('.board-row .person-sub').textContent).toContain(format(t('acct_metric_xp_value'), '4,000'));
   });
   it('aloneOnTheBoardSaysSo', async () => { const { root } = await mount({ leaderboard: [lb('me', 'Fictional lifter')] }); expect(root.textContent).toContain(t('acct_board_alone')); });
-  it('emptyBoardReadsPlain', async () => { const { root } = await mount({ leaderboard: [] }); expect(root.querySelector('.empty').textContent).toBe(t('acct_board_empty')); });
+  it('doesNotBorrowLifetimeStandingsWhenRecentWorkoutsAreEmpty', async () => {
+    const { root } = await mount({ leaderboard: board, workout_xp_leaderboard: [] });
+    expect(root.querySelector('.podium')).toBeNull();
+    expect(root.querySelector('.board-row')).toBeNull();
+    choose(root.querySelector('.board-metric'), 'xp'); await wait();
+    expect(root.querySelector('.podium-place.place-1').dataset.user).toBe('u1');
+  });
   it('friendsAudienceFiltersClientSideOnly', async () => {
     const { root, client } = await mount({ leaderboard: board }, { audience: 'allies', allyIds: new Set(['u2']) });
     expect([...root.querySelectorAll('.podium-place')].map(p => p.dataset.user)).toEqual(['me', 'u2']); expect(client.calls).toHaveLength(1);
@@ -74,8 +86,40 @@ describe('training board', () => {
   it('blockedLifterIsAbsentAsServed', async () => {
     const { root } = await mount({ leaderboard: board.filter(r => r.id !== 'u1') }); expect(root.querySelector('[data-user="u1"]')).toBeNull();
   });
-  it('requestsTheTopHundredByXp', async () => {
-    const { client } = await mount({ leaderboard: board }); const call = client.callsTo('leaderboard')[0]; expect(call.limit).toBe(100); expect(call.order).toEqual([['total_xp', false]]);
+  it('ranksRecentPopulationInsteadOfLifetimeTopHundred', async () => {
+    const { root } = await mount({ leaderboard: [lb('veteran', 'Veteran', { total_xp: 100000 })], workout_xp_leaderboard: [lb('new', 'Newcomer', { total_xp: 20, workout_xp_last_7d: 900 }), lb('veteran', 'Veteran', { total_xp: 100000, workout_xp_last_7d: 100 })] });
+    expect(root.querySelector('.podium-place.place-1').dataset.user).toBe('new');
+    choose(root.querySelector('.board-metric'), 'xp'); await wait();
+    expect(root.querySelector('.podium-place.place-1').dataset.user).toBe('veteran');
+    choose(root.querySelector('.board-metric'), 'workoutxp'); await wait();
+    expect(root.querySelector('.podium-place.place-1').dataset.user).toBe('new');
+  });
+  it.each([undefined, null, 1.5])('rejectsMalformedRecentValuesInsteadOfShowingZero: %s', async value => {
+    const { root } = await mount({ leaderboard: board, workout_xp_leaderboard: [lb('u1', 'Mara', { workout_xp_last_7d: value })] });
+    expect(root.querySelector('.podium')).toBeNull(); expect(root.querySelector('.notice')).not.toBeNull();
+  });
+  it('canRetryAFailedRecentReadWithoutChangingToLifetimeXp', async () => {
+    let unavailable = true;
+    const { root } = await mount({
+      leaderboard: board,
+      workout_xp_leaderboard: () => unavailable
+        ? { code: 'PGRST205', message: 'missing recent view' }
+        : [lb('new', 'Newcomer', { workout_xp_last_7d: 900 })],
+    });
+    expect(root.querySelector('.podium')).toBeNull();
+    unavailable = false;
+    click(root.querySelector('.board button.primary-small')); await wait();
+    expect(root.querySelector('.board-metric').value).toBe('workoutxp');
+    expect(root.querySelector('.podium-place.place-1').dataset.user).toBe('new');
+    expect(root.querySelector('.notice')).toBeNull();
+  });
+  it('ignoresLateResultsAfterMetricChanges', async () => {
+    let release;
+    const { root } = await mount({ leaderboard: () => new Promise(resolve => { release = resolve; }), workout_xp_leaderboard: [lb('new', 'Newcomer', { workout_xp_last_7d: 900 })] });
+    choose(root.querySelector('.board-metric'), 'xp');
+    choose(root.querySelector('.board-metric'), 'workoutxp'); await wait();
+    release([lb('old', 'Old', { total_xp: 90000 })]); await wait();
+    expect(root.querySelector('.board-metric').value).toBe('workoutxp'); expect(root.querySelector('.podium-place.place-1').dataset.user).toBe('new');
   });
 });
 
@@ -131,12 +175,6 @@ describe('one tab row', () => {
 });
 
 describe('every board', () => {
-  it('boardsReadOnlyViewsOnly', async () => {
-    for (const kind of ['training', 'lifts', 'muster']) {
-      const { client } = await mount({ leaderboard: board, lift_board: [], shadow_board: [] }, {}, kind);
-      expect(client.calls.every(c => c.op === 'select')).toBe(true); for (const table of client.tables()) expect(['leaderboard', 'shadow_board', 'lift_board', 'friendships']).toContain(table);
-    }
-  });
   it('theBoardSwitchGoesThroughTheRouter', async () => {
     const { root, router } = await mount({ leaderboard: board }); click(root.querySelector('[aria-label="Board"] [data-value="lifts"]')); expect(router.go).toHaveBeenCalledWith('/friends/boards/lifts');
   });

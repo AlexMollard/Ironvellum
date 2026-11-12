@@ -4790,6 +4790,8 @@
     <string name="cloud_sync_web_snapshot_failed">As estatísticas da web não foram sincronizadas: %1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">As estatísticas da web são grandes demais para sincronizar (%1$d bytes).</string>
     <string name="cloud_sync_tiers_failed">Os níveis dos levantamentos não foram sincronizados: %1$s</string>
+    <string name="cloud_workout_xp_needs_schema">O ranking de XP de treinos dos últimos 7 dias exige o esquema 33 na nuvem. Aplique a atualização mais recente do banco; o ranking de XP total continua disponível.</string>
+    <string name="cloud_workout_xp_needs_schema__t">O ranking de XP de provas dos últimos 7 dias exige o esquema 33 na nuvem. Aplique a atualização mais recente do banco; o ranking de XP total continua disponível.</string>
     <string name="cloud_sync_tiers_failed__t">Os degraus dos levantamentos não foram sincronizados: %1$s</string>
     <string name="cloud_sync_trial_hidden">Este treino não está visível para você</string>
     <string name="cloud_sync_trial_hidden__t">Esta prova está oculta de seus olhos</string>
@@ -4995,7 +4997,15 @@
     <string name="acct_boards_glance_failed">Não foi possível carregar. Abra para tentar novamente.</string>
     <string name="acct_boards_glance_empty">Nenhuma posição ainda</string>
     <string name="acct_boards_open_description">Abrir ranking de %1$s</string>
-    <string name="acct_metric_xp">XP</string>
+    <string name="acct_metric_xp">XP total</string>
+    <string name="acct_metric_workout_xp">XP de treinos</string>
+    <string name="acct_metric_workout_xp__t">XP de provas</string>
+    <string name="acct_workout_xp_caption">XP de treinos visíveis concluídos nos últimos 7 dias. Técnicas, bônus de círculos e treinos importados não contam.</string>
+    <string name="acct_workout_xp_caption__t">XP de provas visíveis seladas nos últimos 7 dias. Domínios, bônus de círculos e provas importadas não contam.</string>
+    <string name="acct_workout_xp_board_label">XP de treinos em 7 dias</string>
+    <string name="acct_workout_xp_board_label__t">XP de provas em 7 dias</string>
+    <string name="acct_workout_xp_empty">Não há XP de treinos visíveis nos últimos 7 dias. Conclua e sincronize um treino para participar.</string>
+    <string name="acct_workout_xp_empty__t">Não há XP de provas visíveis nos últimos 7 dias. Sele e sincronize uma prova para participar.</string>
     <string name="acct_metric_level">Nível</string>
     <string name="acct_metric_strength">Pontuação de força</string>
     <string name="acct_metric_last7">Últimos 7 dias</string>

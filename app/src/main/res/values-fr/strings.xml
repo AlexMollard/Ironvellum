@@ -4790,6 +4790,8 @@
     <string name="cloud_sync_web_snapshot_failed">Les stats Web n\'ont pas été synchronisées : %1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">Les stats Web sont trop volumineuses pour être synchronisées (%1$d octets).</string>
     <string name="cloud_sync_tiers_failed">Les paliers de force n\'ont pas été synchronisés : %1$s</string>
+    <string name="cloud_workout_xp_needs_schema">Le classement glissant des XP de séances nécessite le schéma cloud 33. Applique la dernière mise à jour de la base ; le classement des XP cumulées reste disponible.</string>
+    <string name="cloud_workout_xp_needs_schema__t">Le classement glissant des XP d’épreuves nécessite le schéma cloud 33. Applique la dernière mise à jour de la base ; le classement des XP cumulées reste disponible.</string>
     <string name="cloud_sync_tiers_failed__t">Les échelons de force n\'ont pas été synchronisés : %1$s</string>
     <string name="cloud_sync_trial_hidden">Cette séance ne t\'est pas visible</string>
     <string name="cloud_sync_trial_hidden__t">Cette épreuve ne t\'est pas visible</string>
@@ -4995,7 +4997,15 @@
     <string name="acct_boards_glance_failed">Chargement impossible. Ouvre pour réessayer.</string>
     <string name="acct_boards_glance_empty">Aucun classement pour le moment</string>
     <string name="acct_boards_open_description">Ouvrir le classement %1$s</string>
-    <string name="acct_metric_xp">XP</string>
+    <string name="acct_metric_xp">XP cumulées</string>
+    <string name="acct_metric_workout_xp">XP de séances</string>
+    <string name="acct_metric_workout_xp__t">XP d’épreuves</string>
+    <string name="acct_workout_xp_caption">XP des séances visibles terminées au cours des 7 derniers jours. Techniques, bonus de cercles et séances importées ne comptent pas.</string>
+    <string name="acct_workout_xp_caption__t">XP des épreuves visibles scellées au cours des 7 derniers jours. Arts, bonus de cercles et épreuves importées ne comptent pas.</string>
+    <string name="acct_workout_xp_board_label">XP de séances sur 7 jours</string>
+    <string name="acct_workout_xp_board_label__t">XP d’épreuves sur 7 jours</string>
+    <string name="acct_workout_xp_empty">Aucune XP de séance visible sur les 7 derniers jours. Termine et synchronise une séance pour participer.</string>
+    <string name="acct_workout_xp_empty__t">Aucune XP d’épreuve visible sur les 7 derniers jours. Scelle et synchronise une épreuve pour participer.</string>
     <string name="acct_metric_level">Niveau</string>
     <string name="acct_metric_strength">Score de force</string>
     <string name="acct_metric_last7">7 derniers jours</string>

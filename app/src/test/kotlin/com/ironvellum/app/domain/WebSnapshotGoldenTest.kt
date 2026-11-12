@@ -145,11 +145,11 @@ class WebSnapshotGoldenTest {
             // The boards' ranking rules (BoardRanking), pinned for the web port: each training metric's order and the lift boards' shared ranks.
             put("boardCases", buildJsonObject {
                 val rows = listOf(
-                    LeaderboardRow("a", "Mara", 31, 9000, 5, 12, 14000, 4, null),
-                    LeaderboardRow("b", "Jonah", 31, 9000, 9, 8, 15000, 2, null),
-                    LeaderboardRow("c", "Ines", 18, 4000, 9, 8, 15000, 6, null),
-                    LeaderboardRow("d", "odin", 18, 4000, 2, 20, 9000, 0, null),
-                    LeaderboardRow("e", "Odin", 40, 12000, 0, 3, 100, 1, null),
+                    LeaderboardRow("a", "Mara", 31, 9000, 5, 12, 14000, 4, null, workoutXpLast7d = 100),
+                    LeaderboardRow("b", "Jonah", 31, 9000, 9, 8, 15000, 2, null, workoutXpLast7d = 200),
+                    LeaderboardRow("c", "Ines", 18, 4000, 9, 8, 15000, 6, null, workoutXpLast7d = 300),
+                    LeaderboardRow("d", "odin", 18, 4000, 2, 20, 9000, 0, null, workoutXpLast7d = 200),
+                    LeaderboardRow("e", "Odin", 40, 12000, 0, 3, 100, 1, null, workoutXpLast7d = 200),
                 )
                 put("training", buildJsonObject {
                     put("rows", buildJsonArray {
@@ -157,6 +157,7 @@ class WebSnapshotGoldenTest {
                             add(buildJsonObject {
                                 put("id", r.userId); put("name", r.displayName); put("level", r.level); put("totalXp", r.totalXp); put("streakDays", r.streakDays)
                                 put("titlesCount", r.titlesCount); put("lifetimeStrength", r.lifetimeStrength); put("sessionsLast7d", r.sessionsLast7d)
+                                put("workoutXpLast7d", r.workoutXpLast7d)
                             })
                         }
                     })

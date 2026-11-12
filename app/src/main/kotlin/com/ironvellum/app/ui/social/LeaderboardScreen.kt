@@ -64,6 +64,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -96,6 +99,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 /** Full snapshot of the leader board state: config, session, and data state. */
 data class LeaderboardUi(
@@ -107,6 +111,7 @@ data class LeaderboardUi(
     val rows: List<LeaderboardRow> = emptyList(),
     val loading: Boolean = false,
     val error: UiText? = null,
+    val recentWorkoutXp: Boolean = true,
 )
 
 /** Snapshot of the muster roll board: rows, loading and failure state, independent of the training board. */
@@ -149,6 +154,7 @@ enum class BoardKind(val arg: String, private val labelText: () -> String) {
 
 /** Pickable ranking metric; each entry owns its sort key and display formatting. */
 private enum class BoardMetric(private val labelText: () -> String) {
+    WorkoutXp({ Words.text(UiText.themed(R.string.acct_metric_workout_xp, R.string.acct_metric_workout_xp__t)) }),
     Xp({ Words.text(UiText.res(R.string.acct_metric_xp)) }),
     Level({ Words.text(UiText.res(R.string.acct_metric_level)) }),
     Streak({ Words.oath.c }),
@@ -164,6 +170,7 @@ private enum class BoardMetric(private val labelText: () -> String) {
 
     /** The big per-row display of this metric's value. */
     fun format(row: LeaderboardRow): String = when (this) {
+        WorkoutXp -> Words.text(UiText.res(R.string.acct_metric_xp_value, grouped(value(row))))
         Xp -> Words.text(UiText.res(R.string.acct_metric_xp_value, grouped(row.totalXp)))
         Level -> Words.text(UiText.res(R.string.xp_level_label, row.level))
         Streak -> Words.text(UiText.plural(R.plurals.common_days_count, row.streakDays))
@@ -188,7 +195,7 @@ internal interface LeaderboardGateway {
     val owners: kotlinx.coroutines.flow.Flow<SocialOwner>
     fun owner(): SocialOwner
     val frames: kotlinx.coroutines.flow.Flow<String?>
-    suspend fun training(): Result<List<LeaderboardRow>>
+    suspend fun training(recentWorkoutXp: Boolean, force: Boolean): Result<List<LeaderboardRow>>
     suspend fun muster(force: Boolean): Result<List<ShadowBoardRow>>
     suspend fun lifts(force: Boolean): Result<List<LiftBoardRow>>
 }
@@ -201,7 +208,8 @@ private class CloudLeaderboardGateway(
     override val owners = socialOwners(account.account.map { it?.userId }, { account.account.value?.userId })
     override fun owner() = currentSocialOwner(account.account.value?.userId)
     override val frames = repo.observeEquippedFrame()
-    override suspend fun training() = cloud.leaderboard()
+    override suspend fun training(recentWorkoutXp: Boolean, force: Boolean) =
+        if (recentWorkoutXp) cloud.workoutXpLeaderboard(force) else cloud.leaderboard(force)
     override suspend fun muster(force: Boolean) = cloud.shadowBoard(force)
     override suspend fun lifts(force: Boolean) = cloud.liftBoard(force)
 }
@@ -215,6 +223,8 @@ class LeaderboardViewModel internal constructor(
 
     private var owner = gateway.owner()
     private var liftsRequested = false
+    private var trainingGeneration = 0L
+    private var trainingJob: kotlinx.coroutines.Job? = null
     private fun requestScope() = kotlinx.coroutines.CoroutineScope(
         viewModelScope.coroutineContext + kotlinx.coroutines.SupervisorJob(viewModelScope.coroutineContext[kotlinx.coroutines.Job]),
     )
@@ -228,7 +238,7 @@ class LeaderboardViewModel internal constructor(
         owner = next
         requests.coroutineContext[kotlinx.coroutines.Job]?.cancel()
         requests = requestScope()
-        _ui.value = LeaderboardUi(signedIn = next.userId != null, myUserId = next.userId)
+        _ui.value = LeaderboardUi(signedIn = next.userId != null, myUserId = next.userId, recentWorkoutXp = _ui.value.recentWorkoutXp)
         _muster.value = MusterBoardUi()
         _lifts.value = LiftsBoardUi()
         return true
@@ -305,7 +315,7 @@ class LeaderboardViewModel internal constructor(
                 if (first || changed) {
                     loadMuster()
                     if (owner.userId != null) {
-                        load()
+                        loadTraining(force = false)
                         if (liftsRequested) loadLifts()
                     }
                 }
@@ -323,18 +333,40 @@ class LeaderboardViewModel internal constructor(
 
     private fun Throwable.reason(): UiText = reasonText(UiText.res(R.string.acct_failure_unknown))
 
-    fun load() {
+    fun load() = loadTraining(force = true)
+
+    fun refreshTraining() = loadTraining(force = false)
+
+    fun selectTrainingMetric(recentWorkoutXp: Boolean) {
         refreshOwner()
+        if (_ui.value.recentWorkoutXp != recentWorkoutXp) {
+            _ui.value = _ui.value.copy(recentWorkoutXp = recentWorkoutXp, rows = emptyList(), loading = false, error = null)
+            loadTraining(force = false)
+        } else if (!_ui.value.loading) {
+            loadTraining(force = false)
+        }
+    }
+
+    private fun loadTraining(force: Boolean) {
+        refreshOwner()
+        if (!force && _ui.value.loading) return
+        trainingJob?.cancel()
+        val generation = ++trainingGeneration
         val expected = owner
         val scope = requests
+        val recent = _ui.value.recentWorkoutXp
+        fun isCurrent() = current(expected, scope) && generation == trainingGeneration && _ui.value.recentWorkoutXp == recent
         _ui.value = _ui.value.copy(loading = true, error = null)
-        scope.launch {
+        trainingJob = scope.launch {
             try {
-                gateway.training()
-                    .onSuccess { if (current(expected, scope)) _ui.value = _ui.value.copy(rows = it) }
-                    .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(error = it.reason()) }
+                gateway.training(recent, force)
+                    .onSuccess { if (isCurrent()) _ui.value = _ui.value.copy(rows = it) }
+                    .onFailure { if (isCurrent()) _ui.value = _ui.value.copy(rows = emptyList(), error = it.reason()) }
+            } catch (error: kotlinx.coroutines.CancellationException) {
+                if (isCurrent()) _ui.value = _ui.value.copy(rows = emptyList(), error = UiText.res(R.string.acct_failure_unknown))
+                throw error
             } finally {
-                if (current(expected, scope)) _ui.value = _ui.value.copy(loading = false)
+                if (isCurrent()) _ui.value = _ui.value.copy(loading = false)
             }
         }
     }
@@ -356,7 +388,22 @@ fun LeaderboardScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val muster by viewModel.muster.collectAsStateWithLifecycle()
+    RefreshTrainingBoard(viewModel)
     BoardCards(ui, muster, onOpenBoard)
+}
+
+/** Rolling standings expire even when no sync or navigation event happens. */
+@Composable
+private fun RefreshTrainingBoard(viewModel: LeaderboardViewModel) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(viewModel, lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                viewModel.refreshTraining()
+                delay(60_000)
+            }
+        }
+    }
 }
 
 /** The cards themselves, stateless so a test can hand them any standings. */
@@ -373,7 +420,9 @@ internal fun BoardCards(ui: LeaderboardUi, muster: MusterBoardUi, onOpenBoard: (
             BoardKind.entries.filter { it != BoardKind.Muster || muster.available }.forEachIndexed { index, kind ->
                 if (index > 0) InkDivider()
                 ListRow(
-                    label = kind.label,
+                    label = if (kind == BoardKind.Training && ui.recentWorkoutXp) {
+                        UiText.themed(R.string.acct_workout_xp_board_label, R.string.acct_workout_xp_board_label__t).asString()
+                    } else kind.label,
                     subline = when (kind) {
                         BoardKind.Training -> trainingGlance(ui)
                         BoardKind.Lifts -> stringResource(R.string.acct_boards_glance_lifts)
@@ -392,12 +441,13 @@ internal fun BoardCards(ui: LeaderboardUi, muster: MusterBoardUi, onOpenBoard: (
 @Composable
 private fun trainingGlance(ui: LeaderboardUi): String {
     if (ui.rows.isEmpty()) return glanceWithout(ui.loading, ui.error != null)
-    val sorted = remember(ui.rows) { sortRows(ui.rows, BoardMetric.Xp) }
+    val metric = if (ui.recentWorkoutXp) BoardMetric.WorkoutXp else BoardMetric.Xp
+    val sorted = remember(ui.rows, metric) { sortRows(ui.rows, metric) }
     val mine = sorted.indexOfFirst { it.userId == ui.myUserId }
     return if (mine >= 0) {
         stringResource(R.string.acct_boards_glance_place, mine + 1, sorted.size)
     } else {
-        stringResource(R.string.acct_boards_glance_top, sorted.first().displayName, BoardMetric.Xp.format(sorted.first()))
+        stringResource(R.string.acct_boards_glance_top, sorted.first().displayName, metric.format(sorted.first()))
     }
 }
 
@@ -440,13 +490,15 @@ fun BoardScreen(
     val lifts by viewModel.lifts.collectAsStateWithLifecycle()
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
     // The ranking metric is picked from a row above the board, on Training only.
-    var metric by remember { mutableStateOf(BoardMetric.Xp) }
+    var metric by remember { mutableStateOf(BoardMetric.WorkoutXp) }
     var pickingMetric by remember { mutableStateOf(false) }
 
     LaunchedEffect(kind) {
+        if (kind == BoardKind.Training) viewModel.selectTrainingMetric(metric == BoardMetric.WorkoutXp)
         if (kind == BoardKind.Muster) viewModel.loadMuster()
         if (kind == BoardKind.Lifts) viewModel.loadLifts()
     }
+    if (kind == BoardKind.Training) RefreshTrainingBoard(viewModel)
 
     Column(Modifier.fillMaxSize()) {
         PushedHeader(kind.label, onBack, Modifier.padding(horizontal = 16.dp).padding(top = 20.dp))
@@ -466,6 +518,13 @@ fun BoardScreen(
                     onClick = { pickingMetric = true },
                 )
                 InkDivider()
+                if (metric == BoardMetric.WorkoutXp) {
+                    Text(
+                        UiText.themed(R.string.acct_workout_xp_caption, R.string.acct_workout_xp_caption__t).asString(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.InkMuted,
+                    )
+                }
             }
             Spacer(Modifier.height(12.dp))
             when {
@@ -484,9 +543,10 @@ fun BoardScreen(
                     equippedFrame = equippedFrame,
                     onRefresh = { viewModel.loadMuster(force = true) },
                 )
+                ui.recentWorkoutXp != (metric == BoardMetric.WorkoutXp) -> LoadingLine()
                 ui.loading && ui.rows.isEmpty() -> LoadingLine()
-                ui.rows.isEmpty() && ui.error == null -> EmptyBoard(onRefresh = viewModel::load)
-                ui.rows.isEmpty() -> ErrorPanel(onRefresh = viewModel::load)
+                ui.rows.isEmpty() && ui.error == null -> EmptyBoard(recentWorkoutXp = ui.recentWorkoutXp, onRefresh = viewModel::load)
+                ui.rows.isEmpty() -> ErrorPanel(error = ui.error, onRefresh = viewModel::load)
                 else -> {
                     // Pull-to-refresh replaces the old REFRESH button for the normal signed-in board.
                     // The gesture needs content to grab: in the empty/error states there is nothing to
@@ -522,7 +582,6 @@ fun BoardScreen(
     }
 
     if (pickingMetric) {
-        // A bottom sheet: six short rows, no scroll of its own in the text slot.
         IronvellumDialog(
             onDismissRequest = { pickingMetric = false },
             title = { Text(stringResource(R.string.acct_ranked_by_label)) },
@@ -533,6 +592,7 @@ fun BoardScreen(
                             label = candidate.label,
                             selected = candidate == metric,
                             onClick = {
+                                viewModel.selectTrainingMetric(candidate == BoardMetric.WorkoutXp)
                                 metric = candidate
                                 pickingMetric = false
                             },
@@ -555,9 +615,10 @@ private fun LoadingLine() {
 }
 
 @Composable
-private fun EmptyBoard(onRefresh: () -> Unit) {
+private fun EmptyBoard(recentWorkoutXp: Boolean, onRefresh: () -> Unit) {
     Text(
-        UiText.themed(R.string.acct_board_empty, R.string.acct_board_empty__t).asString(),
+        if (recentWorkoutXp) UiText.themed(R.string.acct_workout_xp_empty, R.string.acct_workout_xp_empty__t).asString()
+        else UiText.themed(R.string.acct_board_empty, R.string.acct_board_empty__t).asString(),
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
@@ -567,9 +628,9 @@ private fun EmptyBoard(onRefresh: () -> Unit) {
 
 /** Load failed with nothing on the board: one muted line and one clean retry. */
 @Composable
-private fun ErrorPanel(onRefresh: () -> Unit) {
+private fun ErrorPanel(error: UiText?, onRefresh: () -> Unit) {
     Text(
-        Lines.leaderboardUnread,
+        error?.asString() ?: Lines.leaderboardUnread,
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )

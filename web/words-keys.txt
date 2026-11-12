@@ -7,6 +7,8 @@ acct_blocked_show_description
 acct_board_alone
 acct_board_choose
 acct_board_empty
+acct_workout_xp_caption
+acct_workout_xp_empty
 acct_board_lifts
 acct_board_loading
 acct_board_search
@@ -30,9 +32,11 @@ acct_metric_strength
 acct_metric_strength_value
 acct_metric_xp
 acct_metric_xp_value
+acct_metric_workout_xp
 acct_ranked_by_label
 acct_rate_per_hour
 acct_unblock_button
+acct_retry_link
 acct_window_all_time
 acct_window_week
 always_deed_cpl
@@ -108,6 +112,7 @@ cloud_remark_empty
 cloud_remark_gone
 cloud_report_self
 cloud_sync_trial_hidden
+cloud_workout_xp_needs_schema
 comments_delete_body
 comments_delete_button
 comments_delete_title

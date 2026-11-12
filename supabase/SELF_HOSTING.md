@@ -17,8 +17,9 @@ stack (Postgres, GoTrue auth, PostgREST, Studio) behind a single host.
 ## 2. Apply the schema
 
 The whole schema is `supabase/migrations/0001_baseline.sql`. Re-apply this
-idempotent baseline to upgrade a self-hosted project to schema 32 (the app itself works from 31;
-32 adds the friend-safe workout card that the web viewer's Friends area shows):
+idempotent baseline to upgrade a self-hosted project to schema 33. The app
+itself works from 31; 32 adds friend-safe workout cards, and 33 adds the
+rolling seven-day workout-XP leaderboard:
 
 ```bash
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/0001_baseline.sql
@@ -27,6 +28,11 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/0001_baseline.sql
 Alternatively, paste the baseline into the project's SQL editor. Its
 `schema_version()` beacon lets the app check the project is ready.
 
+For an existing hosted schema-32 project, apply the additive, idempotent
+`supabase/hosted/2026-11-12-workout-xp.sql` patch instead. It preserves accounts
+and workouts. Recent rankings need that view; a missing view produces an
+explicit error while lifetime rankings and existing sync remain usable.
+
 To wipe a throwaway project back to empty first, run `supabase/reset.sql`.
 **It deletes every account and every app table**, so never run it on a project
 holding anyone's real data.
@@ -34,7 +40,7 @@ holding anyone's real data.
 Afterwards you can verify with the SQL editor:
 
 ```sql
-select schema_version();  -- should return the number NEEDED_SCHEMA_VERSION expects
+select schema_version();  -- 33 after applying the current baseline or workout-XP patch
 ```
 
 ## 3. Point the app at it

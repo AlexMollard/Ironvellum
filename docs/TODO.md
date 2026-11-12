@@ -16,9 +16,10 @@ release, crests, web-viewer and snapshot-cap patches are applied; `circle_draw_c
 crest is on profiles, the boards, the feed and `my_circle()`. The version probe
 confirms the reported schema version, not live mutation or phone installation.
 The 4 MiB snapshot uploader's schema prerequisite is satisfied. The baseline is now at
-schema 32 (the friend-safe feed card); the hosted project stays at 31 until the owner pastes
-`supabase/hosted/2026-10-29-feed-card.sql`. The app's minimum (`NEEDED_SCHEMA_VERSION`) stays
-31, so nothing breaks before that. The updated
+schema 33 (rolling workout XP). The release checklist records the owner applying
+the schema-32 feed-card patch on 2026-10-30; schema 33 still needs
+`supabase/hosted/2026-11-12-workout-xp.sql` applied before release. The app minimum stays 31.
+The updated
 phone build synced successfully, and the deployed viewer's history, set details,
 profile XP, lift variations and trends were verified against a read-only local
 backup. Temporary browser credentials were cleared without signing out the phone.
@@ -35,15 +36,14 @@ The Google OAuth roundtrip acceptance is still outstanding; phase two remains
 gated on that acceptance. Design data contracts and offline
 fixture instructions are in `web/README.md`.
 
-A schema change edits `supabase/migrations/0001_baseline.sql`, bumps the
-`schema_version()` literal and `NEEDED_SCHEMA_VERSION` (`Cloud.kt`) together,
-and ships an idempotent patch in `supabase/hosted/` that the owner pastes into
-the SQL editor once, before the app build that needs it (an optional feature, like the
-feed card, may leave `NEEDED_SCHEMA_VERSION` behind the baseline and gate on the version
-instead). `HostedPatchTest`
-fails the unit gate if a patch drifts from the baseline. `python3 tools/gate.py
---backend` proves the baseline and the newest patch in Docker (applied twice,
-assertions after); older patches migrate warbands and are not re-run there.
+A schema change edits `supabase/migrations/0001_baseline.sql`, bumps its
+`schema_version()` literal and ships an idempotent patch in `supabase/hosted/`.
+The owner applies it before the feature ships. Raise `NEEDED_SCHEMA_VERSION`
+only for an app-wide requirement; optional features such as feed cards and
+rolling workout XP leave the minimum at 31. `python3 tools/gate.py --backend`
+proves the baseline, compatible hosted patches and the reset round trip in
+real Postgres, including repeated application. Historical pre-circles patches
+are intentionally not replayed on the current baseline.
 
 **Never paste `supabase/reset.sql` into the live project.** It deletes every
 account. It exists for a throwaway project and for the gate's round trip.

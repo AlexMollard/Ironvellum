@@ -1,8 +1,8 @@
 import { t, format, word } from './i18n.js';
 
 /** The training board's metrics in the phone's order, with the id the parity cases use (`BoardRanking.Metric` lowercased). */
-export const METRICS = ['xp', 'level', 'streak', 'titles', 'strength', 'last7'];
-const VALUE = { xp: r => r.totalXp, level: r => r.level, streak: r => r.streakDays, titles: r => r.titlesCount, strength: r => r.lifetimeStrength, last7: r => r.sessionsLast7d };
+export const METRICS = ['workoutxp', 'xp', 'level', 'streak', 'titles', 'strength', 'last7'];
+const VALUE = { workoutxp: r => { if (r.workoutXpLast7d == null) throw new Error('Missing workout XP'); return r.workoutXpLast7d; }, xp: r => r.totalXp, level: r => r.level, streak: r => r.streakDays, titles: r => r.titlesCount, strength: r => r.lifetimeStrength, last7: r => r.sessionsLast7d };
 /** The raw value a metric ranks by. */
 export const metricValue = (metric, row) => VALUE[metric](row);
 
@@ -14,7 +14,10 @@ const byName = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
  * `liftStandings`: one lift for a window, best tier first, ties sharing a rank (1, 1, 3), and the week window dropping lifters with no
  * recent step. Both are pinned by `boardCases` in test/fixtures/parity.json, which the phone generates.
  */
-export const rankRows = (metric, rows) => [...rows].sort((a, b) => metricValue(metric, b) - metricValue(metric, a) || b.totalXp - a.totalXp || byName(a.name, b.name));
+export const rankRows = (metric, rows) => {
+  if (metric === 'workoutxp') rows.forEach(row => metricValue(metric, row));
+  return [...rows].sort((a, b) => metricValue(metric, b) - metricValue(metric, a) || (metric === 'workoutxp' ? byName(a.name.toLowerCase(), b.name.toLowerCase()) || byName(a.id, b.id) : b.totalXp - a.totalXp || byName(a.name, b.name)));
+};
 
 export function rankLift(rows, lift, recent) {
   const ranked = rows.filter(r => r.lift === lift).map(r => ({ row: r, step: recent ? r.recentStep : r.step })).filter(x => x.step != null)
@@ -26,11 +29,12 @@ export function rankLift(rows, lift, recent) {
 export const ordinal = n => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' })[n % 10] ?? 'th'}`;
 const grouped = n => Number(n).toLocaleString('en-US');
 
-export const metricLabel = metric => ({ xp: () => t('acct_metric_xp'), level: () => t('acct_metric_level'), streak: () => word('Streak', 'concept_oath_c'), titles: () => word('Deeds', 'always_deed_cpl'), strength: () => t('acct_metric_strength'), last7: () => t('acct_metric_last7') })[metric]();
+export const metricLabel = metric => ({ workoutxp: () => t('acct_metric_workout_xp'), xp: () => t('acct_metric_xp'), level: () => t('acct_metric_level'), streak: () => word('Streak', 'concept_oath_c'), titles: () => word('Deeds', 'always_deed_cpl'), strength: () => t('acct_metric_strength'), last7: () => t('acct_metric_last7') })[metric]();
 
 /** The big per-row figure of a metric, in the phone's own strings. */
 export function metricText(metric, row) {
   switch (metric) {
+    case 'workoutxp': return format(t('acct_metric_xp_value'), grouped(metricValue(metric, row)));
     case 'xp': return format(t('acct_metric_xp_value'), grouped(row.totalXp));
     case 'level': return format(t('xp_level_label'), row.level);
     case 'streak': return `${row.streakDays} ${row.streakDays === 1 ? 'day' : 'days'}`;

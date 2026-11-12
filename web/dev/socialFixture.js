@@ -50,6 +50,10 @@ export function createFixtureSocial() {
       ['fixture', 'Fictional lifter', 50, 61200, 12, 18, 98000, 4], ['u-mara', 'Mara Quill', 31, 48200, 6, 9, 14200, 5], ['u-jonah', 'Jonah Reed', 18, 22100, 3, 5, 9100, 3],
       ['u-ines', 'Ines Vale', 22, 19000, 9, 7, 8800, 6], ['u-odin', 'Odin Hart', 9, 6400, 1, 2, 2100, 1], ['u-eve', 'Eve Marsh', 14, 5200, 0, 3, 1900, 0],
     ].map(([id, name, level, totalXp, streakDays, titlesCount, lifetimeStrength, sessionsLast7d]) => ({ id, name, level, totalXp, streakDays, titlesCount, lifetimeStrength, sessionsLast7d, titleId: null, crestId: id === 'u-mara' ? 'iron' : null })),
+    workoutXpLeaderboard: async () => [
+      ['fixture', 'Fictional lifter', 50, 61200, 12, 18, 98000, 4, 1200], ['u-mara', 'Mara Quill', 31, 48200, 6, 9, 14200, 5, 1500], ['u-jonah', 'Jonah Reed', 18, 22100, 3, 5, 9100, 3, 900],
+      ['u-ines', 'Ines Vale', 22, 19000, 9, 7, 8800, 6, 1700], ['u-odin', 'Odin Hart', 9, 6400, 1, 2, 2100, 1, 300],
+    ].map(([id, name, level, totalXp, streakDays, titlesCount, lifetimeStrength, sessionsLast7d, workoutXpLast7d]) => ({ id, name, level, totalXp, streakDays, titlesCount, lifetimeStrength, sessionsLast7d, workoutXpLast7d, titleId: null, crestId: id === 'u-mara' ? 'iron' : null })),
     liftBoard: async () => [
       ['fixture', 'Fictional lifter', 'squat', 8, 7], ['u-mara', 'Mara Quill', 'squat', 7, 6], ['u-jonah', 'Jonah Reed', 'squat', 7, null], ['u-ines', 'Ines Vale', 'squat', 5, 5],
       ['fixture', 'Fictional lifter', 'bench', 6, 6], ['u-mara', 'Mara Quill', 'bench', 4, null], ['fixture', 'Fictional lifter', 'muscle_up', 3, null],

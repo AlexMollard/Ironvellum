@@ -15,7 +15,7 @@
  *  friends(): Promise<any[]>, findHunter(name:string): Promise<{id:string,displayName:string}|null>,
  *  requestFriend(userId:string): Promise<void>, acceptFriend(userId:string): Promise<void>, removeFriend(userId:string): Promise<void>,
  *  lifter(userId:string): Promise<any>, lifterWorkout(sessionId:string): Promise<any>,
- *  leaderboard(): Promise<any[]>, liftBoard(): Promise<any[]>, shadowBoard(): Promise<any[]>,
+ *  leaderboard(): Promise<any[]>, workoutXpLeaderboard(): Promise<any[]>, liftBoard(): Promise<any[]>, shadowBoard(): Promise<any[]>,
  *  blocked(): Promise<{userId:string,name:string|null}[]>,                            // blocks (blocked_name is filled by the server)
  *  mute(userId:string): Promise<void>, unmute(userId:string): Promise<void>, block(userId:string): Promise<void>, unblock(userId:string): Promise<void>,
  *  report(r:{targetUserId:string, sessionId?:string, commentId?:string, reason:'spam'|'abuse'|'cheating'|'other', note:string}): Promise<void>,
@@ -24,7 +24,7 @@
  *  rotateCircleCode(): Promise<void>, kickCircleMember(userId:string): Promise<void>, circleBonuses(): Promise<any[]> }} SocialSource */
 
 export const METHODS = ['feed', 'workoutFeedRow', 'react', 'reactors', 'comments', 'addComment', 'deleteComment', 'inbox', 'markInboxSeen', 'friends', 'findHunter',
-  'requestFriend', 'acceptFriend', 'removeFriend', 'lifter', 'lifterWorkout', 'leaderboard', 'liftBoard', 'shadowBoard', 'mute', 'unmute', 'block',
+  'requestFriend', 'acceptFriend', 'removeFriend', 'lifter', 'lifterWorkout', 'leaderboard', 'workoutXpLeaderboard', 'liftBoard', 'shadowBoard', 'mute', 'unmute', 'block',
   'unblock', 'blocked', 'report', 'circle', 'createCircle', 'joinCircle', 'leaveCircle', 'setCircleGoal', 'setCircleName', 'rotateCircleCode',
   'kickCircleMember', 'circleBonuses'];
 
@@ -226,6 +226,16 @@ function boardsApi(client) {
         id: r.id, name: r.display_name, level: r.level ?? 1, titleId: r.current_title_id ?? null, crestId: r.current_crest_id ?? null, totalXp: r.total_xp ?? 0, streakDays: r.streak_days ?? 0,
         titlesCount: r.titles_count ?? 0, lifetimeStrength: r.lifetime_strength ?? 0, sessionsLast7d: r.sessions_last_7d ?? 0,
       }));
+    },
+    // workout_xp_leaderboard aggregates visible completed workouts before applying the top-100 limit.
+    async workoutXpLeaderboard() {
+      return (await rowsOf(client.from('workout_xp_leaderboard').select('*').order('workout_xp_last_7d', { ascending: false }).order('display_name', { ascending: true }).order('id', { ascending: true }).limit(BOARD_LIMIT))).map(r => {
+        if (!Number.isSafeInteger(r.workout_xp_last_7d) || r.workout_xp_last_7d < 0) throw new Error('Invalid workout XP leaderboard');
+        return {
+          id: r.id, name: r.display_name, level: r.level ?? 1, titleId: r.current_title_id ?? null, crestId: r.current_crest_id ?? null, totalXp: r.total_xp ?? 0, streakDays: r.streak_days ?? 0,
+          titlesCount: r.titles_count ?? 0, lifetimeStrength: r.lifetime_strength ?? 0, sessionsLast7d: r.sessions_last_7d ?? 0, workoutXpLast7d: r.workout_xp_last_7d,
+        };
+      });
     },
     // lift_board (view): one row per lifter per lift for me and my accepted friends; only a tier step ever leaves a phone
     async liftBoard() {

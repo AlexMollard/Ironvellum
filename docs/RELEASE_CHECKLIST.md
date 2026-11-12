@@ -57,20 +57,24 @@ Run all three; all must pass before anything is uploaded:
 The whole schema is ONE file, `supabase/migrations/0001_baseline.sql`, the
 source of truth for a fresh project. The hosted project holds real accounts and
 is upgraded in place: a schema change edits the baseline, bumps the
-`schema_version()` literal and `NEEDED_SCHEMA_VERSION` in `Cloud.kt` together,
-and ships an idempotent patch in `supabase/hosted/` cut verbatim from the
-baseline (`HostedPatchTest` fails the unit gate if one drifts). The hosted
+`schema_version()` literal, and ships an idempotent patch in `supabase/hosted/`
+cut from the baseline. Raise `NEEDED_SCHEMA_VERSION` only when the whole app
+requires it. `python3 tools/gate.py --backend` exercises the baseline, hosted
+patch replay and reset round trip against real Postgres. The hosted
 project was at schema 30 before the snapshot cap patch
 (`supabase/hosted/2026-10-28-web-snapshot-cap.sql`, schema 31) and the hardening patch
 (`2026-10-28-web-snapshot-hardening.sql`: 8 MiB text bound, owner-only snapshot delete,
 cheaper RLS; no schema bump, four web tables only); both are applied.
 
 The owner applied `supabase/hosted/2026-10-29-feed-card.sql` (after the hardening patch)
-to the hosted project on 2026-10-30, so it is at schema 32. The patch adds
+to the hosted project on 2026-10-30, establishing schema 32. The patch adds
 `sessions.feed_card` and the last column of `public_feed`. It stays optional for the app:
 `NEEDED_SCHEMA_VERSION` is 31, so a phone on a backend at 31 keeps syncing and simply sends
 no card (`CloudSync.feedReady` needs 32), and the web viewer's Friends area needs 32.
-Confirm with `select public.schema_version();`, which must return 32.
+For 1.11, apply `supabase/hosted/2026-11-12-workout-xp.sql` and confirm that
+`select public.schema_version();` returns 33. This patch has been verified
+locally, not applied to the hosted project by this task. It adds the rolling
+workout-XP view without raising the app-wide minimum of 31.
 
 **Never paste `supabase/reset.sql` into the hosted project.** It deletes every
 account. It exists for a throwaway project and for the gate's round trip.

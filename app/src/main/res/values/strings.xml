@@ -5681,6 +5681,8 @@
     <string name="cloud_sync_web_snapshot_too_large">Web stats are too large to sync (%1$d bytes).</string>
     <string name="cloud_sync_tiers_failed">Lift tiers were not synced: %1$s</string>
     <string name="cloud_sync_tiers_failed__t">Lift rungs were not synced: %1$s</string>
+    <string name="cloud_workout_xp_needs_schema">Rolling workout XP needs cloud schema 33. Apply the latest hosted update; lifetime rankings still work.</string>
+    <string name="cloud_workout_xp_needs_schema__t">Rolling trial XP needs cloud schema 33. Apply the latest hosted update; lifetime rankings still work.</string>
     <string name="cloud_sync_trial_hidden">This workout is not visible to you</string>
     <string name="cloud_sync_trial_hidden__t">This trial is not visible to you</string>
 
@@ -5923,7 +5925,15 @@
     <!-- Accessibility: %1$s is the name of the board. -->
     <string name="acct_boards_open_description">Open %1$s board</string>
     <!-- Ranking metrics: the picker rows and the value in the Ranked by row (short). -->
-    <string name="acct_metric_xp">XP</string>
+    <string name="acct_metric_xp">Lifetime XP</string>
+    <string name="acct_metric_workout_xp">Workout XP</string>
+    <string name="acct_metric_workout_xp__t">Trial XP</string>
+    <string name="acct_workout_xp_caption">Workout XP visible to you, completed in the rolling last 7 days. Skill claims, circle bonuses and imported workouts do not count.</string>
+    <string name="acct_workout_xp_caption__t">Trial XP visible to you, sealed in the rolling last 7 days. Technique claims, circle bonuses and imported trials do not count.</string>
+    <string name="acct_workout_xp_board_label">7-day workout XP</string>
+    <string name="acct_workout_xp_board_label__t">7-day trial XP</string>
+    <string name="acct_workout_xp_empty">No visible workout XP in the last 7 days. Complete a workout and sync to join this board.</string>
+    <string name="acct_workout_xp_empty__t">No visible trial XP in the last 7 days. Seal a trial and sync to join this board.</string>
     <string name="acct_metric_level">Level</string>
     <string name="acct_metric_strength">Strength score</string>
     <string name="acct_metric_last7">Last 7 days</string>

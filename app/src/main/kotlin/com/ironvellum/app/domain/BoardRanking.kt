@@ -9,10 +9,11 @@ import com.ironvellum.app.data.cloud.LiftBoardRow
  */
 object BoardRanking {
     /** The training board's ranking metrics; the screen owns their labels. */
-    enum class Metric { Xp, Level, Streak, Titles, Strength, Last7 }
+    enum class Metric { WorkoutXp, Xp, Level, Streak, Titles, Strength, Last7 }
 
     /** The raw value a metric ranks by. */
     fun value(metric: Metric, row: LeaderboardRow): Long = when (metric) {
+        Metric.WorkoutXp -> requireNotNull(row.workoutXpLast7d)
         Metric.Xp -> row.totalXp
         Metric.Level -> row.level.toLong()
         Metric.Streak -> row.streakDays.toLong()
@@ -21,12 +22,17 @@ object BoardRanking {
         Metric.Last7 -> row.sessionsLast7d.toLong()
     }
 
-    /** Local re-sort for the selected metric; XP breaks ties, then name for stability. No network call. */
-    fun sort(rows: List<LeaderboardRow>, metric: Metric): List<LeaderboardRow> = rows.sortedWith(
-        compareByDescending<LeaderboardRow> { value(metric, it) }
-            .thenByDescending { it.totalXp }
-            .thenBy { it.displayName },
-    )
+    /** Recent workout XP ties use name and ID; the other metrics retain lifetime XP ties. */
+    fun sort(rows: List<LeaderboardRow>, metric: Metric): List<LeaderboardRow> =
+        if (metric == Metric.WorkoutXp) {
+            rows.sortedWith(compareByDescending<LeaderboardRow> { value(metric, it) }
+                .thenBy { it.displayName.lowercase() }
+                .thenBy { it.userId })
+        } else {
+            rows.sortedWith(compareByDescending<LeaderboardRow> { value(metric, it) }
+                .thenByDescending { it.totalXp }
+                .thenBy { it.displayName })
+        }
 
     /** One lifter's place on one lift board; [step] is the tier step that ranked them, never a ratio. */
     data class LiftStanding(val rank: Int, val row: LiftBoardRow, val step: Int)

@@ -1,6 +1,6 @@
 # Sidenotes
 
-Last audited 2026-11-12 against the current 1.11 source. Only unresolved work remains below; a historical visual complaint is not proof that the current screen still has it.
+Last audited 2026-11-12 against the current 1.11 source. Open boxes are unresolved; completed entries retain their verification. A historical visual complaint is not proof that the current screen still has it.
 
 - [ ] [2026-09-15] I feel like the deeds tab in the codex window is very dese and could do with a little ui/ux work to make it more digestible
   ↳ Equalising empty-state art stroke weight across dashboard/stats after the production-readiness wave · Codex screen deeds tab (app/src/main/kotlin/com/ironvellum/app/ui/titles/DeedsBoard.kt) · main@e5816f8
@@ -20,9 +20,9 @@ Last audited 2026-11-12 against the current 1.11 source. Only unresolved work re
 - [ ] [2026-09-30] "5 × BW" spacing vs glossary "5×5"; 'Activity'/'Ledger'/'STR' wording.
   ↳ extracted from the v1.4 FTUE leftovers · plain/themed copy and numerical notation · main@5b904b9
   Audit: low priority; no current functional defect established. Stats/Ledger are intentional plain/themed variants and Activity also names Health Connect data. Revisit only against specific current labels, not as a global terminology rewrite.
-- [ ] [2026-11-11] We should add a rolling leaderboard as the xp leaderboard will always have the same guy on top everyday if hes used the app teh longest which kinda makes the leaderboards useless to others
+- [x] [2026-11-11] We should add a rolling leaderboard as the xp leaderboard will always have the same guy on top everyday if hes used the app teh longest which kinda makes the leaderboards useless to others
   ↳ Independently disproving five social bugs before fixing confirmed findings · social leaderboards · main@005d86f8
-  Audit: recommended next product feature. The training board still queries lifetime `total_xp` and caps that result at 100 (`CloudSync.kt:901-924`). The existing seven-day lift board is strength-tier ranking, not rolling XP (`0001_baseline.sql:1693-1708,1724-1739`). A recent-XP ranking must select its own eligible candidates rather than re-sort the lifetime top 100.
+  Completed 2026-11-12: rolling 168-hour workout XP on Android and web, separate recent candidates and retained Lifetime XP. Verified Android metric switching, real screenshots, 31 web checks and six Postgres privacy/window mutations with 18 restored full-suite passes. Apply the schema-33 hosted patch before release; it has not been deployed by this task.
 
 ## Cleanup record — 2026-11-12
 

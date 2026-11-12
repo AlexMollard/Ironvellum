@@ -64,7 +64,7 @@ class BoardCardsTest {
     @Test
     fun eachCardGlancesAtYourPlaceOrTheLeaderAndOpensItsBoard() {
         val opened = ArrayList<BoardKind>()
-        show(LeaderboardUi(signedIn = true, myUserId = "me", rows = rows), MusterBoardUi(rows = veilRows, loaded = true)) { opened += it }
+        show(LeaderboardUi(signedIn = true, myUserId = "me", rows = rows, recentWorkoutXp = false), MusterBoardUi(rows = veilRows, loaded = true)) { opened += it }
         compose.onNodeWithText("Training").assertIsDisplayed()
         compose.onNodeWithText("Your place: 2 of 3").assertIsDisplayed()
         compose.onNodeWithText("Lifts").assertIsDisplayed()
@@ -80,12 +80,67 @@ class BoardCardsTest {
     @Test
     fun aLifterNotOnTheBoardSeesWhoLeadsAndANeverSetUpVeilHasNoCard() {
         show(
-            LeaderboardUi(signedIn = true, myUserId = "other", rows = rows),
+            LeaderboardUi(signedIn = true, myUserId = "other", rows = rows, recentWorkoutXp = false),
             MusterBoardUi(available = false),
             light = true,
         )
         compose.onNodeWithText("Top: Ada, 5,000 XP").assertIsDisplayed()
         compose.onAllNodesWithText("The Veil").assertCountEquals(0)
         ShotRecorder.take(compose, "boards-cards-light")
+    }
+
+    @Test
+    fun recentGlanceRanksWorkoutXpRatherThanLifetimeXp() {
+        val recent = listOf(
+            rows[0].copy(workoutXpLast7d = 10),
+            rows[1].copy(workoutXpLast7d = 50),
+        )
+        show(LeaderboardUi(signedIn = true, myUserId = "other", rows = recent), MusterBoardUi(available = false))
+        compose.onNodeWithText("Top: Sam, 50 XP", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun changingMetricReplacesThePopulationAndCanReturnToRecentWorkouts() {
+        val newcomer = rows[1].copy(userId = "new", displayName = "Newcomer", workoutXpLast7d = 900)
+        val veteran = rows[0].copy(displayName = "Veteran", totalXp = 100_000)
+        val gateway = object : LeaderboardGateway {
+            override val owners = kotlinx.coroutines.flow.MutableStateFlow(SocialOwner("me", Any()))
+            override fun owner() = owners.value
+            override val frames = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+            override suspend fun training(recentWorkoutXp: Boolean, force: Boolean) =
+                Result.success(if (recentWorkoutXp) listOf(newcomer) else listOf(veteran))
+            override suspend fun muster(force: Boolean) = Result.success(emptyList<ShadowBoardRow>())
+            override suspend fun lifts(force: Boolean) = Result.success(emptyList<com.ironvellum.app.data.cloud.LiftBoardRow>())
+        }
+        lateinit var model: LeaderboardViewModel
+        compose.activityRule.scenario.onActivity {
+            ShotRecorder.darkWindow(it)
+            model = LeaderboardViewModel(gateway, com.ironvellum.app.data.cloud.AccountRepository())
+            it.setContent {
+                IronvellumTheme {
+                    Box(Modifier.fillMaxSize().statusBarsPadding()) {
+                        BoardScreen(BoardKind.Training, onBack = {}, onOpenFriend = { _, _ -> }, viewModel = model)
+                    }
+                }
+            }
+        }
+        compose.onNodeWithText("Newcomer").assertIsDisplayed()
+        compose.onAllNodesWithText("Veteran").assertCountEquals(0)
+        ShotRecorder.take(compose, "rolling-workout-xp-board")
+        compose.mainClock.autoAdvance = true
+        compose.onNodeWithText("Ranked by").performClick()
+        compose.onNodeWithText("Lifetime XP").assertIsDisplayed()
+        compose.waitForIdle()
+        ShotRecorder.take(compose, "rolling-workout-xp-metric-picker")
+        compose.mainClock.autoAdvance = true
+        compose.onNodeWithText("Lifetime XP").performClick()
+        compose.onNodeWithText("Veteran").assertIsDisplayed()
+        compose.onAllNodesWithText("Newcomer").assertCountEquals(0)
+        ShotRecorder.take(compose, "lifetime-xp-board")
+        compose.mainClock.autoAdvance = true
+        compose.onNodeWithText("Ranked by").performClick()
+        compose.onNodeWithText("Workout XP").performClick()
+        compose.onNodeWithText("Newcomer").assertIsDisplayed()
+        compose.onAllNodesWithText("Veteran").assertCountEquals(0)
     }
 }

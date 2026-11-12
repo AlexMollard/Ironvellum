@@ -40,6 +40,7 @@ drop view if exists public.lift_board;
 drop view if exists public.public_feed;
 drop view if exists public.shadow_board;
 drop view if exists public.leaderboard;
+drop view if exists public.workout_xp_leaderboard;
 
 -- The circle RPCs return the `circles` row type (create_circle), so they must
 -- go before the tables or the drop is refused on the dependency.

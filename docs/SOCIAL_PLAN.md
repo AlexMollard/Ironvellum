@@ -148,6 +148,22 @@ phone. (Warbands followed later the same day — see the roadmap above.)
     cancels background polling and queued retries. Foreground reads can still
     establish the silent baseline and refresh the unread count.
 
+## 1.11 rolling workout XP
+
+- The Training board defaults to **Workout XP / Trial XP**, summed over the
+  elapsed last 168 hours using workout completion time, not upload time.
+- Only completed, non-future workouts visible to the reader contribute.
+  Skill claims, circle bonuses and imported workouts are excluded. Private
+  workouts count for their owner, not for other readers.
+- Aggregate the recent population before taking its top 100. Rank by recent
+  workout XP, then name and id; lifetime XP does not break recent-score ties.
+- Keep **Lifetime XP** and the other existing lifetime-population metrics.
+  A missing recent view is an explicit error, never a lifetime fallback.
+- Schema 33 adds the caller-RLS-filtered `workout_xp_leaderboard` view. Apply
+  `supabase/hosted/2026-11-12-workout-xp.sql` before releasing this feature.
+  The app-wide minimum remains 31; this optional view does not block sync.
+
+
 
 ## Moderation
 

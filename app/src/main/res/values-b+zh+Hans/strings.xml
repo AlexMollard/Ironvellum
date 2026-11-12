@@ -4501,6 +4501,8 @@
     <string name="cloud_sync_web_snapshot_failed">网页版统计未同步：%1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">网页版统计数据过大，无法同步（%1$d 字节）。</string>
     <string name="cloud_sync_tiers_failed">动作段位未同步：%1$s</string>
+    <string name="cloud_workout_xp_needs_schema">滚动训练 XP 排名需要云端架构 33。请应用最新数据库更新；累计 XP 排名仍可使用。</string>
+    <string name="cloud_workout_xp_needs_schema__t">滚动试炼 XP 排名需要云端架构 33。请应用最新数据库更新；累计 XP 排名仍可使用。</string>
     <string name="cloud_sync_tiers_failed__t">动作之阶未同步：%1$s</string>
     <string name="cloud_sync_trial_hidden">你无权查看此训练</string>
     <string name="cloud_sync_trial_hidden__t">你无权查看此试炼</string>
@@ -4696,7 +4698,15 @@
     <string name="acct_boards_glance_failed">无法加载。打开后重试。</string>
     <string name="acct_boards_glance_empty">暂无名次</string>
     <string name="acct_boards_open_description">打开 %1$s 排行榜</string>
-    <string name="acct_metric_xp">XP</string>
+    <string name="acct_metric_xp">累计 XP</string>
+    <string name="acct_metric_workout_xp">训练 XP</string>
+    <string name="acct_metric_workout_xp__t">试炼 XP</string>
+    <string name="acct_workout_xp_caption">按完成时间统计过去 7 天你可见的训练 XP。技法精通、圈子奖励和导入训练不计入。</string>
+    <string name="acct_workout_xp_caption__t">按完成时间统计过去 7 天你可见的试炼 XP。绝技宣告、圈子奖励和导入试炼不计入。</string>
+    <string name="acct_workout_xp_board_label">7 天训练 XP</string>
+    <string name="acct_workout_xp_board_label__t">7 天试炼 XP</string>
+    <string name="acct_workout_xp_empty">过去 7 天没有可见的训练 XP。完成并同步训练即可加入排名。</string>
+    <string name="acct_workout_xp_empty__t">过去 7 天没有可见的试炼 XP。封存并同步试炼即可加入排名。</string>
     <string name="acct_metric_level">等级</string>
     <string name="acct_metric_strength">力量评分</string>
     <string name="acct_metric_last7">过去 7 天</string>

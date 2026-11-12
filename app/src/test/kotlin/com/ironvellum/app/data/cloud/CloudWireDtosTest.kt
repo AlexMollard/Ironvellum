@@ -7,6 +7,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.SerializationException
 
 /**
  * The wire contract between these DTOs and the Supabase schema is carried
@@ -38,6 +39,13 @@ class CloudWireDtosTest {
     }
 
     private val json = Json
+
+    @Test(expected = SerializationException::class)
+    fun `a lifetime response cannot silently become a zero recent XP ranking`() {
+        val lifetime = """{"id":"lifter","display_name":"Lifter","level":10,"total_xp":100000,"streak_days":2,"titles_count":3,"lifetime_strength":40,"sessions_last_7d":2}"""
+        json.decodeFromString<LeaderboardDto>(lifetime)
+        json.decodeFromString<WorkoutXpLeaderboardDto>(lifetime)
+    }
 
     @Test
     fun `a session row decodes its generated id, local_id and nullable completed_at`() {

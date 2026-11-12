@@ -5,11 +5,12 @@ import { podium } from '../../components/podium.js';
 import { stepLabel, MAX_STEP, knownLift } from '../../components/liftTier.js';
 import { rankRows, rankLift, ordinal, METRICS, metricLabel, metricText } from '../../boardRanking.js';
 import { t, format, word } from '../../i18n.js';
+import { explain } from '../../explain.js';
 
 export const BOARD_KINDS = [['training', () => t('acct_board_training')], ['lifts', () => t('acct_board_lifts')], ['muster', () => word('The Veil', 'always_the_veil_c')]];
 // The viewer's picks survive a re-render (the Friends | Everyone switch) for the session, like the phone's remembered ones.
-let metric = 'xp', lift = 'squat', recent = false;
-export const resetBoards = () => { metric = 'xp'; lift = 'squat'; recent = false; };
+let metric = 'workoutxp', lift = 'squat', recent = false;
+export const resetBoards = () => { metric = 'workoutxp'; lift = 'squat'; recent = false; };
 
 // The board kind is the one tab row on this screen (a segmented control); every other choice is a labelled native select in `.board-filters`.
 const segmented = (label, options, current, pick) => {
@@ -28,8 +29,9 @@ const scoped = (rows, ctx, me) => (ctx.audience === 'allies' && ctx.allyIds ? ro
 
 function trainingBoard(body, rows, me, redraw, filters, ctx) {
   filters.append(field(t('acct_ranked_by_label'), METRICS.map(m => [m, metricLabel(m)]), metric, 'board-metric', value => { metric = value; redraw(); }));
+  if (metric === 'workoutxp') body.append(node('p', t('acct_workout_xp_caption'), 'muted'));
   const sorted = rankRows(metric, rows);
-  if (!sorted.length) { body.append(node('p', t('acct_board_empty'), 'empty')); return; }
+  if (!sorted.length) { body.append(node('p', t(metric === 'workoutxp' ? 'acct_workout_xp_empty' : 'acct_board_empty'), 'empty')); return; }
   body.append(podium(sorted.slice(0, 3).map((row, i) => ({ rank: i + 1, row, figure: metricText(metric, row) })), me, ctx.folioOf));
   if (sorted.length === 1) body.append(node('p', t('acct_board_alone'), 'muted'));
   const list = node('div', null, 'board-rows');
@@ -87,14 +89,33 @@ function musterBoard(body, rows, me, redraw, filters, ctx) {
 export async function renderBoards(root, ctx, kind) {
   const { social, router, source } = ctx, me = source.userId;
   const active = BOARD_KINDS.some(([id]) => id === kind) ? kind : 'training';
-  const nav = segmented('Board', BOARD_KINDS.map(([id, label]) => [id, label()]), active, id => router.go(`/friends/boards/${id}`));
+  let rows = [], request = 0, loadedKind = null;
+  const nav = segmented('Board', BOARD_KINDS.map(([id, label]) => [id, label()]), active, id => { request++; router.go(`/friends/boards/${id}`); });
   const filters = node('div', null, 'board-filters');
-  filters.append(field('Show', [['allies', word('Friends', 'concept_ally_cpl')], ['everyone', 'Everyone']], ctx.audience, 'board-audience', value => { ctx.setAudience?.(value); router.go(kind ? `/friends/boards/${kind}` : '/friends/boards'); }));
+  filters.append(field('Show', [['allies', word('Friends', 'concept_ally_cpl')], ['everyone', 'Everyone']], ctx.audience, 'board-audience', value => { request++; ctx.setAudience?.(value); router.go(kind ? `/friends/boards/${kind}` : '/friends/boards'); }));
   const body = node('div', null, 'board'); root.append(nav, filters, body);
-  const rows = scoped(active === 'training' ? await social.leaderboard() : active === 'lifts' ? await social.liftBoard() : await social.shadowBoard(), ctx, me);
   const draw = () => {
     body.replaceChildren(); for (const extra of [...filters.children].slice(1)) extra.remove();
-    (active === 'training' ? trainingBoard : active === 'lifts' ? liftBoard : musterBoard)(body, rows, me, draw, filters, ctx);
+    (active === 'training' ? trainingBoard : active === 'lifts' ? liftBoard : musterBoard)(body, rows, me, active === 'training' ? selectMetric : draw, filters, ctx);
   };
-  draw();
+  const selectMetric = async () => {
+    const current = metric, boardKind = current === 'workoutxp' ? 'workoutxp' : 'lifetime', token = ++request;
+    if (loadedKind === boardKind) { draw(); return; }
+    rows = []; loadedKind = null; draw();
+    body.replaceChildren(node('p', t('acct_board_loading'), 'muted'));
+    try {
+      const result = await (boardKind === 'workoutxp' ? social.workoutXpLeaderboard() : social.leaderboard());
+      if (token !== request || metric !== current || !root.isConnected) return;
+      rows = scoped(result, ctx, me); loadedKind = boardKind; draw();
+    } catch (error) {
+      if (token === request && metric === current && root.isConnected) {
+        const retry = node('button', t('acct_retry_link'), 'primary-small'); retry.type = 'button';
+        retry.addEventListener('click', selectMetric);
+        const missingRecent = boardKind === 'workoutxp' && ['PGRST205', '42P01'].includes(error?.code);
+        body.replaceChildren(node('p', missingRecent ? t('cloud_workout_xp_needs_schema') : explain(error), 'notice friends-notice'), retry);
+      }
+    }
+  };
+  if (active === 'training') await selectMetric();
+  else { rows = scoped(await (active === 'lifts' ? social.liftBoard() : social.shadowBoard()), ctx, me); draw(); }
 }

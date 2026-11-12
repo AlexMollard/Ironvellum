@@ -1312,12 +1312,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 32,
-        format('schema_version() reports %s, not 32 — bump the literal with the schema change', public.schema_version())
+        (select public.schema_version()) = 33,
+        format('schema_version() reports %s, not 33 — the rolling-board patch is not advertised', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 32,
+        (select public.schema_version()) = 33,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;
@@ -2642,6 +2642,117 @@ begin
     delete from auth.users where id in (ally, stranger, blocked);
     perform set_config('probe.uid', '', true);
 end $feed$;
+
+-- --------------------------------------------------------- rolling workout XP
+-- These identities are independent of the older probes: both positive access
+-- and refusals must survive reapplying the baseline or hosted patch.
+do $workout_xp$
+declare
+    owner_id uuid := 'b7330000-0000-4000-8000-000000000001';
+    ally uuid := 'b7330000-0000-4000-8000-000000000002';
+    stranger uuid := 'b7330000-0000-4000-8000-000000000003';
+    ordinary uuid := 'b7332222-0000-4000-8000-000000000001';
+    inside_edge uuid := 'b7332222-0000-4000-8000-000000000003';
+    n bigint;
+    total bigint;
+    leader uuid;
+begin
+    delete from auth.users where id in (owner_id, ally, stranger)
+       or id::text like 'b7331111-%';
+    insert into auth.users (instance_id,id,aud,role,email,encrypted_password,created_at,updated_at)
+    select '00000000-0000-0000-0000-000000000000', u, 'authenticated', 'authenticated',
+           u::text || '@workout-xp.test', '', now(), now()
+    from unnest(array[owner_id,ally,stranger]) u;
+    insert into profiles (id,display_name,visibility,total_xp) values
+        (owner_id,'WindowLeader','friends',1000000),
+        (ally,'WindowNewcomer','friends',1000),
+        (stranger,'WindowStranger','friends',500)
+    on conflict (id) do update set display_name=excluded.display_name,
+        visibility=excluded.visibility,total_xp=excluded.total_xp;
+    insert into friendships (requester_id,addressee_id,accepted)
+    values (owner_id,ally,true);
+
+    -- A hundred inactive public profiles dominate the lifetime population.
+    -- They must not prevent an active newcomer entering the recent top 100.
+    insert into auth.users (instance_id,id,aud,role,email,encrypted_password,created_at,updated_at)
+    select '00000000-0000-0000-0000-000000000000',
+        ('b7331111-0000-4000-8000-' || lpad(i::text,12,'0'))::uuid,
+        'authenticated','authenticated','window-idle-' || i || '@workout-xp.test','',now(),now()
+    from generate_series(1,100) i;
+    insert into profiles (id,display_name,visibility,total_xp)
+    select ('b7331111-0000-4000-8000-' || lpad(i::text,12,'0'))::uuid,
+        'WindowIdle' || i,'public',2000000
+    from generate_series(1,100) i
+    on conflict (id) do update set display_name=excluded.display_name,
+        visibility=excluded.visibility,total_xp=excluded.total_xp;
+
+    insert into sessions (id,user_id,local_id,label,started_at,completed_at,xp_awarded,audience) values
+        (ordinary,owner_id,1,'Ordinary',now()-interval '2 hours',now()-interval '1 hour',10,'profile'),
+        ('b7332222-0000-4000-8000-000000000002',owner_id,2,'At edge',now()-interval '169 hours',now()-interval '168 hours',5000,'profile'),
+        (inside_edge,owner_id,3,'Just inside',now()-interval '169 hours',now()-interval '168 hours'+interval '1 microsecond',20,'profile'),
+        ('b7332222-0000-4000-8000-000000000004',owner_id,4,'Just outside',now()-interval '169 hours',now()-interval '168 hours'-interval '1 microsecond',10000,'profile'),
+        ('b7332222-0000-4000-8000-000000000005',owner_id,5,'Future',now(),now()+interval '1 hour',20000,'profile'),
+        ('b7332222-0000-4000-8000-000000000006',owner_id,6,'Unfinished',now(),null,30000,'profile'),
+        ('b7332222-0000-4000-8000-000000000007',owner_id,7,'Private',now()-interval '3 hours',now()-interval '2 hours',90,'private'),
+        ('b7332222-0000-4000-8000-000000000008',ally,1,'Newcomer',now()-interval '4 hours',now()-interval '3 hours',200,'profile'),
+        ('b7332222-0000-4000-8000-000000000009',stranger,1,'Stranger',now()-interval '4 hours',now()-interval '3 hours',300,'profile');
+
+    perform assert_true(refused_as_anon('select * from workout_xp_leaderboard',array['42501']),
+        'rolling XP allows anonymous reads');
+    perform set_config('probe.uid',stranger::text,true);
+    set local role authenticated;
+    select count(*) into n from workout_xp_leaderboard where id=owner_id;
+    perform assert_true(n=0,'rolling XP leaks a friends-only profile to a stranger');
+    select workout_xp_last_7d into total from workout_xp_leaderboard where id=stranger;
+    perform assert_true(total=300,'rolling XP hides the reader from themselves');
+    reset role;
+
+    perform set_config('probe.uid',ally::text,true);
+    set local role authenticated;
+    select workout_xp_last_7d into total from workout_xp_leaderboard where id=owner_id;
+    perform assert_true(total=30,'rolling XP hides an accepted friend, leaks private XP, or includes an out-of-window award');
+    select sessions_last_7d into n from workout_xp_leaderboard where id=owner_id;
+    perform assert_true(n=2,'rolling XP includes unfinished, future or boundary-excluded workouts');
+    reset role;
+
+    perform set_config('probe.uid',owner_id::text,true);
+    set local role authenticated;
+    select workout_xp_last_7d into total from workout_xp_leaderboard where id=owner_id;
+    perform assert_true(total=120,'rolling XP loses visible private workouts or miscalculates the elapsed-time boundary');
+    select id into leader from workout_xp_leaderboard where id in(owner_id,ally)
+      order by workout_xp_last_7d desc,display_name,id limit 1;
+    perform assert_true(leader=ally,'rolling XP still prefers account age over recent workout awards');
+    select count(*) into n from (select id from leaderboard order by total_xp desc limit 100) old_top where id=ally;
+    perform assert_true(n=0,'rolling XP top-100 fixture does not challenge the lifetime population');
+    select count(*) into n from (
+        select id from workout_xp_leaderboard order by workout_xp_last_7d desc,display_name,id limit 100
+    ) recent_top where id=ally;
+    perform assert_true(n=1,'rolling XP chooses candidates from the lifetime top 100');
+    select count(*) into n from workout_xp_leaderboard where id::text like 'b7331111-%';
+    perform assert_true(n=0,'rolling XP fabricates ranked zero rows for inactive profiles');
+    reset role;
+
+    update sessions set xp_awarded=15 where id=ordinary;
+    perform assert_true(value_as(ally,format('select workout_xp_last_7d from workout_xp_leaderboard where id=%L',owner_id))='35',
+        'rolling XP ignores an amended award');
+    delete from sessions where id=inside_edge;
+    perform assert_true(value_as(ally,format('select workout_xp_last_7d from workout_xp_leaderboard where id=%L',owner_id))='15',
+        'rolling XP retains a deleted award');
+    insert into sessions (id,user_id,local_id,label,started_at,completed_at,xp_awarded)
+        select id,user_id,local_id,label,started_at,completed_at,xp_awarded from sessions where id=ordinary
+        on conflict(user_id,local_id) do update set xp_awarded=excluded.xp_awarded;
+    perform assert_true(value_as(ally,format('select workout_xp_last_7d from workout_xp_leaderboard where id=%L',owner_id))='15',
+        'rolling XP duplicates an idempotent session repush');
+    update sessions set completed_at=null where id=ordinary;
+    perform assert_true(value_as(ally,format('select count(*) from workout_xp_leaderboard where id=%L',owner_id))='0',
+        'rolling XP keeps a reopened workout ranked');
+    update sessions set completed_at=now()-interval '1 hour' where id=ordinary;
+    perform assert_true(value_as(ally,format('select workout_xp_last_7d from workout_xp_leaderboard where id=%L',owner_id))='15',
+        'rolling XP fails to count a resealed workout once');
+
+    delete from auth.users where id in(owner_id,ally,stranger) or id::text like 'b7331111-%';
+    perform set_config('probe.uid','',true);
+end $workout_xp$;
 
 drop function if exists assert_true(boolean, text);
 drop function if exists refused_as(uuid, text, text[]);
