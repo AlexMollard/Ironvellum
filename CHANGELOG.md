@@ -5,6 +5,9 @@ store listing; this is the whole list.
 
 ## 1.11
 
+### Maintenance
+- Use one session-set projection for live logging, history and exports, preserving their existing ordering and recorded fields.
+
 ### Rolling workout XP
 - Rank the Training board by workout XP earned in the rolling last seven days, with Lifetime XP still available in the metric picker.
 - Count completed, visible workouts by completion time, including workouts synced later. Skill claims, circle bonuses and imported workouts do not count toward this board.

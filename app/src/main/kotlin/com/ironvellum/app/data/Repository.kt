@@ -1628,25 +1628,7 @@ class Repository(
         exerciseDao.observeAll(),
     ) { sets, exercises ->
         val names = exercises.associate { it.id to it.name }
-        sets.map { s ->
-            SessionSet(
-                id = s.id,
-                exerciseId = s.exerciseId,
-                exerciseName = names[s.exerciseId] ?: "Unknown",
-                exercisePosition = s.exercisePosition,
-                setIndex = s.setIndex,
-                reps = s.reps,
-                weightKg = s.weightKg,
-                modifiers = s.modifiers,
-                done = s.done,
-                durationSec = s.durationSec,
-                distanceM = s.distanceM,
-                grade = s.grade,
-                kind = s.setKind(),
-                supersetGroup = s.supersetGroup,
-                rpe = s.rpe,
-            )
-        }.sortedWith(compareBy({ it.exercisePosition }, { it.setIndex }))
+        sets.map { it.toSessionSet(names) }.sortedWith(compareBy({ it.exercisePosition }, { it.setIndex }))
     }
 
     /**
@@ -2556,29 +2538,27 @@ class Repository(
     /** Every completed session without its sets, newest first: for what only reads dates and rites. */
     suspend fun completedSessions(): List<WorkoutSession> = sessionDao.completedSessions().map { it.toDomain() }
 
+    private fun SetLogEntity.toSessionSet(names: Map<Long, String>): SessionSet =
+        SessionSet(
+            id = id,
+            exerciseId = exerciseId,
+            exerciseName = names[exerciseId] ?: "Unknown",
+            exercisePosition = exercisePosition,
+            setIndex = setIndex,
+            reps = reps,
+            weightKg = weightKg,
+            modifiers = modifiers,
+            done = done,
+            durationSec = durationSec,
+            distanceM = distanceM,
+            grade = grade,
+            kind = setKind(),
+            supersetGroup = supersetGroup,
+            rpe = rpe,
+        )
+
     private fun SessionWithSets.toHistoryRow(names: Map<Long, String>): Pair<WorkoutSession, List<SessionSet>> =
-        session.toDomain() to sets.map { s ->
-            SessionSet(
-                id = s.id,
-                exerciseId = s.exerciseId,
-                exerciseName = names[s.exerciseId] ?: "Unknown",
-                // Without this every set defaulted to position 0, so the
-                // session record grouped a five-exercise workout under one
-                // heading with SET 1 repeating once per exercise.
-                exercisePosition = s.exercisePosition,
-                setIndex = s.setIndex,
-                reps = s.reps,
-                weightKg = s.weightKg,
-                modifiers = s.modifiers,
-                done = s.done,
-                durationSec = s.durationSec,
-                distanceM = s.distanceM,
-                grade = s.grade,
-                kind = s.setKind(),
-                supersetGroup = s.supersetGroup,
-                rpe = s.rpe,
-            )
-        }
+        session.toDomain() to sets.map { it.toSessionSet(names) }
 
     /** Complete record of one movement in one [Variation] (the plain one by default): its logged sets plus derived stats. */
     fun observeExerciseHistory(exerciseId: Long, variation: String? = null): Flow<ExerciseHistory?> = combine(
@@ -3661,30 +3641,7 @@ class Repository(
     suspend fun exportJson(): String = exportArchive().json
 
     private suspend fun completedSessionsWithSets(names: Map<Long, String>): List<Pair<WorkoutSession, List<SessionSet>>> =
-        sessionDao.observeCompletedWithSets().first().map { sws ->
-            sws.session.toDomain() to sws.sets.map { s ->
-                SessionSet(
-                    id = s.id,
-                    exerciseId = s.exerciseId,
-                    exerciseName = names[s.exerciseId] ?: "Unknown",
-                    // Which block a set belongs to: without it a restored
-                    // backup lands every set on position 0 and merges the
-                    // movements into one block.
-                    exercisePosition = s.exercisePosition,
-                    setIndex = s.setIndex,
-                    reps = s.reps,
-                    weightKg = s.weightKg,
-                    modifiers = s.modifiers,
-                    done = s.done,
-                    durationSec = s.durationSec,
-                    distanceM = s.distanceM,
-                    grade = s.grade,
-                    kind = s.setKind(),
-                    supersetGroup = s.supersetGroup,
-                    rpe = s.rpe,
-                )
-            }
-        }
+        sessionDao.observeCompletedWithSets().first().map { it.toHistoryRow(names) }
 
     /** One period of trials as a Strong-format CSV, or null when the period holds none. */
     suspend fun exportCsv(period: WorkoutCsvWriter.Period, today: LocalDate, zone: ZoneId): String? {
