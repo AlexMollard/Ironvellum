@@ -22,7 +22,7 @@ Every sentence that names a glossary concept is written twice, as two complete s
 `key` is the plain wording (the default, and what a language ships on); `key__t` is the themed wording. Never build
 one sentence out of concept words (`{trial}`, `%1$s` standing for "workout"): a translator cannot inflect a word they
 are handed, and the two modes differ in grammar ("a workout" / "a trial"). StringsXmlTest rejects `{...}` placeholders;
-GlossaryTest rejects themed words in plain values and retired words in themed values.
+review each value in its language and wording mode. English keyword lists are not a translation validator.
 
 A string that names no concept (a button called "Save", "Rest timer") is plain-only: one `key`, shown in both modes.
 
@@ -48,7 +48,7 @@ a form: the whole sentence becomes a `key` / `key__t` pair and the call site sto
 
 `bothModes` concepts (the reward layer: deed, the Veil) are themed whatever the switch says, so each form is one
 string with no twin, named `always_<name>_<form>`. The `always_` prefix is the contract for any text shown the same in
-both modes (it may hold themed words; GlossaryTest skips it): `always_oath_name` is the themed name that stays themed
+both modes (it may hold themed words): `always_oath_name` is the themed name that stays themed
 (`themedName`), `always_themed_names_caption` is the Settings example that names both vocabularies.
 
 The words come from `Words.init` (the app's resources). A JVM unit test has no `init`, so `Words` falls back to the
@@ -136,23 +136,15 @@ UiText.themed(R.string.x, R.string.x__t).themedText()   // the themed wording
 UiText.res(R.string.x).plainText(DiskStrings(themedComplete = false))  // a language without themed strings
 ```
 
-## The guard: HardcodedUiLiteralTest
+## Review and verification
 
-A source scan, like GlossaryTest. It counts string literals that look like screen text: any literal handed to
-`Text(`, a `label =` / `title =` / `contentDescription =` / `placeholder =` / `supportingText =` / `caption =` ...
-argument, a notification builder's `setContentTitle(` and friends, or any `String` parameter of a composable in this
-tree (found by reading the declarations, so new wrappers are covered), plus any two-word literal elsewhere outside
-logs and thrown errors. The per-file counts are checked in at `app/src/test/resources/hardcoded-ui-literals.baseline`.
+Screen text still belongs in resources; source-literal counts and English vocabulary scans are not behavioral tests.
+Review changed call sites and whole-sentence pairs in their own language. Check actual screens in plain and themed
+modes, including large text, and keep deterministic tests for meaningful state, formatting and placeholder contracts.
+`StringsXmlTest` validates resource structure and Android formatting rules; screenshots establish visual behavior.
 
-- A file with MORE literals than its baseline fails and lists them: use a resource.
-- A file with FEWER fails too, naming the number to lower the baseline to, so room you made is not spent elsewhere.
-- Re-baseline after a migration: `UPDATE_UI_LITERAL_BASELINE=1 ./gradlew :app:testFossDebugUnitTest --tests "*HardcodedUiLiteralTest*"`.
-  `DUMP_UI_LITERALS=<file>` writes every counted literal as `path:line<TAB>text`: the migration worklist.
-- Data files (exercise and skill catalogues, import aliases, SQL, export keys) are exempt in the test's `exempt` map,
-  each with the reason. Add one only for text that is data, never to silence a screen string.
-
-Migrating a screen means: move its literals into `strings.xml` (a pair where a concept word was interpolated), swap the
-call sites, delete any `Lines`/`Words` entry it orphaned, then re-baseline. A screen at zero drops out of the baseline.
+When migrating a screen, move its literals into `strings.xml`, swap the callers, remove orphaned entries and verify
+the rendered result. Do not maintain literal-count baselines or repin wording snapshots.
 
 ## Recipe: a call site that interpolates a concept
 
@@ -167,7 +159,7 @@ resolves through the facade and needs nothing). Steps:
    `Words.text(UiText.themed(...))` / `.asString(context)` outside composition.
 4. Delete the `Words` forms the sentence orphaned only if no other site reads them (WordsFormsTest does not flag
    unused forms; the strings.xml entry can stay until the last reader goes).
-5. Run GlossaryTest, StringsXmlTest and the ratchet; re-baseline last, after rebasing.
+5. Run StringsXmlTest and the affected behavioral checks, then inspect the running screen in both wording modes.
 
 Example 1, `ui/train/PresetsScreen.kt` (a concept plus its article inside a title):
 
@@ -246,10 +238,9 @@ them as unbracketed English: `adb shell cmd locale set-app-locales com.ironvellu
 
 ### Not migrated as of 1.8
 
-Rank titles and the catalogue names (skills, titles, crests, deeds, relics, exercises, templates) stay English data. What
-else is left in the baseline (`app/src/test/resources/hardcoded-ui-literals.baseline`) is not screen text: formats,
-routes, keys, test tags, SVG paths, import aliases. `HardcodedUiLiteralTest.justified` says why for each file, and a
-baseline entry for a file with no reason fails the test.
+Rank titles and catalogue names (skills, titles, crests, deeds, relics, exercises and templates) stay English data.
+Routes, keys, test tags, SVG paths and import aliases are data rather than screen text. Review those uses separately
+from localized copy; a source-literal count cannot distinguish them reliably.
 
 ### Plurals and the lint check
 

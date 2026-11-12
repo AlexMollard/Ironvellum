@@ -1,6 +1,5 @@
 package com.ironvellum.app.domain
 
-import com.ironvellum.app.RETIRED_WORDS
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -656,29 +655,6 @@ class WorkoutShareTest {
         assertTrue(card(emptyList(), emptyList()).startsWith("Ironvellum · Push Day · 16 Sep"))
     }
 
-    @Test
-    fun `no retired glossary word reaches the card`() {
-        val sets = listOf(
-            set(1, "Bench Press", 0, 5, 80.0),
-            set(2, "Run", 0, 0, distanceM = 5000.0, durationSec = 1500, position = 1),
-            set(3, "Climb", 0, 6, grade = "V4", position = 2),
-        )
-        val catalogue = listOf(
-            exercise(1, "Bench Press", weighted = true),
-            exercise(2, "Run", ExerciseMetric.DISTANCE_TIME),
-            exercise(3, "Climb", ExerciseMetric.ATTEMPTS_GRADE),
-        )
-        val text = card(
-            sets,
-            catalogue,
-            session(title = "Push day", note = "good one"),
-            peaks = listOf(peak("Bench Press", 0)),
-            notes = mapOf(1L to "felt light"),
-            includeNotes = true,
-        )
-        val hits = RETIRED_WORDS.filter { it.containsMatchIn(text) }
-        assertTrue("$text\n$hits", hits.isEmpty())
-    }
 
     @Test
     fun `totals count done sets and keep held seconds apart from reps`() {

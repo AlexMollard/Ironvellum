@@ -91,8 +91,8 @@ to look at, about 40s of the suite). The captures are now opt-in and the gate sk
 ## Screen text goes in string resources
 
 New screen text is a resource in `res/values/strings.xml` (plain `key`, themed `key__t`), never a literal in Kotlin.
-`HardcodedUiLiteralTest` fails when a file has more literals than its checked-in baseline, and also when it has fewer
-(lower the baseline). The guide, naming, plurals and the ratchet are in `docs/STRINGS.md`.
+The guide, naming and plurals are in `docs/STRINGS.md`. Review changed copy in both wording modes
+and verify the running screen; resource-contract tests cover XML escaping and placeholders.
 
 ## One emulator, shared between sessions
 

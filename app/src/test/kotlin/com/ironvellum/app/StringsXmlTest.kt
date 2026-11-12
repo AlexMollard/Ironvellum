@@ -8,7 +8,6 @@ import org.junit.Test
 /**
  * Lint for the string resources (docs/STRINGS.md): the plain/themed pairing contract, placeholder discipline and
  * escaping, checked on every strings.xml under res (default and translations) so a translator's file is held to the same rules as the English one.
- * (GlossaryTest checks the vocabulary: plain values hold no themed words, themed values no retired ones.)
  */
 class StringsXmlTest {
 

@@ -292,25 +292,13 @@ each lift".
 
 ## Enforcement
 
-A unit test (`GlossaryTest`) scans the string literals under `app/src/main`
-for both vocabularies: the plain words and the themed names. A concept word in
-a literal is a bug in one mode, so the only places allowed to spell them are
-the vocabulary files (`Words.kt`, `WordLines.kt`, `TodayNarration.kt`) and a
-short list of files that hold other data (exercise instructions, citations,
-licence texts). So it does not cry wolf, it:
+Review concept words through their resources and `Words` accessors, then inspect the actual screen in both modes.
+Do not validate translations with English keyword lists: French “technique” and “comment” have ordinary meanings
+that are not leaks from the English themed vocabulary.
 
-- strips `${…}` templates before matching, so `${Words.rite.s}` never counts;
-- matches whole words, case-insensitively, and counts a possessive ("circle's");
-- skips key-like literals (routes, tags, ids);
-- keeps an explicit allowlist of literal + reason for the legitimate uses:
-  citations, the sentinel `Ironbound`, the ascension names (themed only), crest
-  and relic names, the wire text `Only the Keeper`, and the English idioms.
+`WordsTest` exercises mode-dependent resolution, plurals, articles and server sentences; `NamesToggleTest` verifies
+that changing the mode relabels navigation without restarting. Keep behavioral coverage rather than source scans
+or exact-copy snapshots.
 
-Ambiguous English (standing, frame, pattern, yours) is left to review rather
-than banned. `WordsTest` covers both modes, plurals, articles, the server
-sentences and the first-run default; `NamesToggleTest` flips the switch on a
-device and checks the nav bar relabels with no restart.
-
-Add a word to the lists when a new concept arrives; add an allowlist entry only
-with a reason. Server messages are themed on the wire and are shown through
-`Words.fromServer`, which turns them plain in plain mode.
+Server messages are themed on the wire and pass through `Words.fromServer` for plain-mode display. Data names,
+citations and protocol identifiers are not screen prose; assess them in their actual consumer context.

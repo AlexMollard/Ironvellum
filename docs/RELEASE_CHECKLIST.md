@@ -52,6 +52,16 @@ Run all three; all must pass before anything is uploaded:
 .\gradlew.bat :app:assembleFossRelease
 ```
 
+Latest verification (2026-11-12): the JVM suite and debug/test APK builds pass,
+all 374 web tests pass, and the seven focused ranking/settings device tests pass.
+Backend baseline/hosted-patch/reset assertions pass on local Postgres.
+The full gate is **not green**: release lint reports eight existing untranslated
+`rest_*` resources; the first device attempt reports eight fixed-size assumptions
+(411×891dp expected, 411×914dp available), an `AccountRestoreTest` SDK-refresh wait
+failure and a `SessionExpandedPaneTest` closed-database error. The gate timed out
+during its automatic device retry. Resolve these separately before release;
+focused feature checks are not a substitute for a green release gate.
+
 ## 4. Supabase schema
 
 The whole schema is ONE file, `supabase/migrations/0001_baseline.sql`, the
@@ -73,8 +83,9 @@ to the hosted project on 2026-10-30, establishing schema 32. The patch adds
 no card (`CloudSync.feedReady` needs 32), and the web viewer's Friends area needs 32.
 For 1.11, apply `supabase/hosted/2026-11-12-workout-xp.sql` and confirm that
 `select public.schema_version();` returns 33. This patch has been verified
-locally, not applied to the hosted project by this task. It adds the rolling
-workout-XP view without raising the app-wide minimum of 31.
+locally, not applied to the hosted project by this task. A read-only hosted RPC
+check on 2026-11-12 still returned 32. The patch adds the rolling workout-XP view
+without raising the app-wide minimum of 31.
 
 **Never paste `supabase/reset.sql` into the hosted project.** It deletes every
 account. It exists for a throwaway project and for the gate's round trip.
