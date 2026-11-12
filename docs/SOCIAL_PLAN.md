@@ -37,15 +37,18 @@ Existing foundations:
 
 ### Smallest useful adoption
 
-1. Extend the existing app-to-web exporter with an explicit allowlist of
-   `FeedEntryDto`, `CommentDto`, `InboxRowDto`, `LeaderboardDto` and
-   `WorkoutXpLeaderboardDto`. Export wire names, primitive kinds, nullability,
-   optional-field metadata and `Reaction.wire` values to
-   `web/src/generated/social-wire.json`. Do not scan or expose every DTO.
-2. Generate raw-row JSDoc declarations beside that asset for browser authoring.
-   These describe snake_case transport rows, not the camelCase screen models.
-3. Replace the browser's reaction-value literal with the generated values.
-   Retain its current unknown-reaction handling and all row transformations.
+1. Start with `Reaction.wire` values exported to
+   `web/src/generated/social-wire.json`. Replace the browser's reaction-value
+   literal with those generated values, retaining unknown-reaction handling.
+2. Only when browser tooling actually checks the declarations, extend the
+   existing exporter with an explicit allowlist of `FeedEntryDto`, `CommentDto`,
+   `InboxRowDto`, `LeaderboardDto` and `WorkoutXpLeaderboardDto`. Export wire
+   names, primitive kinds, nullability and optional-field metadata. Do not scan
+   or expose every DTO.
+3. Generate raw-row JSDoc declarations beside that asset for browser authoring.
+   These describe snake_case transport rows, not the camelCase screen models
+   or the complete server schema. The current Vite build and Vitest suite do
+   not type-check JSDoc; declarations alone do not enforce wire-name correctness.
 4. Add other genuinely shared row families only after their current decoding
    differences are documented. Do not generate Android DTOs from SQL or replace
    request implementations.
