@@ -41,7 +41,6 @@ internal data class TreeLayout(
 )
 
 private const val MIN_CELL_DP = 72f
-private const val MIN_COLUMNS = 4
 private const val MAX_COLUMNS = 6
 
 /** Marks a waypoint's name so it can never clash with a technique. */
@@ -66,13 +65,9 @@ private const val MAX_SPREAD = 2.2
  */
 private const val EDGE_REACH = 0.7
 
-/**
- * How many node slots fit across [availableDp]. A path's widest row is three
- * techniques, so four slots on a 360dp phone never wrap; a wider screen gets
- * more slots rather than stretched ones.
- */
-internal fun columnsFor(availableDp: Float): Int =
-    (availableDp / MIN_CELL_DP).toInt().coerceIn(MIN_COLUMNS, MAX_COLUMNS)
+/** Prefer measured label width, retaining two slots for prerequisite routing. */
+internal fun columnsFor(availableDp: Float, minimumCellDp: Float): Int =
+    (availableDp / maxOf(MIN_CELL_DP, minimumCellDp)).toInt().coerceIn(2, MAX_COLUMNS)
 
 /**
  * Lays one path out as a layered graph.
@@ -96,7 +91,7 @@ internal fun columnsFor(availableDp: Float): Int =
  * spreads evenly under its parent. Waypoints give way before nodes do.
  */
 internal fun treeLayout(line: String, columns: Int): TreeLayout {
-    require(columns >= 1) { "columns must be at least 1" }
+    require(columns >= 2) { "at least two columns are needed for prerequisite lanes" }
     val onLine = Skills.ALL.filter { it.line == line }
     val inLine = onLine.map { it.name }.toSet()
     val parents: Map<String, List<String>> =
@@ -180,7 +175,7 @@ internal fun treeLayout(line: String, columns: Int): TreeLayout {
         chainOf.values.flatten().toSet().forEach { passing[it.substringAfterLast('@').toInt()]++ }
         val tight = order.indices.firstOrNull { l ->
             val n = order[l].size
-            n > 1 && (n - 1) + LANE_NODE_GAP * passing[l] > columns - 1 + 2 * LANE_MARGIN &&
+            n > 1 && (n - 1) + LANE_NODE_GAP * passing[l] > columns - 1 + (if (columns >= 4) 2 * LANE_MARGIN else 0.0) &&
                 limit.getValue(levelGroup[l]) > 1
         } ?: break
         limit[levelGroup[tight]] = order[tight].size - 1
@@ -308,8 +303,14 @@ internal fun treeLayout(line: String, columns: Int): TreeLayout {
     val xOf = HashMap<String, Double>()
 
     fun isLane(n: String) = n.startsWith(LANE_MARK)
+    // Narrow graphs have wider label cells. Keep node clearance, but pack
+    // parallel edge lanes so even a one-node row fits within its end margins.
+    val laneGap = if (columns >= 4) LANE_GAP else {
+        val mostLanes = order.maxOf { row -> row.count { it.startsWith(LANE_MARK) } }
+        minOf(LANE_GAP, (columns - 1.0 + LANE_MARGIN - LANE_NODE_GAP) / maxOf(1, mostLanes - 1))
+    }
     fun gap(a: String, b: String): Double = when {
-        isLane(a) && isLane(b) -> LANE_GAP
+        isLane(a) && isLane(b) -> laneGap
         isLane(a) || isLane(b) -> LANE_NODE_GAP
         else -> 1.0
     }
@@ -363,8 +364,21 @@ internal fun treeLayout(line: String, columns: Int): TreeLayout {
         order[l].let { names -> place(names, names.map { n -> mean(parentsOf(n)) ?: xOf.getValue(n) }) }
     }
 
-    // Centre the whole drawing, waypoints included, in the width it was given.
-    val shift = (columns - 1) / 2.0 - (xOf.values.min() + xOf.values.max()) / 2.0
+    // Centre the drawing without shifting a real node out of its label slot.
+    var leftNode = Double.POSITIVE_INFINITY
+    var rightNode = Double.NEGATIVE_INFINITY
+    var leftEdge = Double.POSITIVE_INFINITY
+    var rightEdge = Double.NEGATIVE_INFINITY
+    xOf.forEach { (name, x) ->
+        leftEdge = minOf(leftEdge, x)
+        rightEdge = maxOf(rightEdge, x)
+        if (!isLane(name)) {
+            leftNode = minOf(leftNode, x)
+            rightNode = maxOf(rightNode, x)
+        }
+    }
+    val shift = ((columns - 1) / 2.0 - (leftEdge + rightEdge) / 2.0)
+        .coerceIn(-leftNode, maxOf(-leftNode, columns - 1.0 - rightNode))
     xOf.keys.toList().forEach { xOf[it] = xOf.getValue(it) + shift }
 
     // Spread: a branchy path packs into the middle of the row, leaving the margins empty. Stretch the whole

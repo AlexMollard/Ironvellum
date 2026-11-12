@@ -154,6 +154,20 @@ class SkillTreeEdgeTest {
         val start = layout.edgeCurve(layout.edges.first { it.from == "Dead Hang" }, three).first().p0
         assertTrue(start.y >= three.discBottom(n.level) + 3 * 12f)
     }
+
+    @Test
+    fun `measured caption lines reserve room for the next row and edge`() {
+        val layout = treeLayout("Pull", columnsFor(328f, 140f))
+        val m = treeMetrics(layout, 164f, 24f, crossLinesOf = { 4 }, cueLinesOf = { 2 }, linesOf = { 5 })
+        layout.nodes.forEach { node ->
+            val expected = m.discBottom(node.level) + TEXT_GAP_DP + 24f * (5 + 2 + 4)
+            assertTrue(m.rowBottom(node.level) >= expected)
+        }
+        layout.edges.forEach { edge ->
+            val node = layout.nodes.first { it.skill.name == edge.from }
+            assertTrue(layout.edgeCurve(edge, m).first().p0.y >= layout.nodeBottom(node, m))
+        }
+    }
 }
 
 private data class Box(val l: Float, val t: Float, val r: Float, val b: Float) {
@@ -165,7 +179,7 @@ private data class Box(val l: Float, val t: Float, val r: Float, val b: Float) {
 /** One path laid out for a phone [width] wide (16dp gutters), with its nodes, captions and edges as boxes and lines. */
 private class Drawn(val line: String, width: Float) {
     val avail = width - 32f
-    val columns = columnsFor(avail)
+    val columns = columnsFor(avail, 72f)
     val cellW = avail / columns
     val layout = treeLayout(line, columns)
     val m = treeMetrics(layout, cellW, 12f)

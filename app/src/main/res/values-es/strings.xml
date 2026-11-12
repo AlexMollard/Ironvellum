@@ -6228,3 +6228,4 @@
     <string name="exercise_unit_scope">Se usa para este ejercicio en todos los entrenamientos. Tus pesos registrados no cambian.</string>
     <string name="exercise_unit_choose_description">Unidad de peso para %1$s</string>
 </resources>
+    <string name="skill_tree_tiers_caption">Los números romanos indican niveles de dificultad. Cuanto mayor es el número, más difícil.</string>

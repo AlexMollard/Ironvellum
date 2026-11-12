@@ -6228,3 +6228,4 @@
     <string name="exercise_unit_scope">Usada neste exercício em todos os treinos. Seus pesos registrados não mudam.</string>
     <string name="exercise_unit_choose_description">Unidade de peso de %1$s</string>
 </resources>
+    <string name="skill_tree_tiers_caption">Os algarismos romanos indicam níveis de dificuldade. Quanto maior o número, mais difícil.</string>

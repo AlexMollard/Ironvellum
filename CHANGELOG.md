@@ -12,6 +12,11 @@ store listing; this is the whole list.
 - Only describe you as alone on the board when you are actually the sole ranked lifter.
 - Require the optional schema 33 hosted update for recent rankings; existing sync and lifetime rankings remain available on older supported backends.
 
+### Skill paths
+- Keep skill names and prerequisite captions at a 12sp base size that respects system text scaling, instead of shrinking labels to 8sp.
+- Give large text wider cells and enough row height for every measured line; keep nodes and prerequisite routes within the graph when fewer columns fit.
+- Explain the Roman-numeral difficulty tiers on every open path.
+
 ### Rest times
 - Set compound and isolation rest defaults or override an exercise in its workout settings; turn a custom value off to use the underlying default again. Top-set rest remains separate.
 - Use custom rest in rule-based workout estimates; estimates based on your measured pace still reflect that history.

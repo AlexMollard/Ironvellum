@@ -2,15 +2,15 @@
 
 Last audited 2026-11-12 against the current 1.11 source. Open boxes are unresolved; completed entries retain their verification. A historical visual complaint is not proof that the current screen still has it.
 
-- [ ] [2026-09-15] I feel like the deeds tab in the codex window is very dese and could do with a little ui/ux work to make it more digestible
+- [x] [2026-09-15] I feel like the deeds tab in the codex window is very dese and could do with a little ui/ux work to make it more digestible
   ↳ Equalising empty-state art stroke weight across dashboard/stats after the production-readiness wave · Codex screen deeds tab (app/src/main/kotlin/com/ironvellum/app/ui/titles/DeedsBoard.kt) · main@e5816f8
-  Audit: keep as a fresh visual review, not an automatic redesign. Deeds now has close-to-earning rows, category drill-down and grouped ladders (`DeedsBoard.kt:199-220,271-304`); whether it still feels dense needs current screenshots.
+  Reviewed 2026-11-12: current close-to-earning rows and category grouping remain readable at 100% and 200% text (`.tmp/shots/codex-deeds-default.png`, `codex-deeds-font-200.png`). Kept the existing grouped layout; no further redesign was justified by this review.
 - [ ] [2026-09-29] I think a future plan would be to overhaul the social features to compete with the big hitters
   ↳ after tagging v1.3 and pushing F-Droid MR !49794 · Allies tab (ui/social) · main@1ad24e8
   Audit: direction, not a scoped build task. Comments, reactions, inbox, lift boards, sharing and circles already have concrete contracts in `docs/SOCIAL_PLAN.md:16-23,84-94`. Prefer specific gaps such as rolling XP rankings over another blanket overhaul.
-- [ ] [2026-09-30] skill-tree descriptions clipped at 8-9sp, no legend for roman tiers
+- [x] [2026-09-30] skill-tree descriptions clipped at 8-9sp, no legend for roman tiers
   ↳ extracted from the v1.4 FTUE leftovers · Codex skill paths · main@5b904b9
-  Audit: worthwhile readability follow-up. `SkillTree.kt:151-176,300` still permits 8sp labels; current clipping has not been reverified. An I-V introduction now exists (`TitlesScreen.kt:438-440`), but its adequacy as a tier legend still needs a current visual review.
+  Completed 2026-11-12: 12sp base labels/captions, measured uncapped wrapping, adaptive columns with narrow-graph lane packing, and a persistent tier explanation. Checked real skill interaction and screenshots at 85%, 100%, 150%, 200% text plus density 560; geometry assertions cover every path at 2–6 columns.
 - [ ] [2026-09-30] Training mode in Settings lacks Skills/Mixed from onboarding
   ↳ extracted from the v1.4 FTUE leftovers · training preferences and generated routines · main@5b904b9
   Audit: clarify the concepts, not a confirmed missing enum option. Settings changes the two progression modes (`TrainingModeSettings.kt:43-64`); onboarding chooses four generation focuses (`OnboardingScreen.kt:1134-1156`). Skills/Mixed deliberately do not replace the progression mode (`ProgramEditing.kt:151-162`).

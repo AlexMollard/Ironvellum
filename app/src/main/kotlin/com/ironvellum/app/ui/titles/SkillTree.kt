@@ -45,7 +45,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -135,9 +134,6 @@ fun SkillTreeGraph(
     onFocusHandled: () -> Unit = {},
 ) {
     BoxWithConstraints(modifier.fillMaxWidth()) {
-        val columns = columnsFor(maxWidth.value)
-        val cellW = maxWidth / columns
-        val layout = remember(line, columns) { treeLayout(line, columns) }
 
         // Label lines scale with the system font so a large setting grows the
         // rows instead of clipping the label; the geometry reads the same height.
@@ -154,22 +150,24 @@ fun SkillTreeGraph(
             letterSpacing = 0.sp,
             fontWeight = FontWeight.Bold,
         )
-        // A label wraps between words, never inside one: when the widest word of the path is wider
-        // than the cell's text box (a big system font, a narrow phone), every label shrinks to fit it.
-        val labelSize = remember(layout, cellW, uiDensity, baseStyle) {
-            val textW = with(uiDensity) { (cellW - LabelPad * 2).roundToPx() }.coerceAtLeast(1)
-            val widest = layout.nodes.maxOf { n ->
-                n.skill.name.split(' ', '-').maxOf { w -> measurer.measure(w, baseStyle).size.width }
-            }
-            if (widest <= textW) LabelSize else maxOf(MIN_LABEL_SP, LABEL_SP * textW / widest).sp
+        // Measure once per path and text environment, before choosing the number of columns.
+        val minimumCellDp = remember(line, uiDensity, baseStyle, measurer) {
+            val widest = Skills.ALL.asSequence().filter { it.line == line }
+                .flatMap { it.name.split(' ', '-').asSequence() }
+                .maxOfOrNull { measurer.measure(it, baseStyle).size.width } ?: 0
+            with(uiDensity) { widest.toDp().value } + 2 * LABEL_PAD_DP
         }
-        val labelStyle = baseStyle.copy(fontSize = labelSize)
+        val columns = columnsFor(maxWidth.value, minimumCellDp)
+        val cellW = maxWidth / columns
+        val layout = remember(line, columns) { treeLayout(line, columns) }
+        val labelSize = LabelSize
+        val labelStyle = baseStyle
         val measured = remember(layout, cellW, uiDensity, labelStyle) {
             val textW = with(uiDensity) { (cellW - LabelPad * 2).roundToPx() }.coerceAtLeast(1)
             layout.nodes.associate { n ->
                 n.skill.name to measurer.measure(
-                    n.skill.name, labelStyle, constraints = Constraints(maxWidth = textW), maxLines = MAX_LABEL_LINES,
-                ).lineCount.coerceIn(1, MAX_LABEL_LINES)
+                    n.skill.name, labelStyle, constraints = Constraints(maxWidth = textW),
+                ).lineCount.coerceAtLeast(1)
             }
         }
         // The marker under a name ("needs L-sit (Core)") wraps too, at its own size; its longest form is reserved.
@@ -178,8 +176,8 @@ fun SkillTreeGraph(
             val textW = with(uiDensity) { (cellW - LabelPad * 2).roundToPx() }.coerceAtLeast(1)
             layout.nodes.associate { n ->
                 n.skill.name to (layout.crossMarker(n.skill.name)?.let {
-                    measurer.measure(it, crossStyle, constraints = Constraints(maxWidth = textW), maxLines = MAX_LABEL_LINES)
-                        .lineCount.coerceIn(1, MAX_LABEL_LINES)
+                    measurer.measure(it, crossStyle, constraints = Constraints(maxWidth = textW))
+                        .lineCount.coerceAtLeast(1)
                 } ?: 0)
             }
         }
@@ -194,8 +192,8 @@ fun SkillTreeGraph(
         val measuredCue = remember(cues, cellW, uiDensity, crossStyle) {
             val textW = with(uiDensity) { (cellW - LabelPad * 2).roundToPx() }.coerceAtLeast(1)
             cues.mapValues { (_, cue) ->
-                measurer.measure(cue, crossStyle, constraints = Constraints(maxWidth = textW), maxLines = MAX_LABEL_LINES)
-                    .lineCount.coerceIn(1, MAX_LABEL_LINES)
+                measurer.measure(cue, crossStyle, constraints = Constraints(maxWidth = textW))
+                    .lineCount.coerceAtLeast(1)
             }
         }
         val metrics = remember(layout, cellW, lineH, measured, measuredCross, measuredCue) {
@@ -296,10 +294,8 @@ fun SkillTreeGraph(
     }
 }
 
-/** The smallest a label shrinks to so its widest word still fits its cell. */
-private const val MIN_LABEL_SP = 8f
 
-private val LabelLine = 12.sp
+private val LabelLine = 16.sp
 private val LabelSize = LABEL_SP.sp
 private val CrossSize = CROSS_SP.sp
 
@@ -496,8 +492,6 @@ private fun SkillNode(
                 NodeState.LOCKED -> IronvellumColors.InkMuted
             },
             textAlign = TextAlign.Center,
-            maxLines = MAX_LABEL_LINES,
-            overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .widthIn(max = width)
                 .heightIn(min = textH / 2 * lines)
@@ -515,8 +509,6 @@ private fun SkillNode(
                 letterSpacing = 0.sp,
                 color = IronvellumColors.InkMuted,
                 textAlign = TextAlign.Center,
-                maxLines = MAX_LABEL_LINES,
-                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .widthIn(max = width)
                     .heightIn(min = textH / 2 * cueLines)
@@ -545,8 +537,6 @@ private fun CrossNeedCaption(text: String, need: CrossNeed, width: Dp, lines: In
         color = IronvellumColors.SystemGreen,
         textDecoration = TextDecoration.Underline,
         textAlign = TextAlign.Center,
-        maxLines = MAX_LABEL_LINES,
-        overflow = TextOverflow.Ellipsis,
         modifier = Modifier
             .widthIn(max = width)
             // The rows reserve [lines] for this marker; a minimum, so a rounding pixel never cuts the last line.

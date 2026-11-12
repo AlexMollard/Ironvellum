@@ -11,21 +11,26 @@ import org.junit.Test
 class SkillTreeLayoutTest {
 
     /** A 360dp phone: 16dp gutters each side. */
-    private val phoneColumns = columnsFor(360f - 32f)
+    private val phoneColumns = columnsFor(360f - 32f, 72f)
 
     @Test
-    fun `a phone gets four slots and a tablet more, never fewer`() {
+    fun `columns prefer measured label width while preserving prerequisite routing room`() {
         assertEquals(4, phoneColumns)
-        assertEquals(4, columnsFor(100f))
-        assertEquals(6, columnsFor(2000f))
+        assertEquals(2, columnsFor(100f, 72f))
+        assertEquals(6, columnsFor(2000f, 72f))
+        assertEquals(2, columnsFor(328f, 140f))
+        assertEquals(2, columnsFor(328f, 330f))
+        assertEquals(5, columnsFor(1000f, 200f))
     }
 
     @Test
     fun `every technique on a path is placed exactly once`() {
-        for (line in Skills.LINES) {
-            val placed = treeLayout(line, phoneColumns).nodes.map { it.skill.name }
-            assertEquals(line, Skills.ALL.filter { it.line == line }.map { it.name }.sorted(), placed.sorted())
-            assertEquals(line, placed.size, placed.toSet().size)
+        for (columns in 2..6) {
+            for (line in Skills.LINES) {
+                val placed = treeLayout(line, columns).nodes.map { it.skill.name }
+                assertEquals(line, Skills.ALL.filter { it.line == line }.map { it.name }.sorted(), placed.sorted())
+                assertEquals(line, placed.size, placed.toSet().size)
+            }
         }
     }
 
@@ -52,26 +57,21 @@ class SkillTreeLayoutTest {
     }
 
     @Test
-    fun `no two nodes overlap at 360dp and none leaves the row`() {
-        for (line in Skills.LINES) {
-            val layout = treeLayout(line, phoneColumns)
+    fun `no two nodes overlap or leave the row at any supported column count`() {
+        for (columns in 2..6) for (line in Skills.LINES) {
+            val layout = treeLayout(line, columns)
             layout.nodes.groupBy { it.level }.forEach { (level, row) ->
                 val xs = row.map { it.x }.sorted()
-                assertTrue("$line row $level below the left edge", xs.first() >= 0f)
-                assertTrue("$line row $level past the right edge", xs.last() <= phoneColumns - 1f)
+                assertTrue("$line row $level below the left edge with $columns columns: $xs", xs.first() >= 0f)
+                assertTrue("$line row $level past the right edge with $columns columns", xs.last() <= columns - 1f)
                 xs.zipWithNext { a, b -> assertTrue("$line row $level overlaps: $xs", b - a >= 1f - 1e-4f) }
+            }
+            layout.lanes.values.forEach { lane ->
+                lane.forEach { x -> assertTrue("$line edge leaves the graph with $columns columns: $x", x >= -0.5f && x <= columns - 0.5f) }
             }
         }
     }
 
-    @Test
-    fun `a row wider than the screen wraps instead of overlapping`() {
-        for (line in Skills.LINES) {
-            val layout = treeLayout(line, columns = 1)
-            assertEquals(line, Skills.ALL.count { it.line == line }, layout.nodes.size)
-            layout.nodes.groupBy { it.level }.values.forEach { assertEquals(line, 1, it.size) }
-        }
-    }
 
     @Test
     fun `a chain stays on one vertical and a fork sits under its parent`() {

@@ -38,8 +38,8 @@ internal data class TreeMetrics(
 )
 
 /** Type sizes of the two captions under a disc, for the line estimate; [SkillTree] draws with the same. */
-internal const val LABEL_SP = 11f
-internal const val CROSS_SP = 10f
+internal const val LABEL_SP = 12f
+internal const val CROSS_SP = 12f
 
 /** Side padding inside a label plate; text wraps in the cell less this on each side. */
 internal const val LABEL_PAD_DP = 3f

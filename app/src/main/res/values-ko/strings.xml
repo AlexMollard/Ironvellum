@@ -5859,3 +5859,4 @@
     <string name="exercise_unit_scope">모든 운동 세션에서 이 운동에 적용돼요. 기록된 중량은 그대로 유지돼요.</string>
     <string name="exercise_unit_choose_description">%1$s 중량 단위</string>
 </resources>
+    <string name="skill_tree_tiers_caption">로마 숫자는 난이도 단계를 나타내요. 숫자가 클수록 어려워요.</string>

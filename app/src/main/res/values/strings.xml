@@ -3189,6 +3189,7 @@
     <!-- A skill's tier shown as a numeral (I to V); the last is shown when the tier is unknown. -->
     <string name="skill_tier_1">I</string>
     <string name="skill_tier_2">II</string>
+    <string name="skill_tree_tiers_caption">Roman numerals mark difficulty tiers. Higher means harder.</string>
     <string name="skill_tier_3">III</string>
     <string name="skill_tier_4">IV</string>
     <string name="skill_tier_5">V</string>

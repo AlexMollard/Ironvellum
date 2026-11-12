@@ -34,6 +34,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
@@ -103,6 +104,12 @@ internal fun PathPager(
             selected = line,
             mastered = mastered,
             onPick = onLine,
+        )
+        Text(
+            stringResource(R.string.skill_tree_tiers_caption),
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
         HorizontalPager(
             state = pager,

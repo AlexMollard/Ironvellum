@@ -5859,3 +5859,4 @@
     <string name="exercise_unit_scope">すべてのワークアウトでこの種目に適用されます。記録済みの重量は変わりません。</string>
     <string name="exercise_unit_choose_description">%1$sの重量の単位</string>
 </resources>
+    <string name="skill_tree_tiers_caption">ローマ数字は難易度の段階です。数字が大きいほど難しくなります。</string>
