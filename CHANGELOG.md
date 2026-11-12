@@ -37,6 +37,7 @@ store listing; this is the whole list.
 - Use custom rest in rule-based workout estimates; estimates based on your measured pace still reflect that history.
 - Keep an exercise's rest override when renaming a custom exercise; remove it when the unused exercise is deleted.
 - Keep compound rest defaults out of timer-free custom activity estimates, and use each block's separate top-set rest in the live time remaining.
+- Translate custom rest controls and descriptions in all seven supported UI languages.
 
 ### Weight units per exercise
 - Choose App default, kg or lb from an exercise's About page or its unit dropdown while logging a workout.

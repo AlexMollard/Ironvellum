@@ -6231,4 +6231,12 @@
     <string name="exercise_unit_scope">Utilisée pour cet exercice dans chaque séance. Tes poids enregistrés restent inchangés.</string>
     <string name="exercise_unit_choose_description">Unité de poids pour %1$s</string>
     <string name="skill_tree_tiers_caption">Les chiffres romains indiquent le niveau de difficulté. Plus le chiffre est élevé, plus c’est difficile.</string>
+    <string name="rest_defaults_title">Temps de repos par défaut</string>
+    <string name="rest_compound_label">Repos personnalisé : polyarticulaires</string>
+    <string name="rest_isolation_label">Repos personnalisé : isolation</string>
+    <string name="rest_exercise_label">Repos personnalisé pour cet exercice</string>
+    <string name="rest_custom_caption">Les réglages de l’exercice remplacent les valeurs par défaut de sa catégorie. Le repos après la série lourde reste distinct.</string>
+    <string name="rest_duration_label">Durée du repos</string>
+    <string name="rest_duration_less">Réduire la durée du repos</string>
+    <string name="rest_duration_more">Augmenter la durée du repos</string>
 </resources>

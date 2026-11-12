@@ -5862,4 +5862,12 @@
     <string name="exercise_unit_scope">모든 운동 세션에서 이 운동에 적용돼요. 기록된 중량은 그대로 유지돼요.</string>
     <string name="exercise_unit_choose_description">%1$s 중량 단위</string>
     <string name="skill_tree_tiers_caption">로마 숫자는 난이도 단계를 나타내요. 숫자가 클수록 어려워요.</string>
+    <string name="rest_defaults_title">기본 휴식 시간</string>
+    <string name="rest_compound_label">복합 운동 휴식 직접 설정</string>
+    <string name="rest_isolation_label">고립 운동 휴식 직접 설정</string>
+    <string name="rest_exercise_label">이 운동 휴식 직접 설정</string>
+    <string name="rest_custom_caption">운동별 설정이 카테고리 기본값보다 우선해요. 탑 세트 후 휴식은 별도로 설정해요.</string>
+    <string name="rest_duration_label">휴식 시간</string>
+    <string name="rest_duration_less">휴식 시간 줄이기</string>
+    <string name="rest_duration_more">휴식 시간 늘리기</string>
 </resources>

@@ -6223,4 +6223,12 @@
     <string name="exercise_unit_scope">Gilt für diese Übung in jedem Training. Deine aufgezeichneten Gewichte bleiben unverändert.</string>
     <string name="exercise_unit_choose_description">Gewichtseinheit für %1$s</string>
     <string name="skill_tree_tiers_caption">Römische Zahlen markieren die Schwierigkeitsstufen. Je höher die Zahl, desto schwieriger.</string>
+    <string name="rest_defaults_title">Standard-Pausenzeiten</string>
+    <string name="rest_compound_label">Eigene Pause für Verbundübungen</string>
+    <string name="rest_isolation_label">Eigene Pause für Isolationsübungen</string>
+    <string name="rest_exercise_label">Eigene Pause für diese Übung</string>
+    <string name="rest_custom_caption">Übungseinstellungen haben Vorrang vor den Kategorie-Standards. Die Pause nach dem Topsatz bleibt separat.</string>
+    <string name="rest_duration_label">Pausendauer</string>
+    <string name="rest_duration_less">Pausendauer verkürzen</string>
+    <string name="rest_duration_more">Pausendauer verlängern</string>
 </resources>

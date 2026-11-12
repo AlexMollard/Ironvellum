@@ -21,26 +21,23 @@ Written 2026-09-15. Verification commands run from the repo root on Windows:
    ironvellum.key.alias=ironvellum
    ironvellum.key.password=...
    ```
-3. Add the three backend keys to `local.properties` (gitignored). They become
-   BuildConfig fields `SUPABASE_URL`, `SUPABASE_KEY`, `GOOGLE_WEB_CLIENT_ID`:
-   ```
-   supabase.url=https://<project>.supabase.co
-   supabase.key=<anon key>
-   google.webClientId=<web client id>.apps.googleusercontent.com
-   ```
-   Debug builds work with these blank (cloud degrades gracefully,
-   `Cloud.configured == false`), but a RELEASE build without them ships an app
-   whose social features can never sign in — treat them as mandatory for the
-   release build and confirm the values are non-blank before section 3.
-4. Verify configuration succeeds even without keys:
-   `.\gradlew.bat :app:assembleFossRelease` (with keys: check
-   `app/build/outputs/apk/foss/release/` is signed; without: unsigned APK is fine
-   for CI).
+3. Confirm the release backend configuration. The public URL and publishable key
+   come from committed `cloud-defaults.properties`; `local.properties` may override
+   `supabase.url` and `supabase.key`. The release validation task rejects blank
+   values. Never embed a service-role or server secret key in an APK.
+   The `play` flavour also requires `google.webClientId`; `foss` does not use it.
+4. Build `:app:assembleFossRelease` and `:app:bundleFossRelease`. Without signing
+   credentials these produce unsigned artifacts, which are suitable for local
+   verification but not direct installation or a Play upload. Sign a separate
+   copy with the existing debug key for emulator smoke checks only. F-Droid
+   builds and signs its own package from the release tag.
 
 ## 2. Version bump
 
 - In `app/build.gradle.kts` → `defaultConfig`: increment `versionCode` and set
   `versionName` to match the tag. Play rejects a `versionCode` already uploaded.
+- Prepared for this release: `versionName = "1.11"`, `versionCode = 12`, and
+  `fastlane/metadata/android/en-US/changelogs/12.txt` (372 characters).
 
 ## 3. Local validation
 
@@ -48,19 +45,34 @@ Run all three; all must pass before anything is uploaded:
 
 ```
 .\gradlew.bat :app:testFossDebugUnitTest
-.\gradlew.bat :app:lintFossRelease        # baseline: 0 errors / 26 warnings
-.\gradlew.bat :app:assembleFossRelease
+.\gradlew.bat :app:lintFossRelease        # must report zero errors
+.\gradlew.bat :app:assembleFossRelease :app:bundleFossRelease --no-configuration-cache
 ```
 
-Latest verification (2026-11-12): the JVM suite and debug/test APK builds pass,
-all 374 web tests pass, and the seven focused ranking/settings device tests pass.
-Backend baseline/hosted-patch/reset assertions pass on local Postgres.
-The full gate is **not green**: release lint reports eight existing untranslated
-`rest_*` resources; the first device attempt reports eight fixed-size assumptions
-(411×891dp expected, 411×914dp available), an `AccountRestoreTest` SDK-refresh wait
-failure and a `SessionExpandedPaneTest` closed-database error. The gate timed out
-during its automatic device retry. Resolve these separately before release;
-focused feature checks are not a substitute for a green release gate.
+Use the non-cached release invocation above: the backend-validation task actions
+capture Gradle script objects and are not configuration-cache compatible.
+R8 minification and resource shrinking remain enabled.
+
+Latest verification (2026-11-12): `python3 tools/gate.py --backend` is
+**GATE GREEN**, without an instrumented retry:
+
+- 2,865 unit tests, 832 instrumented tests and 374 web tests; zero failures.
+- Release lint: zero errors, 1,137 warnings. Web production build passes.
+- Local Postgres baseline, hosted-patch replay/idempotence and reset assertions pass.
+- Wall clock: 11m04s, above the seven-minute budget.
+
+The minified, resource-shrunk FOSS APK and AAB build successfully as 1.11/code 12.
+A separately debug-signed copy ran on `emulator-5554`: fresh setup, exercise art,
+per-exercise pounds display preserving recorded kilograms, a completed workout
+and rewards, and retained XP after a cold restart. Rest controls work in both
+wording modes; all seven translated rest-settings screens were inspected.
+The app's read-only backend test returns schema 33. No backend switch was saved.
+The crash buffer stayed empty. Packaged serializers, launcher resources and both
+backup-exclusion rule files were checked in the release APK.
+
+The original release artifacts remain unsigned. This smoke does not verify Play
+signing, Google sign-in, Health Connect, or authenticated production sync/social
+flows. No release tag or GitHub release has been created.
 
 ## 4. Supabase schema
 
@@ -81,9 +93,10 @@ to the hosted project on 2026-10-30, establishing schema 32. The patch adds
 `sessions.feed_card` and the last column of `public_feed`. It stays optional for the app:
 `NEEDED_SCHEMA_VERSION` is 31, so a phone on a backend at 31 keeps syncing and simply sends
 no card (`CloudSync.feedReady` needs 32), and the web viewer's Friends area needs 32.
-Alex applied `supabase/hosted/2026-11-12-workout-xp.sql` for 1.11 and confirmed
-that `select public.schema_version();` returns 33. This is owner-reported
-deployment confirmation, not a new end-to-end hosted leaderboard check.
+Alex applied `supabase/hosted/2026-11-12-workout-xp.sql` for 1.11. The minified
+release's read-only backend test independently returned schema 33 on 2026-11-12.
+This confirms reachability, the public key and schema version, not end-to-end
+hosted leaderboard or authenticated sync behavior.
 The patch adds the rolling workout-XP view without raising the app-wide minimum of 31.
 
 **Never paste `supabase/reset.sql` into the hosted project.** It deletes every
@@ -97,9 +110,8 @@ account. It exists for a throwaway project and for the gate's round trip.
    longer run (the circles patch renamed `warbands`, so the inbox patch fails
    with `42P01` and rolls back, harmlessly).
 2. Re-run the assertion suite against a throwaway database first if the schema
-   changed at all — nothing on a server does this any more (CI is manual-only
-   because the repo is private and every runner minute is billed), and it is
-   the one check that proves the guarantees still hold:
+   changed at all — automated CI is disabled by repository policy, so the local
+   assertions are the check that proves the guarantees still hold:
 
    ```bash
    python3 tools/gate.py --backend
@@ -117,10 +129,9 @@ account. It exists for a throwaway project and for the gate's round trip.
    psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/migrations/0001_baseline.sql
    psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/test/assert_all.sql
    ```
-3. Smoke-test sign-in, a sync, and one friend request against production before
-   the release. The `find_lifter` and `push_aggregates` call paths are
-   compile-verified only — no local harness speaks PostgREST, so the first real
-   round trip is their first proof.
+3. Smoke-test sign-in, a sync, and one friend request against production with a
+   dedicated test account before release. The read-only schema probe above does
+   not exercise these authenticated flows.
 
 ## 5. Backend / Google Cloud Console
 

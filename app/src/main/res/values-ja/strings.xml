@@ -5862,4 +5862,12 @@
     <string name="exercise_unit_scope">すべてのワークアウトでこの種目に適用されます。記録済みの重量は変わりません。</string>
     <string name="exercise_unit_choose_description">%1$sの重量の単位</string>
     <string name="skill_tree_tiers_caption">ローマ数字は難易度の段階です。数字が大きいほど難しくなります。</string>
+    <string name="rest_defaults_title">既定の休息時間</string>
+    <string name="rest_compound_label">複合種目の休息を指定</string>
+    <string name="rest_isolation_label">単関節種目の休息を指定</string>
+    <string name="rest_exercise_label">この種目の休息を指定</string>
+    <string name="rest_custom_caption">種目ごとの設定はカテゴリの既定値より優先されます。トップセット後の休息は別に設定します。</string>
+    <string name="rest_duration_label">休息時間</string>
+    <string name="rest_duration_less">休息時間を短くする</string>
+    <string name="rest_duration_more">休息時間を長くする</string>
 </resources>

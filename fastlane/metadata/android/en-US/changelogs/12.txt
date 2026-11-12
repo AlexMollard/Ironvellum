@@ -1,0 +1,7 @@
+• Rolling seven-day workout XP rankings, with lifetime XP still available
+• Per-exercise kg/lb choices and configurable rest defaults
+• Clearer skill paths and training preferences
+• Fix custom-exercise details and Veil accrual on startup
+• Safer sign-in, background notifications and social refreshes
+
+Everything: github.com/AlexMollard/Ironvellum/blob/main/CHANGELOG.md

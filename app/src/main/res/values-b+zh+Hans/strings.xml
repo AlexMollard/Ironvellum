@@ -5862,4 +5862,12 @@
     <string name="exercise_unit_scope">每次训练中的此动作均使用此设置。已记录的重量保持不变。</string>
     <string name="exercise_unit_choose_description">%1$s的重量单位</string>
     <string name="skill_tree_tiers_caption">罗马数字表示难度等级。数字越大，难度越高。</string>
+    <string name="rest_defaults_title">默认休息时间</string>
+    <string name="rest_compound_label">自定义复合动作休息</string>
+    <string name="rest_isolation_label">自定义孤立动作休息</string>
+    <string name="rest_exercise_label">自定义此动作休息</string>
+    <string name="rest_custom_caption">动作设置优先于类别默认值。大重量组后的休息单独设置。</string>
+    <string name="rest_duration_label">休息时长</string>
+    <string name="rest_duration_less">缩短休息时长</string>
+    <string name="rest_duration_more">延长休息时长</string>
 </resources>
