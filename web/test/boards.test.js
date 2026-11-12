@@ -71,7 +71,10 @@ describe('training board', () => {
     const { root } = await mount({ leaderboard: [...board, lb('u6', 'Zed', { total_xp: 10 })] }); choose(root.querySelector('.board-metric'), 'level'); await wait();
     expect(root.querySelector('.board-row .person-sub').textContent).toContain(format(t('acct_metric_xp_value'), '4,000'));
   });
-  it('aloneOnTheBoardSaysSo', async () => { const { root } = await mount({ leaderboard: [lb('me', 'Fictional lifter')] }); expect(root.textContent).toContain(t('acct_board_alone')); });
+  it.each([['me', true], ['other', false]])('onlyClaimsYouAreAloneWhenYouAreTheOnlyRankedLifter: %s', async (id, alone) => {
+    const { root } = await mount({ leaderboard: [lb(id, 'Only ranked lifter')] });
+    expect(root.textContent.includes(t('acct_board_alone'))).toBe(alone);
+  });
   it('doesNotBorrowLifetimeStandingsWhenRecentWorkoutsAreEmpty', async () => {
     const { root } = await mount({ leaderboard: board, workout_xp_leaderboard: [] });
     expect(root.querySelector('.podium')).toBeNull();

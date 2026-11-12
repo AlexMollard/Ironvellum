@@ -9,6 +9,7 @@ store listing; this is the whole list.
 - Rank the Training board by workout XP earned in the rolling last seven days, with Lifetime XP still available in the metric picker.
 - Count completed, visible workouts by completion time, including workouts synced later. Skill claims, circle bonuses and imported workouts do not count toward this board.
 - Keep recent and lifetime standings separate when changing metrics, accounts or backends; refresh retained standings and invalidate visibility-sensitive caches after relationship changes.
+- Only describe you as alone on the board when you are actually the sole ranked lifter.
 - Require the optional schema 33 hosted update for recent rankings; existing sync and lifetime rankings remain available on older supported backends.
 
 ### Rest times

@@ -666,7 +666,7 @@ private fun Board(
     Podium(sorted.take(podiumCount), metric, ui.myUserId, equippedFrame)
     Spacer(Modifier.height(12.dp))
 
-    if (sorted.size == 1) {
+    if (sorted.size == 1 && myIndex == 0) {
         Text(
             UiText.themed(R.string.acct_board_alone, R.string.acct_board_alone__t).asString(),
             style = MaterialTheme.typography.bodySmall,

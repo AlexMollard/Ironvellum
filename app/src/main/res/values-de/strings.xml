@@ -5000,8 +5000,8 @@
     <string name="acct_metric_xp">Gesamt-XP</string>
     <string name="acct_metric_workout_xp">Trainings-XP</string>
     <string name="acct_metric_workout_xp__t">Prüfungs-XP</string>
-    <string name="acct_workout_xp_caption">XP aus sichtbaren Trainings der letzten 7 Tage, nach Abschlusszeit. XP aus Fähigkeiten, Kreisboni und importierte Trainings zählen nicht.</string>
-    <string name="acct_workout_xp_caption__t">XP aus sichtbaren Prüfungen der letzten 7 Tage, nach Abschlusszeit. XP aus Künsten, Kreisboni und importierte Prüfungen zählen nicht.</string>
+    <string name="acct_workout_xp_caption">XP aus sichtbaren Trainings der letzten 7 Tage, nach Abschlusszeit. XP aus Fähigkeiten, Gruppenboni und importierte Trainings zählen nicht.</string>
+    <string name="acct_workout_xp_caption__t">XP aus sichtbaren Prüfungen der letzten 7 Tage, nach Abschlusszeit. XP aus Künsten, Boni aus Bünden und importierte Prüfungen zählen nicht.</string>
     <string name="acct_workout_xp_board_label">7-Tage-Trainings-XP</string>
     <string name="acct_workout_xp_board_label__t">7-Tage-Prüfungs-XP</string>
     <string name="acct_workout_xp_empty">Keine sichtbaren Trainings-XP in den letzten 7 Tagen. Schließe ein Training ab und synchronisiere es, um teilzunehmen.</string>

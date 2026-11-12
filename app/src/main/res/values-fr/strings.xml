@@ -5000,7 +5000,7 @@
     <string name="acct_metric_xp">XP cumulées</string>
     <string name="acct_metric_workout_xp">XP de séances</string>
     <string name="acct_metric_workout_xp__t">XP d’épreuves</string>
-    <string name="acct_workout_xp_caption">XP des séances visibles terminées au cours des 7 derniers jours. Techniques, bonus de cercles et séances importées ne comptent pas.</string>
+    <string name="acct_workout_xp_caption">XP des séances visibles terminées au cours des 7 derniers jours. Techniques, bonus de groupes et séances importées ne comptent pas.</string>
     <string name="acct_workout_xp_caption__t">XP des épreuves visibles scellées au cours des 7 derniers jours. Arts, bonus de cercles et épreuves importées ne comptent pas.</string>
     <string name="acct_workout_xp_board_label">XP de séances sur 7 jours</string>
     <string name="acct_workout_xp_board_label__t">XP d’épreuves sur 7 jours</string>

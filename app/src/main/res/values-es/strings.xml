@@ -5000,7 +5000,7 @@
     <string name="acct_metric_xp">XP total</string>
     <string name="acct_metric_workout_xp">XP de entrenamientos</string>
     <string name="acct_metric_workout_xp__t">XP de pruebas</string>
-    <string name="acct_workout_xp_caption">XP de entrenamientos visibles de los últimos 7 días, según su finalización. No incluye habilidades, bonificaciones de círculos ni entrenamientos importados.</string>
+    <string name="acct_workout_xp_caption">XP de entrenamientos visibles de los últimos 7 días, según su finalización. No incluye habilidades, bonificaciones de grupos ni entrenamientos importados.</string>
     <string name="acct_workout_xp_caption__t">XP de pruebas visibles de los últimos 7 días, según su finalización. No incluye técnicas, bonificaciones de círculos ni pruebas importadas.</string>
     <string name="acct_workout_xp_board_label">XP de entrenamientos de 7 días</string>
     <string name="acct_workout_xp_board_label__t">XP de pruebas de 7 días</string>

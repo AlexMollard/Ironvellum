@@ -4701,8 +4701,8 @@
     <string name="acct_metric_xp">累計XP</string>
     <string name="acct_metric_workout_xp">ワークアウトXP</string>
     <string name="acct_metric_workout_xp__t">試練XP</string>
-    <string name="acct_workout_xp_caption">完了日時に基づく直近7日間の閲覧可能なワークアウトXPです。テクニックの達成、サークルボーナス、インポートしたワークアウトは含みません。</string>
-    <string name="acct_workout_xp_caption__t">封印日時に基づく直近7日間の閲覧可能な試練XPです。技の宣言、サークルボーナス、インポートした試練は含みません。</string>
+    <string name="acct_workout_xp_caption">完了日時に基づく直近7日間の閲覧可能なワークアウトXPです。テクニックの達成、グループボーナス、インポートしたワークアウトは含みません。</string>
+    <string name="acct_workout_xp_caption__t">封印日時に基づく直近7日間の閲覧可能な試練XPです。技の宣言、結社ボーナス、インポートした試練は含みません。</string>
     <string name="acct_workout_xp_board_label">7日間のワークアウトXP</string>
     <string name="acct_workout_xp_board_label__t">7日間の試練XP</string>
     <string name="acct_workout_xp_empty">直近7日間に閲覧可能なワークアウトXPはありません。ワークアウトを完了して同期すると参加できます。</string>

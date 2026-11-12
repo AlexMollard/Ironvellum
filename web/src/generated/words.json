@@ -188,7 +188,7 @@
         "themed": "Week"
     },
     "acct_workout_xp_caption": {
-        "plain": "Workout XP visible to you, completed in the rolling last 7 days. Skill claims, circle bonuses and imported workouts do not count.",
+        "plain": "Workout XP visible to you, completed in the rolling last 7 days. Skill claims, group bonuses and imported workouts do not count.",
         "themed": "Trial XP visible to you, sealed in the rolling last 7 days. Technique claims, circle bonuses and imported trials do not count."
     },
     "acct_workout_xp_empty": {

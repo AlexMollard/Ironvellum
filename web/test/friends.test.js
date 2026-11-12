@@ -13,7 +13,7 @@ const source = (version = 32) => ({ userId: 'me', schemaVersion: async () => ver
 afterEach(() => { setWordsMode(false); resetAudience(); });
 
 // The tables and RPCs a Friends screen may read: friends' rows through the existing read policies, never an owner-only table.
-const ALLOWED_TABLES = new Set(['public_feed', 'session_likes', 'session_comments', 'friendships', 'profiles', 'sessions', 'session_sets', 'lift_board', 'leaderboard',
+const ALLOWED_TABLES = new Set(['public_feed', 'session_likes', 'session_comments', 'friendships', 'profiles', 'sessions', 'session_sets', 'lift_board', 'leaderboard', 'workout_xp_leaderboard',
   'shadow_board', 'blocks', 'mutes', 'inbox_seen', 'earned_titles', 'level_ups', 'reports']);
 const ALLOWED_RPCS = new Set(['my_inbox', 'mark_inbox_seen', 'find_hunter', 'my_circle', 'circle_bonuses', 'create_circle', 'join_circle', 'leave_circle', 'set_circle_goal', 'set_circle_name', 'rotate_circle_code', 'kick_circle_member']);
 const FORBIDDEN = ['web_snapshots', 'imported_sessions', 'imported_session_sets', 'session_set_details', 'cloud_archives'];

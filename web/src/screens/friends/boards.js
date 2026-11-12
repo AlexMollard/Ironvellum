@@ -33,7 +33,7 @@ function trainingBoard(body, rows, me, redraw, filters, ctx) {
   const sorted = rankRows(metric, rows);
   if (!sorted.length) { body.append(node('p', t(metric === 'workoutxp' ? 'acct_workout_xp_empty' : 'acct_board_empty'), 'empty')); return; }
   body.append(podium(sorted.slice(0, 3).map((row, i) => ({ rank: i + 1, row, figure: metricText(metric, row) })), me, ctx.folioOf));
-  if (sorted.length === 1) body.append(node('p', t('acct_board_alone'), 'muted'));
+  if (sorted.length === 1 && sorted[0].id === me) body.append(node('p', t('acct_board_alone'), 'muted'));
   const list = node('div', null, 'board-rows');
   for (const [index, row] of sorted.entries()) {
     if (index < 3) continue;

@@ -4701,8 +4701,8 @@
     <string name="acct_metric_xp">累计 XP</string>
     <string name="acct_metric_workout_xp">训练 XP</string>
     <string name="acct_metric_workout_xp__t">试炼 XP</string>
-    <string name="acct_workout_xp_caption">按完成时间统计过去 7 天你可见的训练 XP。技法精通、圈子奖励和导入训练不计入。</string>
-    <string name="acct_workout_xp_caption__t">按完成时间统计过去 7 天你可见的试炼 XP。绝技宣告、圈子奖励和导入试炼不计入。</string>
+    <string name="acct_workout_xp_caption">按完成时间统计过去 7 天你可见的训练 XP。技法精通、小组奖励和导入训练不计入。</string>
+    <string name="acct_workout_xp_caption__t">按完成时间统计过去 7 天你可见的试炼 XP。绝技宣告、结社奖励和导入试炼不计入。</string>
     <string name="acct_workout_xp_board_label">7 天训练 XP</string>
     <string name="acct_workout_xp_board_label__t">7 天试炼 XP</string>
     <string name="acct_workout_xp_empty">过去 7 天没有可见的训练 XP。完成并同步训练即可加入排名。</string>

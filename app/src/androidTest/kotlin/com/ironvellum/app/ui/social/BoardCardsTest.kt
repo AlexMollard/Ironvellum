@@ -126,6 +126,7 @@ class BoardCardsTest {
         }
         compose.onNodeWithText("Newcomer").assertIsDisplayed()
         compose.onAllNodesWithText("Veteran").assertCountEquals(0)
+        compose.onAllNodesWithText(compose.activity.getString(com.ironvellum.app.R.string.acct_board_alone)).assertCountEquals(0)
         ShotRecorder.take(compose, "rolling-workout-xp-board")
         compose.mainClock.autoAdvance = true
         compose.onNodeWithText("Ranked by").performClick()

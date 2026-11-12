@@ -4701,8 +4701,8 @@
     <string name="acct_metric_xp">누적 XP</string>
     <string name="acct_metric_workout_xp">운동 XP</string>
     <string name="acct_metric_workout_xp__t">시련 XP</string>
-    <string name="acct_workout_xp_caption">완료 시각 기준 최근 7일 동안 볼 수 있는 운동 XP예요. 숙련 기술 달성, 서클 보너스, 가져온 운동은 포함하지 않아요.</string>
-    <string name="acct_workout_xp_caption__t">봉인 시각 기준 최근 7일 동안 볼 수 있는 시련 XP예요. 절기 선언, 서클 보너스, 가져온 시련은 포함하지 않아요.</string>
+    <string name="acct_workout_xp_caption">완료 시각 기준 최근 7일 동안 볼 수 있는 운동 XP예요. 숙련 기술 달성, 그룹 보너스, 가져온 운동은 포함하지 않아요.</string>
+    <string name="acct_workout_xp_caption__t">봉인 시각 기준 최근 7일 동안 볼 수 있는 시련 XP예요. 절기 선언, 결사 보너스, 가져온 시련은 포함하지 않아요.</string>
     <string name="acct_workout_xp_board_label">7일 운동 XP</string>
     <string name="acct_workout_xp_board_label__t">7일 시련 XP</string>
     <string name="acct_workout_xp_empty">최근 7일 동안 볼 수 있는 운동 XP가 없어요. 운동을 완료하고 동기화하면 참여할 수 있어요.</string>

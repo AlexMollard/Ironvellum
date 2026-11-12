@@ -5928,7 +5928,7 @@
     <string name="acct_metric_xp">Lifetime XP</string>
     <string name="acct_metric_workout_xp">Workout XP</string>
     <string name="acct_metric_workout_xp__t">Trial XP</string>
-    <string name="acct_workout_xp_caption">Workout XP visible to you, completed in the rolling last 7 days. Skill claims, circle bonuses and imported workouts do not count.</string>
+    <string name="acct_workout_xp_caption">Workout XP visible to you, completed in the rolling last 7 days. Skill claims, group bonuses and imported workouts do not count.</string>
     <string name="acct_workout_xp_caption__t">Trial XP visible to you, sealed in the rolling last 7 days. Technique claims, circle bonuses and imported trials do not count.</string>
     <string name="acct_workout_xp_board_label">7-day workout XP</string>
     <string name="acct_workout_xp_board_label__t">7-day trial XP</string>
