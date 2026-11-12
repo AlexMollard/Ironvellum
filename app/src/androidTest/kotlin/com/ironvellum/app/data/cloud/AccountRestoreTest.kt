@@ -27,8 +27,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -81,7 +79,7 @@ class AccountRestoreTest {
     @Test fun firstStorageFailureThenSdkPauseStillAllowsBackgroundRecovery() = runTest {
         val sdkReadStarted = CompletableDeferred<Unit>()
         val releaseSdkRead = CompletableDeferred<Unit>()
-        val memory = MemorySessionManager(session().copy(expiresAt = Clock.System.now() + 1.seconds))
+        val memory = MemorySessionManager(session())
         var reads = 0
         val storage = object : SessionManager by memory {
             override suspend fun loadSession(): UserSession {
@@ -103,7 +101,6 @@ class AccountRestoreTest {
                     HttpStatusCode.OK, JSON_HEADERS,
                 )
                 request.url.encodedPath.endsWith("/inbox_seen") -> respond("[]", HttpStatusCode.OK, JSON_HEADERS)
-                request.url.encodedPath.endsWith("/token") -> respond(SESSION, HttpStatusCode.OK, JSON_HEADERS)
                 request.url.encodedPath.endsWith("/profiles") -> {
                     profiles++
                     respond(PROFILE, HttpStatusCode.OK, JSON_HEADERS)
@@ -133,12 +130,13 @@ class AccountRestoreTest {
             genuinelyInitializing.cancelAndJoin()
             releaseSdkRead.complete(Unit)
             testScheduler.runCurrent()
-            assertNotNull("SDK refresh must have started after its initial import", client.auth.autoRefreshInformation())
+            assertEquals("SDK must have imported the stored identity", USER, client.auth.currentUserOrNull()?.id)
             client.auth.stopAutoRefreshForCurrentSession()
             client.auth.setSessionStatus(io.github.jan.supabase.auth.status.SessionStatus.Initializing)
             accounts.restore().getOrThrow()
             assertEquals(USER, accounts.account.value?.userId)
             assertEquals("Test Ally", accounts.account.value?.displayName)
+            assertTrue(checkNotNull(accounts.account.value).profileLoaded)
             assertEquals(1, profiles)
             assertFalse("background recovery must not restart refresh", client.auth.isAutoRefreshRunning)
             val context = InstrumentationRegistry.getInstrumentation().targetContext
