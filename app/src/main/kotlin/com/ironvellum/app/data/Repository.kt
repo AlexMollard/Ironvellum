@@ -1739,8 +1739,11 @@ class Repository(
         val first = rows.firstOrNull() ?: return@withTransaction
         if (isSealed(first.sessionId)) return@withTransaction
         rows.forEach { sessionDao.deleteSet(it.id) }
-        sessionDao.setsFor(first.sessionId).filter { it.blockKey == first.blockKey }
-            .sortedBy { it.setIndex }
+        reindexSets(sessionDao.setsFor(first.sessionId).asSequence().filter { it.blockKey == first.blockKey })
+    }
+
+    private suspend fun reindexSets(rows: Sequence<SetLogEntity>) {
+        rows.sortedBy { it.setIndex }
             .forEachIndexed { index, row -> if (row.setIndex != index) sessionDao.updateSet(row.copy(setIndex = index)) }
     }
 
@@ -1945,12 +1948,7 @@ class Repository(
         val siblings = sessionDao.setsFor(set.sessionId).filter { it.blockKey == set.blockKey }
         if (siblings.size <= 1) return@withTransaction null
         sessionDao.deleteSet(setId)
-        siblings.asSequence()
-            .filter { it.id != setId }
-            .sortedBy { it.setIndex }
-            .forEachIndexed { index, row ->
-                if (row.setIndex != index) sessionDao.updateSet(row.copy(setIndex = index))
-            }
+        reindexSets(siblings.asSequence().filter { it.id != setId })
         RemovedSets(listOf(set), siblings.associate { it.id to it.setIndex })
     }
 

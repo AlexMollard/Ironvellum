@@ -13,6 +13,7 @@ store listing; this is the whole list.
 - Share top-set narrowing while retaining each consumer's existing grouping, eligibility and fallback sets.
 - Share live-set persistence and figure propagation without merging rep, hold or activity validation.
 - Share routine-entry projection between observed routines and exports, preserving preparation choices and entry order.
+- Share set reindexing after removals without changing last-set protection, undo indices or sibling read timing.
 
 ### Rolling workout XP
 - Rank the Training board by workout XP earned in the rolling last seven days, with Lifetime XP still available in the metric picker.
