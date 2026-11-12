@@ -4,6 +4,12 @@ export function node(tag, text, className) {
   if (className) el.className = className;
   return el;
 }
+/** A social-screen notice with the caller's existing live-region role. */
+export function friendsNotice(role) {
+  const el = node('p', null, 'notice friends-notice');
+  if (role) el.setAttribute('role', role);
+  return el;
+}
 export function card(title, className = '', aside) {
   const el = node('section', null, `card ${className}`.trim());
   if (title || aside != null) {

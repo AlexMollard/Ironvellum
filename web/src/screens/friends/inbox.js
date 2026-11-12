@@ -1,4 +1,4 @@
-import { node, link } from '../../components/statCard.js';
+import { node, link, friendsNotice } from '../../components/statCard.js';
 import { hiddenName } from '../../components/hiddenName.js';
 import { explain } from '../../explain.js';
 import { t, format, word } from '../../i18n.js';
@@ -37,7 +37,7 @@ export function itemLine(item) {
  */
 export async function renderInbox(root, ctx) {
   const { social, router, nowMs = Date.now(), setInboxUnread } = ctx;
-  const body = node('div', null, 'inbox'), status = node('p', null, 'notice friends-notice'); status.setAttribute('role', 'status');
+  const body = node('div', null, 'inbox'), status = friendsNotice('status');
   root.append(body, status, node('p', 'One inbox, two windows: reading it here clears it in the app too. There are no push messages or emails.', 'muted inbox-note'));
   let answered = new Set();
   const load = async () => {

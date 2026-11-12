@@ -1,4 +1,4 @@
-import { node, displayDate } from '../../components/statCard.js';
+import { node, displayDate, friendsNotice } from '../../components/statCard.js';
 import { personRow } from '../../components/personRow.js';
 import { confirmPanel } from '../../components/reasonDialog.js';
 import { hiddenName } from '../../components/hiddenName.js';
@@ -29,7 +29,7 @@ const checkboxes = (done, of) => { const bar = node('span', null, 'day-boxes'); 
  */
 export async function renderCircle(root, ctx) {
   const { social, source, nowMs = Date.now() } = ctx, me = source.userId;
-  const body = node('div', null, 'circle'), status = node('p', null, 'notice friends-notice'); status.setAttribute('role', 'status');
+  const body = node('div', null, 'circle'), status = friendsNotice('status');
   root.append(body, status);
   const say = text => { status.textContent = text; };
   const guarded = async (run, done) => { say(''); try { await run(); if (done) say(done); await load(); return true; } catch (error) { say(explain(error)); return false; } };

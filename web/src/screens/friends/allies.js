@@ -1,4 +1,4 @@
-import { node, link } from '../../components/statCard.js';
+import { node, link, friendsNotice } from '../../components/statCard.js';
 import { personRow } from '../../components/personRow.js';
 import { hiddenName } from '../../components/hiddenName.js';
 import { renderFolio } from '../../components/folio.js';
@@ -15,7 +15,7 @@ export async function renderAllies(root, ctx, openId) {
   const layout = node('div', null, `allies-layout${openId ? ' has-folio' : ''}`), left = node('div', null, 'allies-list'), right = node('div', null, 'allies-folio');
   layout.append(left, right); root.append(layout);
 
-  const status = node('p', null, 'notice friends-notice'); status.setAttribute('role', 'status');
+  const status = friendsNotice('status');
   const say = text => { status.textContent = text; };
 
   const form = node('form', null, 'panel allies-add'), label = node('label', t('acct_invite_label')), input = node('input'), send = node('button', t('acct_invite_button'), 'primary-small');

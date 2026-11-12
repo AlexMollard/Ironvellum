@@ -1,4 +1,4 @@
-import { node } from '../../components/statCard.js';
+import { node, friendsNotice } from '../../components/statCard.js';
 import { feedCard } from '../../components/feedCard.js';
 import { commentThread } from '../../components/commentThread.js';
 import { reasonDialog, confirmPanel } from '../../components/reasonDialog.js';
@@ -13,7 +13,7 @@ import { FEED_PAGE } from '../../data/socialSource.js';
  */
 export async function renderFeed(root, ctx) {
   const { social, snapshot, router, nowMs = Date.now(), source } = ctx, me = source.userId;
-  const list = node('div', null, 'feed-list'), more = node('button', null, 'pill feed-more'), status = node('p', null, 'notice friends-notice'); more.type = 'button'; more.hidden = true; more.textContent = 'Older workouts';
+  const list = node('div', null, 'feed-list'), more = node('button', null, 'pill feed-more'), status = friendsNotice(); more.type = 'button'; more.hidden = true; more.textContent = 'Older workouts';
   root.append(node('p', t('feed_header'), 'muted'), list, status, more);
   let rows = [], last = null;
 
