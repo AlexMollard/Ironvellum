@@ -9,6 +9,7 @@ store listing; this is the whole list.
 - Use one session-set projection for live logging, history and exports, preserving their existing ordering and recorded fields.
 - Render worked front/back body maps through one shared web component, keeping layout, labels and keyboard access unchanged.
 - Share social-screen notice construction while preserving each screen's existing live-region role.
+- Share assisted-machine estimated-max arithmetic while retaining each history and records view's existing eligibility and bodyweight rules.
 
 ### Rolling workout XP
 - Rank the Training board by workout XP earned in the rolling last seven days, with Lifetime XP still available in the metric picker.

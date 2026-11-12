@@ -51,6 +51,10 @@ object BodyShare {
         return (bodyweightKg - assistanceKg).coerceAtLeast(0.0)
     }
 
+    /** Estimated one-rep maximum for an assisted machine, when its effective load is known. */
+    fun assistedE1rmKg(assistanceKg: Double?, bodyweightKg: Double?, reps: Int): Double? =
+        assistedLoadKg(assistanceKg, bodyweightKg)?.let { ProgramRules.e1rm(it, reps) }
+
     /** Where a number came from. */
     enum class Basis {
         /** A named movement with a published or deliberately chosen value. */

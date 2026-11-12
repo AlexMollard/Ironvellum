@@ -142,8 +142,7 @@ object ExerciseLogCalculator {
                 if (r.reps < 1) return null
                 val body = bodyweightAt(r.startedAtMs)
                 if (body <= 0.0) bodyMissing = true
-                val load = BodyShare.assistedLoadKg(r.weightKg, body) ?: return null
-                return ProgramRules.e1rm(load, r.reps)
+                return BodyShare.assistedE1rmKg(r.weightKg, body, r.reps)
             }
             val kg = r.weightKg ?: return null
             if (kg <= 0.0 || r.reps < 1) return null

@@ -395,10 +395,7 @@ object ExerciseHistoryCalculator {
                 ?.takeIf { it > 0.0 } ?: bodyweightKg?.takeIf { it > 0.0 }
         fun e1rmOf(r: ExerciseSetRow): Double? {
             if (r.reps < 1) return null
-            if (assisted) {
-                val load = BodyShare.assistedLoadKg(r.weightKg, bodyAt(r.atMs, r.sessionId)) ?: return null
-                return ProgramRules.e1rm(load, r.reps)
-            }
+            if (assisted) return BodyShare.assistedE1rmKg(r.weightKg, bodyAt(r.atMs, r.sessionId), r.reps)
             val kg = r.weightKg ?: return null
             if (kg <= 0.0) return null
             return BodyShare.e1rmAddedKg(kg, r.reps, BodyShare.of(exercise, r.modifiers), bodyAt(r.atMs, r.sessionId))
