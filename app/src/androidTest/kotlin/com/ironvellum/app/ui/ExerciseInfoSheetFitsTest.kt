@@ -1,6 +1,16 @@
 package com.ironvellum.app.ui
 
+import android.content.res.Configuration
+import android.view.View
+import android.view.ViewGroup
+import android.view.Window
+import android.view.inspector.WindowInspector
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.performScrollTo
@@ -25,7 +35,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Assume.assumeTrue
+import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -44,6 +54,11 @@ class ExerciseInfoSheetFitsTest {
     val compose = createAndroidComposeRule<ComponentActivity>()
 
     private val app = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as IronvellumApp
+    private val phoneWidthDp = 411
+    private val phoneHeightDp = 891
+    private lateinit var sheetWindow: Window
+    private lateinit var sheetPane: SemanticsMatcher
+
     private val seeded = mutableListOf<Long>()
 
     private lateinit var pullUp: Exercise
@@ -112,28 +127,75 @@ class ExerciseInfoSheetFitsTest {
     }
 
     private fun show(exercise: Exercise, light: Boolean = false, lastLine: String? = "10 × BW · 13 Oct") {
+        sheetPane = SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, exercise.name)
         if (!light) compose.activityRule.scenario.onActivity { ShotRecorder.darkWindow(it) }
         compose.setContent {
-            IronvellumTheme(light = light) {
-                ExerciseInfoSheet(exercise = exercise, lastLine = lastLine, onDismiss = {}, onPick = {}, why = when (exercise.name) { "Pull-up" -> worstWhy; "Hammer Curl" -> curlWhy; else -> null })
+            // InfoSheet derives its height from configuration; match it to the actual
+            // dialog window below rather than the emulator's larger display.
+            val phone = Configuration(LocalConfiguration.current).apply {
+                screenWidthDp = phoneWidthDp
+                screenHeightDp = phoneHeightDp
+            }
+            CompositionLocalProvider(LocalConfiguration provides phone) {
+                IronvellumTheme(light = light) {
+                    ExerciseInfoSheet(exercise = exercise, lastLine = lastLine, onDismiss = {}, onPick = {}, why = when (exercise.name) { "Pull-up" -> worstWhy; "Hammer Curl" -> curlWhy; else -> null })
+                }
             }
         }
         compose.waitForIdle()
+        var window: Window? = null
+        compose.runOnUiThread {
+            fun findDialog(view: View): Window? {
+                if (view is DialogWindowProvider) return view.window
+                if (view is ViewGroup) {
+                    for (index in 0 until view.childCount) {
+                        findDialog(view.getChildAt(index))?.let { return it }
+                    }
+                }
+                return null
+            }
+            window = WindowInspector.getGlobalWindowViews().firstNotNullOfOrNull(::findDialog)
+            assertNotNull("Exercise sheet dialog window not found", window)
+            sheetWindow = window!!
+            val density = compose.activity.resources.displayMetrics.density
+            sheetWindow.setLayout((phoneWidthDp * density).toInt(), (phoneHeightDp * density).toInt())
+        }
+        compose.waitForIdle()
+        assertPhoneViewport()
+    }
+
+    private fun assertPhoneViewport() {
+        compose.runOnUiThread {
+            val density = compose.activity.resources.displayMetrics.density
+            val decor = sheetWindow.decorView
+            assertEquals("Dialog viewport width (px)", phoneWidthDp * density, decor.width.toFloat(), 1f)
+            assertEquals("Dialog viewport height (px)", phoneHeightDp * density, decor.height.toFloat(), 1f)
+        }
+        val sheet = compose.onNode(sheetPane)
+            .getUnclippedBoundsInRoot()
+        assertTrue("Sheet stays inside the phone viewport: $sheet",
+            sheet.left.value >= -1f && sheet.top.value >= -1f &&
+                sheet.right.value <= phoneWidthDp + 1f && sheet.bottom.value <= phoneHeightDp + 1f)
     }
 
     /** Runs [block] with the system text size at [scale] (the sheet is a window of its own, so only the system size reaches it), then puts it back. */
     private fun withSystemFontScale(scale: String, block: () -> Unit) {
-        fun shell(command: String) {
+        fun shell(command: String): String {
             val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
-            android.os.ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command)).use { it.readBytes() }
+            return android.os.ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command)).use { it.readBytes().decodeToString().trim() }
         }
+        val original = shell("settings get system font_scale")
+        val originalScale = compose.activity.resources.configuration.fontScale
         shell("settings put system font_scale $scale")
         try {
             compose.activityRule.scenario.recreate()
             compose.waitForIdle()
             block()
         } finally {
-            shell("settings put system font_scale 1.0")
+            if (original == "null") shell("settings delete system font_scale") else shell("settings put system font_scale $original")
+            compose.activityRule.scenario.recreate()
+            compose.waitUntil(5_000) { kotlin.math.abs(compose.activity.resources.configuration.fontScale - originalScale) < 0.001f }
+            compose.waitForIdle()
         }
     }
 
@@ -145,25 +207,21 @@ class ExerciseInfoSheetFitsTest {
         if (label == "History") {
             compose.waitUntil(5_000) { compose.onAllNodes(hasText("TIMES DONE")).fetchSemanticsNodes().isNotEmpty() }
         }
+        assertPhoneViewport()
     }
 
     /** How far the page behind the open tab can still scroll, in px; zero when all of it is on screen. */
     private fun scrollRoom(): Float {
-        val withRange = SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange)
-        return compose.onAllNodes(withRange).fetchSemanticsNodes().maxOfOrNull {
-            it.config[SemanticsProperties.VerticalScrollAxisRange].maxValue()
-        } ?: 0f
-    }
-
-    private fun assumePhone() {
-        val config = InstrumentationRegistry.getInstrumentation().targetContext.resources.configuration
-        assumeTrue("needs a 411x891dp screen, this one is ${config.screenWidthDp}x${config.screenHeightDp}", config.screenHeightDp in 880..900 && config.screenWidthDp in 400..420)
+        val withRange = SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange) and hasAnyAncestor(sheetPane)
+        val nodes = compose.onAllNodes(withRange).fetchSemanticsNodes()
+        assertTrue("Sheet page must expose a vertical scroll range", nodes.isNotEmpty())
+        return nodes.maxOf { it.config[SemanticsProperties.VerticalScrollAxisRange].maxValue() }
     }
 
     /** Opens [tab], asserts the page has nothing to scroll to, then takes the picture [shot]. */
     private fun assertFits(tab: String, shot: String) {
-        assumePhone()
         openTab(tab)
+        assertEquals("No-scroll fit requires normal system text size", 1f, compose.activity.resources.configuration.fontScale, 0.001f)
         val room = scrollRoom()
         ShotRecorder.take(compose, shot)
         assertEquals("$tab scrolls by $room px (${room / app.resources.displayMetrics.density} dp) on a 411x891dp phone", 0f, room, 0.5f)

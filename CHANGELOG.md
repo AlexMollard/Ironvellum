@@ -15,6 +15,7 @@ store listing; this is the whole list.
 - Share routine-entry projection between observed routines and exports, preserving preparation choices and entry order.
 - Share set reindexing after removals without changing last-set protection, undo indices or sibling read timing.
 - Make the SDK-pause recovery regression use a normally expiring session, avoiding a race with immediate token refresh while retaining background-recovery checks.
+- Run exercise-sheet fit regressions in a real 411×891dp dialog viewport on larger emulators, keeping no-scroll checks and restoring the previous text-size setting.
 
 ### Rolling workout XP
 - Rank the Training board by workout XP earned in the rolling last seven days, with Lifetime XP still available in the metric picker.
