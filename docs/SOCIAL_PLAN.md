@@ -13,6 +13,68 @@ Owner decisions (2026-09-29):
   1 MAU, storage 0 / 1 GB. Text rows are a few hundred bytes; nothing here may
   grow with time rather than with people (the inbox is derived, not stored).
 
+## C7 proposal: shared wire metadata
+
+Status (2026-11-12): proposal only, requested during deduplication review. No
+generator, generated contract or cloud behavior has changed.
+
+### Recommendation
+
+Generate a narrow browser contract from the existing Kotlin serialization
+descriptors and wire enums, rather than adding a second hand-maintained schema.
+Keep SQL authoritative for server columns, constraints and privacy. Keep DTOs
+authoritative for the Android client's accepted wire shape.
+
+Existing foundations:
+- `data/cloud/Dtos.kt` defines serial names, nullability and compatibility
+  defaults, plus `Reaction.wire`.
+- `WireNamesMatchSchemaTest` already compares serializer descriptor names with
+  SQL table/view columns.
+- `WebAssetsGoldenTest` already exports app-derived browser assets into
+  `web/src/generated/`, checks freshness and supports `-Dgolden.update=true`.
+- `web/src/data/socialSource.js` separately repeats reaction values and wire
+  row shapes, alongside browser-specific normalization and request behavior.
+
+### Smallest useful adoption
+
+1. Extend the existing app-to-web exporter with an explicit allowlist of
+   `FeedEntryDto`, `CommentDto`, `InboxRowDto`, `LeaderboardDto` and
+   `WorkoutXpLeaderboardDto`. Export wire names, primitive kinds, nullability,
+   optional-field metadata and `Reaction.wire` values to
+   `web/src/generated/social-wire.json`. Do not scan or expose every DTO.
+2. Generate raw-row JSDoc declarations beside that asset for browser authoring.
+   These describe snake_case transport rows, not the camelCase screen models.
+3. Replace the browser's reaction-value literal with the generated values.
+   Retain its current unknown-reaction handling and all row transformations.
+4. Add other genuinely shared row families only after their current decoding
+   differences are documented. Do not generate Android DTOs from SQL or replace
+   request implementations.
+
+### Integration and acceptance
+
+Use the existing exporter update/check workflow documented in `web/README.md`;
+check committed outputs in the local gate. No automatic workflow, dependency,
+Python generator, Gradle configuration hook or runtime reflection is needed.
+Committed outputs keep ordinary web and F-Droid builds independent of generation.
+
+Before adoption, compare old/new browser behavior for every reaction (including
+unknown values), missing/null fields, invalid inbox dates and private/hidden
+rows. Existing cloud DTO/schema guards and web feed/inbox/board suites must still
+pass. Demonstrate that changing a source enum changes its generated browser
+values, without changing request parameters or domain calculations.
+
+Descriptors do not capture arbitrary normalization, all default values or
+conditional field omission. Keep `EncodeDefault.NEVER`, schema-version gates,
+timestamp parsing, numeric handling and nested JSON conversion handwritten.
+Keep lifetime and rolling rankings separate. Never generate cache, optimistic
+update, RLS, visibility or ranking policies.
+
+The tradeoff is coupling web metadata updates to the existing JVM exporter,
+instead of introducing a new manifest and generator to maintain. A standalone
+schema generator is justified only if another independent consumer needs it.
+C10 Room schema snapshots remain independent historical migration evidence;
+they are not inputs to this proposal and must not be deduplicated.
+
 ## Phases
 
 | Release | Theme | Scope |
