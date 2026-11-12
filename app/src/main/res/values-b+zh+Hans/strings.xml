@@ -655,7 +655,7 @@
     <string name="common_off">关闭</string>
     <string name="settings_section_profile_title">个人主页</string>
     <string name="settings_section_appearance_title">外观</string>
-    <string name="settings_section_training_mode_title">训练模式</string>
+    <string name="settings_section_training_mode_title">训练</string>
     <string name="settings_section_during_trial_title">训练期间</string>
     <string name="settings_section_during_trial_title__t">试炼期间</string>
     <string name="settings_section_health_connect_title">HEALTH CONNECT</string>
@@ -672,7 +672,7 @@
     <string name="settings_hub_account_label">账户</string>
     <string name="settings_hub_account_signed_in">已登录</string>
     <string name="settings_hub_account_signed_out">未登录</string>
-    <string name="settings_hub_training_mode_label">训练模式</string>
+    <string name="settings_hub_training_mode_label">训练偏好</string>
     <string name="settings_hub_during_trial_label">训练期间</string>
     <string name="settings_hub_during_trial_label__t">试炼期间</string>
     <string name="settings_hub_appearance_label">外观</string>
@@ -774,6 +774,9 @@
     <string name="settings_trial_awake_label">保持屏幕常亮</string>
     <string name="settings_trial_awake_caption">训练开启时防止屏幕休眠。训练中的口袋锁会调暗屏幕。</string>
     <string name="settings_trial_awake_caption__t">试炼开启时屏幕不会休眠。试炼中的口袋锁会调暗屏幕。</string>
+    <string name="settings_training_progression_title">渐进方式</string>
+    <string name="settings_training_progression_intro">次数和负重如何增加。技法和综合是构建计划时选择的目标。</string>
+    <string name="settings_training_progression_intro__t">次数和负重如何增加。绝技和综合是锻造仪轨时选择的目标。</string>
     <string name="settings_training_strength_caption">完成所有组后增加负重。停滞三次则减载。</string>
     <string name="settings_training_hypertrophy_caption">先增加次数，再增加负重。停滞三次则减载。</string>
     <string name="settings_training_warmup_label">热身提醒</string>
@@ -4498,11 +4501,11 @@
     <string name="cloud_sync_web_failed">网页版训练详情未同步：%1$s</string>
     <string name="cloud_sync_web_failed__t">网页版试炼详情未同步：%1$s</string>
     <string name="cloud_sync_web_needs_schema">网页版统计需要云端架构 31 或更高版本。</string>
+    <string name="cloud_workout_xp_needs_schema">滚动训练 XP 排名需要云端架构 33。请应用最新数据库更新；累计 XP 排名仍可使用。</string>
+    <string name="cloud_workout_xp_needs_schema__t">滚动试炼 XP 排名需要云端架构 33。请应用最新数据库更新；累计 XP 排名仍可使用。</string>
     <string name="cloud_sync_web_snapshot_failed">网页版统计未同步：%1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">网页版统计数据过大，无法同步（%1$d 字节）。</string>
     <string name="cloud_sync_tiers_failed">动作段位未同步：%1$s</string>
-    <string name="cloud_workout_xp_needs_schema">滚动训练 XP 排名需要云端架构 33。请应用最新数据库更新；累计 XP 排名仍可使用。</string>
-    <string name="cloud_workout_xp_needs_schema__t">滚动试炼 XP 排名需要云端架构 33。请应用最新数据库更新；累计 XP 排名仍可使用。</string>
     <string name="cloud_sync_tiers_failed__t">动作之阶未同步：%1$s</string>
     <string name="cloud_sync_trial_hidden">你无权查看此训练</string>
     <string name="cloud_sync_trial_hidden__t">你无权查看此试炼</string>
@@ -5858,5 +5861,5 @@
     <string name="exercise_unit_lb_hint">此动作始终使用磅</string>
     <string name="exercise_unit_scope">每次训练中的此动作均使用此设置。已记录的重量保持不变。</string>
     <string name="exercise_unit_choose_description">%1$s的重量单位</string>
-</resources>
     <string name="skill_tree_tiers_caption">罗马数字表示难度等级。数字越大，难度越高。</string>
+</resources>

@@ -655,7 +655,7 @@
     <string name="common_off">꺼짐</string>
     <string name="settings_section_profile_title">프로필</string>
     <string name="settings_section_appearance_title">화면</string>
-    <string name="settings_section_training_mode_title">훈련 모드</string>
+    <string name="settings_section_training_mode_title">훈련</string>
     <string name="settings_section_during_trial_title">운동 중</string>
     <string name="settings_section_during_trial_title__t">시련 중</string>
     <string name="settings_section_health_connect_title">HEALTH CONNECT</string>
@@ -672,7 +672,7 @@
     <string name="settings_hub_account_label">계정</string>
     <string name="settings_hub_account_signed_in">로그인됨</string>
     <string name="settings_hub_account_signed_out">로그인 안 됨</string>
-    <string name="settings_hub_training_mode_label">훈련 모드</string>
+    <string name="settings_hub_training_mode_label">훈련 설정</string>
     <string name="settings_hub_during_trial_label">운동 중</string>
     <string name="settings_hub_during_trial_label__t">시련 중</string>
     <string name="settings_hub_appearance_label">화면 설정</string>
@@ -774,6 +774,9 @@
     <string name="settings_trial_awake_label">화면 켜짐 유지</string>
     <string name="settings_trial_awake_caption">운동 화면이 열려 있는 동안 화면이 꺼지지 않아요. 운동 화면의 주머니 잠금을 켜면 화면이 어두워져요.</string>
     <string name="settings_trial_awake_caption__t">시련 화면이 열려 있는 동안 화면이 꺼지지 않아요. 시련 화면의 주머니 잠금을 켜면 화면이 어두워져요.</string>
+    <string name="settings_training_progression_title">진행 방식</string>
+    <string name="settings_training_progression_intro">횟수와 중량을 늘리는 방식이에요. 숙련 기술과 혼합은 루틴을 만들 때 선택하는 목표예요.</string>
+    <string name="settings_training_progression_intro__t">횟수와 중량을 늘리는 방식이에요. 절기와 혼합은 의식을 단조할 때 선택하는 목표예요.</string>
     <string name="settings_training_strength_caption">모든 세트를 성공하면 중량이 올라가요. 세 번 정체하면 디로드해요.</string>
     <string name="settings_training_hypertrophy_caption">횟수를 먼저 늘리고 그다음 중량을 올려요. 세 번 정체하면 디로드해요.</string>
     <string name="settings_training_warmup_label">워밍업 알림</string>
@@ -4498,11 +4501,11 @@
     <string name="cloud_sync_web_failed">웹 운동 상세 정보를 동기화하지 못했어요: %1$s</string>
     <string name="cloud_sync_web_failed__t">웹 시련 상세 정보를 동기화하지 못했어요: %1$s</string>
     <string name="cloud_sync_web_needs_schema">웹 통계를 쓰려면 클라우드 스키마 31 이상이 필요해요.</string>
+    <string name="cloud_workout_xp_needs_schema">최근 운동 XP 순위에는 클라우드 스키마 33이 필요해요. 최신 데이터베이스 업데이트를 적용하세요. 누적 XP 순위는 계속 사용할 수 있어요.</string>
+    <string name="cloud_workout_xp_needs_schema__t">최근 시련 XP 순위에는 클라우드 스키마 33이 필요해요. 최신 데이터베이스 업데이트를 적용하세요. 누적 XP 순위는 계속 사용할 수 있어요.</string>
     <string name="cloud_sync_web_snapshot_failed">웹 통계를 동기화하지 못했어요: %1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">웹 통계가 너무 커서 동기화할 수 없어요(%1$d바이트).</string>
     <string name="cloud_sync_tiers_failed">리프트 급을 동기화하지 못했어요: %1$s</string>
-    <string name="cloud_workout_xp_needs_schema">최근 운동 XP 순위에는 클라우드 스키마 33이 필요해요. 최신 데이터베이스 업데이트를 적용하세요. 누적 XP 순위는 계속 사용할 수 있어요.</string>
-    <string name="cloud_workout_xp_needs_schema__t">최근 시련 XP 순위에는 클라우드 스키마 33이 필요해요. 최신 데이터베이스 업데이트를 적용하세요. 누적 XP 순위는 계속 사용할 수 있어요.</string>
     <string name="cloud_sync_tiers_failed__t">리프트 품계를 동기화하지 못했어요: %1$s</string>
     <string name="cloud_sync_trial_hidden">볼 수 없는 운동이에요</string>
     <string name="cloud_sync_trial_hidden__t">볼 수 없는 시련이에요</string>
@@ -5858,5 +5861,5 @@
     <string name="exercise_unit_lb_hint">이 운동에는 항상 파운드 사용</string>
     <string name="exercise_unit_scope">모든 운동 세션에서 이 운동에 적용돼요. 기록된 중량은 그대로 유지돼요.</string>
     <string name="exercise_unit_choose_description">%1$s 중량 단위</string>
-</resources>
     <string name="skill_tree_tiers_caption">로마 숫자는 난이도 단계를 나타내요. 숫자가 클수록 어려워요.</string>
+</resources>

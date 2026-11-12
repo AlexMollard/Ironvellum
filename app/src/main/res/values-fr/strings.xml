@@ -683,7 +683,7 @@
     <string name="common_off">Désactivé</string>
     <string name="settings_section_profile_title">PROFIL</string>
     <string name="settings_section_appearance_title">APPARENCE</string>
-    <string name="settings_section_training_mode_title">MODE D’ENTRAÎNEMENT</string>
+    <string name="settings_section_training_mode_title">ENTRAÎNEMENT</string>
     <string name="settings_section_during_trial_title">PENDANT UNE SÉANCE</string>
     <string name="settings_section_during_trial_title__t">PENDANT UNE ÉPREUVE</string>
     <string name="settings_section_health_connect_title">HEALTH CONNECT</string>
@@ -700,7 +700,7 @@
     <string name="settings_hub_account_label">Compte</string>
     <string name="settings_hub_account_signed_in">Connecté</string>
     <string name="settings_hub_account_signed_out">Non connecté</string>
-    <string name="settings_hub_training_mode_label">Mode d’entraînement</string>
+    <string name="settings_hub_training_mode_label">Préférences d’entraînement</string>
     <string name="settings_hub_during_trial_label">Pendant une séance</string>
     <string name="settings_hub_during_trial_label__t">Pendant une épreuve</string>
     <string name="settings_hub_appearance_label">Apparence</string>
@@ -816,6 +816,9 @@
     <string name="settings_trial_awake_label">Garder l’écran allumé</string>
     <string name="settings_trial_awake_caption">Empêche la mise en veille pendant une séance. Le verrouillage de poche réduit la luminosité.</string>
     <string name="settings_trial_awake_caption__t">Empêche la mise en veille pendant une épreuve. Le verrouillage de poche réduit la luminosité.</string>
+    <string name="settings_training_progression_title">PROGRESSION</string>
+    <string name="settings_training_progression_intro">Comment augmentent les répétitions et la charge. Techniques et Mixte sont des objectifs que tu choisis en créant une routine.</string>
+    <string name="settings_training_progression_intro__t">Comment augmentent les répétitions et la charge. Arts et Mixte sont des objectifs que tu choisis en forgeant un rite.</string>
     <string name="settings_training_strength_caption">Réussis toutes les séries et la charge augmente. Trois blocages : décharge.</string>
     <string name="settings_training_hypertrophy_caption">Les répétitions augmentent, puis la charge. Trois blocages : décharge.</string>
     <string name="settings_training_warmup_label">Rappel d’échauffement</string>
@@ -4787,11 +4790,11 @@
     <string name="cloud_sync_web_failed">Les détails des séances sur le Web n\'ont pas été synchronisés : %1$s</string>
     <string name="cloud_sync_web_failed__t">Les détails des épreuves sur le Web n\'ont pas été synchronisés : %1$s</string>
     <string name="cloud_sync_web_needs_schema">Les stats Web nécessitent la version 31 ou ultérieure du schéma cloud.</string>
+    <string name="cloud_workout_xp_needs_schema">Le classement glissant des XP de séances nécessite le schéma cloud 33. Applique la dernière mise à jour de la base ; le classement des XP cumulées reste disponible.</string>
+    <string name="cloud_workout_xp_needs_schema__t">Le classement glissant des XP d’épreuves nécessite le schéma cloud 33. Applique la dernière mise à jour de la base ; le classement des XP cumulées reste disponible.</string>
     <string name="cloud_sync_web_snapshot_failed">Les stats Web n\'ont pas été synchronisées : %1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">Les stats Web sont trop volumineuses pour être synchronisées (%1$d octets).</string>
     <string name="cloud_sync_tiers_failed">Les paliers de force n\'ont pas été synchronisés : %1$s</string>
-    <string name="cloud_workout_xp_needs_schema">Le classement glissant des XP de séances nécessite le schéma cloud 33. Applique la dernière mise à jour de la base ; le classement des XP cumulées reste disponible.</string>
-    <string name="cloud_workout_xp_needs_schema__t">Le classement glissant des XP d’épreuves nécessite le schéma cloud 33. Applique la dernière mise à jour de la base ; le classement des XP cumulées reste disponible.</string>
     <string name="cloud_sync_tiers_failed__t">Les échelons de force n\'ont pas été synchronisés : %1$s</string>
     <string name="cloud_sync_trial_hidden">Cette séance ne t\'est pas visible</string>
     <string name="cloud_sync_trial_hidden__t">Cette épreuve ne t\'est pas visible</string>
@@ -6227,5 +6230,5 @@
     <string name="exercise_unit_lb_hint">Toujours utiliser les livres pour cet exercice</string>
     <string name="exercise_unit_scope">Utilisée pour cet exercice dans chaque séance. Tes poids enregistrés restent inchangés.</string>
     <string name="exercise_unit_choose_description">Unité de poids pour %1$s</string>
-</resources>
     <string name="skill_tree_tiers_caption">Les chiffres romains indiquent le niveau de difficulté. Plus le chiffre est élevé, plus c’est difficile.</string>
+</resources>

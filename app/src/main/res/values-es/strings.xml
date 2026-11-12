@@ -683,7 +683,7 @@
     <string name="common_off">Desactivado</string>
     <string name="settings_section_profile_title">PERFIL</string>
     <string name="settings_section_appearance_title">APARIENCIA</string>
-    <string name="settings_section_training_mode_title">MODO DE ENTRENAMIENTO</string>
+    <string name="settings_section_training_mode_title">ENTRENAMIENTO</string>
     <string name="settings_section_during_trial_title">DURANTE UN ENTRENAMIENTO</string>
     <string name="settings_section_during_trial_title__t">DURANTE UNA PRUEBA</string>
     <string name="settings_section_health_connect_title">HEALTH CONNECT</string>
@@ -700,7 +700,7 @@
     <string name="settings_hub_account_label">Cuenta</string>
     <string name="settings_hub_account_signed_in">Sesión iniciada</string>
     <string name="settings_hub_account_signed_out">Sesión no iniciada</string>
-    <string name="settings_hub_training_mode_label">Modo de entrenamiento</string>
+    <string name="settings_hub_training_mode_label">Preferencias de entrenamiento</string>
     <string name="settings_hub_during_trial_label">Durante un entreno</string>
     <string name="settings_hub_during_trial_label__t">Durante una prueba</string>
     <string name="settings_hub_appearance_label">Apariencia</string>
@@ -816,6 +816,9 @@
     <string name="settings_trial_awake_label">Mantener pantalla encendida</string>
     <string name="settings_trial_awake_caption">Evita que la pantalla se apague durante un entreno. El bloqueo de bolsillo la atenúa.</string>
     <string name="settings_trial_awake_caption__t">Evita que la pantalla se apague durante una prueba. El bloqueo de bolsillo la atenúa.</string>
+    <string name="settings_training_progression_title">PROGRESIÓN</string>
+    <string name="settings_training_progression_intro">Cómo aumentan las repeticiones y la carga. Habilidades y Mixto son objetivos que eliges al crear una rutina.</string>
+    <string name="settings_training_progression_intro__t">Cómo aumentan las repeticiones y la carga. Técnicas y Mixto son objetivos que eliges al forjar un rito.</string>
     <string name="settings_training_strength_caption">Completa todas las series y sube la carga. Tras tres estancamientos, descarga.</string>
     <string name="settings_training_hypertrophy_caption">Suben las reps y luego la carga. Tras tres estancamientos, descarga.</string>
     <string name="settings_training_warmup_label">Recordatorio de calentamiento</string>
@@ -4787,11 +4790,11 @@
     <string name="cloud_sync_web_failed">No se sincronizaron los detalles web de entrenos: %1$s</string>
     <string name="cloud_sync_web_failed__t">No se sincronizaron los detalles web de pruebas: %1$s</string>
     <string name="cloud_sync_web_needs_schema">Las estadísticas web necesitan el esquema de nube 31 o posterior.</string>
+    <string name="cloud_workout_xp_needs_schema">La clasificación de XP de entrenamientos de los últimos 7 días necesita el esquema 33. Aplica la última actualización de la base de datos; la clasificación de XP total sigue disponible.</string>
+    <string name="cloud_workout_xp_needs_schema__t">La clasificación de XP de pruebas de los últimos 7 días necesita el esquema 33. Aplica la última actualización de la base de datos; la clasificación de XP total sigue disponible.</string>
     <string name="cloud_sync_web_snapshot_failed">No se sincronizaron las estadísticas web: %1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">Las estadísticas web son demasiado grandes para sincronizarlas (%1$d bytes).</string>
     <string name="cloud_sync_tiers_failed">No se sincronizaron los niveles de levantamiento: %1$s</string>
-    <string name="cloud_workout_xp_needs_schema">La clasificación de XP de entrenamientos de los últimos 7 días necesita el esquema 33. Aplica la última actualización de la base de datos; la clasificación de XP total sigue disponible.</string>
-    <string name="cloud_workout_xp_needs_schema__t">La clasificación de XP de pruebas de los últimos 7 días necesita el esquema 33. Aplica la última actualización de la base de datos; la clasificación de XP total sigue disponible.</string>
     <string name="cloud_sync_tiers_failed__t">Los peldaños de levantamiento no se sincronizaron: %1$s</string>
     <string name="cloud_sync_trial_hidden">No puedes ver este entreno</string>
     <string name="cloud_sync_trial_hidden__t">Esta prueba permanece oculta para ti</string>
@@ -6227,5 +6230,5 @@
     <string name="exercise_unit_lb_hint">Usar siempre libras para este ejercicio</string>
     <string name="exercise_unit_scope">Se usa para este ejercicio en todos los entrenamientos. Tus pesos registrados no cambian.</string>
     <string name="exercise_unit_choose_description">Unidad de peso para %1$s</string>
-</resources>
     <string name="skill_tree_tiers_caption">Los números romanos indican niveles de dificultad. Cuanto mayor es el número, más difícil.</string>
+</resources>

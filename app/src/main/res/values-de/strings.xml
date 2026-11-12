@@ -683,7 +683,7 @@
     <string name="common_off">Aus</string>
     <string name="settings_section_profile_title">PROFIL</string>
     <string name="settings_section_appearance_title">ERSCHEINUNGSBILD</string>
-    <string name="settings_section_training_mode_title">TRAININGSMODUS</string>
+    <string name="settings_section_training_mode_title">TRAINING</string>
     <string name="settings_section_during_trial_title">WÄHREND DES TRAININGS</string>
     <string name="settings_section_during_trial_title__t">WÄHREND EINER PRÜFUNG</string>
     <string name="settings_section_health_connect_title">HEALTH CONNECT</string>
@@ -700,7 +700,7 @@
     <string name="settings_hub_account_label">Konto</string>
     <string name="settings_hub_account_signed_in">Angemeldet</string>
     <string name="settings_hub_account_signed_out">Nicht angemeldet</string>
-    <string name="settings_hub_training_mode_label">Trainingsmodus</string>
+    <string name="settings_hub_training_mode_label">Trainingseinstellungen</string>
     <string name="settings_hub_during_trial_label">Während eines Trainings</string>
     <string name="settings_hub_during_trial_label__t">Während einer Prüfung</string>
     <string name="settings_hub_appearance_label">Darstellung</string>
@@ -816,6 +816,9 @@
     <string name="settings_trial_awake_label">Bildschirm anlassen</string>
     <string name="settings_trial_awake_caption">Verhindert den Ruhezustand bei offenem Training. Die Taschensperre im Training dimmt den Bildschirm.</string>
     <string name="settings_trial_awake_caption__t">Hält den Bildschirm während einer Prüfung wach. Die Taschensperre der Prüfung dimmt ihn.</string>
+    <string name="settings_training_progression_title">PROGRESSION</string>
+    <string name="settings_training_progression_intro">Wie Wiederholungen und Gewicht steigen. Fähigkeiten und Gemischt sind Ziele, die du beim Erstellen einer Routine auswählst.</string>
+    <string name="settings_training_progression_intro__t">Wie Wiederholungen und Gewicht steigen. Künste und Gemischt sind Ziele, die du beim Schmieden eines Ritus auswählst.</string>
     <string name="settings_training_strength_caption">Schaffe alle Sätze und das Gewicht steigt. Nach drei Stillständen: Entlastung.</string>
     <string name="settings_training_hypertrophy_caption">Erst steigen die Wiederholungen, dann das Gewicht. Nach drei Stillständen: Entlastung.</string>
     <string name="settings_training_warmup_label">Aufwärmerinnerung</string>
@@ -4787,11 +4790,11 @@
     <string name="cloud_sync_web_failed">Web-Trainingsdetails wurden nicht synchronisiert: %1$s</string>
     <string name="cloud_sync_web_failed__t">Web-Prüfungsdetails wurden nicht synchronisiert: %1$s</string>
     <string name="cloud_sync_web_needs_schema">Web-Statistiken benötigen Cloud-Schema 31 oder neuer.</string>
+    <string name="cloud_workout_xp_needs_schema">Rollierende Trainings-XP benötigen Cloud-Schema 33. Wende das neueste Datenbank-Update an; die Gesamt-XP-Rangliste funktioniert weiterhin.</string>
+    <string name="cloud_workout_xp_needs_schema__t">Rollierende Prüfungs-XP benötigen Cloud-Schema 33. Wende das neueste Datenbank-Update an; die Gesamt-XP-Rangliste funktioniert weiterhin.</string>
     <string name="cloud_sync_web_snapshot_failed">Web-Statistiken wurden nicht synchronisiert: %1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">Web-Statistiken sind zu groß zum Synchronisieren (%1$d Bytes).</string>
     <string name="cloud_sync_tiers_failed">Übungsstufen wurden nicht synchronisiert: %1$s</string>
-    <string name="cloud_workout_xp_needs_schema">Rollierende Trainings-XP benötigen Cloud-Schema 33. Wende das neueste Datenbank-Update an; die Gesamt-XP-Rangliste funktioniert weiterhin.</string>
-    <string name="cloud_workout_xp_needs_schema__t">Rollierende Prüfungs-XP benötigen Cloud-Schema 33. Wende das neueste Datenbank-Update an; die Gesamt-XP-Rangliste funktioniert weiterhin.</string>
     <string name="cloud_sync_tiers_failed__t">Übungsrangstufen wurden nicht synchronisiert: %1$s</string>
     <string name="cloud_sync_trial_hidden">Dieses Training ist für dich nicht sichtbar</string>
     <string name="cloud_sync_trial_hidden__t">Diese Prüfung ist für dich nicht sichtbar</string>
@@ -6219,5 +6222,5 @@
     <string name="exercise_unit_lb_hint">Für diese Übung immer Pfund verwenden</string>
     <string name="exercise_unit_scope">Gilt für diese Übung in jedem Training. Deine aufgezeichneten Gewichte bleiben unverändert.</string>
     <string name="exercise_unit_choose_description">Gewichtseinheit für %1$s</string>
-</resources>
     <string name="skill_tree_tiers_caption">Römische Zahlen markieren die Schwierigkeitsstufen. Je höher die Zahl, desto schwieriger.</string>
+</resources>

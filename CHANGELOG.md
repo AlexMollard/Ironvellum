@@ -17,6 +17,9 @@ store listing; this is the whole list.
 - Give large text wider cells and enough row height for every measured line; keep nodes and prerequisite routes within the graph when fewer columns fit.
 - Explain the Roman-numeral difficulty tiers on every open path.
 
+### Training preferences
+- Separate progression settings from routine-generation goals, explaining where Skills and Mixed are chosen without changing existing progression behavior.
+
 ### Rest times
 - Set compound and isolation rest defaults or override an exercise in its workout settings; turn a custom value off to use the underlying default again. Top-set rest remains separate.
 - Use custom rest in rule-based workout estimates; estimates based on your measured pace still reflect that history.

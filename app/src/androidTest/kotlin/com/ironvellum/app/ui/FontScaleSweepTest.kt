@@ -190,7 +190,7 @@ class FontScaleSweepTest {
             whole("BACK")
             whole("Appearance")
         }
-        for (page in listOf("Profile", "Training mode", "Appearance", "Equipment", "Reminder", "Data", "Health Connect")) {
+        for (page in listOf("Profile", "Training preferences", "Appearance", "Equipment", "Reminder", "Data", "Health Connect")) {
             screen("settings-" + page.lowercase().replace(' ', '-')) {
                 driver.click(page)
                 whole("BACK")

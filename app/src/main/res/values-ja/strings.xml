@@ -655,7 +655,7 @@
     <string name="common_off">オフ</string>
     <string name="settings_section_profile_title">プロフィール</string>
     <string name="settings_section_appearance_title">外観</string>
-    <string name="settings_section_training_mode_title">トレーニングモード</string>
+    <string name="settings_section_training_mode_title">トレーニング</string>
     <string name="settings_section_during_trial_title">ワークアウト中</string>
     <string name="settings_section_during_trial_title__t">試練中</string>
     <string name="settings_section_health_connect_title">HEALTH CONNECT</string>
@@ -672,7 +672,7 @@
     <string name="settings_hub_account_label">アカウント</string>
     <string name="settings_hub_account_signed_in">ログイン中</string>
     <string name="settings_hub_account_signed_out">未ログイン</string>
-    <string name="settings_hub_training_mode_label">トレーニングモード</string>
+    <string name="settings_hub_training_mode_label">トレーニングの設定</string>
     <string name="settings_hub_during_trial_label">ワークアウト中</string>
     <string name="settings_hub_during_trial_label__t">試練の最中</string>
     <string name="settings_hub_appearance_label">外観</string>
@@ -774,6 +774,9 @@
     <string name="settings_trial_awake_label">画面を点灯したままにする</string>
     <string name="settings_trial_awake_caption">ワークアウト中は画面がスリープしません。ポケットロック中は画面が暗くなります。</string>
     <string name="settings_trial_awake_caption__t">試練の間、画面は眠りません。ポケットロックをかけると暗くなります。</string>
+    <string name="settings_training_progression_title">進め方</string>
+    <string name="settings_training_progression_intro">レップ数と重量の増やし方です。テクニックとバランスはルーチンの作成時に選ぶ目標です。</string>
+    <string name="settings_training_progression_intro__t">レップ数と重量の増やし方です。技とバランスは儀礼を鍛えるときに選ぶ目標です。</string>
     <string name="settings_training_strength_caption">全セットを達成すると重量が増えます。3回停滞するとデロードします。</string>
     <string name="settings_training_hypertrophy_caption">レップ数を増やしてから重量を増やします。3回停滞するとデロードします。</string>
     <string name="settings_training_warmup_label">ウォームアップのリマインダー</string>
@@ -4498,11 +4501,11 @@
     <string name="cloud_sync_web_failed">Webのワークアウト詳細を同期できませんでした: %1$s</string>
     <string name="cloud_sync_web_failed__t">Webの試練詳細を同期できませんでした: %1$s</string>
     <string name="cloud_sync_web_needs_schema">Web統計にはクラウドスキーマ31以降が必要です。</string>
+    <string name="cloud_workout_xp_needs_schema">直近のワークアウトXPランキングにはクラウドスキーマ33が必要です。最新のデータベース更新を適用してください。累計XPランキングは引き続き使えます。</string>
+    <string name="cloud_workout_xp_needs_schema__t">直近の試練XPランキングにはクラウドスキーマ33が必要です。最新のデータベース更新を適用してください。累計XPランキングは引き続き使えます。</string>
     <string name="cloud_sync_web_snapshot_failed">Web統計を同期できませんでした: %1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">Web統計が大きすぎるため同期できません（%1$dバイト）。</string>
     <string name="cloud_sync_tiers_failed">リフトの階級を同期できませんでした: %1$s</string>
-    <string name="cloud_workout_xp_needs_schema">直近のワークアウトXPランキングにはクラウドスキーマ33が必要です。最新のデータベース更新を適用してください。累計XPランキングは引き続き使えます。</string>
-    <string name="cloud_workout_xp_needs_schema__t">直近の試練XPランキングにはクラウドスキーマ33が必要です。最新のデータベース更新を適用してください。累計XPランキングは引き続き使えます。</string>
     <string name="cloud_sync_tiers_failed__t">リフトの位階を同期できませんでした: %1$s</string>
     <string name="cloud_sync_trial_hidden">このワークアウトは閲覧できません</string>
     <string name="cloud_sync_trial_hidden__t">この試練は閲覧できません</string>
@@ -5858,5 +5861,5 @@
     <string name="exercise_unit_lb_hint">この種目では常にポンドを使う</string>
     <string name="exercise_unit_scope">すべてのワークアウトでこの種目に適用されます。記録済みの重量は変わりません。</string>
     <string name="exercise_unit_choose_description">%1$sの重量の単位</string>
-</resources>
     <string name="skill_tree_tiers_caption">ローマ数字は難易度の段階です。数字が大きいほど難しくなります。</string>
+</resources>

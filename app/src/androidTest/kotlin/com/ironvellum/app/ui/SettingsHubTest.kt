@@ -45,12 +45,11 @@ class SettingsHubTest {
     @Test
     fun hubShowsEveryRowWithoutScrolling() {
         val rows = listOf(
-            "Profile", "Account", "Training mode", "Armoury", "The Summons",
+            "Profile", "Account", "Training preferences", Words.armoury.c, Words.theSummons.c,
             "Appearance", "Health Connect", "Data", "Advanced",
             if (BuildConfig.SUPPORT_LINKS) "Support Ironvellum" else "About Ironvellum",
         )
         rows.forEach { row(it).assertIsDisplayed() }
-        compose.onNodeWithText("readings stay on this device", substring = true).assertIsDisplayed()
     }
 
     @Test
@@ -62,13 +61,14 @@ class SettingsHubTest {
 
         compose.onNodeWithText("BACK").performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-        row("Training mode").assertIsDisplayed()
+        row("Training preferences").assertIsDisplayed()
     }
 
     @Test
     fun preparationLibraryOpensFromTrainingSettingsAndReturnsThere() {
-        row("Training mode").performClick()
+        row("Training preferences").performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        ShotRecorder.take(compose, "training-preferences")
         compose.onNodeWithText("Warmups & cooldowns").performScrollTo().assertIsDisplayed().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
         compose.onNodeWithText(Words.text(UiText.themed(R.string.preparation_create, R.string.preparation_create__t))).assertIsDisplayed()

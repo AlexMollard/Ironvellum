@@ -122,7 +122,7 @@ Train, Progress, Friends.
 | **The Binding** | setup | First-run setup | step titles: Who you are · How you train · Your cycle |
 | **Armoury** | equipment | The equipment an Ironbound owns | "YOUR ARMOURY", settings header ARMOURY, picker filter "MY ARMOURY" |
 | **Plates** | same | The plate calculator: a chip on a barbell lift in the live trial that opens a sheet building the load from the bar and plates owned; and the Armoury's "Bar and plates" block | chip "Plates", sheet "Plates", "Closest below", "falls between plates", "Use 102.5 kg", "Heaviest you can load" |
-| **Units** | same | kg or lb, a Training mode setting. Storage is kg everywhere; it changes only what is shown and typed | "UNITS · kg lb", "225 lb × 5", "Load (lb)" |
+| **Units** | same | kg or lb, a Training preferences setting. Storage is kg everywhere; it changes only what is shown and typed | "UNITS · kg lb", "225 lb × 5", "Load (lb)" |
 | **The Forge** | plan builder (verb: build) | The builder that makes rites and cycles | "Forge a Cycle", "Forge a Rite", "What my week is missing" |
 | **Temper** | improve | The Forge improving an existing rite | "Temper this rite", "Before / After" |
 | **Optimise** | same | The coverage page's suggestions that change rites you already have: a movement for a gap, an eased heavy muscle, two movements doing one job swapped, days spread for recovery. Each change is kept or skipped, the kept ones apply together, and Undo puts every touched rite back | "Optimise rites", "Apply 2 changes", "Undo, put Upper A back", "Best match" |

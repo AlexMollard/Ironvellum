@@ -220,7 +220,7 @@ by the view model. There is no timed control in an amendment.
 **Stepper.** Label (labelSmall, `InkMuted`) above a value with plain − and +
 glyph buttons (44dp targets, no borders). Tapping the value types it.
 
-**Units.** Loads are stored in kg and shown in the unit set under Training mode
+**Units.** Loads are stored in kg and shown in the unit set under Training preferences
 (kg or lb). Everything that prints, steps or reads a load goes through one
 helper, `Loads` (`LoadUnits.kt`), reached on screen as `Units`: lb shows to the
 nearest 0.5, typed lb converts at the exact pound (0.45359237 kg) and is kept to
@@ -231,7 +231,7 @@ walks its 2.5 kg plate grid. Progression advice in lb moves on the lb grid, so
 Strong-format file whose reader assumes kg), body weight and measurements, and
 the Forge's generated load notes and dumbbell limit.
 
-**Effort (RPE and RIR).** Optional, per set, off by default. Settings > Training mode,
+**Effort (RPE and RIR).** Optional, per set, off by default. Settings > Training preferences,
 "Effort per set": a "Log effort" switch and an RPE | RIR choice. The figure stored is one
 whole-number RPE on the set, 5 to 10 (`domain/Effort.kt`): RIR is 10 minus it, so changing
 scale loses nothing, and anything at or under 5 is stored as 5 (the "≤5" chip, "5+" on

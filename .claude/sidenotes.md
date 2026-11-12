@@ -11,9 +11,9 @@ Last audited 2026-11-12 against the current 1.11 source. Open boxes are unresolv
 - [x] [2026-09-30] skill-tree descriptions clipped at 8-9sp, no legend for roman tiers
   ↳ extracted from the v1.4 FTUE leftovers · Codex skill paths · main@5b904b9
   Completed 2026-11-12: 12sp base labels/captions, measured uncapped wrapping, adaptive columns with narrow-graph lane packing, and a persistent tier explanation. Checked real skill interaction and screenshots at 85%, 100%, 150%, 200% text plus density 560; geometry assertions cover every path at 2–6 columns.
-- [ ] [2026-09-30] Training mode in Settings lacks Skills/Mixed from onboarding
+- [x] [2026-09-30] Training mode in Settings lacks Skills/Mixed from onboarding
   ↳ extracted from the v1.4 FTUE leftovers · training preferences and generated routines · main@5b904b9
-  Audit: clarify the concepts, not a confirmed missing enum option. Settings changes the two progression modes (`TrainingModeSettings.kt:43-64`); onboarding chooses four generation focuses (`OnboardingScreen.kt:1134-1156`). Skills/Mixed deliberately do not replace the progression mode (`ProgramEditing.kt:151-162`).
+  Completed 2026-11-12: renamed the page Training preferences and explained progression versus routine-generation goals in all eight languages. Kept the existing Power/Muscle behavior; Skills/Mixed remain routine goals. Verified navigation and actual screenshots at 100%, 150%, 200% text and density 560.
 - [ ] [2026-09-30] Victory repeats +XP / total XP on first run
   ↳ extracted from the v1.4 FTUE leftovers · first-workout celebration · main@5b904b9
   Audit: keep for a targeted first-workout review, not a confirmed current duplicate. The simple extra XP row is guarded (`VictoryOverlay.kt:287-305`), but this audit has not visually rechecked the full celebration sequence.

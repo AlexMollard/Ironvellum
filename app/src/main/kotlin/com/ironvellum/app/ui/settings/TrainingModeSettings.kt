@@ -50,6 +50,8 @@ internal fun TrainingModeSettings(viewModel: SettingsViewModel, onBack: () -> Un
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val mode = profile?.trainingMode ?: TrainingMode.STRENGTH
     SettingsPage(SettingsSection.TRAINING_MODE.title, onBack) {
+        SectionHeader(stringResource(R.string.settings_training_progression_title), topPadding = 12.dp)
+        SettingsCaption(UiText.themed(R.string.settings_training_progression_intro, R.string.settings_training_progression_intro__t).asString())
         Spacer(Modifier.height(12.dp))
         InkSegmented(
             options = TrainingMode.entries.map { it to it.label() },
