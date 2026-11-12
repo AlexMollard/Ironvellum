@@ -2,7 +2,7 @@
 
 Date: 2026-11-13
 
-**Status: researched plan, not an implemented feature or a proven transport.** Alex requested planning only. All implementation checkboxes below are intentionally unchecked. Approval of this document does not imply approval of a proprietary bridge, cloud dependence, support exclusions, or a release.
+**Status: plan and six-screen design direction approved by Alex on 2026-11-13; phase-zero prototype work authorized.** Alex subsequently confirmed hardware is unavailable now (first intended watch: Galaxy Watch6) and explicitly approved building/checking the isolated prototype while leaving the hardware gate unpassed. Production workout integration remains gated on transport proof. A proprietary bridge, cloud dependence, support exclusions and a release are not approved.
 
 ## 1. Product contract
 
@@ -542,7 +542,7 @@ Not included by default: standalone phone-free session authority, multi-watch co
 | Latency/reconnect/energy budgets | Proposed latency targets; baseline-driven energy budget | Set from phase-zero measurements and Alex's ergonomics check |
 | Preparation execution transfer/recovery | Preserve reducer, add explicit cross-surface ownership | Validate lifecycle and timing policy before shared-state changes |
 | Proprietary bridge | Contingency only, unapproved and unproven | Explicit separate decision if needed |
-| Implementation/release | Not started; planning authorization only | Approve implementation after feasibility/product gates |
+| Implementation/release | Phase-zero isolated prototype authorized; six-screen design direction approved | Production integration after feasibility gates; release/tag still needs explicit approval |
 
 ## 15. Sources and plan verification record
 
@@ -555,3 +555,18 @@ Primary platform/policy sources checked while writing:
 - [Pocketdesk PR 622](https://github.com/sreevarshan-xenoz/Pocketdesk/pull/622) and [microG PR 3837](https://github.com/microg/GmsCore/pull/3837): limited prior art with explicit outstanding hardware proof, not accepted production guarantees.
 
 Local evidence: actual workout screen controls, metric editors, notification action ingress, domain clock/reducer source and repository integration/test inventory in section 2 and section 12. No language server is configured for this checkout; source inspection used text/navigation fallback. No radio experiment, runtime app change, build, suite run or F-Droid acceptance occurred as part of planning. Documentation link/coverage validation and the documentation commit are recorded in the delivery response; unchecked implementation work remains unchecked.
+
+### Implementation evidence after design approval
+
+The isolated build lives under [`tools/watch-spike/`](../../../tools/watch-spike/README.md), outside the production Gradle module graph and under separate phone/watch package IDs. It exchanges disposable fixture state, not real workout data. First intended physical target is Galaxy Watch6; cross-brand, radio, locked-phone reliability, latency and energy results remain unverified while hardware is unavailable. Checkboxes combining a prototype with real hardware proof remain unchecked.
+
+Local prototype verification on 2026-11-13:
+
+- Both isolated debug APKs build with API 37 targeting and minSdk 30. Phone and Wear lint finish successfully with warnings treated as errors.
+- Each variant executes 23 JVM tests: 46 executions total, zero failures/errors/skips. They exercise actual Noise handshakes and encrypted stream traffic, bilateral confirmation, changed pins, tampering/replay, bounded frames, duplicate/evicted request IDs, wrong-set/revision rejection, figures/effort and the disposable timer.
+- The artifact check finds no GMS, Firebase or production Ironvellum classes and no INTERNET permission in either APK. This is not F-Droid submission approval or a cryptographic security certification.
+- Under the shared device lock, the phone probe was installed and exercised on the verified emulator. Reps changed 8 to 9, load 60 to 62.5 kg, completion/RPE 8 were shown, and Undo cleared completion/effort. Actual status and fixture screenshots were inspected under `.tmp/watch-spike/`.
+- Focused source review raised six concrete security/UI/test-coverage items; all were addressed before the successful check. No production training data or root app source was changed by this work.
+- No real watch/phone radio link, watch-screen runtime, first pairing on hardware, background reliability, cross-brand compatibility, latency or energy result is established. The hardware gate is explicitly unpassed, as Alex requested while hardware is unavailable.
+
+Next gate: use a physical Galaxy Watch6 and Android phone with the separate probe packages, then a non-Samsung watch, to execute section 3.4 before any production coordinator/UI integration. The approved six-screen production designs have not been substituted with the diagnostic probe screen.
