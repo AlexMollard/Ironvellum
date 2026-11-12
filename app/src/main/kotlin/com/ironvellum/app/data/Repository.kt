@@ -1644,9 +1644,7 @@ class Repository(
         val current = sessionDao.setById(setId) ?: return@withTransaction
         if (isSealed(current.sessionId)) return@withTransaction
         val next = current.copy(reps = reps, weightKg = weightKg, done = done && !current.isWarmup).ratedOnlyIfDone()
-        sessionDao.updateSet(next)
-        followLoad(current, weightKg)
-        carryFigures(current, next, carryFiguresFor(ExerciseMetric.REPS))
+        persistSetFigures(current, next, ExerciseMetric.REPS)
         // A drop still to do follows the load on the set before it, as that load stands now.
         if (!next.isWarmup && (current.weightKg != next.weightKg || current.done != next.done)) {
             refillDrops(next.sessionId, next.blockKey)
@@ -1764,9 +1762,13 @@ class Repository(
             weightKg = weightKg,
             done = done && !current.isWarmup,
         ).ratedOnlyIfDone()
+        persistSetFigures(current, next, ExerciseMetric.HOLD)
+    }
+
+    private suspend fun persistSetFigures(current: SetLogEntity, next: SetLogEntity, metric: ExerciseMetric) {
         sessionDao.updateSet(next)
-        followLoad(current, weightKg)
-        carryFigures(current, next, carryFiguresFor(ExerciseMetric.HOLD))
+        followLoad(current, next.weightKg)
+        carryFigures(current, next, carryFiguresFor(metric))
     }
 
     /**
@@ -1821,9 +1823,7 @@ class Repository(
             weightKg = weightKg,
             done = done && !current.isWarmup,
         ).ratedOnlyIfDone()
-        sessionDao.updateSet(next)
-        followLoad(current, weightKg)
-        carryFigures(current, next, carryFiguresFor(ExerciseMetric.DURATION))
+        persistSetFigures(current, next, ExerciseMetric.DURATION)
     }
 
     /**
