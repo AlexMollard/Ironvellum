@@ -22,7 +22,7 @@ Last audited 2026-11-12 against the current 1.11 source. Open boxes are unresolv
   Audit: low priority; no current functional defect established. Stats/Ledger are intentional plain/themed variants and Activity also names Health Connect data. Revisit only against specific current labels, not as a global terminology rewrite.
 - [x] [2026-11-11] We should add a rolling leaderboard as the xp leaderboard will always have the same guy on top everyday if hes used the app teh longest which kinda makes the leaderboards useless to others
   ↳ Independently disproving five social bugs before fixing confirmed findings · social leaderboards · main@005d86f8
-  Completed 2026-11-12: rolling 168-hour workout XP on Android and web, separate recent candidates and retained Lifetime XP. Verified Android metric switching, real screenshots, 31 web checks and six Postgres privacy/window mutations with 18 restored full-suite passes. Apply the schema-33 hosted patch before release; it has not been deployed by this task.
+  Completed 2026-11-12: rolling 168-hour workout XP on Android and web, separate recent candidates and retained Lifetime XP. Verified Android metric switching, real screenshots, 31 web checks and six Postgres privacy/window mutations with 18 restored full-suite passes. Alex subsequently applied the hosted patch and confirmed schema 33; a hosted end-to-end leaderboard check is not implied.
 
 ## Cleanup record — 2026-11-12
 

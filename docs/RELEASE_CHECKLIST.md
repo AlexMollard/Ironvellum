@@ -81,11 +81,10 @@ to the hosted project on 2026-10-30, establishing schema 32. The patch adds
 `sessions.feed_card` and the last column of `public_feed`. It stays optional for the app:
 `NEEDED_SCHEMA_VERSION` is 31, so a phone on a backend at 31 keeps syncing and simply sends
 no card (`CloudSync.feedReady` needs 32), and the web viewer's Friends area needs 32.
-For 1.11, apply `supabase/hosted/2026-11-12-workout-xp.sql` and confirm that
-`select public.schema_version();` returns 33. This patch has been verified
-locally, not applied to the hosted project by this task. A read-only hosted RPC
-check on 2026-11-12 still returned 32. The patch adds the rolling workout-XP view
-without raising the app-wide minimum of 31.
+Alex applied `supabase/hosted/2026-11-12-workout-xp.sql` for 1.11 and confirmed
+that `select public.schema_version();` returns 33. This is owner-reported
+deployment confirmation, not a new end-to-end hosted leaderboard check.
+The patch adds the rolling workout-XP view without raising the app-wide minimum of 31.
 
 **Never paste `supabase/reset.sql` into the hosted project.** It deletes every
 account. It exists for a throwaway project and for the gate's round trip.

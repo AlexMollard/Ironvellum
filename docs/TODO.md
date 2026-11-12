@@ -17,8 +17,8 @@ crest is on profiles, the boards, the feed and `my_circle()`. The version probe
 confirms the reported schema version, not live mutation or phone installation.
 The 4 MiB snapshot uploader's schema prerequisite is satisfied. The baseline is now at
 schema 33 (rolling workout XP). The release checklist records the owner applying
-the schema-32 feed-card patch on 2026-10-30; schema 33 still needs
-`supabase/hosted/2026-11-12-workout-xp.sql` applied before release. The app minimum stays 31.
+the schema-32 feed-card patch on 2026-10-30 and confirming the schema-33 workout-XP
+patch now returns 33. The app minimum stays 31.
 The updated
 phone build synced successfully, and the deployed viewer's history, set details,
 profile XP, lift variations and trends were verified against a read-only local
