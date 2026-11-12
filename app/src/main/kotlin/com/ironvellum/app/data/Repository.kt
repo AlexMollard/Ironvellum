@@ -554,24 +554,24 @@ class Repository(
                 preparation = attachments.filter { it.presetId == pw.preset.id }.associate {
                     PreparationKind.valueOf(it.kind) to PreparationChoice(PreparationMode.valueOf(it.mode), it.routineId)
                 },
-                entries = pw.entries.sortedBy { it.position }.map { e ->
-                    PresetEntry(
-                        id = e.id,
-                        exerciseId = e.exerciseId,
-                        exerciseName = names[e.exerciseId] ?: "Unknown",
-                        targetSets = e.targetSets,
-                        targetReps = e.targetReps,
-                        targetWeightKg = e.targetWeightKg,
-                        modifiers = e.modifiers,
-                        position = e.position,
-                        supersetGroup = e.supersetGroup,
-                        scheme = SetScheme.decode(e.setScheme),
-                        warmup = e.warmup,
-                    )
-                },
+                entries = pw.entries.sortedBy { it.position }.map { it.toPresetEntry(names) },
             )
         }
     }
+
+    private fun PresetEntryEntity.toPresetEntry(names: Map<Long, String>) = PresetEntry(
+        id = id,
+        exerciseId = exerciseId,
+        exerciseName = names[exerciseId] ?: "Unknown",
+        targetSets = targetSets,
+        targetReps = targetReps,
+        targetWeightKg = targetWeightKg,
+        modifiers = modifiers,
+        position = position,
+        supersetGroup = supersetGroup,
+        scheme = SetScheme.decode(setScheme),
+        warmup = warmup,
+    )
 
     data class PresetDraftEntry(
         val exerciseId: Long,
@@ -3677,21 +3677,7 @@ class Repository(
                 scheduledDay = pw.preset.scheduledDay,
                 importKey = pw.preset.importKey,
                 preparation = preparations.choices(pw.preset.id),
-                entries = pw.entries.sortedBy { it.position }.map { e ->
-                    PresetEntry(
-                        id = e.id,
-                        exerciseId = e.exerciseId,
-                        exerciseName = names[e.exerciseId] ?: "Unknown",
-                        targetSets = e.targetSets,
-                        targetReps = e.targetReps,
-                        targetWeightKg = e.targetWeightKg,
-                        modifiers = e.modifiers,
-                        position = e.position,
-                        supersetGroup = e.supersetGroup,
-                        scheme = SetScheme.decode(e.setScheme),
-                        warmup = e.warmup,
-                    )
-                },
+                entries = pw.entries.sortedBy { it.position }.map { it.toPresetEntry(names) },
             )
         }
         val notesBySession = sessionDao.allExerciseNotes().groupBy { it.sessionId }

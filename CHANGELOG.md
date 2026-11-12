@@ -12,6 +12,7 @@ store listing; this is the whole list.
 - Share assisted-machine estimated-max arithmetic while retaining each history and records view's existing eligibility and bodyweight rules.
 - Share top-set narrowing while retaining each consumer's existing grouping, eligibility and fallback sets.
 - Share live-set persistence and figure propagation without merging rep, hold or activity validation.
+- Share routine-entry projection between observed routines and exports, preserving preparation choices and entry order.
 
 ### Rolling workout XP
 - Rank the Training board by workout XP earned in the rolling last seven days, with Lifetime XP still available in the metric picker.
