@@ -434,7 +434,7 @@ object ExerciseHistoryCalculator {
         val done = entries.filter { it.done }
         // Records and the chart follow a trial's top set alone when it had one: its back-offs are lighter by design.
         val counted = done.groupBy { it.sessionId }.values.flatMap { sets ->
-            sets.filter { it.kind == SetKind.TOP }.ifEmpty { sets }
+            PeakSets.topOnlyOrElse(sets, { it.kind == SetKind.TOP }) { sets }
         }
         val knownCounted = counted.filter { !invalidExternalLoad(it.weightKg) && (!assisted || knownLoad(it) != null) }
         val heaviest = knownCounted.maxByOrNull { loadOf(it) * 1000 + it.reps }
@@ -448,7 +448,7 @@ object ExerciseHistoryCalculator {
         // The sets that may name a peak, per trial: done working sets, a top set alone when the trial had one.
         fun counting(sets: List<ExerciseSetEntry>): List<ExerciseSetEntry> {
             val worked = sets.filter { it.done && it.kind != SetKind.WARMUP }
-            return worked.filter { it.kind == SetKind.TOP }.ifEmpty { worked }
+            return PeakSets.topOnlyOrElse(worked, { it.kind == SetKind.TOP }) { worked }
         }
         fun peakValue(e: ExerciseSetEntry): Double = if (byE1rm) e.e1rmKg ?: 0.0 else e.score
         val peakSets = entries.groupBy { it.sessionId }.values.flatMap { counting(it) }

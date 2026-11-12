@@ -8,12 +8,14 @@ package com.ironvellum.app.domain
  * records, the boards and the charts.
  */
 object PeakSets {
+    /** Select top sets when present; callers retain their own eligibility and grouping rules. */
+    inline fun <T> topOnlyOrElse(items: Iterable<T>, isTop: (T) -> Boolean, otherwise: () -> List<T>): List<T> =
+        items.filter(isTop).ifEmpty(otherwise)
 
     /** The done working sets of ONE movement in ONE trial that count towards peaks and records. */
     fun eligible(block: List<SessionSet>): List<SessionSet> {
         val worked = block.filter { it.done && !it.warmup }
-        val tops = worked.filter { it.kind == SetKind.TOP }
-        return tops.ifEmpty { worked }
+        return topOnlyOrElse(worked, { it.kind == SetKind.TOP }) { worked }
     }
 
     /** One trial's sets with each movement narrowed by [eligible], in their original order. */

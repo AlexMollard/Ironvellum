@@ -10,6 +10,7 @@ store listing; this is the whole list.
 - Render worked front/back body maps through one shared web component, keeping layout, labels and keyboard access unchanged.
 - Share social-screen notice construction while preserving each screen's existing live-region role.
 - Share assisted-machine estimated-max arithmetic while retaining each history and records view's existing eligibility and bodyweight rules.
+- Share top-set narrowing while retaining each consumer's existing grouping, eligibility and fallback sets.
 
 ### Rolling workout XP
 - Rank the Training board by workout XP earned in the rolling last seven days, with Lifetime XP still available in the metric picker.

@@ -187,7 +187,7 @@ object ExerciseLogCalculator {
             val scored = session.groupBy { it.exercisePosition }.toSortedMap().map { (position, blockRows) ->
                 val sets = blockRows.sortedBy { it.setIndex }.map(::setOf)
                 // A block with a top set is judged on it alone; its back-offs are lighter by design.
-                val counted = sets.indices.filter { sets[it].kind == SetKind.TOP }.ifEmpty { sets.indices.toList() }
+                val counted = PeakSets.topOnlyOrElse(sets.indices, { sets[it].kind == SetKind.TOP }) { sets.indices.toList() }
                 val bestIndex = if (!judged) null else counted.maxByOrNull { score(sets[it]) }?.takeIf { score(sets[it]) > 0.0 }
                 val key = Variation.key(blockRows.first().modifiers)
                 val value = bestIndex?.let { score(sets[it]) }
