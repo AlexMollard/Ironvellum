@@ -2,7 +2,7 @@ import { t, word, workoutsTitle } from '../i18n.js';
 import { snapshotForWorkout, workoutPath } from '../source.js';
 import { formatDay, formatDayShort, formatSets, formatVolume, formatWeekday, formatClock } from '../format.js';
 import { artImg } from '../components/artImg.js';
-import { renderBodyMap } from '../components/bodyMap.js';
+import { workedBodyMapPair } from '../components/bodyMap.js';
 import { node, card, factRow, sortedWorkouts, workoutDay, link, liftPath } from '../components/statCard.js';
 import { setTable } from '../components/setTable.js';
 import { copyButton } from '../components/copyWorkout.js';
@@ -38,8 +38,7 @@ export async function renderWorkoutDetail(root, { source, snapshot, router, soci
   // The friends line: counts from this workout's own public_feed row, names from its reactors; absent when there is nothing or a read fails.
   if (social && workout.origin === 'synced') social.workoutFeedRow(workout.id).then(async row => { const reactors = row && Object.values(row.reactions ?? {}).some(n => n > 0) ? await social.reactors(workout.id).catch(() => []) : []; const line = alliesLine(row, { reactors }); if (line) summary.append(line); }).catch(() => {});
   if (entry) {
-    const muscles = card('Muscles worked', 'muscles-card'); const maps = node('div', null, 'body-map-pair');
-    for (const view of ['front', 'back']) { const map = node('div', null, 'body-map'); renderBodyMap(map, { levels: entry.muscleLevels, figure: snapshot.profile?.figure || 'male', view, look: 'worked', names: snapshot.muscles }); maps.append(map); }
+    const muscles = card('Muscles worked', 'muscles-card'); const maps = workedBodyMapPair({ levels: entry.muscleLevels, figure: snapshot.profile?.figure || 'male', names: snapshot.muscles });
     muscles.append(maps, workedLegend()); side.append(muscles);
   }
   const sets = await source.getSets(workout);

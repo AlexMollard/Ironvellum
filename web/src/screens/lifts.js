@@ -1,5 +1,5 @@
 import { artImg } from '../components/artImg.js';
-import { renderBodyMap } from '../components/bodyMap.js';
+import { workedBodyMapPair } from '../components/bodyMap.js';
 import { renderLineChart } from '../components/lineChart.js';
 import { renderVariationTable, formatPeak } from '../components/variationTable.js';
 import { exerciseUnit, formatLoad, formatWeight, formatSets, formatVolume, isAssistedMachine } from '../format.js';
@@ -44,8 +44,7 @@ function liftDetail(pane, lift, snapshot, router) {
   const chips = el('div', null, 'chips');
   for (const v of lift.variations) if (v.peak) { const chip = el('span', null, 'chip pr-tag'); chip.append(el('b', word('PR', 'concept_peak_u')), `${v.label} ${formatPeak(v.peak, liftUnit, lift.addsToBody, assisted, snapshot.unit ?? liftUnit)}`); chips.append(chip); }
   text.append(chips);
-  const map = el('div', null, 'analytics-body-map body-map-pair');
-  for (const view of ['front', 'back']) { const figure = el('div', null, 'body-map'); renderBodyMap(figure, { levels: lift.muscleLevels, figure: snapshot.profile?.figure, view, look: 'worked', names: snapshot.muscles }); map.append(figure); }
+  const map = workedBodyMapPair({ levels: lift.muscleLevels, figure: snapshot.profile?.figure, names: snapshot.muscles, className: 'analytics-body-map body-map-pair' });
   if (Object.keys(lift.muscleLevels || {}).length) header.append(frame, text, map); else header.append(frame, text);
   pane.append(header);
   const selected = new Set(lift.variations.map(v => v.key));

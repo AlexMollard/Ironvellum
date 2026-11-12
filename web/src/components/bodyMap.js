@@ -41,3 +41,13 @@ export function renderBodyMap(el, {levels={},view='front',figure='male',look='wo
   bindTips(map,'.body-region',region=>{const muscle=region.dataset.muscle;return {title:names[muscle]||tidy(muscle),value:describeLevel(look,levels[muscle]??(look==='coverage'?'none':0))};},{onShow:r=>mark(r,true),onHide:r=>mark(r,false)});
   return map;
 }
+
+/** Front and back worked maps, with the same interactive regions as individual maps. */
+export function workedBodyMapPair({levels, figure, names, className = 'body-map-pair'}) {
+  const pair = document.createElement('div'); pair.className = className;
+  for (const view of ['front', 'back']) {
+    const map = document.createElement('div'); map.className = 'body-map';
+    renderBodyMap(map, {levels, figure, view, look: 'worked', names}); pair.append(map);
+  }
+  return pair;
+}

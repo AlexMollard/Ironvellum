@@ -7,6 +7,7 @@ store listing; this is the whole list.
 
 ### Maintenance
 - Use one session-set projection for live logging, history and exports, preserving their existing ordering and recorded fields.
+- Render worked front/back body maps through one shared web component, keeping layout, labels and keyboard access unchanged.
 
 ### Rolling workout XP
 - Rank the Training board by workout XP earned in the rolling last seven days, with Lifetime XP still available in the metric picker.
