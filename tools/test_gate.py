@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gate  # noqa: E402
@@ -36,6 +37,22 @@ class FirstAttemptTest(unittest.TestCase):
 
     def test_missing_results_directory_is_empty_not_an_error(self):
         self.assertEqual(gate.keep_first_attempt(os.path.join(tempfile.mkdtemp(), "none"), tempfile.mkdtemp() + "/k"), [])
+
+
+class BudgetVerdictTest(unittest.TestCase):
+    def test_gate_verdict_changes_at_budget_boundary(self):
+        for elapsed, expected in ((gate.BUDGET_S - 0.01, 0), (gate.BUDGET_S, 1), (gate.BUDGET_S + 0.01, 1)):
+            with self.subTest(elapsed=elapsed), \
+                    patch.object(sys, "argv", ["gate.py", "--no-device"]), \
+                    patch.object(gate.time, "monotonic", side_effect=[0, elapsed]), \
+                    patch.object(gate, "gradle", return_value=(0, False, "unused")), \
+                    patch.object(gate, "failed_tasks", return_value=[]), \
+                    patch.object(gate.shutil, "which", return_value="npm"), \
+                    patch.object(gate, "run", return_value=0), \
+                    patch.object(gate, "counts", return_value=(1, 0)), \
+                    patch.object(gate, "declared_tests", return_value=1), \
+                    patch.object(gate, "lint_summary", return_value="0 errors, 0 warnings"):
+                self.assertEqual(expected, gate.main())
 
 
 if __name__ == "__main__":

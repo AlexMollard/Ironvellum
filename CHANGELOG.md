@@ -21,6 +21,7 @@ store listing; this is the whole list.
 - Keep adaptive launcher art without obsolete pre-Android-8 fallback icons.
 - Update Android tooling and dependencies, and make release lint fail on warnings.
 - Keep the web bonus-list read-only regression independent of the host's date format.
+- Fail the local gate when it reaches its seven-minute budget instead of reporting an over-budget run as green.
 
 ### Rolling workout XP
 - Rank the Training board by workout XP earned in the rolling last seven days, with Lifetime XP still available in the metric picker.

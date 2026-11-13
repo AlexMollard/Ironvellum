@@ -46,6 +46,11 @@ import device  # noqa: E402
 # Wall-clock budget for one gate; raised from 5 to 7 minutes by the owner on 2026-10-27 as the suite grew.
 BUDGET_S = 7 * 60
 
+
+def within_budget(elapsed: float) -> bool:
+    """The gate must finish strictly before its existing wall-clock limit."""
+    return elapsed < BUDGET_S
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ADB = os.path.join(
     os.environ.get("LOCALAPPDATA", ""), "Android", "Sdk", "platform-tools", "adb.exe"
@@ -410,7 +415,7 @@ def main() -> int:
     parser.add_argument("--no-device", action="store_true", help="skip instrumented tests")
     parser.add_argument("--backend", action="store_true", help="also assert the Supabase schema")
     args = parser.parse_args()
-    gate_started = time.time()
+    gate_started = time.monotonic()
 
     serial = None
     if not args.no_device:
@@ -447,7 +452,8 @@ def main() -> int:
         ready: dict[str, bool] = {}
         booting = None
         if serial:
-            booting = threading.Thread(target=lambda: ready.update(ok=revive(serial)))
+            # Always start the pinned resource profile before measuring the gate.
+            booting = threading.Thread(target=lambda: ready.update(ok=revive(serial, force=True)))
             booting.start()
         code1, _, log1 = gradle(stage1, serial, "build")
         if booting:
@@ -525,10 +531,11 @@ def main() -> int:
     print(f"  lint          {lint_summary(fl)}")
     if args.backend:
         print(f"  backend       {'FAILED' if 'backend' in failures else 'assertions passed'}")
-    took = time.time() - gate_started
-    print(f"  wall clock    {took // 60:.0f}m{took % 60:02.0f}s" + ("" if took < BUDGET_S else f"  !! over the {BUDGET_S // 60} minute budget"))
+    took = time.monotonic() - gate_started
+    minutes, seconds = divmod(int(took), 60)
+    print(f"  wall clock    {minutes}m{seconds:02d}s" + ("" if within_budget(took) else f"  !! over the {BUDGET_S // 60} minute budget"))
 
-    if failures or unit_failed or inst_failed or unit_short or inst_short:
+    if failures or unit_failed or inst_failed or unit_short or inst_short or not within_budget(took):
         print("\nGATE RED" + (f": {'; '.join(failures)}" if failures else ""))
         return 1
     print("\nGATE GREEN")

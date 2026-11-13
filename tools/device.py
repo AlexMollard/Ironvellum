@@ -40,8 +40,8 @@ ADB = SDK / "platform-tools" / "adb.exe"
 EMULATOR = SDK / "emulator" / "emulator.exe"
 AVD = "IronvellumEmu"
 PORT = "5554"
-# angle_indirect: measured 61s vs 70-185s (and degrading with use) for `host` on the same tests; see AGENTS.md.
-GPU = os.environ.get("IRONVELLUM_GPU", "angle_indirect")
+# Use hardware GLES with Vulkan off; bare host mode lost adb during the full suite.
+GPU = os.environ.get("IRONVELLUM_GPU", "host")
 APK = pathlib.Path("app/build/outputs/apk/foss/debug/app-foss-debug.apk")  # :app:assembleFossDebug
 PKG = "com.ironvellum.app"
 SHOTS = pathlib.Path(".tmp/shots")
@@ -124,9 +124,11 @@ def boot(timeout: int = 300) -> str:
     serial = f"emulator-{PORT}"
     env = dict(os.environ)
     env.setdefault("ANDROID_AVD_HOME", r"D:\caches\android-avd")
+    # SDK tooling can rewrite the cached AVD defaults; keep the measured gate profile.
     subprocess.Popen(
         [str(EMULATOR), "-avd", AVD, "-no-window", "-no-audio", "-no-boot-anim",
-         "-gpu", GPU, "-port", PORT, "-no-snapshot", "-camera-back", "none"],
+         "-gpu", GPU, "-feature", "-Vulkan", "-port", PORT, "-no-snapshot", "-camera-back", "none",
+         "-cores", "8", "-memory", "8192"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env,
         creationflags=0x00000008 | 0x00000200,  # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
     )

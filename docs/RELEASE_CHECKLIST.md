@@ -53,8 +53,9 @@ Use the non-cached release invocation above: the backend-validation task actions
 capture Gradle script objects and are not configuration-cache compatible.
 R8 minification and resource shrinking remain enabled.
 
-Latest verification (2026-11-12): `python3 tools/gate.py --backend` is
-**GATE GREEN**, without an instrumented retry:
+Pre-hardening baseline (2026-11-12), `python3 tools/gate.py --backend`: all
+checks passed without an instrumented retry, but the run missed its budget.
+The old summary incorrectly labelled it green; budget overruns now fail.
 
 - 2,865 unit tests, 832 instrumented tests and 374 web tests; zero failures.
 - Release lint: zero errors, 1,137 warnings. Web production build passes.
@@ -70,9 +71,10 @@ The app's read-only backend test returns schema 33. No backend switch was saved.
 The crash buffer stayed empty. Packaged serializers, launcher resources and both
 backup-exclusion rule files were checked in the release APK.
 
-The original release artifacts remain unsigned. This smoke does not verify Play
-signing, Google sign-in, Health Connect, or authenticated production sync/social
-flows. No release tag or GitHub release has been created.
+The original release artifacts remain unsigned. Play signing, Google sign-in
+and Health Connect were not exercised by this FOSS smoke. Authenticated production
+sync and social flows were subsequently verified below. No release tag or GitHub
+release has been created.
 
 Hardening update (2026-11-13): strict release lint reports zero findings. The
 fresh minified FOSS build also passed real production email signup, rejected
@@ -84,10 +86,20 @@ was unreadable before acceptance and returned 60 XP afterward. Recent and
 lifetime boards rendered independently, and authentication survived a cold restart.
 These checks ran on an isolated API 37 emulator; no owner account or phone was used.
 
+The approved manual Pages deployment
+[43344295930](https://github.com/AlexMollard/Ironvellum/actions/runs/43344295930)
+succeeded with all 374 web tests. The deployed `index-DhFkxaTg.js` was checked in
+an isolated signed-in browser: one workout, 60 XP, and a set displayed as
+88 lb (40 kg), 5 reps and 2 RIR. Recent and lifetime boards switched independently;
+the rolling board restored its 168-hour caption. No browser errors were observed.
+
+Both disposable accounts were then deleted through their own authenticated
+`delete_my_account` calls. Subsequent password sign-in returned
+`invalid_credentials`; their profiles, sessions, cloud archives and web snapshots
+contained zero owned rows. The isolated browser was signed out and closed.
+
 This does **not** clear the gate budget: the complete current gate must still
-finish below seven minutes before release. The published viewer also needs its
-approved manual deployment and authenticated check. The temporary accounts are
-retained only until that check, then deleted.
+finish below seven minutes before release.
 
 Target SDK remains 36 by Alex's explicit 1.11 decision. This meets the current
 [Play target-API requirement](https://developer.android.com/google/play/requirements/target-sdk);
