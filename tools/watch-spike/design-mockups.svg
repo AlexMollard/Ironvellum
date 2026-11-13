@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 650" role="img" aria-labelledby="title description">
+  <title id="title">Approved Ironvellum Wear OS concept screens</title>
+  <desc id="description">Six design concepts, not implemented watch screenshots: active set, load editor, rest and RPE, timed hold, stopped-time adjustment, and warm-up countdown.</desc>
+  <g font-family="sans-serif" text-anchor="middle" fill="var(--fg,currentColor)">
+    <g fill="var(--muted,currentColor)" font-size="15">
+      <text x="150" y="25">ACTIVE SET</text>
+      <text x="450" y="25">EDIT LOAD</text>
+      <text x="750" y="25">REST + EFFORT</text>
+      <text x="150" y="355">TIMED HOLD</text>
+      <text x="450" y="355">STOPPED · ADJUST</text>
+      <text x="750" y="355">WARM-UP</text>
+    </g>
+    <g fill="none" stroke="var(--border,currentColor)" stroke-width="3">
+      <circle cx="150" cy="165" r="115"/>
+      <circle cx="450" cy="165" r="115"/>
+      <circle cx="750" cy="165" r="115"/>
+      <circle cx="150" cy="495" r="115"/>
+      <circle cx="450" cy="495" r="115"/>
+      <circle cx="750" cy="495" r="115"/>
+    </g>
+    <text x="150" y="91" font-size="14" fill="var(--success,currentColor)">Connected</text>
+    <text x="150" y="120" font-size="21">Bench press</text>
+    <text x="150" y="143" font-size="14" fill="var(--muted,currentColor)">Set 2 of 4</text>
+    <text x="101" y="183" font-size="26">60 kg</text>
+    <text x="201" y="183" font-size="26">8 reps</text>
+    <g fill="none" stroke="var(--border,currentColor)">
+      <rect x="54" y="152" width="93" height="45" rx="12"/>
+      <rect x="154" y="152" width="93" height="45" rx="12"/>
+    </g>
+    <rect x="76" y="213" width="148" height="42" rx="21" fill="none" stroke="var(--accent,currentColor)" stroke-width="2"/>
+    <text x="150" y="240" font-size="17">Complete set ✓</text>
+    <text x="450" y="96" font-size="18">Bench · set 2</text>
+    <text x="450" y="121" font-size="14" fill="var(--muted,currentColor)">Weight · kg</text>
+    <text x="450" y="171" font-size="38">62.5</text>
+    <text x="379" y="172" font-size="29">−</text>
+    <text x="521" y="172" font-size="29">+</text>
+    <text x="450" y="198" font-size="14" fill="var(--muted,currentColor)">This set only</text>
+    <rect x="388" y="214" width="124" height="40" rx="20" fill="none" stroke="var(--accent,currentColor)" stroke-width="2"/>
+    <text x="450" y="240" font-size="17">Apply</text>
+    <text x="750" y="91" font-size="16">Rest</text>
+    <text x="750" y="134" font-size="39">1:24</text>
+    <text x="689" y="166" font-size="16">−15 s</text>
+    <text x="750" y="166" font-size="16">Skip</text>
+    <text x="811" y="166" font-size="16">+15 s</text>
+    <text x="750" y="196" font-size="14" fill="var(--muted,currentColor)">Set 1 · How hard? RPE</text>
+    <g font-size="16">
+      <text x="674" y="229">≤5</text><text x="705" y="229">6</text>
+      <text x="735" y="229">7</text><text x="765" y="229" fill="var(--accent,currentColor)">8</text>
+      <text x="795" y="229">9</text><text x="825" y="229">10</text>
+    </g>
+    <circle cx="765" cy="223" r="16" fill="none" stroke="var(--accent,currentColor)" stroke-width="2"/>
+    <text x="750" y="257" font-size="14" fill="var(--muted,currentColor)">Next: Bench · set 2</text>
+    <text x="150" y="420" font-size="21">Plank</text>
+    <text x="150" y="446" font-size="14" fill="var(--muted,currentColor)">Set 1 · target 45 seconds</text>
+    <text x="150" y="501" font-size="43">0:32</text>
+    <text x="150" y="527" font-size="14" fill="var(--muted,currentColor)">Elapsed</text>
+    <rect x="88" y="546" width="124" height="40" rx="20" fill="none" stroke="var(--accent,currentColor)" stroke-width="2"/>
+    <text x="150" y="572" font-size="17">Stop</text>
+    <text x="450" y="420" font-size="21">Plank</text>
+    <text x="450" y="447" font-size="14" fill="var(--muted,currentColor)">Actual time</text>
+    <text x="450" y="496" font-size="39">47 s</text>
+    <text x="378" y="496" font-size="23">−1</text>
+    <text x="522" y="496" font-size="23">+1</text>
+    <rect x="386" y="520" width="128" height="39" rx="19" fill="none" stroke="var(--accent,currentColor)" stroke-width="2"/>
+    <text x="450" y="546" font-size="17">Log set ✓</text>
+    <text x="450" y="584" font-size="15" fill="var(--muted,currentColor)">Discard</text>
+    <text x="750" y="420" font-size="20">Shoulder circles</text>
+    <text x="750" y="447" font-size="14" fill="var(--muted,currentColor)">Round 1 · right side</text>
+    <text x="750" y="499" font-size="43">0:18</text>
+    <text x="750" y="526" font-size="14" fill="var(--muted,currentColor)">Remaining</text>
+    <rect x="688" y="544" width="124" height="39" rx="19" fill="none" stroke="var(--accent,currentColor)" stroke-width="2"/>
+    <text x="750" y="570" font-size="17">Pause</text>
+  </g>
+</svg>

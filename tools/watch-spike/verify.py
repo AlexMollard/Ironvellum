@@ -13,12 +13,32 @@ ROOT = Path(__file__).resolve().parents[2]
 PROBE = Path(__file__).resolve().parent
 
 
+def _sdk_path(environment: dict[str, str]) -> Path:
+    configured = environment.get("ANDROID_HOME") or environment.get("ANDROID_SDK_ROOT")
+    if configured:
+        return Path(configured).expanduser()
+    if os.name == "nt" and environment.get("LOCALAPPDATA"):
+        return Path(environment["LOCALAPPDATA"]) / "Android/Sdk"
+    if sys.platform == "darwin":
+        return Path.home() / "Library/Android/sdk"
+    return Path.home() / "Android/Sdk"
+
+
 def main() -> None:
     env = os.environ.copy()
-    env.setdefault("ANDROID_HOME", str(Path(env["LOCALAPPDATA"]) / "Android/Sdk"))
+    sdk = _sdk_path(env)
+    env["ANDROID_HOME"] = str(sdk)
+    if "ANDROID_SDK_ROOT" in env:
+        env["ANDROID_SDK_ROOT"] = str(sdk)
+    suffix = ".exe" if os.name == "nt" else ""
+    aapt = sdk / "build-tools/36.0.0" / ("aapt2" + suffix)
+    if not aapt.is_file():
+        raise SystemExit("Set ANDROID_HOME to your SDK and install build-tools;36.0.0; see START-HERE.md")
     tasks = [f":probe:{task}{variant}" for variant in ("PhoneDebug", "WearDebug") for task in ("assemble", "lint")]
     tasks += [f":probe:test{variant}UnitTest" for variant in ("PhoneDebug", "WearDebug")]
-    command = [str(ROOT / "gradlew.bat"), "-p", str(PROBE), *tasks, "--console=plain", "--max-workers=2"]
+    wrapper = ROOT / ("gradlew.bat" if os.name == "nt" else "gradlew")
+    launcher = [str(wrapper)] if os.name == "nt" else ["sh", str(wrapper)]
+    command = [*launcher, "-p", str(PROBE), *tasks, "--console=plain", "--max-workers=2"]
     result = subprocess.run(command, cwd=ROOT, env=env, check=False)
     if result.returncode:
         raise SystemExit(result.returncode)
@@ -41,7 +61,6 @@ def main() -> None:
                     dex = archive.read(name)
                     for forbidden in (b"Lcom/google/android/gms/", b"Lcom/google/firebase/", b"Lcom/ironvellum/app/"):
                         assert forbidden not in dex, f"{apk.name}: unexpected production or proprietary classes: {forbidden!r}"
-        aapt = Path(env["ANDROID_HOME"]) / "build-tools/36.0.0/aapt2.exe"
         permissions = subprocess.run([str(aapt), "dump", "permissions", str(apk)], capture_output=True, text=True, check=True).stdout
         assert "android.permission.INTERNET" not in permissions, "probe unexpectedly declares internet access"
         assert "android.permission.BLUETOOTH_CONNECT" in permissions, "missing Bluetooth permission"

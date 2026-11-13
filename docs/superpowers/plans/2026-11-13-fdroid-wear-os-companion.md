@@ -570,3 +570,9 @@ Local prototype verification on 2026-11-13:
 - No real watch/phone radio link, watch-screen runtime, first pairing on hardware, background reliability, cross-brand compatibility, latency or energy result is established. The hardware gate is explicitly unpassed, as Alex requested while hardware is unavailable.
 
 Next gate: use a physical Galaxy Watch6 and Android phone with the separate probe packages, then a non-Samsung watch, to execute section 3.4 before any production coordinator/UI integration. The approved six-screen production designs have not been substituted with the diagnostic probe screen.
+
+### Cross-PC continuation
+
+Alex subsequently chose preparation only and requested a pushed handoff for another PC. Start with [`tools/watch-spike/START-HERE.md`](../../../tools/watch-spike/START-HERE.md); the [approved mockup board](../../../tools/watch-spike/design-mockups.svg) is saved alongside it. No probe was installed on the physical phone/watch and no watch developer setup was performed.
+
+The private phone backup stays outside Git and must be transferred separately through private storage. Its desktop archive/hash/database round trip passed; actual Android app restoration/launch remains deferred after the shared QA lock blocked the rehearsal. Do not turn that into a passed restore or hardware gate. The continuation guide distinguishes rebuilding the public prototype from handling the private recovery files.

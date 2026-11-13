@@ -4,6 +4,8 @@ This is phase-zero experimental software for the [approved companion plan](../..
 
 Alex approved the plan/designs on 2026-11-13 and explicitly chose to build/check the isolated prototype while real hardware is unavailable. First intended hardware target: Galaxy Watch6. Cross-brand coverage still requires a non-Samsung Wear OS watch and the plan's broader matrix.
 
+**Continuing on another PC:** start with [START-HERE.md](START-HERE.md). It covers prerequisites, building both APKs, private-backup transfer, Watch6 pairing and the still-unpassed hardware gate. Generated APKs and private backups are not committed; build the APKs on the new PC and transfer any backup separately through private storage.
+
 ## Isolation
 
 - Independent Gradle build under this directory; root settings and the production app are unchanged.
@@ -19,13 +21,15 @@ Native RFCOMM is an unsupported-by-Wear-guidance candidate, **not proven cross-b
 
 ## Build and checks
 
-From the repository root on this Windows workstation:
+From the repository root with Java 21, Python 3.10+ and the Android SDK installed:
 
 ```powershell
 python tools/watch-spike/verify.py
 ```
 
 The runner uses the repository's Gradle wrapper and version catalog, points at this independent build and selects both `phone` and `wear` debug variants. It builds, lints, runs actual JVM cryptographic/protocol tests, checks expected executed test counts and inspects both resulting APKs for proprietary/production classes and internet permission.
+
+The runner accepts `ANDROID_HOME` or `ANDROID_SDK_ROOT`, otherwise the standard Windows/macOS/Linux SDK location. It selects the host's Gradle wrapper and `aapt2` executable. The build/phone smoke was exercised on Windows; other host operating systems still need their first actual build. The shared `tools/device.py` emulator workflow below remains workstation-specific; it is not required for compiling or the manual physical-device experiment.
 
 Do not overlap this with the main local gate. To queue behind the shared emulator/build run and then smoke only the disposable phone package:
 
