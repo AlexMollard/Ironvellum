@@ -76,6 +76,25 @@ and Health Connect were not exercised by this FOSS smoke. Authenticated producti
 sync and social flows were subsequently verified below. No release tag or GitHub
 release has been created.
 
+Final artifact preparation (2026-11-13), source commit
+`8665e413c525a3d496eb7e3816c682ef03f0c125`: `assembleFossRelease`,
+`bundleFossRelease` and `lintFossRelease` all passed. The APK reports
+`com.ironvellum.app`, version 1.11/code 12 and target API 36. Release lint has zero
+findings; the APK's DEX files contain none of the prohibited Google proprietary
+package markers. The version-12 F-Droid notes contain 372 characters (limit 500).
+
+Prepared files and SHA-256 checksums:
+
+- `app/build/outputs/apk/foss/release/app-foss-release-unsigned.apk`
+  - `678d8b93a073a100ef0d101625e6177f98f710ce503c8dfc07203746d9dca8c2`
+- `app/build/outputs/bundle/fossRelease/app-foss-release.aab`
+  - `2bc4ce0496d8d3dee2dcfef28acc35695761a92d1cae293fbd1e904cd07af1d4`
+
+APK signature verification confirms the APK is unsigned; the AAB has no signing
+certificate. These are not directly installable/upload-ready signed releases.
+F-Droid builds and signs from an owner-approved tag. Preparation does not create
+that tag, publish a GitHub release or upload either artifact.
+
 Hardening update (2026-11-13): strict release lint reports zero findings. The
 fresh minified FOSS build also passed real production email signup, rejected
 wrong credentials, signed in again, synced a 40 kg × 5 workout worth 60 XP,
