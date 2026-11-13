@@ -98,6 +98,15 @@ Both disposable accounts were then deleted through their own authenticated
 `invalid_credentials`; their profiles, sessions, cloud archives and web snapshots
 contained zero owned rows. The isolated browser was signed out and closed.
 
+Complete follow-up verification (2026-11-13) passed all 2,865 unit, 832 instrumented
+and 374 web tests, with no instrumented skips, no lint findings and all backend
+assertions passed. The most recent complete run took 8m55s and correctly reported
+**GATE RED**. Its web/backend concurrency experiment did not improve the overall
+runtime and was reverted. Clock-batching, reduced-resolution and CPU-affinity
+experiments were also discarded; the gate retains the original full-resolution
+viewport, assertions and timing checks. Only the account fixture's SDK retry waits
+use virtual coroutine time; production retry behavior remains unchanged.
+
 This does **not** clear the gate budget: the complete current gate must still
 finish below seven minutes before release.
 

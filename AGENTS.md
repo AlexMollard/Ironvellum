@@ -33,7 +33,7 @@ python3 tools/gate.py --no-device  # no emulator: compiles instrumented instead
 
 It finishes in 3.5 to 4 minutes on this machine (3m36s and 3m51s measured after a source edit on a warm
 emulator, 3m58s with a cold boot in the run; 2026-10-16). The budget is 7 minutes (raised from 5 on 2026-10-27) and the
-summary prints the wall clock and flags a miss. It goes red when any test fails, and also when fewer tests
+summary prints the wall clock and goes red for a budget miss. It also goes red when any test fails or fewer tests
 ran than the sources declare: a test process that crashes on start reports zero tests and zero failures,
 which used to read as green.
 
@@ -42,6 +42,11 @@ alongside, verify 309s; the instrumented suite sums to 290s, led by TodayFitsTes
 TodaySwipeTest 16s, FontScaleSweepTest 14s), and `--backend` 5m27s on a warm emulator (verify 303s, the Postgres
 assertions overlap the web build inside the same window). Runs of 7m06s and 8m12s were taken while other builds
 shared the machine: run the gate alone.
+
+The figures above are historical, not 1.11 acceptance proof. The 2026-11-13 follow-up
+runs contain 832 instrumented tests and still miss the unchanged seven-minute budget.
+See `docs/RELEASE_CHECKLIST.md` for actual release evidence; passing test counts alone
+do not make the gate green.
 
 Earlier breakdown, phases of a warm run after an edit (379 instrumented, 2040 unit tests): build 10 to 20s, verify 206 to 211s.
 Verify is the instrumented task alone; unit tests, lint and the other flavour's assembles finish inside it, so
@@ -74,7 +79,7 @@ Emulator settings (the AVD config is outside the repo: `D:\caches\android-avd\Ir
 |---|---|
 | `hw.cpu.ncore` | 8 (the guest reports 6 CPUs) |
 | `hw.ramSize` / `vm.heapSize` | 8192 / 576 |
-| `hw.gpu.mode` | `angle_indirect`; `tools/device.py` also passes `-gpu angle_indirect` (override with `IRONVELLUM_GPU`) |
+| GPU | `tools/device.py` pins the supported `swangle` software backend via `-gpu` (override with `IRONVELLUM_GPU`); legacy `angle_indirect` is deprecated in the current SDK |
 | `fastboot.forceColdBoot` / `forceFastBoot` | `yes` / `no`; `firstboot.saveToLocalSnapshot` and `bootFromLocalSnapshot` are `no`; boot also passes `-no-snapshot` |
 | `hw.camera.back` / `hw.audioInput` / `hw.audioOutput` | `none` / `no` / `no` |
 

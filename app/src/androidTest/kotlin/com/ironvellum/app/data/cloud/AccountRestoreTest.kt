@@ -745,7 +745,7 @@ class AccountRestoreTest {
         }
     }
 
-    @Test fun retryableProfileFailureKeepsNewSessionAndCanRefreshWithoutCredentials() = runBlocking {
+    @Test fun retryableProfileFailureKeepsNewSessionAndCanRefreshWithoutCredentials() = runTest {
         for (serverFailure in listOf(false, true)) {
             val storage = MemorySessionManager(session())
             var profileReads = 0

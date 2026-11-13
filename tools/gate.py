@@ -452,8 +452,7 @@ def main() -> int:
         ready: dict[str, bool] = {}
         booting = None
         if serial:
-            # Always start the pinned resource profile before measuring the gate.
-            booting = threading.Thread(target=lambda: ready.update(ok=revive(serial, force=True)))
+            booting = threading.Thread(target=lambda: ready.update(ok=revive(serial)))
             booting.start()
         code1, _, log1 = gradle(stage1, serial, "build")
         if booting:
