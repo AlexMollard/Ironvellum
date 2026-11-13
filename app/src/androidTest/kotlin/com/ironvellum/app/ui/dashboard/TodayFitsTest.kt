@@ -136,7 +136,16 @@ class TodayFitsTest {
                 }
             }
         }
-        compose.mainClock.advanceTimeBy(500)
+        if (motion) {
+            compose.mainClock.advanceTimeBy(500)
+        } else {
+            // Semantics queries synchronize, so poll from the instrumentation thread.
+            compose.waitUntil(5_000) {
+                compose.mainClock.advanceTimeByFrame()
+                compose.onAllNodesWithTag("today").fetchSemanticsNodes().singleOrNull()
+                    ?.boundsInRoot?.let { it.width > 0f && it.height > 0f } == true
+            }
+        }
     }
 
     /** The node is shown once, whole, inside the Today box. */
@@ -157,14 +166,17 @@ class TodayFitsTest {
         compose.onAllNodesWithText(words, substring = true, useUnmergedTree = true).assertCountEquals(0)
     }
 
-    /** Saves the Today box to the app's external files dir as `<name>.png` for a human to look at; never fails a test. */
+    /** Opt-in human captures (`shots=true`); layout and motion assertions always run. */
     private fun saveShot(name: String) {
+        if (androidx.test.platform.app.InstrumentationRegistry.getArguments().getString("shots") != "true") return
+        val autoAdvance = compose.mainClock.autoAdvance
         runCatching {
-            compose.mainClock.autoAdvance = true
+            compose.mainClock.autoAdvance = false
             val image = compose.onNodeWithTag("today").captureToImage()
             val dir = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null)
             java.io.File(dir, "$name.png").outputStream().use { image.asAndroidBitmap().compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
         }
+        compose.mainClock.autoAdvance = autoAdvance
     }
 
     private fun assertDoesNotScroll() = compose.onAllNodes(hasScrollAction()).assertCountEquals(0)

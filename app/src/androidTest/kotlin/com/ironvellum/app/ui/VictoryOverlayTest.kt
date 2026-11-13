@@ -128,6 +128,7 @@ class VictoryOverlayTest {
         assertEquals(0, count("Skip to summary"))
         compose.onNodeWithText("Wear title").performClick()
         assertEquals(deed.id, worn)
+        compose.mainClock.advanceTimeByFrame()
         compose.onNodeWithText("Wearing ✓").assertExists()
         compose.onNodeWithText("Continue").performClick()
         assertEquals(1, continued)

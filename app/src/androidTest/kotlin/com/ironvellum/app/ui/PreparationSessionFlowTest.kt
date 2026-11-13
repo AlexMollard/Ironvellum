@@ -36,7 +36,7 @@ class PreparationSessionFlowTest {
     }
     private fun check() = compose.onNode(hasContentDescription(text(R.string.preparation_complete_unit), substring = true))
     private fun awaitCheck() {
-        compose.waitUntil(10000) { driver.settle(); compose.onAllNodes(hasContentDescription(text(R.string.preparation_complete_unit), substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10000) { compose.mainClock.advanceTimeByFrame(); compose.onAllNodes(hasContentDescription(text(R.string.preparation_complete_unit), substring = true)).fetchSemanticsNodes().isNotEmpty() }
     }
     private fun offerMenu() { compose.onNodeWithContentDescription(text(R.string.preparation_actions)).performClick(); driver.settle() }
     private fun typedLoad() = SemanticsMatcher("type load action") {
@@ -131,7 +131,7 @@ class PreparationSessionFlowTest {
             open(id)
             driver.awaitText("Assisted Pull-up")
             compose.waitUntil(10000) {
-                driver.settle()
+                compose.mainClock.advanceTimeByFrame()
                 compose.onAllNodes(typedLoad()).fetchSemanticsNodes().isNotEmpty()
             }
             openLoadDialog()
@@ -191,7 +191,9 @@ class PreparationSessionFlowTest {
                 return result
             }
             fun expectAwake(expected: Boolean) {
-                compose.waitUntil(10000) { driver.settle(); awake() == expected }
+                // The clock drives navigation, but the window flag is set asynchronously.
+                // Advance frames while waiting for the flag itself.
+                compose.waitUntil(10000) { compose.mainClock.advanceTimeByFrame(); awake() == expected }
                 assertEquals(expected, awake())
             }
             fun startHold() {
@@ -199,7 +201,7 @@ class PreparationSessionFlowTest {
                 driver.click(app.getString(R.string.timedset_start_button))
                 driver.awaitText(app.getString(R.string.timedset_stop_button))
                 compose.waitUntil(10000) {
-                    driver.settle()
+                    compose.mainClock.advanceTimeByFrame()
                     compose.onAllNodes(hasContentDescription("elapsed, target", substring = true)).fetchSemanticsNodes().isNotEmpty()
                 }
             }

@@ -229,12 +229,16 @@ class AccessibilityChecksTest {
         // an immediate back press here exited the app outright and every later
         // assertion died with "no compose hierarchies". Let the bar appear
         // before concluding we are lost inside a sub-surface.
-        repeat(8) {
+        for (attempt in 0 until 8) {
             if (compose.onAllNodesWithContentDescription("Today")
                     .fetchSemanticsNodes().isNotEmpty()
             ) {
                 return
             }
+            // A ready pushed page already has a back control; startup is the only reason to wait here.
+            if (compose.onAllNodesWithContentDescription("Back").fetchSemanticsNodes().isNotEmpty() ||
+                compose.onAllNodesWithContentDescription("Back to", substring = true).fetchSemanticsNodes().isNotEmpty()
+            ) break
             compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
         }
         repeat(4) {

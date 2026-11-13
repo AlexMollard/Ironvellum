@@ -224,14 +224,36 @@ class FontScaleSweepTest {
             whole("${Words.seal.c} anyway")
             driver.click("${Words.seal.c} anyway")
             for (page in 1..12) {
-                val advance = runCatching {
+                val observed = runCatching {
                     driver.awaitAnyText(attempts = 20) { label -> advanceLabels.any { label.equals(it, ignoreCase = true) } }
                 }.getOrNull() ?: break
-                runCatching { whole(advance) }.onFailure { failures += "[finish-$page] ${it.message ?: it}" }
+                runCatching { whole(observed) }.onFailure { failures += "[finish-$page] ${it.message ?: it}" }
                 ShotRecorder.take(compose, "fontscale-finish-$page")
-                driver.click(advance)
+                // Capture advances the clock, so reselect without dropping the earlier action's layout check.
+                val advance = awaitVisibleAdvance()
+                if (advance != observed) {
+                    runCatching { whole(advance) }.onFailure { failures += "[finish-$page] ${it.message ?: it}" }
+                }
+                compose.onAllNodes(hasText(advance) and hasClickAction()).onFirst()
+                    .performSemanticsAction(SemanticsActions.OnClick)
+                driver.settle()
             }
         }.onFailure { failures += "[finish] ${it.message ?: it}" }
+    }
+
+    private fun awaitVisibleAdvance(): String {
+        repeat(20) {
+            val label = driver.allText().firstOrNull { text ->
+                advanceLabels.any { text.equals(it, ignoreCase = true) } &&
+                    runCatching {
+                        compose.onAllNodes(hasText(text) and hasClickAction()).onFirst().assertIsDisplayed()
+                    }.isSuccess
+            }
+            if (label != null) return label
+            compose.mainClock.advanceTimeBy(1_200)
+            Thread.sleep(100)
+        }
+        error("No visible finish action; on screen: ${driver.allText()}")
     }
 
     /** Runs one screen's checks, saves its picture, and records instead of throwing, so the sweep goes on. */

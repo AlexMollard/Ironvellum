@@ -88,9 +88,11 @@ class ApprovedArtRenderTest {
                 }
                 assertTrue("$name rendered no readable strokes", visible > 20)
             }
-            val image = snapshot.asAndroidBitmap()
-            val dir = InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null)
-            File(dir, "$prefix-$index.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            if (InstrumentationRegistry.getArguments().getString("shots") == "true") {
+                val image = snapshot.asAndroidBitmap()
+                val dir = InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null)
+                File(dir, "$prefix-$index.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            }
         }
     }
 

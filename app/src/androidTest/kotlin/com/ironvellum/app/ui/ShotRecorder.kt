@@ -48,12 +48,9 @@ object ShotRecorder {
         compose.mainClock.autoAdvance = true
         compose.mainClock.advanceTimeBy(1000)
         // A perpetually animated screen never idles with auto-advance enabled.
-        if (enabled) compose.mainClock.autoAdvance = false
+        compose.mainClock.autoAdvance = false
         compose.waitForIdle()
-        if (!enabled) {
-            compose.mainClock.autoAdvance = false
-            return
-        }
+        if (!enabled) return
         Thread.sleep(1200)
         // A screen that has dimmed or slept photographs as the wallpaper under a scrim, not as the app.
         shell("svc power stayon true")
@@ -72,7 +69,6 @@ object ShotRecorder {
         file.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
         shell("cp ${file.absolutePath} $DIR/$name.png")
         file.delete()
-        compose.mainClock.autoAdvance = false
     }
 
     private fun shell(command: String) {

@@ -17,12 +17,15 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.Units
+import com.ironvellum.app.domain.LoadUnit
 import com.ironvellum.app.domain.PeriodReview
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,9 +44,31 @@ class ReviewScreenTest {
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
     private val app get() = context.applicationContext as IronvellumApp
 
+    private val exercises = listOf("Back Squat", "Barbell Row", "Bench Press", "Overhead Press", "Weighted Pull-up", "Front Squat")
+    private var previousUnit: String? = null
+    private lateinit var previousOverrides: Map<String, LoadUnit?>
+
+    @Before
+    fun useKilograms() {
+        compose.runOnUiThread {
+            Units.init(context)
+            previousUnit = context.getSharedPreferences("appearance", 0).getString("loadUnit", null)
+            previousOverrides = exercises.associateWith(Units::overrideFor)
+            Units.set(context, LoadUnit.KG)
+            exercises.forEach { Units.setExercise(context, it, LoadUnit.KG) }
+        }
+    }
+
     @After
     fun themedAgain() {
         Words.setThemed(app, true)
+        compose.runOnUiThread {
+            previousOverrides.forEach { (exercise, unit) -> Units.setExercise(context, exercise, unit) }
+            val editor = context.getSharedPreferences("appearance", 0).edit()
+            if (previousUnit == null) editor.remove("loadUnit") else editor.putString("loadUnit", previousUnit)
+            editor.apply()
+            Units.init(context)
+        }
     }
 
     private fun mode(themed: Boolean) {

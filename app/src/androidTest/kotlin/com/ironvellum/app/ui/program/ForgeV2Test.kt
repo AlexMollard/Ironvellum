@@ -43,7 +43,7 @@ import org.junit.runner.RunWith
  * Phase 1 of the Forge redesign, end to end where it matters and on the stateless pages where a state is
  * hard to reach: the three-step form keeps its answers, Apply cannot be pressed while saving or after a
  * failure, coverage says its state in words, heavy appears and can be dismissed, and a days clash asks first.
- * Each test also saves a picture to the app's files dir for a human to look at.
+ * Each test can also save pictures to the app's files dir for a human to look at with `shots=true`.
  */
 @RunWith(AndroidJUnit4::class)
 class ForgeV2Test {
@@ -91,13 +91,18 @@ class ForgeV2Test {
 
     /** Best effort, like the dialog shots: a missed redraw must not fail the assertions beside it. */
     private fun shot(name: String) {
-        compose.mainClock.autoAdvance = true
-        val image = runCatching { compose.onRoot().captureToImage() }.getOrNull()
-        if (image != null) {
-            val dir = InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null)
-            File(dir, "$name.png").outputStream().use { image.asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it) }
+        if (InstrumentationRegistry.getArguments().getString("shots") != "true") return
+        val autoAdvance = compose.mainClock.autoAdvance
+        try {
+            compose.mainClock.autoAdvance = true
+            val image = runCatching { compose.onRoot().captureToImage() }.getOrNull()
+            if (image != null) {
+                val dir = InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null)
+                File(dir, "$name.png").outputStream().use { image.asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it) }
+            }
+        } finally {
+            compose.mainClock.autoAdvance = autoAdvance
         }
-        compose.mainClock.autoAdvance = false
     }
 
     private fun stateNodes(state: String) = compose.onAllNodes(

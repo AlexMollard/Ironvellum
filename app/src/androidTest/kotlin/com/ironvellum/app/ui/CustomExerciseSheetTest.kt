@@ -81,10 +81,16 @@ class CustomExerciseSheetTest {
         // Scroll actions await frames; ShotRecorder pauses the clock after its capture.
         compose.mainClock.autoAdvance = true
     }
-    private fun role(muscle: Muscle, level: Int) = compose.onNode(
+    private fun roleMatcher(muscle: Muscle, level: Int) =
         hasContentDescription(text(R.string.muscles_selector_role_description, muscle.label, text(level))) and
-            hasAnyAncestor(hasAnyDescendant(hasContentDescription(text(R.string.muscles_selector_search)))),
-    )
+            hasAnyAncestor(hasAnyDescendant(hasContentDescription(text(R.string.muscles_selector_search))))
+    private fun role(muscle: Muscle, level: Int) = compose.onNode(roleMatcher(muscle, level))
+    private fun awaitNode(matcher: SemanticsMatcher) {
+        compose.waitUntil(10_000) {
+            compose.mainClock.advanceTimeByFrame()
+            compose.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
 
     private fun assertReadableTitle(id: Int) {
         val layouts = ArrayList<TextLayoutResult>()
@@ -117,10 +123,17 @@ class CustomExerciseSheetTest {
                 ExercisePickerSheet(exercises = listOf(exercise), onPick = {}, onDismiss = {}, defaultMyGear = false)
             }
         }
-        driver.settle()
+        awaitNode(hasContentDescription(text(R.string.picker_row_about_description, NAME)))
         compose.onAllNodesWithContentDescription(text(R.string.picker_row_about_description, NAME)).onFirst().performClick()
-        driver.settle()
         val inInfo = hasAnyAncestor(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, NAME))
+        compose.waitUntil(10_000) {
+            compose.mainClock.advanceTimeByFrame()
+            runCatching {
+                compose.onNode(hasText(text(R.string.infosheet_close_button)) and inInfo).assertIsDisplayed()
+                compose.onNode(hasText(text(R.string.infosheet_edit_button)) and inInfo).assertIsDisplayed()
+                compose.onNode(hasText(text(R.string.picker_confirm_add)) and inInfo).assertIsDisplayed()
+            }.isSuccess
+        }
         compose.onNode(hasText(text(R.string.infosheet_close_button)) and inInfo).assertIsDisplayed()
         compose.onNode(hasText(text(R.string.infosheet_edit_button)) and inInfo).assertIsDisplayed()
         compose.onNode(hasText(text(R.string.picker_confirm_add)) and inInfo).assertIsDisplayed()
@@ -131,7 +144,7 @@ class CustomExerciseSheetTest {
 
     @Test fun createAndEditPersistChoicesAndMuscleRoles() = runBlocking {
         compose.setContent { IronvellumTheme { Form() } }
-        driver.settle()
+        awaitNode(hasText(text(R.string.customex_save_new_button)))
         compose.onNodeWithText(text(R.string.customex_save_new_button)).assertIsNotEnabled()
         compose.onNodeWithContentDescription(text(R.string.customex_name_label)).performClick().assertIsFocused()
         click(R.string.customex_type_label)
@@ -155,10 +168,10 @@ class CustomExerciseSheetTest {
         click(R.string.common_done)
         val offLine = text(R.string.muscles_selector_line, Muscle.SIDE_DELTS.label, text(R.string.muscles_level_off))
         compose.onAllNodesWithContentDescription(offLine, substring = true).onFirst().performScrollTo().performTouchInput { click(center) }
-        driver.settle()
         val assistLine = text(R.string.muscles_selector_line, Muscle.SIDE_DELTS.label, text(R.string.muscles_level_assist))
+        awaitNode(hasContentDescription(assistLine, substring = true))
         compose.onAllNodesWithContentDescription(assistLine, substring = true).onFirst().performScrollTo().performTouchInput { click(center) }
-        driver.settle()
+        awaitNode(hasContentDescription(text(R.string.muscles_selector_line, Muscle.SIDE_DELTS.label, text(R.string.muscles_level_main)), substring = true))
         compose.onNodeWithText(text(R.string.muscles_selector_by_name)).performScrollTo()
         click(R.string.muscles_selector_by_name)
         shot("muscle-picker")
@@ -166,12 +179,12 @@ class CustomExerciseSheetTest {
         driver.settle()
         role(Muscle.FRONT_DELTS, R.string.muscles_level_assist).performScrollTo().performClick()
         role(Muscle.REAR_DELTS, R.string.muscles_level_main).performScrollTo().performClick()
-        driver.settle()
+        awaitNode(roleMatcher(Muscle.REAR_DELTS, R.string.muscles_level_main) and isSelected())
         role(Muscle.REAR_DELTS, R.string.muscles_level_main).assertIsSelected()
         role(Muscle.REAR_DELTS, R.string.muscles_level_off).assertIsNotSelected()
         shot("muscle-search")
         role(Muscle.REAR_DELTS, R.string.muscles_level_off).performScrollTo().performClick()
-        driver.settle()
+        awaitNode(roleMatcher(Muscle.REAR_DELTS, R.string.muscles_level_off) and isSelected())
         role(Muscle.REAR_DELTS, R.string.muscles_level_off).assertIsSelected()
         click(R.string.inkpicker_close_button)
         shot("muscles")
@@ -184,7 +197,7 @@ class CustomExerciseSheetTest {
         assertEquals(mapOf(Muscle.SIDE_DELTS to 1.0, Muscle.FRONT_DELTS to 0.5), made.shares)
         assertTrue(made.isWeighted)
         compose.runOnIdle { editing = made; saved = null; open = true }
-        driver.settle()
+        awaitNode(hasText(text(R.string.customex_save_edit_button)))
         shot("form")
         click(R.string.customex_needs_label)
         driver.click(CustomNeed.NOTHING.label)
@@ -251,7 +264,7 @@ class CustomExerciseSheetTest {
             compose.onNodeWithContentDescription(text(R.string.muscles_selector_search)).performTextInput(Muscle.FRONT_DELTS.label)
             driver.settle()
             role(Muscle.FRONT_DELTS, R.string.muscles_level_main).performScrollTo().performClick()
-            driver.settle()
+            awaitNode(roleMatcher(Muscle.FRONT_DELTS, R.string.muscles_level_main) and isSelected())
             assertReadableTitle(R.string.customex_muscles_label)
             role(Muscle.FRONT_DELTS, R.string.muscles_level_main).assertIsSelected()
             shot("picker-${width}-${font}")
