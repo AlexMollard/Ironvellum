@@ -2390,12 +2390,18 @@
     <string name="optimise_heavy_label">過多</string>
     <string name="optimise_recovery_label">開始時に疲労</string>
     <string name="optimise_recovery_title">%1$sは%2$sが疲れたまま始まることが続いています</string>
-    <string name="optimise_recovery_detail">直近%2$d回の開始時のうち%1$d回で高</string>
-    <string name="optimise_recovery_subline">%1$s：直近%3$d回の開始時のうち%2$d回で高</string>
+    <plurals name="optimise_recovery_detail">
+        <item quantity="other">直近%2$d回の開始時のうち%1$d回で高</item>
+    </plurals>
+    <plurals name="optimise_recovery_subline">
+        <item quantity="other">%1$s：直近%3$d回の開始時のうち%2$d回で高</item>
+    </plurals>
     <string name="optimise_recovery_subtitle">開始時に%1$sがまだ疲労</string>
     <string name="optimise_recovery_open_label">%1$sの回復状況を開く</string>
     <string name="optimise_recovery_description">%1$sは疲れた状態で始まります。%2$s</string>
-    <string name="optimise_recovery_intro">%1$sの開始時、直近%3$d回中%2$d回で疲労が高以上でした。変更を選ぶか、そのままにしてください。</string>
+    <plurals name="optimise_recovery_intro">
+        <item quantity="other">%1$sの開始時、直近%3$d回中%2$d回で疲労が高以上でした。変更を選ぶか、そのままにしてください。</item>
+    </plurals>
     <string name="optimise_recovery_starts_label">開始時の状態</string>
     <string name="optimise_recovery_cause">主な原因は%2$sの%1$s（%3$s）です。</string>
     <string name="optimise_recovery_cause_free">主な原因は%1$sのワークアウト（%2$s）です。</string>
@@ -2492,7 +2498,6 @@
     <string name="coverage_week_state_none">なし</string>
     <string name="coverage_week_legend_to">%1$d+まで</string>
     <string name="coverage_week_caption">今週（月〜日）：これまでの実績とプランの残りの予定</string>
-    <string name="coverage_week_caption__t">今週（月〜日）：これまでの実績と周期の残りの予定</string>
     <string name="coverage_week_sets_done">%1$s完了</string>
     <string name="coverage_week_sets_planned">%1$s予定</string>
     <string name="coverage_week_sets_both">%1$s 完了 + %2$s 予定</string>
@@ -2538,9 +2543,6 @@
         <item quantity="other">儀礼を開いて曜日を設定</item>
     </plurals>
     <string name="coverage_covered_empty">あらゆる筋肉をカバー</string>
-    <plurals name="coverage_covered_count">
-        <item quantity="other">%1$d部位をカバー</item>
-    </plurals>
     <string name="coverage_covered_hide_hint">カバー済みの筋肉を非表示</string>
     <string name="coverage_covered_show_hint">カバー済みの筋肉を表示</string>
     <string name="coverage_by_exercise_label">種目別</string>
@@ -2809,9 +2811,15 @@
     <string name="progression_climb_reps">目標達成：%1$dレップを目指す</string>
     <string name="progression_add_drop">目標達成：%1$sを追加し、%2$dレップに減らす</string>
     <string name="progression_ceiling_add">レップ数の上限に到達：%1$sを追加し、%2$dレップに戻す</string>
-    <string name="progression_assistance_less">補助重量を%1$sに減らし、%2$dレップに戻す</string>
-    <string name="progression_assistance_deload">補助重量を%1$sに増やし、%2$dレップに戻す</string>
-    <string name="progression_assistance_reps">補助重量を維持して%1$dレップを目指す</string>
+    <plurals name="progression_assistance_less">
+        <item quantity="other">補助重量を%1$sに減らし、%2$dレップに戻す</item>
+    </plurals>
+    <plurals name="progression_assistance_deload">
+        <item quantity="other">補助重量を%1$sに増やし、%2$dレップに戻す</item>
+    </plurals>
+    <plurals name="progression_assistance_reps">
+        <item quantity="other">補助重量を維持して%1$dレップを目指す</item>
+    </plurals>
     <string name="progression_assistance_zero">補助重量はもうありません。準備ができたら難しいバリエーションへ</string>
     <string name="session_suggestion_less_assistance">補助を減らす：%1$s × %2$d</string>
     <string name="session_suggestion_more_assistance">補助を増やす：%1$s × %2$d</string>
@@ -3446,7 +3454,7 @@
     <string name="stats_drill_from_reading__t">体脂肪率を含む最新の記（%1$s）から算出。</string>
     <string name="stats_add_weight_label">体重（kg）</string>
     <string name="stats_add_weight_error">体重は%1$d〜%2$d kgで入力してください。</string>
-    <string name="stats_add_body_fat_label">体脂肪率 % （任意）</string>
+    <string name="stats_add_body_fat_label">体脂肪率 (%)（任意）</string>
     <string name="stats_add_body_fat_error">体脂肪率は%1$d〜%2$d%%で入力するか、空欄にしてください。</string>
     <string name="stats_add_height_hint">身長を設定するとBMIとFFMIを使えます。</string>
     <string name="stats_add_set_height">身長を設定</string>
@@ -4504,7 +4512,9 @@
     <string name="cloud_workout_xp_needs_schema">直近のワークアウトXPランキングにはクラウドスキーマ33が必要です。最新のデータベース更新を適用してください。累計XPランキングは引き続き使えます。</string>
     <string name="cloud_workout_xp_needs_schema__t">直近の試練XPランキングにはクラウドスキーマ33が必要です。最新のデータベース更新を適用してください。累計XPランキングは引き続き使えます。</string>
     <string name="cloud_sync_web_snapshot_failed">Web統計を同期できませんでした: %1$s</string>
-    <string name="cloud_sync_web_snapshot_too_large">Web統計が大きすぎるため同期できません（%1$dバイト）。</string>
+    <plurals name="cloud_sync_web_snapshot_too_large">
+        <item quantity="other">Web統計が大きすぎるため同期できません（%1$dバイト）。</item>
+    </plurals>
     <string name="cloud_sync_tiers_failed">リフトの階級を同期できませんでした: %1$s</string>
     <string name="cloud_sync_tiers_failed__t">リフトの位階を同期できませんでした: %1$s</string>
     <string name="cloud_sync_trial_hidden">このワークアウトは閲覧できません</string>
@@ -4771,7 +4781,6 @@
     <string name="cloud_account_signup_no_profile">アカウントは作成されましたが、プロフィールを読み込めませんでした — 再度サインインしてください</string>
     <string name="cloud_account_signin_no_profile">サインインしましたが、プロフィールを読み込めませんでした — 再試行してください</string>
     <string name="cloud_account_reset_no_profile">パスワードは変更されましたが、プロフィールを読み込めませんでした — 再度サインインしてください</string>
-    <string name="cloud_account_google_no_user">Googleサインインでユーザーが返されませんでした</string>
     <string name="cloud_account_google_no_profile">Googleでサインインしましたが、プロフィールを読み込めませんでした — 再試行してください</string>
     <string name="cloud_account_claim_signed_out">表示名を取得するにはサインインしてください</string>
     <string name="cloud_account_claim_signed_out__t">真の名を得るにはサインインしてください</string>
@@ -5515,8 +5524,6 @@
     <string name="fatigue_advice_projected">予測</string>
     <string name="fatigue_advice_sub">%1$s・%2$s</string>
     <string name="fatigue_advice_adjust_button">調整</string>
-    <string name="fatigue_advice_adjust_description">今日のワークアウトを調整します。%1$s</string>
-    <string name="fatigue_advice_adjust_description__t">本日の試練を整えます。%1$s</string>
     <string name="fatigue_adjust_title">今日の調整</string>
     <string name="fatigue_adjust_caption">%1$sは%3$sの影響でまだ%2$sです。今日のワークアウトだけを変更し、%4$sはそのままです。</string>
     <string name="fatigue_adjust_caption__t">%1$sは%3$sの余波でまだ%2$sです。本日の試練だけを変え、%4$sはそのまま残ります。</string>

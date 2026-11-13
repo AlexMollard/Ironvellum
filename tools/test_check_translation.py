@@ -121,6 +121,26 @@ class CheckerTest(unittest.TestCase):
         errors += ct.check_bools(d, self.english, tr)
         self.assertTrue(any("set it true" in e for e in errors), errors)
 
+    def test_million_quantity_is_required_and_accepted_in_supported_romance_locales(self):
+        english = {"count": ct.Entry("count", None, {"one": "%d set", "other": "%d sets"}, True)}
+        for code, singular, plural in (
+            ("es", "serie", "series"),
+            ("fr", "série", "séries"),
+            ("pt-rBR", "série", "séries"),
+        ):
+            with self.subTest(locale=code):
+                translated = ct.Entry(
+                    "count", None, {"one": f"%d {singular}", "other": f"%d {plural}"}, True,
+                )
+                errors, _ = ct.check(english, {"count": translated}, code)
+                self.assertTrue(any("plural quantities for count" in error for error in errors), errors)
+                translated.items["many"] = f"%d {plural}"
+                errors, _ = ct.check(english, {"count": translated}, code)
+                self.assertEqual([], errors)
+                translated.items["many"] = f"%s {plural}"
+                errors, _ = ct.check(english, {"count": translated}, code)
+                self.assertTrue(any("placeholders for count[many]" in error for error in errors), errors)
+
     def test_long_button_is_a_warning_not_an_error(self):
         d, tr = self.write_translation(
             """<resources>

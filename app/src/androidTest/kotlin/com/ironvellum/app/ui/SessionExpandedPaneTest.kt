@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -20,6 +21,13 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.R
@@ -37,6 +45,8 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import com.ironvellum.app.ui.train.SessionScreen
 import com.ironvellum.app.ui.train.SessionViewModel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -53,6 +63,15 @@ class SessionExpandedPaneTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private lateinit var db: IronvellumDatabase
     private lateinit var repo: Repository
+    private val owner = object : ViewModelStoreOwner {
+        override val viewModelStore = ViewModelStore()
+    }
+    private val sessionModel = lazy {
+        ViewModelProvider(owner, viewModelFactory {
+            initializer { SessionViewModel(repo, context, sessionId, SavedStateHandle()) }
+        })["session", SessionViewModel::class.java]
+    }
+    private val showContent = mutableStateOf(true)
     private var sessionId = 0L
     private var oldEffort = false
     private lateinit var oldScale: EffortScale
@@ -85,6 +104,13 @@ class SessionExpandedPaneTest {
 
     @After
     fun tearDown() {
+        if (sessionModel.isInitialized()) {
+            compose.mainClock.autoAdvance = true
+            compose.runOnUiThread { showContent.value = false }
+            compose.waitForIdle()
+            runBlocking { sessionModel.value.viewModelScope.coroutineContext.job.cancelAndJoin() }
+        }
+        compose.runOnUiThread { owner.viewModelStore.clear() }
         TrialPrefs(context).apply {
             restOff = oldRestOff
             setRestOffFor("Dip", oldDipRestOff)
@@ -99,21 +125,23 @@ class SessionExpandedPaneTest {
     // measures as the requested dp width. This exercises both branches without an
     // oversized child clipped to a phone's physical window.
     private fun showSession(widthDp: Float) {
-        val vm = SessionViewModel(repo, context, sessionId)
+        val vm = sessionModel.value
         val paneLight = InstrumentationRegistry.getArguments().getString("paneLight") == "true"
         compose.setContent {
-            val window = LocalWindowInfo.current
-            val density = Density(window.containerSize.width / widthDp, fontScale = 1f)
-            CompositionLocalProvider(LocalDensity provides density) {
-                if (paneLight) {
-                    IronvellumTheme(light = true) {
+            if (showContent.value) {
+                val window = LocalWindowInfo.current
+                val density = Density(window.containerSize.width / widthDp, fontScale = 1f)
+                CompositionLocalProvider(LocalDensity provides density) {
+                    if (paneLight) {
+                        IronvellumTheme(light = true) {
+                            Box(Modifier.fillMaxSize().background(IronvellumColors.Abyss)) {
+                                SessionScreen(sessionId, onExit = {}, onSealed = {}, viewModel = vm)
+                            }
+                        }
+                    } else {
                         Box(Modifier.fillMaxSize().background(IronvellumColors.Abyss)) {
                             SessionScreen(sessionId, onExit = {}, onSealed = {}, viewModel = vm)
                         }
-                    }
-                } else {
-                    Box(Modifier.fillMaxSize().background(IronvellumColors.Abyss)) {
-                        SessionScreen(sessionId, onExit = {}, onSealed = {}, viewModel = vm)
                     }
                 }
             }

@@ -103,7 +103,7 @@ fun DeedsBoard(
     sex: Sex,
     // The caller supplies the height bound: this list is the scroll container,
     // so it must never be handed infinite height by a scrolling parent.
-    modifier: Modifier = Modifier.fillMaxSize(),
+    modifier: Modifier = Modifier,
 ) {
     val earnedIds = remember(unlocked) { unlocked.keys.toSet() }
     val progressOf = remember(ledger, Words.themed) {
@@ -133,7 +133,7 @@ fun DeedsBoard(
             listState = homeState,
             onOpenCategory = { openCategory = it },
             onOpenDeed = { sheetId = it },
-            modifier = modifier,
+            modifier = modifier.fillMaxSize(),
         )
     } else {
         CategoryScreen(
@@ -145,7 +145,7 @@ fun DeedsBoard(
             sex = sex,
             onBack = { openCategory = null },
             onOpenDeed = { sheetId = it },
-            modifier = modifier,
+            modifier = modifier.fillMaxSize(),
         )
     }
 

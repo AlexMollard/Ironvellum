@@ -437,7 +437,7 @@ internal fun recoveryRites(input: OptimiseInput): List<RecoveryRite> {
                 id = listOf("recovery", finding.presetId, finding.muscle.name).joinToString(":"),
                 kind = OptKind.RECOVERY,
                 title = Words.text(UiText.res(R.string.optimise_recovery_title, finding.rite, finding.muscle.label.lowercase())),
-                detail = Words.text(UiText.res(R.string.optimise_recovery_detail, finding.tiredStarts, finding.starts.size)),
+                detail = Words.text(UiText.plural(R.plurals.optimise_recovery_detail, finding.starts.size, finding.tiredStarts, finding.starts.size)),
                 rite = finding.rite,
                 options = options,
             ),

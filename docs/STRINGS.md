@@ -248,3 +248,10 @@ from localized copy; a source-literal count cannot distinguish them reliably.
 string holds two numbers, the quantity is the one the noun agrees with ("%1$d of %2$d sets": the total). A string whose
 number is not a count of a noun (an amount of XP or essence, an ordinal, a range, a progress figure) stays a `<string>`
 with `tools:ignore="PluralsCandidate"` and a translator comment above it saying why.
+
+Translations follow their locale's CLDR quantities, not English's category set. Spanish, French and
+Brazilian Portuguese require `one`, `many` and `other`; a locale-only category must keep the placeholders
+from English `other`. The validator checks those extra categories too, including argument positions and types.
+
+Run `python3 tools/check_translation.py fr` for one locale (also `de`, `es`, `ja`, `ko`, `pt-rBR` and
+`b+zh+Hans`). `python3 -m unittest tools.test_check_translation` covers missing quantities and placeholder drift.

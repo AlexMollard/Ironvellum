@@ -189,7 +189,7 @@ internal fun ActivityTab(
             Spacer(Modifier.height(8.dp))
             BarChart(
                 steps,
-                IronvellumColors.Ink,
+                color = IronvellumColors.Ink,
                 goal = STEP_GOAL.toDouble(),
                 lastColor = IronvellumColors.Emerald,
                 emptyColor = IronvellumColors.Rune,
@@ -221,7 +221,7 @@ internal fun ActivityTab(
             Spacer(Modifier.height(8.dp))
             BarChart(
                 sleep,
-                IronvellumColors.Ink,
+                color = IronvellumColors.Ink,
                 lastColor = IronvellumColors.Emerald,
                 emptyColor = IronvellumColors.Rune,
                 startLabel = startLabel,
@@ -246,7 +246,7 @@ internal fun ActivityTab(
             Spacer(Modifier.height(8.dp))
             BarChart(
                 burns.map { it?.kcal?.toDouble() },
-                IronvellumColors.Ink,
+                color = IronvellumColors.Ink,
                 faded = burns.map { it != null && it.confidence != EnergyConfidence.MEASURED },
                 lastColor = IronvellumColors.Emerald,
                 emptyColor = IronvellumColors.Rune,

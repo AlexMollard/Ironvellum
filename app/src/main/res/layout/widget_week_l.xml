@@ -76,7 +76,8 @@
                     android:orientation="vertical"
                     android:clipChildren="false"
                     android:layout_weight="1"
-                    android:paddingStart="12dp">
+                    android:paddingStart="12dp"
+                    android:paddingEnd="0dp">
                     <TextView
                         android:id="@+id/k_title"
                         android:layout_width="match_parent"

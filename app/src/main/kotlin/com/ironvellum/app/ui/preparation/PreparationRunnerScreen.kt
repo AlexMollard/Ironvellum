@@ -127,7 +127,7 @@ fun PreparationRunnerScreen(
         else -> preparationText(if (progress?.hasProgress == true) R.string.preparation_resume else R.string.preparation_begin,
             if (progress?.hasProgress == true) R.string.preparation_resume__t else R.string.preparation_begin__t, kindLabel(kind))
     }
-    PreparationFrame(kindLabel(kind), leave, primary, {
+    PreparationFrame(kindLabel(kind), leave, primary = primary, onPrimary = {
         if (terminal || state?.snapshot?.steps?.isEmpty() == true) onComplete()
         else viewModel.act(PreparationAction.START, after = { preview = false })
     }, enabled = ui.loaded && !ui.busy && state != null, actions = {

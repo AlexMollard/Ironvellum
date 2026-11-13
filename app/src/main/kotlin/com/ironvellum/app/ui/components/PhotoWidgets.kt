@@ -64,7 +64,7 @@ internal fun PhotoActions(
     FlowRow(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         if (source.canTake && enabled) InkChip(takeLabel, icon = Icons.Outlined.PhotoCamera, height = 48.dp, onClick = source.take)
         if (enabled) InkChip(pickLabel, icon = Icons.Outlined.PhotoLibrary, height = 48.dp, onClick = source.pick)
-        if (kept && enabled) InkChip(stringResource(R.string.photo_remove_button), stringResource(R.string.photo_remove_description), Icons.Outlined.Delete, height = 48.dp, onClick = onRemove)
+        if (kept && enabled) InkChip(stringResource(R.string.photo_remove_button), clickLabel = stringResource(R.string.photo_remove_description), icon = Icons.Outlined.Delete, height = 48.dp, onClick = onRemove)
     }
 }
 

@@ -23,6 +23,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -52,7 +53,7 @@ internal fun startedOn(atMs: Long, zone: ZoneId = ZoneId.systemDefault(), locale
 @Composable
 internal fun recoverySubline(rite: RecoveryRite): String {
     val f = rite.finding
-    return stringResource(R.string.optimise_recovery_subline, f.muscle.label, f.tiredStarts, f.starts.size)
+    return pluralStringResource(R.plurals.optimise_recovery_subline, f.starts.size, f.muscle.label, f.tiredStarts, f.starts.size)
 }
 
 @Composable
@@ -79,7 +80,7 @@ internal fun RecoveryPage(
                 status = stringResource(R.string.optimise_kind_recovery),
             )
             Text(
-                stringResource(R.string.optimise_recovery_intro, finding.muscle.label, finding.tiredStarts, finding.starts.size),
+                pluralStringResource(R.plurals.optimise_recovery_intro, finding.starts.size, finding.muscle.label, finding.tiredStarts, finding.starts.size),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(top = 8.dp),

@@ -58,6 +58,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 @Composable
 fun TrendChart(
     values: List<Double?>,
+    modifier: Modifier = Modifier,
     color: Color = IronvellumColors.Emerald,
     goal: Double? = null,
     /**
@@ -66,7 +67,6 @@ fun TrendChart(
      * renders as a dead flat line, so those scale to their own span.
      */
     fromZero: Boolean = true,
-    modifier: Modifier = Modifier.fillMaxWidth().height(110.dp),
     positions: List<Double>? = null,
     startLabel: String? = null,
     endLabel: String? = null,
@@ -123,6 +123,7 @@ fun TrendChart(
     Column(Modifier.fillMaxWidth()) {
         Canvas(
             modifier
+                .fillMaxWidth().height(110.dp)
                 .semantics {
                     if (scrub) {
                         scrubSemantics(
@@ -386,6 +387,7 @@ internal fun scrubReadout(value: String, date: String?): String = if (date == nu
 @Composable
 fun BarChart(
     values: List<Double?>,
+    modifier: Modifier = Modifier,
     color: Color = IronvellumColors.Emerald,
     goal: Double? = null,
     faded: List<Boolean>? = null,
@@ -393,7 +395,6 @@ fun BarChart(
     lastColor: Color? = null,
     /** The hairline stub drawn for a slot with no data. */
     emptyColor: Color = LedgerContrast.Graphic,
-    modifier: Modifier = Modifier.fillMaxWidth().height(96.dp),
     startLabel: String? = null,
     endLabel: String? = null,
     description: String? = null,
@@ -414,6 +415,7 @@ fun BarChart(
     Column(Modifier.fillMaxWidth()) {
         Canvas(
             modifier
+                .fillMaxWidth().height(96.dp)
                 .semantics {
                     scrubSemantics(
                         spoken, scrubState, values.size,

@@ -1,5 +1,6 @@
 package com.ironvellum.app.data.cloud
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
@@ -232,13 +233,24 @@ object Cloud {
     internal fun webCatchUpStarted(userId: String): Boolean =
         webCatchUpKey("web_catch_up_started", userId)?.let { prefs?.getBoolean(it, false) } == true
 
-    internal fun markWebCatchUpStarted(userId: String): Boolean =
-        webCatchUpKey("web_catch_up_started", userId)?.let { prefs?.edit()?.putBoolean(it, true)?.commit() } == true
+    // KTX edit discards commit's Boolean; callers need disk-write success before catch-up.
+    @SuppressLint("UseKtx")
+    internal fun markWebCatchUpStarted(userId: String): Boolean {
+        val key = webCatchUpKey("web_catch_up_started", userId) ?: return false
+        val editor = prefs?.edit() ?: return false
+        editor.putBoolean(key, true)
+        return editor.commit()
+    }
 
+    // Preserve the commit result while clearing the started marker in the same edit.
+    @SuppressLint("UseKtx")
     internal fun markWebCaughtUp(userId: String): Boolean {
         val caughtUp = webCatchUpKey("web_caught_up", userId) ?: return false
         val started = webCatchUpKey("web_catch_up_started", userId) ?: return false
-        return prefs?.edit()?.putBoolean(caughtUp, true)?.remove(started)?.commit() == true
+        val editor = prefs?.edit() ?: return false
+        editor.putBoolean(caughtUp, true)
+        editor.remove(started)
+        return editor.commit()
     }
 
     /** Query the same schema beacon as [probe], returning null when it cannot be read. */

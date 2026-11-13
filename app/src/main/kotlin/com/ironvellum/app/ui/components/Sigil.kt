@@ -71,10 +71,10 @@ private fun specOf(name: String): SigilSpec {
 @Composable
 fun RelicSigil(
     name: String,
+    modifier: Modifier = Modifier,
     accent: Color = IronvellumColors.EmeraldBright,
     /** Slow drift for the relic that is actually setting the rate. */
     spin: Boolean = false,
-    modifier: Modifier = Modifier,
 ) {
     val spec = remember(name) { specOf(name) }
     // 48s per revolution: perceptible as life, never as spinning.

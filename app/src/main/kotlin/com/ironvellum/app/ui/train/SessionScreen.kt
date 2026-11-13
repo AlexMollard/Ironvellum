@@ -292,7 +292,7 @@ class SessionViewModel(
     private val repo: Repository,
     private val appContext: Context,
     private val sessionId: Long,
-    private val savedState: SavedStateHandle = SavedStateHandle(),
+    private val savedState: SavedStateHandle,
 ) : ViewModel() {
     // Keep both the outstanding decision and its observation baseline across recreation. The decision also
     // lives in the saved state, so a process death while Switch / Keep as is waits does not lose the question.
@@ -1014,7 +1014,9 @@ fun SessionScreen(
             onAllow = {
                 notificationSheet = false
                 FirstRunPrefs.setNotificationsAsked(screenContext)
-                askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
             },
             onNotNow = {
                 notificationSheet = false
@@ -2765,7 +2767,6 @@ internal fun OpenExerciseCard(
     /** This movement's rest switch (null where none applies, as in an amendment or for an activity). */
     restOff: Boolean?,
     onRestOff: (Boolean) -> Unit,
-    onRestChanged: () -> Unit = {},
     onAddSet: () -> Unit,
     onRemoveSet: (SessionSet) -> Unit,
     onRemoveExercise: () -> Unit,
@@ -2776,6 +2777,7 @@ internal fun OpenExerciseCard(
     onSetKind: (SessionSet, SetKind) -> Unit,
     onUnlog: (SessionSet) -> Unit,
     modifier: Modifier = Modifier,
+    onRestChanged: () -> Unit = {},
     /** The sealed trial's amend mode: any set can open for editing, and there is no live-only chrome. */
     amend: Boolean = false,
     onChangeExercise: (() -> Unit)? = null,

@@ -450,42 +450,52 @@
     <string name="narration_no_cycle__t">Forje um ciclo e seus ritos aparecerão aqui.</string>
     <plurals name="narration_begin_streak">
         <item quantity="one">Comece quando quiser. Sua sequência é de %1$d dia.</item>
+        <item quantity="many">Comece quando quiser. Sua sequência é de %1$d dias.</item>
         <item quantity="other">Comece quando quiser. Sua sequência é de %1$d dias.</item>
     </plurals>
     <plurals name="narration_begin_streak__t">
         <item quantity="one">A página está em branco. Há %1$d dia de tinta atrás dela.</item>
+        <item quantity="many">A página está em branco. Há %1$d dias de tinta atrás dela.</item>
         <item quantity="other">A página está em branco. Há %1$d dias de tinta atrás dela.</item>
     </plurals>
     <plurals name="narration_live_start">
         <item quantity="one">%1$d série registrada. Bom começo.</item>
+        <item quantity="many">%1$d séries registradas. Bom começo.</item>
         <item quantity="other">%1$d séries registradas. Bom começo.</item>
     </plurals>
     <plurals name="narration_live_start__t">
         <item quantity="one">%1$d série inscrita. A página começa a se preencher.</item>
+        <item quantity="many">%1$d séries inscritas. A página começa a se preencher.</item>
         <item quantity="other">%1$d séries inscritas. A página começa a se preencher.</item>
     </plurals>
     <plurals name="narration_live_half">
         <item quantity="one">%1$d série registrada. Mais da metade concluída.</item>
+        <item quantity="many">%1$d séries registradas. Mais da metade concluída.</item>
         <item quantity="other">%1$d séries registradas. Mais da metade concluída.</item>
     </plurals>
     <plurals name="narration_live_half__t">
         <item quantity="one">%1$d série inscrita. A página está pela metade.</item>
+        <item quantity="many">%1$d séries inscritas. A página está pela metade.</item>
         <item quantity="other">%1$d séries inscritas. A página está pela metade.</item>
     </plurals>
     <plurals name="common_exercises_count">
         <item quantity="one">%1$d exercício</item>
+        <item quantity="many">%1$d exercícios</item>
         <item quantity="other">%1$d exercícios</item>
     </plurals>
     <plurals name="common_sets_count">
         <item quantity="one">%1$d série</item>
+        <item quantity="many">%1$d séries</item>
         <item quantity="other">%1$d séries</item>
     </plurals>
     <plurals name="common_days_count">
         <item quantity="one">%1$d dia</item>
+        <item quantity="many">%1$d dias</item>
         <item quantity="other">%1$d dias</item>
     </plurals>
     <plurals name="common_reps_count">
         <item quantity="one">%1$d repetição</item>
+        <item quantity="many">%1$d repetições</item>
         <item quantity="other">%1$d repetições</item>
     </plurals>
     <string name="notification_channel_summons_description">Um lembrete à noite enquanto o treino de hoje não for finalizado.</string>
@@ -506,10 +516,12 @@
     <string name="notification_inbox_title_one__t">Uma missiva</string>
     <plurals name="notification_inbox_title_many">
         <item quantity="one">%1$d nova mensagem</item>
+        <item quantity="many">%1$d novas mensagens</item>
         <item quantity="other">%1$d novas mensagens</item>
     </plurals>
     <plurals name="notification_inbox_title_many__t">
         <item quantity="one">%1$d nova missiva</item>
+        <item quantity="many">%1$d novas missivas</item>
         <item quantity="other">%1$d novas missivas</item>
     </plurals>
     <string name="notification_inbox_public_one">Nova mensagem de um amigo</string>
@@ -558,20 +570,24 @@
     <string name="notification_trial_all_done__t">Todas as séries estão feitas. Sele a prova.</string>
     <plurals name="notification_trial_set_reps">
         <item quantity="one">Série %1$d · %2$d repetição</item>
+        <item quantity="many">Série %1$d · %2$d repetições</item>
         <item quantity="other">Série %1$d · %2$d repetições</item>
     </plurals>
     <plurals name="notification_trial_set_reps_load">
         <item quantity="one">Série %1$d · %2$d repetição · %3$s</item>
+        <item quantity="many">Série %1$d · %2$d repetições · %3$s</item>
         <item quantity="other">Série %1$d · %2$d repetições · %3$s</item>
     </plurals>
     <string name="notification_trial_set_hold">Série %1$d · %2$ds</string>
     <string name="notification_trial_set_hold_load">Série %1$d · %2$ds · %3$s</string>
     <plurals name="notification_trial_progress">
         <item quantity="one">TREINO · %1$d / %2$d série</item>
+        <item quantity="many">TREINO · %1$d / %2$d séries</item>
         <item quantity="other">TREINO · %1$d / %2$d séries</item>
     </plurals>
     <plurals name="notification_trial_progress__t">
         <item quantity="one">PROVA · %1$d / %2$d série</item>
+        <item quantity="many">PROVA · %1$d / %2$d séries</item>
         <item quantity="other">PROVA · %1$d / %2$d séries</item>
     </plurals>
     <string name="notification_trial_action_set_done">Série concluída</string>
@@ -596,6 +612,7 @@
     <string name="widget_live_none">Nenhuma série ainda</string>
     <plurals name="widget_progress_sets">
         <item quantity="one">%1$d de %2$d série</item>
+        <item quantity="many">%1$d de %2$d séries</item>
         <item quantity="other">%1$d de %2$d séries</item>
     </plurals>
     <string name="widget_meta_live">%1$s · %2$d min</string>
@@ -603,6 +620,7 @@
     <string name="widget_meta_done_records">Feito · %1$s · %2$d min · %3$s</string>
     <plurals name="widget_records_count">
         <item quantity="one">%1$d recorde</item>
+        <item quantity="many">%1$d recordes</item>
         <item quantity="other">%1$d recordes</item>
     </plurals>
     <string name="widget_meta_rest">%1$s · próximo: %2$s em %3$s</string>
@@ -615,10 +633,12 @@
     <string name="widget_begin_named">Começar %1$s</string>
     <plurals name="widget_streak_chip">
         <item quantity="one">Sequência de %1$d dia</item>
+        <item quantity="many">Sequência de %1$d dias</item>
         <item quantity="other">Sequência de %1$d dias</item>
     </plurals>
     <plurals name="widget_streak_chip__t">
         <item quantity="one">Juramento de %1$d dia</item>
+        <item quantity="many">Juramento de %1$d dias</item>
         <item quantity="other">Juramento de %1$d dias</item>
     </plurals>
     <string name="widget_streak_caption">dias em sequência</string>
@@ -627,28 +647,34 @@
     <string name="widget_week_meta_begin">Hoje · %1$s · ~%2$d min</string>
     <plurals name="widget_week_workouts">
         <item quantity="one">%1$d treino nesta semana</item>
+        <item quantity="many">%1$d treinos nesta semana</item>
         <item quantity="other">%1$d treinos nesta semana</item>
     </plurals>
     <plurals name="widget_week_workouts__t">
         <item quantity="one">%1$d prova nesta semana</item>
+        <item quantity="many">%1$d provas nesta semana</item>
         <item quantity="other">%1$d provas nesta semana</item>
     </plurals>
     <string name="widget_week_rest">Descanso</string>
     <string name="widget_week_summary">Esta semana: %1$d feitos, %2$d restantes</string>
     <plurals name="widget_totals_workouts">
         <item quantity="one">%1$d de %2$d treino</item>
+        <item quantity="many">%1$d de %2$d treinos</item>
         <item quantity="other">%1$d de %2$d treinos</item>
     </plurals>
     <plurals name="widget_totals_workouts__t">
         <item quantity="one">%1$d de %2$d prova</item>
+        <item quantity="many">%1$d de %2$d provas</item>
         <item quantity="other">%1$d de %2$d provas</item>
     </plurals>
     <plurals name="widget_totals_workouts_only">
         <item quantity="one">%1$d treino</item>
+        <item quantity="many">%1$d treinos</item>
         <item quantity="other">%1$d treinos</item>
     </plurals>
     <plurals name="widget_totals_workouts_only__t">
         <item quantity="one">%1$d prova</item>
+        <item quantity="many">%1$d provas</item>
         <item quantity="other">%1$d provas</item>
     </plurals>
     <string name="widget_totals_time">%1$s nesta semana</string>
@@ -671,10 +697,12 @@
     <string name="notification_ask_live_body__t">Progresso ao vivo da prova aberta, com um botão Selar.</string>
     <plurals name="notification_ask_again">
         <item quantity="one">Ao escolher Agora não, perguntaremos novamente no próximo treino, até %1$d vez no total. Você também pode permitir depois em Configurações.</item>
+        <item quantity="many">Ao escolher Agora não, perguntaremos novamente no próximo treino, até %1$d vezes no total. Você também pode permitir depois em Configurações.</item>
         <item quantity="other">Ao escolher Agora não, perguntaremos novamente no próximo treino, até %1$d vezes no total. Você também pode permitir depois em Configurações.</item>
     </plurals>
     <plurals name="notification_ask_again__t">
         <item quantity="one">Ao escolher Agora não, perguntaremos novamente na próxima prova, até %1$d vez no total. Você também pode permitir depois em Configurações.</item>
+        <item quantity="many">Ao escolher Agora não, perguntaremos novamente na próxima prova, até %1$d vezes no total. Você também pode permitir depois em Configurações.</item>
         <item quantity="other">Ao escolher Agora não, perguntaremos novamente na próxima prova, até %1$d vezes no total. Você também pode permitir depois em Configurações.</item>
     </plurals>
     <string name="notification_ask_allow_button">Permitir notificações</string>
@@ -711,6 +739,7 @@
     <string name="settings_hub_advanced_label">Avançado</string>
     <plurals name="settings_hub_advanced_crashes">
         <item quantity="one">%1$d falha registrada</item>
+        <item quantity="many">%1$d falhas registradas</item>
         <item quantity="other">%1$d falhas registradas</item>
     </plurals>
     <string name="settings_hub_cloud_none">Sem nuvem</string>
@@ -735,14 +764,17 @@
     <string name="settings_summary_health_connected">Conectado</string>
     <plurals name="settings_summary_health_connected_days">
         <item quantity="one">Conectado · %1$d dia</item>
+        <item quantity="many">Conectado · %1$d dias</item>
         <item quantity="other">Conectado · %1$d dias</item>
     </plurals>
     <plurals name="settings_import_csv_sessions">
         <item quantity="one">%1$d treino importado</item>
+        <item quantity="many">%1$d treinos importados</item>
         <item quantity="other">%1$d treinos importados</item>
     </plurals>
     <plurals name="settings_import_csv_sessions__t">
         <item quantity="one">%1$d prova importada</item>
+        <item quantity="many">%1$d provas importadas</item>
         <item quantity="other">%1$d provas importadas</item>
     </plurals>
     <string name="settings_import_csv_xp">+%1$d XP</string>
@@ -750,42 +782,52 @@
     <string name="settings_import_csv_skipped__t">%1$d já constam na sua Crônica</string>
     <plurals name="settings_archive_restored_routines">
         <item quantity="one">%1$d rotina restaurada</item>
+        <item quantity="many">%1$d rotinas restauradas</item>
         <item quantity="other">%1$d rotinas restauradas</item>
     </plurals>
     <plurals name="settings_archive_restored_routines__t">
         <item quantity="one">%1$d rito restaurado</item>
+        <item quantity="many">%1$d ritos restaurados</item>
         <item quantity="other">%1$d ritos restaurados</item>
     </plurals>
     <plurals name="settings_archive_restored_sessions">
         <item quantity="one">%1$d treino finalizado</item>
+        <item quantity="many">%1$d treinos finalizados</item>
         <item quantity="other">%1$d treinos finalizados</item>
     </plurals>
     <plurals name="settings_archive_restored_sessions__t">
         <item quantity="one">%1$d prova selada</item>
+        <item quantity="many">%1$d provas seladas</item>
         <item quantity="other">%1$d provas seladas</item>
     </plurals>
     <plurals name="settings_archive_restored_stats">
         <item quantity="one">%1$d medição</item>
+        <item quantity="many">%1$d medições</item>
         <item quantity="other">%1$d medições</item>
     </plurals>
     <plurals name="settings_archive_restored_stats__t">
         <item quantity="one">%1$d leitura</item>
+        <item quantity="many">%1$d leituras</item>
         <item quantity="other">%1$d leituras</item>
     </plurals>
     <plurals name="settings_archive_restored_deeds">
         <item quantity="one">%1$d proeza</item>
+        <item quantity="many">%1$d proezas</item>
         <item quantity="other">%1$d proezas</item>
     </plurals>
     <plurals name="settings_archive_restored_skills">
         <item quantity="one">%1$d tentativa no diário de prática</item>
+        <item quantity="many">%1$d tentativas no diário de prática</item>
         <item quantity="other">%1$d tentativas no diário de prática</item>
     </plurals>
     <plurals name="settings_archive_restored_skills__t">
         <item quantity="one">%1$d tentativa no diário</item>
+        <item quantity="many">%1$d tentativas no diário</item>
         <item quantity="other">%1$d tentativas no diário</item>
     </plurals>
     <plurals name="settings_archive_restored_health_days">
         <item quantity="one">%1$d dia de saúde</item>
+        <item quantity="many">%1$d dias de saúde</item>
         <item quantity="other">%1$d dias de saúde</item>
     </plurals>
     <string name="settings_saved_confirmation">✓ Salvo</string>
@@ -906,16 +948,19 @@
     <string name="settings_health_heart_rate_missing">A frequência cardíaca não é compartilhada com o Ironvellum, então a frequência em repouso fica vazia. Conectar &amp; sincronizar solicita acesso.</string>
     <plurals name="settings_health_steps_today">
         <item quantity="one">%1$d passo hoje</item>
+        <item quantity="many">%1$d passos hoje</item>
         <item quantity="other">%1$d passos hoje</item>
     </plurals>
     <plurals name="settings_health_steps_today_as_of">
         <item quantity="one">%1$d passo hoje (até %2$s)</item>
+        <item quantity="many">%1$d passos hoje (até %2$s)</item>
         <item quantity="other">%1$d passos hoje (até %2$s)</item>
     </plurals>
     <string name="settings_health_weight">%1$s kg</string>
     <string name="settings_health_body_fat">%1$s%% de gordura</string>
     <plurals name="settings_health_days_synced">
         <item quantity="one">%1$d dia sincronizado</item>
+        <item quantity="many">%1$d dias sincronizados</item>
         <item quantity="other">%1$d dias sincronizados</item>
     </plurals>
     <string name="settings_health_steps_total">%1$s passos</string>
@@ -932,10 +977,12 @@
     <string name="common_done">Concluído</string>
     <plurals name="settings_import_review_sessions">
         <item quantity="one">%1$d treino</item>
+        <item quantity="many">%1$d treinos</item>
         <item quantity="other">%1$d treinos</item>
     </plurals>
     <plurals name="settings_import_review_sessions__t">
         <item quantity="one">%1$d prova</item>
+        <item quantity="many">%1$d provas</item>
         <item quantity="other">%1$d provas</item>
     </plurals>
     <string name="settings_import_review_range">de %1$s a %2$s</string>
@@ -949,10 +996,12 @@
     <string name="settings_import_review_importing">Importando</string>
     <plurals name="settings_import_review_button">
         <item quantity="one">Importar %1$d treino</item>
+        <item quantity="many">Importar %1$d treinos</item>
         <item quantity="other">Importar %1$d treinos</item>
     </plurals>
     <plurals name="settings_import_review_button__t">
         <item quantity="one">Importar %1$d prova</item>
+        <item quantity="many">Importar %1$d provas</item>
         <item quantity="other">Importar %1$d provas</item>
     </plurals>
     <string name="settings_import_review_choose">Escolher</string>
@@ -1010,6 +1059,7 @@
     <string name="settings_advanced_crash_empty">O registro de falhas está vazio.</string>
     <plurals name="settings_advanced_crash_summary">
         <item quantity="one">%1$d registro de falha · último em %2$s</item>
+        <item quantity="many">%1$d registros de falha · último em %2$s</item>
         <item quantity="other">%1$d registros de falha · último em %2$s</item>
     </plurals>
     <string name="settings_advanced_crash_share_title">Compartilhar registro de falhas do Ironvellum</string>
@@ -1053,10 +1103,12 @@
     <string name="settings_health_history_updated">Histórico de atividades atualizado — %1$s, %2$s.</string>
     <plurals name="settings_health_history_readings">
         <item quantity="one">%1$d medição</item>
+        <item quantity="many">%1$d medições</item>
         <item quantity="other">%1$d medições</item>
     </plurals>
     <plurals name="settings_health_history_readings__t">
         <item quantity="one">%1$d leitura</item>
+        <item quantity="many">%1$d leituras</item>
         <item quantity="other">%1$d leituras</item>
     </plurals>
     <string name="settings_health_history_partial">Parcial: %1$s</string>
@@ -1116,10 +1168,12 @@
     <string name="onboarding_replace_title__t">Substituir seus ritos?</string>
     <plurals name="onboarding_replace_text">
         <item quantity="one">Adotar este plano semanal substitui sua %1$d rotina atual. Seu histórico será mantido. Não é possível desfazer.</item>
+        <item quantity="many">Adotar este plano semanal substitui suas %1$d rotinas atuais. Seu histórico será mantido. Não é possível desfazer.</item>
         <item quantity="other">Adotar este plano semanal substitui suas %1$d rotinas atuais. Seu histórico será mantido. Não é possível desfazer.</item>
     </plurals>
     <plurals name="onboarding_replace_text__t">
         <item quantity="one">Adotar este ciclo substitui seu %1$d rito atual. Sua Crônica será preservada. Não há volta.</item>
+        <item quantity="many">Adotar este ciclo substitui seus %1$d ritos atuais. Sua Crônica será preservada. Não há volta.</item>
         <item quantity="other">Adotar este ciclo substitui seus %1$d ritos atuais. Sua Crônica será preservada. Não há volta.</item>
     </plurals>
     <string name="onboarding_replace_button">Substituir</string>
@@ -1207,6 +1261,7 @@
     <string name="session_folded_best">%1$d/%2$d · melhor %3$s</string>
     <plurals name="session_folded_progress">
         <item quantity="one">%1$d/%2$d série</item>
+        <item quantity="many">%1$d/%2$d séries</item>
         <item quantity="other">%1$d/%2$d séries</item>
     </plurals>
     <string name="session_folded_set_a_load">%1$d × %2$d · defina uma carga</string>
@@ -1215,6 +1270,7 @@
     <string name="session_figure_km_minutes">%1$s km · %2$d min</string>
     <plurals name="session_figure_attempts">
         <item quantity="one">%1$d tentativa</item>
+        <item quantity="many">%1$d tentativas</item>
         <item quantity="other">%1$d tentativas</item>
     </plurals>
     <string name="session_reference_last">Último %1$s</string>
@@ -1231,6 +1287,7 @@
     <string name="session_effort_reserve_many">5 ou mais reps na reserva</string>
     <plurals name="session_effort_reserve">
         <item quantity="one">%1$d rep na reserva</item>
+        <item quantity="many">%1$d reps na reserva</item>
         <item quantity="other">%1$d reps na reserva</item>
     </plurals>
     <string name="session_effort_rpe_low">RPE 5 ou menos</string>
@@ -1247,6 +1304,7 @@
     <string name="session_abandon_item__t">Abandonar prova</string>
     <plurals name="session_progress">
         <item quantity="one">%1$d / %2$d série</item>
+        <item quantity="many">%1$d / %2$d séries</item>
         <item quantity="other">%1$d / %2$d séries</item>
     </plurals>
     <string name="session_minutes_left">~%1$d min restantes</string>
@@ -1262,6 +1320,7 @@
     <string name="session_warmup_letter">A</string>
     <plurals name="session_warmup_fold">
         <item quantity="one">Aquecimento · %1$d série</item>
+        <item quantity="many">Aquecimento · %1$d séries</item>
         <item quantity="other">Aquecimento · %1$d séries</item>
     </plurals>
     <string name="session_warmup_fold_description">%1$s, concluído</string>
@@ -1343,10 +1402,12 @@
     <string name="session_slide_log_first__t">Registre uma série para selar a prova</string>
     <plurals name="session_slide_left">
         <item quantity="one">Falta %1$d série · deslize para finalizar</item>
+        <item quantity="many">Faltam %1$d séries · deslize para finalizar</item>
         <item quantity="other">Faltam %1$d séries · deslize para finalizar</item>
     </plurals>
     <plurals name="session_slide_left__t">
         <item quantity="one">Falta %1$d série · deslize para selar</item>
+        <item quantity="many">Faltam %1$d séries · deslize para selar</item>
         <item quantity="other">Faltam %1$d séries · deslize para selar</item>
     </plurals>
     <string name="session_rest_label">DESCANSO</string>
@@ -1365,22 +1426,26 @@
     <string name="session_remove_title">Remover %1$s?</string>
     <plurals name="session_remove_text">
         <item quantity="one">Sua %1$d série registrada também será removida. Desfazer fica na tela por alguns segundos.</item>
+        <item quantity="many">Suas %1$d séries registradas também serão removidas. Desfazer fica na tela por alguns segundos.</item>
         <item quantity="other">Suas %1$d séries registradas também serão removidas. Desfazer fica na tela por alguns segundos.</item>
     </plurals>
     <string name="session_seal_title">Finalizar o treino?</string>
     <string name="session_seal_title__t">Selar a prova?</string>
     <plurals name="session_seal_unlogged_title">
         <item quantity="one">Finalizar com %1$d série não registrada?</item>
+        <item quantity="many">Finalizar com %1$d séries não registradas?</item>
         <item quantity="other">Finalizar com %1$d séries não registradas?</item>
     </plurals>
     <plurals name="session_seal_unlogged_title__t">
         <item quantity="one">Selar com %1$d série não registrada?</item>
+        <item quantity="many">Selar com %1$d séries não registradas?</item>
         <item quantity="other">Selar com %1$d séries não registradas?</item>
     </plurals>
     <string name="session_seal_confirm_text">Todas as séries foram registradas. Finalizar agora?</string>
     <string name="session_seal_confirm_text__t">Todas as séries foram registradas. Selar agora?</string>
     <plurals name="session_seal_unlogged_text">
         <item quantity="one">Nenhum set será contado.</item>
+        <item quantity="many">Elas não contarão.</item>
         <item quantity="other">Elas não contarão.</item>
     </plurals>
     <string name="session_seal_anyway_button">Finalizar mesmo assim</string>
@@ -1411,6 +1476,7 @@
     <string name="session_load_this_set">Esta série</string>
     <plurals name="session_load_all_sets">
         <item quantity="one">Toda a %1$d série</item>
+        <item quantity="many">Todas as %1$d séries</item>
         <item quantity="other">Todas as %1$d séries</item>
     </plurals>
     <string name="session_exercise_fallback">Exercício</string>
@@ -1462,6 +1528,7 @@
     <string name="session_suggestion_deload_hold">Reduzir para %1$s × %2$d s?</string>
     <plurals name="session_suggestion_more_reps">
         <item quantity="one">Tente %1$d repetição</item>
+        <item quantity="many">Tente %1$d repetições</item>
         <item quantity="other">Tente %1$d repetições</item>
     </plurals>
     <string name="session_suggestion_longer_hold">Tente sustentar por %1$d s</string>
@@ -1473,6 +1540,7 @@
     <string name="session_suggestion_applied_load_hold">Aplicado: %1$s × %2$d s pelo resto de hoje</string>
     <plurals name="session_suggestion_applied_reps">
         <item quantity="one">Aplicado: %1$d repetição pelo resto de hoje</item>
+        <item quantity="many">Aplicado: %1$d repetições pelo resto de hoje</item>
         <item quantity="other">Aplicado: %1$d repetições pelo resto de hoje</item>
     </plurals>
     <string name="session_suggestion_applied_longer_hold">Aplicado: sustentar por %1$d s pelo resto de hoje</string>
@@ -1517,6 +1585,7 @@
     <string name="timedset_discard_button">Descartar</string>
     <plurals name="always_victory_inscription_note">
         <item quantity="one">+%1$d inscrição aguarda no Véu</item>
+        <item quantity="many">+%1$d inscrições aguardam no Véu</item>
         <item quantity="other">+%1$d inscrições aguardam no Véu</item>
     </plurals>
     <string name="victory_row_level">Nível</string>
@@ -1529,10 +1598,12 @@
     <string name="victory_xp_caption__t">%1$s · selado</string>
     <plurals name="victory_summary">
         <item quantity="one">Finalizado · %1$d min · %2$d série</item>
+        <item quantity="many">Finalizado · %1$d min · %2$d séries</item>
         <item quantity="other">Finalizado · %1$d min · %2$d séries</item>
     </plurals>
     <plurals name="victory_summary__t">
         <item quantity="one">Selado · %1$d min · %2$d série</item>
+        <item quantity="many">Selado · %1$d min · %2$d séries</item>
         <item quantity="other">Selado · %1$d min · %2$d séries</item>
     </plurals>
     <string name="victory_reopen_offer">Finalizou cedo demais? Continue</string>
@@ -1541,10 +1612,12 @@
     <string name="victory_share_button__t">Compartilhar prova</string>
     <plurals name="victory_totals_sets">
         <item quantity="one">%1$s série</item>
+        <item quantity="many">%1$s séries</item>
         <item quantity="other">%1$s séries</item>
     </plurals>
     <plurals name="victory_totals_reps">
         <item quantity="one">%1$s repetição</item>
+        <item quantity="many">%1$s repetições</item>
         <item quantity="other">%1$s repetições</item>
     </plurals>
     <string name="victory_totals_held">%1$s s sustentados</string>
@@ -1561,6 +1634,7 @@
     <string name="victory_peak_no_xp">sem XP</string>
     <plurals name="victory_peak_gain_reps">
         <item quantity="one">+%1$d repetição</item>
+        <item quantity="many">+%1$d repetições</item>
         <item quantity="other">+%1$d repetições</item>
     </plurals>
     <string name="plates_title">Anilhas</string>
@@ -1621,18 +1695,22 @@
     <string name="workoutlog_detail_placeholder__t">Selecione uma prova para vê-la aqui.</string>
     <plurals name="workoutlog_totals_trials">
         <item quantity="one">%1$d treino</item>
+        <item quantity="many">%1$d treinos</item>
         <item quantity="other">%1$d treinos</item>
     </plurals>
     <plurals name="workoutlog_totals_trials__t">
         <item quantity="one">%1$d prova</item>
+        <item quantity="many">%1$d provas</item>
         <item quantity="other">%1$d provas</item>
     </plurals>
     <plurals name="workoutlog_totals_reps">
         <item quantity="one">%1$s repetição</item>
+        <item quantity="many">%1$s repetições</item>
         <item quantity="other">%1$s repetições</item>
     </plurals>
     <plurals name="workoutlog_totals_attempts">
         <item quantity="one">%1$s tentativa</item>
+        <item quantity="many">%1$s tentativas</item>
         <item quantity="other">%1$s tentativas</item>
     </plurals>
     <string name="workoutlog_totals_held">%1$ss sustentados</string>
@@ -1702,6 +1780,7 @@
     <string name="workoutdetail_best">melhor %1$s</string>
     <plurals name="workoutdetail_attempts_count">
         <item quantity="one">%1$d tentativa</item>
+        <item quantity="many">%1$d tentativas</item>
         <item quantity="other">%1$d tentativas</item>
     </plurals>
     <string name="workoutdetail_superset">Série composta %1$d</string>
@@ -1747,10 +1826,12 @@
     <string name="setssheet_droppercent_more_description">Aumentar percentual do drop</string>
     <plurals name="setssheet_drops_after_last">
         <item quantity="one">%1$d drop após a última série</item>
+        <item quantity="many">%1$d drops após a última série</item>
         <item quantity="other">%1$d drops após a última série</item>
     </plurals>
     <plurals name="setssheet_drops_after_each">
         <item quantity="one">%1$d drop após cada uma das últimas %2$d séries</item>
+        <item quantity="many">%1$d drops após cada uma das últimas %2$d séries</item>
         <item quantity="other">%1$d drops após cada uma das últimas %2$d séries</item>
     </plurals>
     <string name="setssheet_rest_ramp_label">Descanso, progressão de aquecimento</string>
@@ -1796,6 +1877,7 @@
     <string name="setssheet_line_reps_or_more">Pare com %1$d ou mais reps restantes</string>
     <plurals name="setssheet_line_reps_left">
         <item quantity="one">Pare com %1$d rep restante</item>
+        <item quantity="many">Pare com %1$d reps restantes</item>
         <item quantity="other">Pare com %1$d reps restantes</item>
     </plurals>
     <string name="setssheet_line_reps_range">Pare com %1$d–%2$d reps restantes</string>
@@ -1826,6 +1908,7 @@
     <string name="setssheet_youll_ramp_first">Progressão de aquecimento primeiro</string>
     <plurals name="setssheet_run_label">
         <item quantity="one">%1$s, %2$d série</item>
+        <item quantity="many">%1$s, %2$d séries</item>
         <item quantity="other">%1$s, %2$d séries</item>
     </plurals>
     <string name="ritedetail_edit_button">Editar</string>
@@ -1849,22 +1932,27 @@
     <string name="routineshare_nothing_imported">Nada importado — nenhum desses exercícios está na sua lista.</string>
     <plurals name="routineshare_replaced">
         <item quantity="one">Plano semanal substituído por %1$d rotina.</item>
+        <item quantity="many">Plano semanal substituído por %1$d rotinas.</item>
         <item quantity="other">Plano semanal substituído por %1$d rotinas.</item>
     </plurals>
     <plurals name="routineshare_replaced__t">
         <item quantity="one">Ciclo substituído por %1$d rito.</item>
+        <item quantity="many">Ciclo substituído por %1$d ritos.</item>
         <item quantity="other">Ciclo substituído por %1$d ritos.</item>
     </plurals>
     <plurals name="routineshare_added">
         <item quantity="one">%1$d rotina adicionada.</item>
+        <item quantity="many">%1$d rotinas adicionadas.</item>
         <item quantity="other">%1$d rotinas adicionadas.</item>
     </plurals>
     <plurals name="routineshare_added__t">
         <item quantity="one">%1$d rito adicionado.</item>
+        <item quantity="many">%1$d ritos adicionados.</item>
         <item quantity="other">%1$d ritos adicionados.</item>
     </plurals>
     <plurals name="routineshare_preview_line">
         <item quantity="one">%1$s · %2$d exercício</item>
+        <item quantity="many">%1$s · %2$d exercícios</item>
         <item quantity="other">%1$s · %2$d exercícios</item>
     </plurals>
     <string name="routineshare_import_title">Importar código</string>
@@ -1878,10 +1966,12 @@
     <string name="routineshare_replace_title__t">Substituir meu ciclo?</string>
     <plurals name="routineshare_replace_body">
         <item quantity="one">Isso exclui sua %1$d rotina e seu plano semanal e adiciona as %2$d deste código. Treinos finalizados permanecem no histórico.</item>
+        <item quantity="many">Isso exclui todas as suas %1$d rotinas e seu plano semanal e adiciona as %2$d deste código. Treinos finalizados permanecem no histórico.</item>
         <item quantity="other">Isso exclui todas as suas %1$d rotinas e seu plano semanal e adiciona as %2$d deste código. Treinos finalizados permanecem no histórico.</item>
     </plurals>
     <plurals name="routineshare_replace_body__t">
         <item quantity="one">Isso apaga teu %1$d rito e teu ciclo e acrescenta os %2$d deste código. Provas seladas permanecem na Crônica.</item>
+        <item quantity="many">Isso apaga todos os teus %1$d ritos e teu ciclo e acrescenta os %2$d deste código. Provas seladas permanecem na Crônica.</item>
         <item quantity="other">Isso apaga todos os teus %1$d ritos e teu ciclo e acrescenta os %2$d deste código. Provas seladas permanecem na Crônica.</item>
     </plurals>
     <string name="routineshare_replace_button">Substituir</string>
@@ -1914,18 +2004,22 @@
     <string name="explorer_chart_best_score">Melhor pontuação de série</string>
     <plurals name="explorer_chart_e1rm_count">
         <item quantity="one">1RM estimado, %1$d treino</item>
+        <item quantity="many">1RM estimado, %1$d treinos</item>
         <item quantity="other">1RM estimado, %1$d treinos</item>
     </plurals>
     <plurals name="explorer_chart_e1rm_count__t">
         <item quantity="one">1RM estimado, %1$d prova</item>
+        <item quantity="many">1RM estimado, %1$d provas</item>
         <item quantity="other">1RM estimado, %1$d provas</item>
     </plurals>
     <plurals name="explorer_chart_score_count">
         <item quantity="one">Melhor pontuação de série, %1$d treino</item>
+        <item quantity="many">Melhor pontuação de série, %1$d treinos</item>
         <item quantity="other">Melhor pontuação de série, %1$d treinos</item>
     </plurals>
     <plurals name="explorer_chart_score_count__t">
         <item quantity="one">Melhor pontuação de série, %1$d prova</item>
+        <item quantity="many">Melhor pontuação de série, %1$d provas</item>
         <item quantity="other">Melhor pontuação de série, %1$d provas</item>
     </plurals>
     <string name="explorer_chart_one">Um treino registrado — são necessários ao menos dois para ver uma tendência.</string>
@@ -2074,10 +2168,12 @@
     <string name="forge_replace_title__t">Substituir teu ciclo?</string>
     <plurals name="forge_replace_body">
         <item quantity="one">Sua %1$d rotina atual será excluída e o plano semanal criado ocupará seu lugar. Seu histórico não será alterado.</item>
+        <item quantity="many">Suas %1$d rotinas atuais serão excluídas e o plano semanal criado ocupará seu lugar. Seu histórico não será alterado.</item>
         <item quantity="other">Suas %1$d rotinas atuais serão excluídas e o plano semanal criado ocupará seu lugar. Seu histórico não será alterado.</item>
     </plurals>
     <plurals name="forge_replace_body__t">
         <item quantity="one">Teu %1$d rito atual será apagado e o ciclo forjado ocupará seu lugar. A Crônica permanecerá intacta.</item>
+        <item quantity="many">Teus %1$d ritos atuais serão apagados e o ciclo forjado ocupará seu lugar. A Crônica permanecerá intacta.</item>
         <item quantity="other">Teus %1$d ritos atuais serão apagados e o ciclo forjado ocupará seu lugar. A Crônica permanecerá intacta.</item>
     </plurals>
     <string name="forge_replace_button">Substituir</string>
@@ -2131,10 +2227,12 @@
     <string name="forge_plan_intro">As séries são um ponto de partida. Cada uma é uma série intensa, feita perto da falha. Altere qualquer número.</string>
     <plurals name="forge_coverage_includes">
         <item quantity="one">A cobertura inclui sua %1$d rotina existente.</item>
+        <item quantity="many">A cobertura inclui suas %1$d rotinas existentes.</item>
         <item quantity="other">A cobertura inclui suas %1$d rotinas existentes.</item>
     </plurals>
     <plurals name="forge_coverage_includes__t">
         <item quantity="one">A cobertura inclui seu %1$d rito existente.</item>
+        <item quantity="many">A cobertura inclui seus %1$d ritos existentes.</item>
         <item quantity="other">A cobertura inclui seus %1$d ritos existentes.</item>
     </plurals>
     <string name="forge_failed_title">O criador de planos falhou</string>
@@ -2145,10 +2243,12 @@
     <string name="forge_apply_note">Uma dica sobre cobertura nunca impede esta ação.</string>
     <plurals name="forge_writing">
         <item quantity="one">Adicionando %1$d rotina ao seu plano semanal. As edições ficam pausadas até terminar.</item>
+        <item quantity="many">Adicionando %1$d rotinas ao seu plano semanal. As edições ficam pausadas até terminar.</item>
         <item quantity="other">Adicionando %1$d rotinas ao seu plano semanal. As edições ficam pausadas até terminar.</item>
     </plurals>
     <plurals name="forge_writing__t">
         <item quantity="one">Adicionando %1$d rito ao seu ciclo. As edições ficam pausadas até terminar.</item>
+        <item quantity="many">Adicionando %1$d ritos ao seu ciclo. As edições ficam pausadas até terminar.</item>
         <item quantity="other">Adicionando %1$d ritos ao seu ciclo. As edições ficam pausadas até terminar.</item>
     </plurals>
     <string name="forge_movements_heading">Movimentos</string>
@@ -2163,6 +2263,7 @@
     <string name="forge_conflict_taken__t">Seu ciclo já tem ritos em %1$s.</string>
     <plurals name="forge_conflict_clash">
         <item quantity="one">%1$s dos novos dias está em conflito.</item>
+        <item quantity="many">%1$s dos novos dias estão em conflito.</item>
         <item quantity="other">%1$s dos novos dias estão em conflito.</item>
     </plurals>
     <string name="forge_conflict_taken_by">Ocupado por %1$s</string>
@@ -2172,10 +2273,12 @@
     <string name="forge_conflict_nofit__t">Seu ciclo deixa poucos dias livres nesta semana, então não é possível fazer o ajuste.</string>
     <plurals name="forge_conflict_delete">
         <item quantity="one">Exclui sua %1$d rotina atual. Seu histórico é mantido.</item>
+        <item quantity="many">Exclui suas %1$d rotinas atuais. Seu histórico é mantido.</item>
         <item quantity="other">Exclui suas %1$d rotinas atuais. Seu histórico é mantido.</item>
     </plurals>
     <plurals name="forge_conflict_delete__t">
         <item quantity="one">Exclui seu %1$d rito atual. Sua Crônica é mantida.</item>
+        <item quantity="many">Exclui seus %1$d ritos atuais. Sua Crônica é mantida.</item>
         <item quantity="other">Exclui seus %1$d ritos atuais. Sua Crônica é mantida.</item>
     </plurals>
     <string name="forge_conflict_fit_button">Ajustar aos meus dias</string>
@@ -2186,26 +2289,32 @@
     <string name="forge_discard_keep">Continuar editando</string>
     <plurals name="forge_cycle_subtitle">
         <item quantity="one">%1$d dia por semana · %2$s</item>
+        <item quantity="many">%1$d dias por semana · %2$s</item>
         <item quantity="other">%1$d dias por semana · %2$s</item>
     </plurals>
     <plurals name="forge_edits_swapped">
         <item quantity="one">%1$d movimento trocado</item>
+        <item quantity="many">%1$d movimentos trocados</item>
         <item quantity="other">%1$d movimentos trocados</item>
     </plurals>
     <plurals name="forge_edits_sets">
         <item quantity="one">%1$d quantidade de séries alterada</item>
+        <item quantity="many">%1$d quantidades de séries alteradas</item>
         <item quantity="other">%1$d quantidades de séries alteradas</item>
     </plurals>
     <plurals name="forge_edits_loads">
         <item quantity="one">%1$d carga alterada</item>
+        <item quantity="many">%1$d cargas alteradas</item>
         <item quantity="other">%1$d cargas alteradas</item>
     </plurals>
     <plurals name="forge_edits_removed">
         <item quantity="one">%1$d movimento removido</item>
+        <item quantity="many">%1$d movimentos removidos</item>
         <item quantity="other">%1$d movimentos removidos</item>
     </plurals>
     <plurals name="forge_edits_added">
         <item quantity="one">%1$d movimento adicionado</item>
+        <item quantity="many">%1$d movimentos adicionados</item>
         <item quantity="other">%1$d movimentos adicionados</item>
     </plurals>
     <string name="builder_error_history">Não foi possível ler seu histórico: %1$s</string>
@@ -2222,10 +2331,12 @@
     <string name="builder_saved_not_remembered">Salvo, mas não foi possível guardar suas respostas: %1$s</string>
     <plurals name="builder_no_room">
         <item quantity="one">Seu plano semanal deixa %1$d dia livre e esta semana precisa de %2$d. Libere alguns dias ou substitua seu plano semanal.</item>
+        <item quantity="many">Seu plano semanal deixa %1$d dias livres e esta semana precisa de %2$d. Libere alguns dias ou substitua seu plano semanal.</item>
         <item quantity="other">Seu plano semanal deixa %1$d dias livres e esta semana precisa de %2$d. Libere alguns dias ou substitua seu plano semanal.</item>
     </plurals>
     <plurals name="builder_no_room__t">
         <item quantity="one">Seu ciclo deixa %1$d dia livre e esta semana precisa de %2$d. Libere alguns dias ou substitua seu ciclo.</item>
+        <item quantity="many">Seu ciclo deixa %1$d dias livres e esta semana precisa de %2$d. Libere alguns dias ou substitua seu ciclo.</item>
         <item quantity="other">Seu ciclo deixa %1$d dias livres e esta semana precisa de %2$d. Libere alguns dias ou substitua seu ciclo.</item>
     </plurals>
     <string name="builder_fail_add">Não foi possível adicionar as rotinas</string>
@@ -2254,6 +2365,7 @@
     <string name="builder_template_none__t">Não há padrão criado à mão para este objetivo — forje um ciclo.</string>
     <plurals name="builder_template_subline">
         <item quantity="one">%1$s · %2$d dia</item>
+        <item quantity="many">%1$s · %2$d dias</item>
         <item quantity="other">%1$s · %2$d dias</item>
     </plurals>
     <string name="builder_template_adapted">Adaptado ao seu equipamento e volume semanal.</string>
@@ -2266,18 +2378,22 @@
     <string name="builder_improve_loading__t">Lendo seu rito à luz das evidências…</string>
     <plurals name="builder_volume_others">
         <item quantity="one">O volume semanal inclui sua %1$d outra rotina.</item>
+        <item quantity="many">O volume semanal inclui suas %1$d outras rotinas.</item>
         <item quantity="other">O volume semanal inclui suas %1$d outras rotinas.</item>
     </plurals>
     <plurals name="builder_volume_others__t">
         <item quantity="one">O volume semanal inclui seu %1$d outro rito.</item>
+        <item quantity="many">O volume semanal inclui seus %1$d outros ritos.</item>
         <item quantity="other">O volume semanal inclui seus %1$d outros ritos.</item>
     </plurals>
     <plurals name="builder_volume_existing">
         <item quantity="one">O volume semanal inclui sua %1$d rotina existente.</item>
+        <item quantity="many">O volume semanal inclui suas %1$d rotinas existentes.</item>
         <item quantity="other">O volume semanal inclui suas %1$d rotinas existentes.</item>
     </plurals>
     <plurals name="builder_volume_existing__t">
         <item quantity="one">O volume semanal inclui seu %1$d rito existente.</item>
+        <item quantity="many">O volume semanal inclui seus %1$d ritos existentes.</item>
         <item quantity="other">O volume semanal inclui seus %1$d ritos existentes.</item>
     </plurals>
     <string name="builder_take_cycle">Usar este plano semanal</string>
@@ -2293,18 +2409,22 @@
     <string name="builder_history_suggested">Sugerido com base em %1$s de treino.</string>
     <plurals name="builder_span_days">
         <item quantity="one">%1$d dia</item>
+        <item quantity="many">%1$d dias</item>
         <item quantity="other">%1$d dias</item>
     </plurals>
     <plurals name="builder_span_weeks">
         <item quantity="one">%1$d semana</item>
+        <item quantity="many">%1$d semanas</item>
         <item quantity="other">%1$d semanas</item>
     </plurals>
     <plurals name="builder_span_months">
         <item quantity="one">%1$d mês</item>
+        <item quantity="many">%1$d meses</item>
         <item quantity="other">%1$d meses</item>
     </plurals>
     <plurals name="builder_span_years">
         <item quantity="one">%1$s ano</item>
+        <item quantity="many">%1$s anos</item>
         <item quantity="other">%1$s anos</item>
     </plurals>
     <string name="builder_armoury_preview">Escolha seu equipamento para ver uma prévia. Nada significa usar apenas o peso corporal.</string>
@@ -2375,6 +2495,7 @@
     <string name="riteday_note_free">%1$s está livre.</string>
     <plurals name="riteday_note_taken">
         <item quantity="one">%1$s já está em %2$s. Os dois dividiriam esse dia.</item>
+        <item quantity="many">%1$s já estão em %2$s. Os dois dividiriam esse dia.</item>
         <item quantity="other">%1$s já estão em %2$s. Os dois dividiriam esse dia.</item>
     </plurals>
     <string name="riteday_title">Em que dia fica %1$s?</string>
@@ -2387,6 +2508,7 @@
     <string name="ritemuscles_title_empty__t">Músculos trabalhados neste rito</string>
     <plurals name="ritemuscles_summary">
         <item quantity="one">%1$d músculo · %2$s</item>
+        <item quantity="many">%1$d músculos · %2$s</item>
         <item quantity="other">%1$d músculos · %2$s</item>
     </plurals>
     <string name="ritemuscles_empty">Ainda não há dados de músculos para esta rotina.</string>
@@ -2394,14 +2516,17 @@
     <string name="ritemuscles_sets_heading">SÉRIES POR MÚSCULO</string>
     <plurals name="ritemuscles_sets">
         <item quantity="one">%1$s série</item>
+        <item quantity="many">%1$s séries</item>
         <item quantity="other">%1$s séries</item>
     </plurals>
     <plurals name="effort_hard_sets">
         <item quantity="one">%1$d série intensa</item>
+        <item quantity="many">%1$d séries intensas</item>
         <item quantity="other">%1$d séries intensas</item>
     </plurals>
     <plurals name="effort_movements">
         <item quantity="one">%1$d movimento</item>
+        <item quantity="many">%1$d movimentos</item>
         <item quantity="other">%1$d movimentos</item>
     </plurals>
     <string name="effort_cue_rir">pare 0–2 reps antes da falha</string>
@@ -2410,6 +2535,7 @@
     <string name="effort_sentence_failure">Leve a última série até a falha. As reps orientam a escolha da carga.</string>
     <plurals name="effort_rep_guide_single">
         <item quantity="one">~%1$d repetição</item>
+        <item quantity="many">~%1$d repetições</item>
         <item quantity="other">~%1$d repetições</item>
     </plurals>
     <string name="effort_rep_guide_range">~%1$d–%2$d reps</string>
@@ -2486,10 +2612,12 @@
     <string name="optimise_card_open_description">Abrir alteração %1$d: %2$s, %3$s</string>
     <plurals name="optimise_card_more_label">
         <item quantity="one">Mostrar mais %1$d opção para a alteração %2$d</item>
+        <item quantity="many">Mostrar mais %1$d opções para a alteração %2$d</item>
         <item quantity="other">Mostrar mais %1$d opções para a alteração %2$d</item>
     </plurals>
     <plurals name="optimise_card_more_options">
         <item quantity="one">Mais %1$d opção</item>
+        <item quantity="many">Mais %1$d opções</item>
         <item quantity="other">Mais %1$d opções</item>
     </plurals>
     <string name="optimise_card_ranked_one">Classificada em 2º</string>
@@ -2509,6 +2637,7 @@
     <string name="optimise_hub_nothing">Nada a alterar</string>
     <plurals name="optimise_hub_findings">
         <item quantity="one">%1$d ponto para analisar</item>
+        <item quantity="many">%1$d pontos para analisar</item>
         <item quantity="other">%1$d pontos para analisar</item>
     </plurals>
     <string name="optimise_hub_note">As sugestões alteram suas rotinas atuais. Nada é salvo até você aplicar.</string>
@@ -2519,12 +2648,24 @@
     <string name="optimise_heavy_label">Excessivo</string>
     <string name="optimise_recovery_label">Começa cansado</string>
     <string name="optimise_recovery_title">%1$s continua começando com %2$s ainda cansado</string>
-    <string name="optimise_recovery_detail">Alto em %1$d dos últimos %2$d inícios</string>
-    <string name="optimise_recovery_subline">%1$s alto em %2$d dos últimos %3$d inícios</string>
+    <plurals name="optimise_recovery_detail">
+        <item quantity="one">Alto em %1$d do último %2$d início</item>
+        <item quantity="many">Alto em %1$d dos últimos %2$d inícios</item>
+        <item quantity="other">Alto em %1$d dos últimos %2$d inícios</item>
+    </plurals>
+    <plurals name="optimise_recovery_subline">
+        <item quantity="one">%1$s alto em %2$d do último %3$d início</item>
+        <item quantity="many">%1$s alto em %2$d dos últimos %3$d inícios</item>
+        <item quantity="other">%1$s alto em %2$d dos últimos %3$d inícios</item>
+    </plurals>
     <string name="optimise_recovery_subtitle">%1$s ainda cansado no início</string>
     <string name="optimise_recovery_open_label">Abrir recuperação de %1$s</string>
     <string name="optimise_recovery_description">%1$s começa cansado. %2$s</string>
-    <string name="optimise_recovery_intro">Nível alto ou maior no início para %1$s em %2$d das últimas %3$d vezes. Escolha uma alteração ou mantenha como está.</string>
+    <plurals name="optimise_recovery_intro">
+        <item quantity="one">Nível alto ou maior no início para %1$s em %2$d da última %3$d vez. Escolha uma alteração ou mantenha como está.</item>
+        <item quantity="many">Nível alto ou maior no início para %1$s em %2$d das últimas %3$d vezes. Escolha uma alteração ou mantenha como está.</item>
+        <item quantity="other">Nível alto ou maior no início para %1$s em %2$d das últimas %3$d vezes. Escolha uma alteração ou mantenha como está.</item>
+    </plurals>
     <string name="optimise_recovery_starts_label">Quando começou</string>
     <string name="optimise_recovery_cause">A maior parte veio de %1$s em %2$s (%3$s).</string>
     <string name="optimise_recovery_cause_free">A maior parte veio de um treino em %1$s (%2$s).</string>
@@ -2545,6 +2686,7 @@
     <string name="optimise_changes_none">nenhuma alteração segura</string>
     <plurals name="optimise_changes_count">
         <item quantity="one">%1$d alteração</item>
+        <item quantity="many">%1$d alterações</item>
         <item quantity="other">%1$d alterações</item>
     </plurals>
     <string name="optimise_heavy_empty">Nenhuma alteração reduz isso sem deixar outro músculo abaixo do mínimo. O alerta é apenas uma orientação; você pode deixar como está.</string>
@@ -2557,6 +2699,7 @@
     <string name="optimise_overlap_subline">Dois movimentos fazendo o mesmo trabalho · %1$s</string>
     <plurals name="optimise_overlaps_found">
         <item quantity="one">%1$d sobreposição encontrada</item>
+        <item quantity="many">%1$d sobreposições encontradas</item>
         <item quantity="other">%1$d sobreposições encontradas</item>
     </plurals>
     <string name="optimise_overlap_open_label">Abrir sobreposições em %1$s</string>
@@ -2587,6 +2730,7 @@
     <string name="optimise_changes_label">Alterações</string>
     <plurals name="optimise_apply_changes">
         <item quantity="one">Aplicar %1$d alteração</item>
+        <item quantity="many">Aplicar %1$d alterações</item>
         <item quantity="other">Aplicar %1$d alterações</item>
     </plurals>
     <string name="optimise_apply_note">Nada é salvo até você aplicar. As alterações ignoradas permanecem como estão.</string>
@@ -2606,6 +2750,7 @@
     <string name="optimise_applied_status">Aplicada</string>
     <plurals name="optimise_applied_count">
         <item quantity="one">%1$d alteração aplicada</item>
+        <item quantity="many">%1$d alterações aplicadas</item>
         <item quantity="other">%1$d alterações aplicadas</item>
     </plurals>
     <string name="optimise_applied_skipped">%1$d ignoradas, mantidas como estavam.</string>
@@ -2625,7 +2770,6 @@
     <string name="coverage_week_state_none">Nenhum</string>
     <string name="coverage_week_legend_to">até %1$d+</string>
     <string name="coverage_week_caption">Nesta semana, de segunda a domingo: o que já foi feito e o que ainda está no plano</string>
-    <string name="coverage_week_caption__t">Nesta semana, de segunda a domingo: o que já foi feito e o que ainda está no ciclo</string>
     <string name="coverage_week_sets_done">%1$s feitas</string>
     <string name="coverage_week_sets_planned">%1$s planejadas</string>
     <string name="coverage_week_sets_both">%1$s feitas + %2$s planejadas</string>
@@ -2636,14 +2780,17 @@
     <string name="coverage_week_row_short_nothing">Abaixo do mínimo: nada planejado</string>
     <plurals name="coverage_week_row_short_by">
         <item quantity="one">Falta %1$s série</item>
+        <item quantity="many">Faltam %1$s séries</item>
         <item quantity="other">Faltam %1$s séries</item>
     </plurals>
     <plurals name="coverage_week_covered_count">
         <item quantity="one">Já coberto · %1$d músculo</item>
+        <item quantity="many">Já cobertos · %1$d músculos</item>
         <item quantity="other">Já cobertos · %1$d músculos</item>
     </plurals>
     <plurals name="coverage_week_line_short">
         <item quantity="one">%1$d músculo abaixo do mínimo</item>
+        <item quantity="many">%1$d músculos abaixo do mínimo</item>
         <item quantity="other">%1$d músculos abaixo do mínimo</item>
     </plurals>
     <string name="coverage_week_line_heavy">%1$d com volume alto</string>
@@ -2660,29 +2807,30 @@
     <string name="coverage_empty_cycle__t">Ainda não há ritos inscritos. Forje um ciclo e ele será mapeado aqui.</string>
     <plurals name="coverage_unattributed_sets">
         <item quantity="one">%1$d set não contado: sem dados musculares para esse exercício.</item>
+        <item quantity="many">%1$d séries não contadas: não há dados musculares para esses exercícios.</item>
         <item quantity="other">%1$d séries não contadas: não há dados musculares para esses exercícios.</item>
     </plurals>
     <plurals name="coverage_uncounted_rites">
         <item quantity="one">%1$d rotina não tem dia definido e não é contada</item>
+        <item quantity="many">%1$d rotinas não têm dia definido e não são contadas</item>
         <item quantity="other">%1$d rotinas não têm dia definido e não são contadas</item>
     </plurals>
     <plurals name="coverage_uncounted_rites__t">
         <item quantity="one">%1$d rito não tem dia definido e não é contado</item>
+        <item quantity="many">%1$d ritos não têm dia definido e não são contados</item>
         <item quantity="other">%1$d ritos não têm dia definido e não são contados</item>
     </plurals>
     <plurals name="coverage_uncounted_open_hint">
         <item quantity="one">Abra essa rotina para definir uma data</item>
+        <item quantity="many">Abra suas rotinas para definir os dias</item>
         <item quantity="other">Abra suas rotinas para definir os dias</item>
     </plurals>
     <plurals name="coverage_uncounted_open_hint__t">
         <item quantity="one">Abra esse rite para definir uma data</item>
+        <item quantity="many">Abra teus ritos para definir os dias</item>
         <item quantity="other">Abra teus ritos para definir os dias</item>
     </plurals>
     <string name="coverage_covered_empty">Todos os músculos cobertos</string>
-    <plurals name="coverage_covered_count">
-        <item quantity="one">%1$d músculo coberto</item>
-        <item quantity="other">%1$d músculos cobertos</item>
-    </plurals>
     <string name="coverage_covered_hide_hint">Ocultar os músculos cobertos</string>
     <string name="coverage_covered_show_hint">Mostrar os músculos cobertos</string>
     <string name="coverage_by_exercise_label">Por exercício</string>
@@ -2699,15 +2847,18 @@
     <string name="coverage_headline_heavy">%1$d com volume alto</string>
     <plurals name="coverage_headline_gaps">
         <item quantity="one">%1$d músculo precisa de mais séries</item>
+        <item quantity="many">%1$d músculos precisam de mais séries</item>
         <item quantity="other">%1$d músculos precisam de mais séries</item>
     </plurals>
     <string name="coverage_reason">Cerca de %1$d séries intensas por músculo por semana é um bom mínimo.</string>
     <plurals name="coverage_hard_sets">
         <item quantity="one">%1$s série intensa</item>
+        <item quantity="many">%1$s séries intensas</item>
         <item quantity="other">%1$s séries intensas</item>
     </plurals>
     <plurals name="coverage_hard_sets_week">
         <item quantity="one">%1$s série intensa nesta semana</item>
+        <item quantity="many">%1$s séries intensas nesta semana</item>
         <item quantity="other">%1$s séries intensas nesta semana</item>
     </plurals>
     <string name="coverage_heavy_reason_week">Após cerca de %1$d séries por semana, cada série extra traz menos benefício. É uma sugestão sobre recuperação, não um limite.</string>
@@ -2723,6 +2874,7 @@
     <string name="coverage_chip_link">Cobertura ›</string>
     <plurals name="coverage_tile_description">
         <item quantity="one">%1$d músculo: %2$s</item>
+        <item quantity="many">%1$d músculos: %2$s</item>
         <item quantity="other">%1$d músculos: %2$s</item>
     </plurals>
     <string name="coverage_disclosure_hide_hint">Ocultar %1$s</string>
@@ -2821,19 +2973,23 @@
     <string name="session_plan_line">%1$s · %2$s · ~%3$d MIN</string>
     <plurals name="session_plan_exercises">
         <item quantity="one">%1$d EXERCÍCIO</item>
+        <item quantity="many">%1$d EXERCÍCIOS</item>
         <item quantity="other">%1$d EXERCÍCIOS</item>
     </plurals>
     <plurals name="session_plan_sets">
         <item quantity="one">%1$d SÉRIE</item>
+        <item quantity="many">%1$d SÉRIES</item>
         <item quantity="other">%1$d SÉRIES</item>
     </plurals>
     <string name="session_plan_line_sentence">%1$s · %2$s · ~%3$d min</string>
     <plurals name="session_plan_exercises_sentence">
         <item quantity="one">%1$d exercício</item>
+        <item quantity="many">%1$d exercícios</item>
         <item quantity="other">%1$d exercícios</item>
     </plurals>
     <plurals name="session_plan_sets_sentence">
         <item quantity="one">%1$d série</item>
+        <item quantity="many">%1$d séries</item>
         <item quantity="other">%1$d séries</item>
     </plurals>
     <string name="plates_bar_other">Outra</string>
@@ -2844,6 +3000,7 @@
     <string name="plates_pairs_more_description">Mais pares de %1$s</string>
     <plurals name="plates_pair_word">
         <item quantity="one">dupla</item>
+        <item quantity="many">pares</item>
         <item quantity="other">pares</item>
     </plurals>
     <string name="plates_rack_heaviest">Carga máxima possível: %1$s</string>
@@ -2856,35 +3013,42 @@
     <string name="scheme_type_custom">Personalizado</string>
     <plurals name="scheme_count_sets">
         <item quantity="one">%1$d série</item>
+        <item quantity="many">%1$d séries</item>
         <item quantity="other">%1$d séries</item>
     </plurals>
     <plurals name="scheme_summary_top_backoffs">
         <item quantity="one">Série pesada + %1$d série leve</item>
+        <item quantity="many">Série pesada + %1$d séries leves</item>
         <item quantity="other">Série pesada + %1$d séries leves</item>
     </plurals>
     <plurals name="scheme_drop_last">
         <item quantity="one">série final</item>
+        <item quantity="many">últimas %1$d séries</item>
         <item quantity="other">últimas %1$d séries</item>
     </plurals>
     <string name="scheme_times_once">uma vez</string>
     <string name="scheme_times_twice">duas vezes</string>
     <plurals name="scheme_times_many">
         <item quantity="one">%1$d vez</item>
+        <item quantity="many">%1$d vezes</item>
         <item quantity="other">%1$d vezes</item>
     </plurals>
     <string name="scheme_summary_drops">%1$s, %2$s drops %3$s</string>
     <plurals name="scheme_summary_custom">
         <item quantity="one">Personalizado, %1$d série</item>
+        <item quantity="many">Personalizado, %1$d séries</item>
         <item quantity="other">Personalizado, %1$d séries</item>
     </plurals>
     <string name="scheme_clause_straight">%1$d uniformes</string>
     <plurals name="scheme_clause_top_backoffs">
         <item quantity="one">pesada + %1$d leve</item>
+        <item quantity="many">pesada + %1$d leves</item>
         <item quantity="other">pesada + %1$d leves</item>
     </plurals>
     <string name="scheme_clause_drops">%1$s drops %2$s (−%3$d%%)</string>
     <plurals name="scheme_clause_custom">
         <item quantity="one">personalizada %1$d série</item>
+        <item quantity="many">personalizadas %1$d séries</item>
         <item quantity="other">personalizadas %1$d séries</item>
     </plurals>
     <string name="scheme_figure_seconds">%1$ss</string>
@@ -2922,35 +3086,43 @@
     <string name="exercise_target_km">%1$s × %2$s km</string>
     <plurals name="exercise_target_attempts">
         <item quantity="one">%1$s × %2$s tentativa</item>
+        <item quantity="many">%1$s × %2$s tentativas</item>
         <item quantity="other">%1$s × %2$s tentativas</item>
     </plurals>
     <plurals name="progression_first_reps">
         <item quantity="one">Primeira tentativa — faça %1$d repetição em cada série</item>
+        <item quantity="many">Primeira tentativa — faça %1$d repetições em cada série</item>
         <item quantity="other">Primeira tentativa — faça %1$d repetições em cada série</item>
     </plurals>
     <string name="progression_first_hold">Primeira tentativa — alcance %1$d s em cada série</string>
     <plurals name="progression_stalled_reps">
         <item quantity="one">Sem progresso por %1$d treino — faça deload para %2$s e retome de %3$d reps</item>
+        <item quantity="many">Sem progresso por %1$d treinos — faça deload para %2$s e retome de %3$d reps</item>
         <item quantity="other">Sem progresso por %1$d treinos — faça deload para %2$s e retome de %3$d reps</item>
     </plurals>
     <plurals name="progression_stalled_reps__t">
         <item quantity="one">Sem avanço por %1$d prova — faça deload para %2$s e reconquiste o caminho a partir de %3$d reps</item>
+        <item quantity="many">Sem avanço por %1$d provas — faça deload para %2$s e reconquiste o caminho a partir de %3$d reps</item>
         <item quantity="other">Sem avanço por %1$d provas — faça deload para %2$s e reconquiste o caminho a partir de %3$d reps</item>
     </plurals>
     <plurals name="progression_stalled_hold">
         <item quantity="one">Sem progresso por %1$d treino — faça deload para %2$s e retome a sustentação de %3$d s</item>
+        <item quantity="many">Sem progresso por %1$d treinos — faça deload para %2$s e retome a sustentação de %3$d s</item>
         <item quantity="other">Sem progresso por %1$d treinos — faça deload para %2$s e retome a sustentação de %3$d s</item>
     </plurals>
     <plurals name="progression_stalled_hold__t">
         <item quantity="one">Sem avanço por %1$d prova — faça deload para %2$s e reconquiste os %3$d s de sustentação</item>
+        <item quantity="many">Sem avanço por %1$d provas — faça deload para %2$s e reconquiste os %3$d s de sustentação</item>
         <item quantity="other">Sem avanço por %1$d provas — faça deload para %2$s e reconquiste os %3$d s de sustentação</item>
     </plurals>
     <plurals name="progression_repeat_reps">
         <item quantity="one">Repita até a série %1$d chegar a %2$d reps</item>
+        <item quantity="many">Repita até cada uma das %1$d séries chegar a %2$d reps</item>
         <item quantity="other">Repita até cada uma das %1$d séries chegar a %2$d reps</item>
     </plurals>
     <plurals name="progression_repeat_hold">
         <item quantity="one">Repita até a série %1$d chegar a %2$d s</item>
+        <item quantity="many">Repita até cada uma das %1$d séries chegar a %2$d s</item>
         <item quantity="other">Repita até cada uma das %1$d séries chegar a %2$d s</item>
     </plurals>
     <string name="progression_cleared_control_1">Treino concluído — aumente um pouco a amplitude antes de adicionar reps</string>
@@ -2975,9 +3147,21 @@
     <string name="progression_climb_reps">Meta alcançada — avance para %1$d reps</string>
     <string name="progression_add_drop">Meta alcançada — adicione %1$s e reduza para %2$d reps</string>
     <string name="progression_ceiling_add">Limite de reps alcançado — adicione %1$s e volte a %2$d reps</string>
-    <string name="progression_assistance_less">Reduza a assistência para %1$s e volte a %2$d reps</string>
-    <string name="progression_assistance_deload">Aumente a assistência para %1$s e volte a %2$d reps</string>
-    <string name="progression_assistance_reps">Mantenha a mesma assistência e avance para %1$d reps</string>
+    <plurals name="progression_assistance_less">
+        <item quantity="one">Reduza a assistência para %1$s e volte a %2$d repetição</item>
+        <item quantity="many">Reduza a assistência para %1$s e volte a %2$d repetições</item>
+        <item quantity="other">Reduza a assistência para %1$s e volte a %2$d repetições</item>
+    </plurals>
+    <plurals name="progression_assistance_deload">
+        <item quantity="one">Aumente a assistência para %1$s e volte a %2$d repetição</item>
+        <item quantity="many">Aumente a assistência para %1$s e volte a %2$d repetições</item>
+        <item quantity="other">Aumente a assistência para %1$s e volte a %2$d repetições</item>
+    </plurals>
+    <plurals name="progression_assistance_reps">
+        <item quantity="one">Mantenha a mesma assistência e avance para %1$d repetição</item>
+        <item quantity="many">Mantenha a mesma assistência e avance para %1$d repetições</item>
+        <item quantity="other">Mantenha a mesma assistência e avance para %1$d repetições</item>
+    </plurals>
     <string name="progression_assistance_zero">Não há mais assistência; escolha uma variação mais difícil quando estiver pronto</string>
     <string name="session_suggestion_less_assistance">Menos assistência: %1$s × %2$d</string>
     <string name="session_suggestion_more_assistance">Mais assistência: %1$s × %2$d</string>
@@ -2993,6 +3177,7 @@
     <string name="share_distance_in_time">%1$s em %2$s</string>
     <plurals name="share_attempts">
         <item quantity="one">%1$d tentativa</item>
+        <item quantity="many">%1$d tentativas</item>
         <item quantity="other">%1$d tentativas</item>
     </plurals>
     <string name="share_figures_seconds">%1$ss</string>
@@ -3002,6 +3187,7 @@
     <string name="share_footer_minutes">%1$d min</string>
     <plurals name="share_footer_sets">
         <item quantity="one">%1$d série</item>
+        <item quantity="many">%1$d séries</item>
         <item quantity="other">%1$d séries</item>
     </plurals>
     <string name="share_footer_xp">+%1$s XP</string>
@@ -3069,6 +3255,7 @@
     <string name="energy_basis_activity">MET líquido %1$s × %2$s kg × %3$s min</string>
     <plurals name="energy_basis_sets">
         <item quantity="one">%1$d série × MET líquido %2$s × %3$s kg × %4$s min</item>
+        <item quantity="many">%1$d séries × MET líquido %2$s × %3$s kg × %4$s min</item>
         <item quantity="other">%1$d séries × MET líquido %2$s × %3$s kg × %4$s min</item>
     </plurals>
     <string name="energy_basis_timed_sets">MET líquido das séries cronometradas × %1$s kg × %2$s min</string>
@@ -3148,6 +3335,7 @@
     <string name="picker_search_label">Buscar exercícios</string>
     <plurals name="picker_exercise_count">
         <item quantity="one">%1$d exercício</item>
+        <item quantity="many">%1$d exercícios</item>
         <item quantity="other">%1$d exercícios</item>
     </plurals>
     <string name="picker_filter_type">Tipo</string>
@@ -3185,6 +3373,7 @@
     <string name="picker_confirm_add">Adicionar</string>
     <plurals name="program_kit_dumbbells">
         <item quantity="one">seu halter de %1$s kg</item>
+        <item quantity="many">seus halteres de %1$s kg</item>
         <item quantity="other">seus halteres de %1$s kg</item>
     </plurals>
     <string name="program_load_capped_far">limitado a %1$s por %2$d reps, ainda longe da falha - passe para uma variação mais difícil quando puder</string>
@@ -3205,14 +3394,17 @@
     <string name="program_advice_build_week__t">forje um ciclo para cobri-los.</string>
     <plurals name="program_shortfall">
         <item quantity="one">%1$d músculo abaixo de %2$d séries intensas (%3$s) — %4$s</item>
+        <item quantity="many">%1$d músculos abaixo de %2$d séries intensas (%3$s) — %4$s</item>
         <item quantity="other">%1$d músculos abaixo de %2$d séries intensas (%3$s) — %4$s</item>
     </plurals>
     <plurals name="program_note_fewer_days">
         <item quantity="one">Só foi possível planejar %1$d de %2$d dia — seu equipamento não tinha opções para o restante.</item>
+        <item quantity="many">Só foi possível planejar %1$d de %2$d dias — seu equipamento não tinha opções para o restante.</item>
         <item quantity="other">Só foi possível planejar %1$d de %2$d dias — seu equipamento não tinha opções para o restante.</item>
     </plurals>
     <plurals name="program_note_fewer_days__t">
         <item quantity="one">Apenas %1$d de %2$d dia pôde ser planejado — seu arsenal não oferecia opções para o restante.</item>
+        <item quantity="many">Apenas %1$d de %2$d dias puderam ser planejados — seu arsenal não oferecia opções para o restante.</item>
         <item quantity="other">Apenas %1$d de %2$d dias puderam ser planejados — seu arsenal não oferecia opções para o restante.</item>
     </plurals>
     <string name="program_note_nothing_to_plan">Nenhum dia pôde ser planejado — seu equipamento e suas configurações não deixaram opções para montar a semana.</string>
@@ -3237,6 +3429,7 @@
     <string name="program_was_short">com falta de %1$s</string>
     <plurals name="program_sets_phrase">
         <item quantity="one">%1$s série</item>
+        <item quantity="many">%1$s séries</item>
         <item quantity="other">%1$s séries</item>
     </plurals>
     <string name="program_why_added">Adicionado %1$s: faltavam %2$s para %3$s na semana</string>
@@ -3331,14 +3524,17 @@
     <string name="today_first_run_rank_titles">%1$s é seu título de nível e sobe com seu XP. O rank de força depende do que você levanta.</string>
     <plurals name="today_card_live_meta_today">
         <item quantity="one">Treino de hoje · %1$d de %2$d série registrada</item>
+        <item quantity="many">Treino de hoje · %1$d de %2$d séries registradas</item>
         <item quantity="other">Treino de hoje · %1$d de %2$d séries registradas</item>
     </plurals>
     <plurals name="today_card_live_meta_today__t">
         <item quantity="one">Prova de hoje · %1$d de %2$d série inscrita</item>
+        <item quantity="many">Prova de hoje · %1$d de %2$d séries inscritas</item>
         <item quantity="other">Prova de hoje · %1$d de %2$d séries inscritas</item>
     </plurals>
     <plurals name="today_card_live_meta_under_way">
         <item quantity="one">Em andamento · %1$d de %2$d série registrada</item>
+        <item quantity="many">Em andamento · %1$d de %2$d séries registradas</item>
         <item quantity="other">Em andamento · %1$d de %2$d séries registradas</item>
     </plurals>
     <string name="today_continue_button">Continuar %1$s</string>
@@ -3357,6 +3553,7 @@
     <string name="today_first_rite_subline__t">O primeiro rito do seu ciclo</string>
     <plurals name="today_sets_logged">
         <item quantity="one">%1$d de %2$d série registrada</item>
+        <item quantity="many">%1$d de %2$d séries registradas</item>
         <item quantity="other">%1$d de %2$d séries registradas</item>
     </plurals>
     <string name="today_week_status_sealed">Treino finalizado</string>
@@ -3387,15 +3584,18 @@
     <string name="today_level_state">Progresso de nível: %1$d de %2$d XP para o próximo nível</string>
     <plurals name="today_oath_progress">
         <item quantity="one">%1$d / %2$d dia</item>
+        <item quantity="many">%1$d / %2$d dias</item>
         <item quantity="other">%1$d / %2$d dias</item>
     </plurals>
     <plurals name="today_oath_state_next">
         <item quantity="one">%1$s; próxima marca em %2$d dia: %3$s</item>
+        <item quantity="many">%1$s; próxima marca em %2$d dias: %3$s</item>
         <item quantity="other">%1$s; próxima marca em %2$d dias: %3$s</item>
     </plurals>
     <string name="today_oath_state_done">%1$s; todas as marcas alcançadas</string>
     <plurals name="today_oath_kept">
         <item quantity="one">%1$d dia mantido</item>
+        <item quantity="many">%1$d dias mantidos</item>
         <item quantity="other">%1$d dias mantidos</item>
     </plurals>
     <string name="today_oath_state_begin">%1$s; finalize um treino para começar</string>
@@ -3427,6 +3627,7 @@
     <string name="settings_advanced_dev_held">(mantido: o nível nunca diminui)</string>
     <plurals name="settings_advanced_dev_inscriptions_due">
         <item quantity="one">%1$d inscrição pendente</item>
+        <item quantity="many">%1$d inscrições pendentes</item>
         <item quantity="other">%1$d inscrições pendentes</item>
     </plurals>
     <string name="settings_advanced_dev_level">Nível %1$s → %2$s%3$s.</string>
@@ -3438,10 +3639,12 @@
     <string name="settings_advanced_dev_pricing_title__t">Avaliando cada prova…</string>
     <plurals name="settings_advanced_dev_changed">
         <item quantity="one">%1$d de %2$d treino muda.</item>
+        <item quantity="many">%1$d de %2$d treinos mudam.</item>
         <item quantity="other">%1$d de %2$d treinos mudam.</item>
     </plurals>
     <plurals name="settings_advanced_dev_changed__t">
         <item quantity="one">%1$d de %2$d prova muda.</item>
+        <item quantity="many">%1$d de %2$d provas mudam.</item>
         <item quantity="other">%1$d de %2$d provas mudam.</item>
     </plurals>
     <string name="settings_advanced_dev_xp_line">XP dos treinos %1$s; XP total %2$s → %3$s (%4$s).</string>
@@ -3459,15 +3662,18 @@
     <string name="rank_sheet_next_log">Próximo: registre %1$s para subir mais</string>
     <plurals name="rank_sheet_window_note">
         <item quantity="one">Um padrão que você não treinou em %1$d dia fica de fora, sem contar como zero. Treinar abdômen nunca reduz seu rank.</item>
+        <item quantity="many">Um padrão que você não treinou em %1$d dias fica de fora, sem contar como zero. Treinar abdômen nunca reduz seu rank.</item>
         <item quantity="other">Um padrão que você não treinou em %1$d dias fica de fora, sem contar como zero. Treinar abdômen nunca reduz seu rank.</item>
     </plurals>
     <string name="rank_sheet_top_of_scale">Topo da escala</string>
     <plurals name="rank_sheet_steps_to_next">
         <item quantity="one">%1$d passo até %2$s</item>
+        <item quantity="many">%1$d passos até %2$s</item>
         <item quantity="other">%1$d passos até %2$s</item>
     </plurals>
     <plurals name="rank_sheet_progress_caption">
         <item quantity="one">Média de %1$d de 3 padrões no último %2$d dia</item>
+        <item quantity="many">Média de %1$d de 3 padrões nos últimos %2$d dias</item>
         <item quantity="other">Média de %1$d de 3 padrões nos últimos %2$d dias</item>
     </plurals>
     <string name="sharecard_title">Compartilhar este treino</string>
@@ -3495,25 +3701,30 @@
     <string name="daily_today">hoje</string>
     <plurals name="daily_steps_avg">
         <item quantity="one">média %1$s/dia · %2$d de %3$d dia, sem contar hoje</item>
+        <item quantity="many">média %1$s/dia · %2$d de %3$d dias, sem contar hoje</item>
         <item quantity="other">média %1$s/dia · %2$d de %3$d dias, sem contar hoje</item>
     </plurals>
     <string name="daily_steps_none">nenhum dia registrado</string>
     <plurals name="daily_steps_value">
         <item quantity="one">%1$s passo</item>
+        <item quantity="many">%1$s passos</item>
         <item quantity="other">%1$s passos</item>
     </plurals>
     <plurals name="daily_steps_goal">
         <item quantity="one">%1$d de %2$d dia alcançou %3$s</item>
+        <item quantity="many">%1$d de %2$d dias alcançaram %3$s</item>
         <item quantity="other">%1$d de %2$d dias alcançaram %3$s</item>
     </plurals>
     <string name="daily_sleep_last_night">última noite</string>
     <plurals name="daily_sleep_avg">
         <item quantity="one">média %1$s · %2$d de %3$d noite</item>
+        <item quantity="many">média %1$s · %2$d de %3$d noites</item>
         <item quantity="other">média %1$s · %2$d de %3$d noites</item>
     </plurals>
     <string name="daily_sleep_none">nenhuma noite registrada</string>
     <plurals name="daily_kcal_summary">
         <item quantity="one">%1$d de %2$d dia · %3$d medido, barras claras são estimativas</item>
+        <item quantity="many">%1$d de %2$d dias · %3$d medidos, barras claras são estimativas</item>
         <item quantity="other">%1$d de %2$d dias · %3$d medidos, barras claras são estimativas</item>
     </plurals>
     <string name="daily_kcal_value">%1$s kcal</string>
@@ -3521,6 +3732,7 @@
     <string name="daily_bpm_value">%1$d bpm</string>
     <plurals name="daily_resting_hr_avg">
         <item quantity="one">Média de 7 dias · %1$d de %2$d dia</item>
+        <item quantity="many">Média de 7 dias · %1$d de %2$d dias</item>
         <item quantity="other">Média de 7 dias · %1$d de %2$d dias</item>
     </plurals>
     <string name="daily_resting_hr_none">O Health Connect ainda não tem dados</string>
@@ -3553,7 +3765,7 @@
     <string name="ledger_bmi_needs_weight">precisa do peso</string>
     <string name="ledger_tap_set_height">toque para definir sua altura</string>
     <string name="ledger_ffmi_from">a partir de %1$s</string>
-    <string name="ledger_ffmi_needs_body_fat">precisa da % de gordura corporal</string>
+    <string name="ledger_ffmi_needs_body_fat">precisa do percentual de gordura corporal</string>
     <string name="ledger_bmi_ffmi_explainer">O IMC relaciona peso e altura; o FFMI relaciona massa magra e altura. Toque em um deles para ver suas faixas.</string>
     <string name="ledger_tape_logged">%1$d de %2$d registrados</string>
     <string name="ledger_stays_on_device">permanece neste dispositivo</string>
@@ -3566,10 +3778,12 @@
     <string name="ledger_consistency_empty__t">Cada semana ganha forma aqui conforme você sela provas.</string>
     <plurals name="ledger_week_strip_description">
         <item quantity="one">Dias finalizados por semana na última %1$d semana, mais antigo primeiro: %2$s</item>
+        <item quantity="many">Dias finalizados por semana nas últimas %1$d semanas, mais antigo primeiro: %2$s</item>
         <item quantity="other">Dias finalizados por semana nas últimas %1$d semanas, mais antigo primeiro: %2$s</item>
     </plurals>
     <plurals name="ledger_week_strip_description__t">
         <item quantity="one">Dias selados por semana na última %1$d semana, mais antigo primeiro: %2$s</item>
+        <item quantity="many">Dias selados por semana nas últimas %1$d semanas, mais antigo primeiro: %2$s</item>
         <item quantity="other">Dias selados por semana nas últimas %1$d semanas, mais antigo primeiro: %2$s</item>
     </plurals>
     <string name="ledger_history_header">HISTÓRICO DE PESO</string>
@@ -3595,10 +3809,12 @@
     <string name="measurement_show_fewer">Mostrar menos</string>
     <plurals name="measurement_show_all">
         <item quantity="one">Mostrar toda a %1$d medição</item>
+        <item quantity="many">Mostrar todas as %1$d medições</item>
         <item quantity="other">Mostrar todas as %1$d medições</item>
     </plurals>
     <plurals name="measurement_show_all__t">
         <item quantity="one">Revelar toda a %1$d leitura</item>
+        <item quantity="many">Revelar todas as %1$d leituras</item>
         <item quantity="other">Revelar todas as %1$d leituras</item>
     </plurals>
     <string name="measurement_tape_hint">Toque em um local para fazer a primeira medição.</string>
@@ -3619,10 +3835,12 @@
     <string name="stats_strength_value">%1$s pontos de força</string>
     <plurals name="stats_strength_caption">
         <item quantity="one">Melhor %1$d · %2$d treino · ajustado ao peso corporal</item>
+        <item quantity="many">Melhores %1$d · %2$d treinos · ajustados ao peso corporal</item>
         <item quantity="other">Melhores %1$d · %2$d treinos · ajustados ao peso corporal</item>
     </plurals>
     <plurals name="stats_strength_caption__t">
         <item quantity="one">Melhor %1$d · %2$d prova · ajustada ao peso corporal</item>
+        <item quantity="many">Melhores %1$d · %2$d provas · ajustadas ao peso corporal</item>
         <item quantity="other">Melhores %1$d · %2$d provas · ajustadas ao peso corporal</item>
     </plurals>
     <string name="stats_strength_one">Melhores %1$d · mais um treino pontuado traça a linha.</string>
@@ -3637,10 +3855,12 @@
     <string name="stats_drill_blank__t">Esta página ainda está em branco. Inscreva leituras para preenchê-la.</string>
     <plurals name="stats_drill_count">
         <item quantity="one">%1$d medição nas estatísticas</item>
+        <item quantity="many">%1$d medições nas estatísticas</item>
         <item quantity="other">%1$d medições nas estatísticas</item>
     </plurals>
     <plurals name="stats_drill_count__t">
         <item quantity="one">%1$d leitura no Registro</item>
+        <item quantity="many">%1$d leituras no Registro</item>
         <item quantity="other">%1$d leituras no Registro</item>
     </plurals>
     <string name="stats_drill_bands_label">FAIXAS</string>
@@ -3648,7 +3868,7 @@
     <string name="stats_drill_from_reading__t">Da leitura de %1$s, a mais recente com gordura corporal inscrita.</string>
     <string name="stats_add_weight_label">Peso (kg)</string>
     <string name="stats_add_weight_error">Informe um peso entre %1$d e %2$d kg.</string>
-    <string name="stats_add_body_fat_label">Percentual de gordura (opcional)</string>
+    <string name="stats_add_body_fat_label">Gordura corporal (%) (opcional)</string>
     <string name="stats_add_body_fat_error">Informe gordura corporal entre %1$d e %2$d%% ou deixe em branco.</string>
     <string name="stats_add_height_hint">A altura libera o IMC e o FFMI.</string>
     <string name="stats_add_set_height">Definir altura</string>
@@ -3665,10 +3885,12 @@
     <string name="stats_add_use">Usar</string>
     <plurals name="stats_calendar_trials">
         <item quantity="one">%1$s, treino finalizado</item>
+        <item quantity="many">%1$s, %2$d treinos finalizados</item>
         <item quantity="other">%1$s, %2$d treinos finalizados</item>
     </plurals>
     <plurals name="stats_calendar_trials__t">
         <item quantity="one">%1$s, prova selada</item>
+        <item quantity="many">%1$s, %2$d provas seladas</item>
         <item quantity="other">%1$s, %2$d provas seladas</item>
     </plurals>
     <string name="stats_calendar_rite_day">%1$s, dia de rotina</string>
@@ -3678,10 +3900,12 @@
     <string name="stats_calendar_today_speech">%1$s, hoje</string>
     <plurals name="stats_calendar_unit">
         <item quantity="one">treino</item>
+        <item quantity="many">treinos</item>
         <item quantity="other">treinos</item>
     </plurals>
     <plurals name="stats_calendar_unit__t">
         <item quantity="one">prova</item>
+        <item quantity="many">provas</item>
         <item quantity="other">provas</item>
     </plurals>
     <string name="stats_calendar_this_month">finalizados neste mês</string>
@@ -3741,6 +3965,7 @@
     <string name="always_veil_strength_tapering">Esvaindo-se, com %1$d%% de força</string>
     <plurals name="always_veil_inscriptions_waiting">
         <item quantity="one">%1$d inscrição à espera</item>
+        <item quantity="many">%1$d inscrições à espera</item>
         <item quantity="other">%1$d inscrições à espera</item>
     </plurals>
     <string name="always_veil_inscriptions_none">Nenhuma inscrição à espera</string>
@@ -3749,18 +3974,22 @@
     <string name="chart_summary_none">Gráfico sem dados</string>
     <plurals name="chart_summary">
         <item quantity="one">Gráfico de %1$d valor. Mais recente %2$s, mínimo %3$s, máximo %4$s.</item>
+        <item quantity="many">Gráfico de %1$d valores. Mais recente %2$s, mínimo %3$s, máximo %4$s.</item>
         <item quantity="other">Gráfico de %1$d valores. Mais recente %2$s, mínimo %3$s, máximo %4$s.</item>
     </plurals>
     <plurals name="chart_summary_range">
         <item quantity="one">Gráfico de %1$d valor. Mais recente %2$s, mínimo %3$s, máximo %4$s. De %5$s a %6$s.</item>
+        <item quantity="many">Gráfico de %1$d valores. Mais recente %2$s, mínimo %3$s, máximo %4$s. De %5$s a %6$s.</item>
         <item quantity="other">Gráfico de %1$d valores. Mais recente %2$s, mínimo %3$s, máximo %4$s. De %5$s a %6$s.</item>
     </plurals>
     <plurals name="chart_summary_gaps">
         <item quantity="one">Gráfico de %1$d valor, %2$d de %3$d posições vazias. Mais recente %4$s, mínimo %5$s, máximo %6$s.</item>
+        <item quantity="many">Gráfico de %1$d valores, %2$d de %3$d posições vazias. Mais recente %4$s, mínimo %5$s, máximo %6$s.</item>
         <item quantity="other">Gráfico de %1$d valores, %2$d de %3$d posições vazias. Mais recente %4$s, mínimo %5$s, máximo %6$s.</item>
     </plurals>
     <plurals name="chart_summary_gaps_range">
         <item quantity="one">Gráfico de %1$d valor, %2$d de %3$d posições vazias. Mais recente %4$s, mínimo %5$s, máximo %6$s. De %7$s a %8$s.</item>
+        <item quantity="many">Gráfico de %1$d valores, %2$d de %3$d posições vazias. Mais recente %4$s, mínimo %5$s, máximo %6$s. De %7$s a %8$s.</item>
         <item quantity="other">Gráfico de %1$d valores, %2$d de %3$d posições vazias. Mais recente %4$s, mínimo %5$s, máximo %6$s. De %7$s a %8$s.</item>
     </plurals>
     <string name="accent_emerald_gold">Esmeralda &amp; Ouro</string>
@@ -3784,10 +4013,12 @@
     <string name="celebration_crest_wear_hint__t">Exiba em seu fólio</string>
     <plurals name="celebration_echoes_count">
         <item quantity="one">%1$d eco</item>
+        <item quantity="many">%1$d ecos</item>
         <item quantity="other">%1$d ecos</item>
     </plurals>
     <plurals name="celebration_crest_line_count">
         <item quantity="one">%1$s · %2$d de %3$d brasão</item>
+        <item quantity="many">%1$s · %2$d de %3$d brasões</item>
         <item quantity="other">%1$s · %2$d de %3$d brasões</item>
     </plurals>
     <string name="celebration_crest_lead_chance">Sorteio</string>
@@ -3796,14 +4027,17 @@
     <string name="celebration_crest_lead_house">Brasão da casa · %1$s</string>
     <plurals name="celebration_retro_inscriptions">
         <item quantity="one">%1$d inscrição para sortear</item>
+        <item quantity="many">%1$d inscrições para sortear</item>
         <item quantity="other">%1$d inscrições para sortear</item>
     </plurals>
     <plurals name="celebration_retro_crests">
         <item quantity="one">%1$d brasão inscrito</item>
+        <item quantity="many">%1$d brasões inscritos</item>
         <item quantity="other">%1$d brasões inscritos</item>
     </plurals>
     <plurals name="celebration_retro_relics">
         <item quantity="one">%1$d relíquia restaurada</item>
+        <item quantity="many">%1$d relíquias restauradas</item>
         <item quantity="other">%1$d relíquias restauradas</item>
     </plurals>
     <string name="always_celebration_veil_remembered">O Véu se lembrou de você</string>
@@ -3843,23 +4077,28 @@
     <string name="celebration_deed_wear_button">Exibir título</string>
     <plurals name="always_celebration_deed_earned">
         <item quantity="one">Conquista obtida</item>
+        <item quantity="many">Proezas conquistadas</item>
         <item quantity="other">Proezas conquistadas</item>
     </plurals>
     <string name="xp_subline_hard_easy">%1$d difíceis · %2$d leves</string>
     <plurals name="xp_subline_hard_sets">
         <item quantity="one">%1$d série difícil</item>
+        <item quantity="many">%1$d séries difíceis</item>
         <item quantity="other">%1$d séries difíceis</item>
     </plurals>
     <plurals name="xp_subline_hard_holds">
         <item quantity="one">%1$d sustentação difícil</item>
+        <item quantity="many">%1$d sustentações difíceis</item>
         <item quantity="other">%1$d sustentações difíceis</item>
     </plurals>
     <plurals name="xp_subline_easy_sets">
         <item quantity="one">%1$d série leve</item>
+        <item quantity="many">%1$d séries leves</item>
         <item quantity="other">%1$d séries leves</item>
     </plurals>
     <plurals name="xp_subline_easy_holds">
         <item quantity="one">%1$d sustentação leve</item>
+        <item quantity="many">%1$d sustentações leves</item>
         <item quantity="other">%1$d sustentações leves</item>
     </plurals>
     <string name="xp_subline_top_load">máxima %1$s</string>
@@ -3876,10 +4115,12 @@
     <string name="xp_page_spoken_level">Nível %1$d.</string>
     <plurals name="always_xp_veil_line">
         <item quantity="one">Uma inscrição te espera no Véu</item>
+        <item quantity="many">%1$d inscrições aguardam no Véu</item>
         <item quantity="other">%1$d inscrições aguardam no Véu</item>
     </plurals>
     <plurals name="xp_headline">
         <item quantity="one">Conquistou %1$d XP em %2$d segmento, nível %3$d</item>
+        <item quantity="many">Conquistou %1$d XP em %2$d segmentos, nível %3$d</item>
         <item quantity="other">Conquistou %1$d XP em %2$d segmentos, nível %3$d</item>
     </plurals>
     <string name="xp_effort_bonus_caption">%1$d esforço · %2$d bônus</string>
@@ -3895,6 +4136,7 @@
     <string name="veilreveal_outcome_refined">%1$s Uma duplicata a refinou para ×%2$s.</string>
     <plurals name="veilreveal_outcome_maxed">
         <item quantity="one">Já atingiu o máximo do seu nível, então concedeu %1$d eco.</item>
+        <item quantity="many">Já atingiu o máximo do seu nível, então concedeu %1$d ecos.</item>
         <item quantity="other">Já atingiu o máximo do seu nível, então concedeu %1$d ecos.</item>
     </plurals>
     <string name="veilreveal_strongest_none">Nenhuma ainda</string>
@@ -3906,10 +4148,12 @@
     <string name="veilreveal_run_note_after">Após %1$d, sua próxima inscrição será uma relíquia ou um brasão.</string>
     <plurals name="veilreveal_run_description">
         <item quantity="one">%1$d de %2$d sorteio de eco consecutivo</item>
+        <item quantity="many">%1$d de %2$d sorteios de eco consecutivos</item>
         <item quantity="other">%1$d de %2$d sorteios de eco consecutivos</item>
     </plurals>
     <plurals name="veilreveal_run_title">
         <item quantity="one">%1$d sorteio de eco consecutivo</item>
+        <item quantity="many">%1$d sorteios de eco consecutivos</item>
         <item quantity="other">%1$d sorteios de eco consecutivos</item>
     </plurals>
     <string name="veilreveal_rate_moved">%1$s → %2$s por hora</string>
@@ -3940,6 +4184,7 @@
     <string name="terminfo_ranks_definition__t">O rank de força revela sua força atual: Destreinado, Iniciante, Intermediário, Avançado ou Elite. O Registro examina três padrões, puxar, empurrar e pernas, nos últimos %1$s. Cada um toma sua melhor marca: agachamento, supino, levantamento terra, desenvolvimento, barra fixa ou paralelas, pontuados pelo 1RM estimado em relação ao peso corporal, ou um domínio de puxar, empurrar ou pernas conquistado, conforme seu nível. Seu rank é a média dos padrões treinados, arredondada para baixo. Padrões ignorados ficam de fora, e o core jamais o reduz. A Ascensão segue seu nível, elevado pelo XP de cada prova: %2$s.</string>
     <plurals name="terminfo_ranks_window">
         <item quantity="one">%1$d dia</item>
+        <item quantity="many">%1$d dias</item>
         <item quantity="other">%1$d dias</item>
     </plurals>
     <string name="terminfo_ranks_ladder_item">%1$s no %2$d</string>
@@ -3971,6 +4216,7 @@
     <string name="terminfo_oath_definition__t">Os dias em que você manteve o treinamento sem romper a corrente. Cada prova selada ou dia de trégua mantém o juramento; ele só se rompe quando passam mais de %1$s sem nenhum dos dois. A contagem começa com a corrente e cresce a cada manhã enquanto ela perdura. A barra do juramento mostra o caminho até o próximo marco de proeza.</string>
     <plurals name="terminfo_oath_gap">
         <item quantity="one">%1$d dia</item>
+        <item quantity="many">%1$d dias</item>
         <item quantity="other">%1$d dias</item>
     </plurals>
     <string name="terminfo_seal_definition">Finalizar um treino. Ao finalizar, você guarda o XP e soma a pontuação de força ao total acumulado. Um treino finalizado ainda pode ser alterado depois, e a diferença é ajustada.</string>
@@ -3987,62 +4233,77 @@
     <string name="deeds_progress_hardest_climb">escalada mais difícil concluída</string>
     <plurals name="deeds_togo_trials">
         <item quantity="one">falta %1$s treino</item>
+        <item quantity="many">faltam %1$s treinos</item>
         <item quantity="other">faltam %1$s treinos</item>
     </plurals>
     <plurals name="deeds_togo_trials__t">
         <item quantity="one">falta %1$s prova</item>
+        <item quantity="many">faltam %1$s provas</item>
         <item quantity="other">faltam %1$s provas</item>
     </plurals>
     <plurals name="deeds_togo_skills">
         <item quantity="one">falta %1$s habilidade</item>
+        <item quantity="many">faltam %1$s habilidades</item>
         <item quantity="other">faltam %1$s habilidades</item>
     </plurals>
     <plurals name="deeds_togo_skills__t">
         <item quantity="one">falta %1$s domínio</item>
+        <item quantity="many">faltam %1$s domínios</item>
         <item quantity="other">faltam %1$s domínios</item>
     </plurals>
     <plurals name="deeds_togo_levels">
         <item quantity="one">falta %1$s nível</item>
+        <item quantity="many">faltam %1$s níveis</item>
         <item quantity="other">faltam %1$s níveis</item>
     </plurals>
     <plurals name="deeds_togo_sets">
         <item quantity="one">falta %1$s série</item>
+        <item quantity="many">faltam %1$s séries</item>
         <item quantity="other">faltam %1$s séries</item>
     </plurals>
     <plurals name="deeds_togo_reps">
         <item quantity="one">falta %1$s repetição</item>
+        <item quantity="many">faltam %1$s repetições</item>
         <item quantity="other">faltam %1$s repetições</item>
     </plurals>
     <plurals name="deeds_togo_steps">
         <item quantity="one">falta %1$s passo</item>
+        <item quantity="many">faltam %1$s passos</item>
         <item quantity="other">faltam %1$s passos</item>
     </plurals>
     <plurals name="deeds_togo_days">
         <item quantity="one">falta %1$s dia</item>
+        <item quantity="many">faltam %1$s dias</item>
         <item quantity="other">faltam %1$s dias</item>
     </plurals>
     <plurals name="deeds_togo_attempts">
         <item quantity="one">falta %1$s tentativa</item>
+        <item quantity="many">faltam %1$s tentativas</item>
         <item quantity="other">faltam %1$s tentativas</item>
     </plurals>
     <plurals name="deeds_togo_activities">
         <item quantity="one">falta %1$s atividade</item>
+        <item quantity="many">faltam %1$s atividades</item>
         <item quantity="other">faltam %1$s atividades</item>
     </plurals>
     <plurals name="deeds_togo_grades">
         <item quantity="one">falta %1$s grau</item>
+        <item quantity="many">faltam %1$s graus</item>
         <item quantity="other">faltam %1$s graus</item>
     </plurals>
     <plurals name="deeds_togo_lifts">
         <item quantity="one">falta %1$s levantamento</item>
+        <item quantity="many">faltam %1$s levantamentos</item>
         <item quantity="other">faltam %1$s levantamentos</item>
     </plurals>
     <plurals name="deeds_togo_variations">
         <item quantity="one">falta %1$s variação</item>
+        <item quantity="many">faltam %1$s variações</item>
         <item quantity="other">faltam %1$s variações</item>
     </plurals>
     <plurals name="deeds_togo_modifiers">
         <item quantity="one">falta %1$s modificador</item>
+        <item quantity="many">faltam %1$s modificadores</item>
         <item quantity="other">faltam %1$s modificadores</item>
     </plurals>
     <string name="deeds_togo_strength">faltam %1$s de força</string>
@@ -4083,6 +4344,7 @@
     <string name="deeds_category_count">%1$d de %2$d</string>
     <plurals name="always_deeds_category_description">
         <item quantity="one">%1$s. %2$s. %3$d de %4$d proeza conquistada.</item>
+        <item quantity="many">%1$s. %2$s. %3$d de %4$d proezas conquistadas.</item>
         <item quantity="other">%1$s. %2$s. %3$d de %4$d proezas conquistadas.</item>
     </plurals>
     <string name="deeds_earned_header">CONQUISTADAS %1$d</string>
@@ -4103,6 +4365,7 @@
     <string name="always_deeds_none_here">Nenhuma proeza aqui.</string>
     <plurals name="always_deeds_ladder_held">
         <item quantity="one">%1$d de %2$d proeza conquistada.</item>
+        <item quantity="many">%1$d de %2$d proezas conquistadas.</item>
         <item quantity="other">%1$d de %2$d proezas conquistadas.</item>
     </plurals>
     <string name="deeds_ladder_next">Próxima: %1$s, %2$s.</string>
@@ -4110,11 +4373,13 @@
     <string name="deeds_ladder_next_name">Próxima · %1$s</string>
     <plurals name="always_deeds_ladder_all_earned">
         <item quantity="one">A proeza foi conquistada: %1$d</item>
+        <item quantity="many">Todas as %1$d proezas conquistadas</item>
         <item quantity="other">Todas as %1$d proezas conquistadas</item>
     </plurals>
     <string name="deeds_near_description">%1$s, %2$s. %3$s %4$s.</string>
     <plurals name="always_deeds_rung_strip_description">
         <item quantity="one">%1$d proeza. %2$s</item>
+        <item quantity="many">%1$d proezas. %2$s</item>
         <item quantity="other">%1$d proezas. %2$s</item>
     </plurals>
     <string name="deeds_rung_earned">conquistada</string>
@@ -4155,20 +4420,24 @@
     <string name="skilldetail_passed_hint__t">Reivindique-a quando quiser. Não haverá outra recompensa.</string>
     <plurals name="skilldetail_claim_passes">
         <item quantity="one">Ao dominá-la, %1$d habilidade anterior também será marcada como superada. Ao todo, rende %2$d XP.</item>
+        <item quantity="many">Ao dominá-la, %1$d habilidades anteriores também serão marcadas como superadas. Ao todo, rende %2$d XP.</item>
         <item quantity="other">Ao dominá-la, %1$d habilidades anteriores também serão marcadas como superadas. Ao todo, rende %2$d XP.</item>
     </plurals>
     <plurals name="skilldetail_claim_passes__t">
         <item quantity="one">Ao reivindicá-lo, %1$d domínio anterior também será marcado como superado. A conquista rende %2$d XP ao todo.</item>
+        <item quantity="many">Ao reivindicá-lo, %1$d domínios anteriores também serão marcados como superados. A conquista rende %2$d XP ao todo.</item>
         <item quantity="other">Ao reivindicá-lo, %1$d domínios anteriores também serão marcados como superados. A conquista rende %2$d XP ao todo.</item>
     </plurals>
     <string name="skilldetail_unclaim_question">Desfazer o domínio da habilidade? Os %1$d XP também serão removidos.</string>
     <string name="skilldetail_unclaim_question__t">Renunciar ao domínio? Os %1$d XP também serão retirados.</string>
     <plurals name="skilldetail_unclaim_question_passes">
         <item quantity="one">Desfazer o domínio da habilidade? Os %1$d XP e a marca da %2$d habilidade superada também serão removidos.</item>
+        <item quantity="many">Desfazer o domínio da habilidade? Os %1$d XP e as marcas das %2$d habilidades superadas também serão removidos.</item>
         <item quantity="other">Desfazer o domínio da habilidade? Os %1$d XP e as marcas das %2$d habilidades superadas também serão removidos.</item>
     </plurals>
     <plurals name="skilldetail_unclaim_question_passes__t">
         <item quantity="one">Renunciar ao domínio? Os %1$d XP e a marca do %2$d domínio superado também serão retirados.</item>
+        <item quantity="many">Renunciar ao domínio? Os %1$d XP e as marcas dos %2$d domínios superados também serão retirados.</item>
         <item quantity="other">Renunciar ao domínio? Os %1$d XP e as marcas dos %2$d domínios superados também serão retirados.</item>
     </plurals>
     <string name="skilldetail_keep_button">Manter</string>
@@ -4227,18 +4496,22 @@
     <string name="skilljournal_heat_title">Últimas 12 semanas</string>
     <plurals name="skilljournal_days_practised">
         <item quantity="one">%1$d dia de prática</item>
+        <item quantity="many">%1$d dias de prática</item>
         <item quantity="other">%1$d dias de prática</item>
     </plurals>
     <plurals name="skilljournal_attempts_count">
         <item quantity="one">%1$d tentativa</item>
+        <item quantity="many">%1$d tentativas</item>
         <item quantity="other">%1$d tentativas</item>
     </plurals>
     <plurals name="skilljournal_heatmap_summary">
         <item quantity="one">%1$d semana: %2$s, máximo de %3$s em %4$s</item>
+        <item quantity="many">%1$d semanas: %2$s, máximo de %3$s em %4$s</item>
         <item quantity="other">%1$d semanas: %2$s, máximo de %3$s em %4$s</item>
     </plurals>
     <plurals name="skilljournal_heatmap_empty">
         <item quantity="one">%1$d semana: nenhuma tentativa registrada</item>
+        <item quantity="many">%1$d semanas: nenhuma tentativa registrada</item>
         <item quantity="other">%1$d semanas: nenhuma tentativa registrada</item>
     </plurals>
     <string name="skilljournal_paths_named_more">%1$s e mais %2$d</string>
@@ -4255,10 +4528,12 @@
     <string name="titles_unclaim_stays__t">Este domínio continua conquistado.</string>
     <plurals name="titles_paths_tally">
         <item quantity="one">%1$d de %2$d habilidade dominada</item>
+        <item quantity="many">%1$d de %2$d habilidades dominadas</item>
         <item quantity="other">%1$d de %2$d habilidades dominadas</item>
     </plurals>
     <plurals name="titles_paths_tally__t">
         <item quantity="one">%1$d de %2$d domínio conquistado</item>
+        <item quantity="many">%1$d de %2$d domínios conquistados</item>
         <item quantity="other">%1$d de %2$d domínios conquistados</item>
     </plurals>
     <string name="titles_tiers_intro">Cada habilidade tem um nível de I a V; algumas exigem uma mais fácil antes.</string>
@@ -4303,6 +4578,7 @@
     <string name="customex_error_name_empty">Dê um nome.</string>
     <plurals name="customex_error_name_long">
         <item quantity="one">Limite o nome a %1$d caractere.</item>
+        <item quantity="many">Limite o nome a %1$d caracteres.</item>
         <item quantity="other">Limite o nome a %1$d caracteres.</item>
     </plurals>
     <string name="customex_error_used_now">Está em uso, então será mantido.</string>
@@ -4324,14 +4600,17 @@
     <string name="muscles_selector_role_description">%1$s, %2$s</string>
     <plurals name="muscles_selector_count">
         <item quantity="one">%1$d músculo</item>
+        <item quantity="many">%1$d músculos</item>
         <item quantity="other">%1$d músculos</item>
     </plurals>
     <plurals name="customex_used_by">
         <item quantity="one">Usado por %1$d série registrada, rotina ou nota. Será mantido enquanto houver uso, para preservar seu histórico.</item>
+        <item quantity="many">Usado por %1$d séries registradas, rotinas e notas. Será mantido enquanto houver uso, para preservar seu histórico.</item>
         <item quantity="other">Usado por %1$d séries registradas, rotinas e notas. Será mantido enquanto houver uso, para preservar seu histórico.</item>
     </plurals>
     <plurals name="customex_used_by__t">
         <item quantity="one">Usado por %1$d série registrada, rito ou nota. Permanecerá enquanto houver uso, para preservar sua Crônica.</item>
+        <item quantity="many">Usado por %1$d séries registradas, ritos e notas. Permanecerá enquanto houver uso, para preservar sua Crônica.</item>
         <item quantity="other">Usado por %1$d séries registradas, ritos e notas. Permanecerá enquanto houver uso, para preservar sua Crônica.</item>
     </plurals>
     <string name="customex_delete_button">Excluir exercício</string>
@@ -4387,10 +4666,12 @@
     <string name="infosheet_why_label">POR QUE FAZER</string>
     <plurals name="infosheet_history_see_all">
         <item quantity="one">Ver %d treino</item>
+        <item quantity="many">Ver todos os %d treinos</item>
         <item quantity="other">Ver todos os %d treinos</item>
     </plurals>
     <plurals name="infosheet_history_see_all__t">
         <item quantity="one">Ver %d prova</item>
+        <item quantity="many">Ver todas as %d provas</item>
         <item quantity="other">Ver todas as %d provas</item>
     </plurals>
     <string name="infosheet_last_label">ÚLTIMO TREINO</string>
@@ -4438,14 +4719,17 @@
     <string name="lastlogged_days_ago">há %1$d dias</string>
     <plurals name="setfigure_noun_reps">
         <item quantity="one">REP</item>
+        <item quantity="many">REPS</item>
         <item quantity="other">REPS</item>
     </plurals>
     <plurals name="setfigure_noun_seconds">
         <item quantity="one">SEGUNDO</item>
+        <item quantity="many">SEGUNDOS</item>
         <item quantity="other">SEGUNDOS</item>
     </plurals>
     <plurals name="setfigure_noun_attempts">
         <item quantity="one">TENTATIVA</item>
+        <item quantity="many">TENTATIVAS</item>
         <item quantity="other">TENTATIVAS</item>
     </plurals>
     <string name="setfigure_noun_minutes">MINUTOS</string>
@@ -4477,14 +4761,17 @@
     <string name="gacha_pity_first">Sua primeira inscrição é uma relíquia.</string>
     <plurals name="gacha_pity_echo_run">
         <item quantity="one">Seu último sorteio foi um eco: %1$d ao todo. Este será uma relíquia ou um brasão.</item>
+        <item quantity="many">Seus últimos %1$d sorteios foram ecos; este será uma relíquia ou um brasão.</item>
         <item quantity="other">Seus últimos %1$d sorteios foram ecos; este será uma relíquia ou um brasão.</item>
     </plurals>
     <plurals name="gacha_pity_relic_drought">
         <item quantity="one">Passou %1$d sorteio desde sua última relíquia; este será uma relíquia.</item>
+        <item quantity="many">Passaram %1$d sorteios desde sua última relíquia; este será uma relíquia.</item>
         <item quantity="other">Passaram %1$d sorteios desde sua última relíquia; este será uma relíquia.</item>
     </plurals>
     <plurals name="gacha_pity_after">
         <item quantity="one">Após %1$d sorteio de eco seguido, o próximo será uma relíquia ou um brasão.</item>
+        <item quantity="many">Após %1$d sorteios de eco seguidos, o próximo será uma relíquia ou um brasão.</item>
         <item quantity="other">Após %1$d sorteios de eco seguidos, o próximo será uma relíquia ou um brasão.</item>
     </plurals>
     <string name="veil_bonus_complete">%1$s completo · %2$s</string>
@@ -4498,6 +4785,7 @@
     <string name="idle_houses_follows">Segue %1$s.</string>
     <plurals name="idle_houses_set_bonus">
         <item quantity="one">%1$d relíquia: %2$s</item>
+        <item quantity="many">%1$d relíquias: %2$s</item>
         <item quantity="other">%1$d relíquias: %2$s</item>
     </plurals>
     <string name="idle_houses_footer">Os bônus afetam apenas sua taxa de essência. Nunca alteram seu nível, XP, força ou títulos. Relíquias vêm dos níveis e da essência obtida ao treinar.</string>
@@ -4527,6 +4815,7 @@
     <string name="idle_collection_reached_description">Alcançado</string>
     <plurals name="idle_collection_bonus_row">
         <item quantity="one">%1$d relíquia · %2$s</item>
+        <item quantity="many">%1$d relíquias · %2$s</item>
         <item quantity="other">%1$d relíquias · %2$s</item>
     </plurals>
     <string name="idle_collection_to_go">Faltam %1$d</string>
@@ -4541,6 +4830,7 @@
     <string name="idle_crests_group_header">%1$s · %2$d de %3$d</string>
     <plurals name="idle_crests_group_ladder">
         <item quantity="one">Escada · a cada %1$d nível</item>
+        <item quantity="many">Escada · a cada %1$d níveis</item>
         <item quantity="other">Escada · a cada %1$d níveis</item>
     </plurals>
     <string name="idle_crests_group_houses">Casas · complete uma casa</string>
@@ -4574,6 +4864,7 @@
     <string name="idle_essence_label">Essência</string>
     <plurals name="idle_intro_essence_body">
         <item quantity="one">Ela se acumula sozinha enquanto você está ausente. Força total por %1$d hora após a última coleta, depois diminui.</item>
+        <item quantity="many">Ela se acumula sozinha enquanto você está ausente. Força total por %1$d horas após a última coleta, depois diminui.</item>
         <item quantity="other">Ela se acumula sozinha enquanto você está ausente. Força total por %1$d horas após a última coleta, depois diminui.</item>
     </plurals>
     <string name="idle_intro_echoes_title">Ecos</string>
@@ -4602,6 +4893,7 @@
     <string name="idle_strongest_none_hint">Sua primeira inscrição é uma relíquia. Ela aumenta sua taxa de essência.</string>
     <plurals name="idle_relics_together">
         <item quantity="one">Sua %1$d relíquia reunida</item>
+        <item quantity="many">Suas %1$d relíquias reunidas</item>
         <item quantity="other">Suas %1$d relíquias reunidas</item>
     </plurals>
     <string name="idle_stacked_rate">Taxa ×%1$s</string>
@@ -4611,6 +4903,7 @@
     <string name="idle_next_crest">Próximo brasão no nível %1$d</string>
     <plurals name="idle_next_crest_levels">
         <item quantity="one">%1$d nível</item>
+        <item quantity="many">%1$d níveis</item>
         <item quantity="other">%1$d níveis</item>
     </plurals>
     <string name="idle_dock_buy_another">Ou compre outra · %1$s</string>
@@ -4635,35 +4928,43 @@
     <string name="idle_rate_training_feeds">%1$s · %2$s · %3$s</string>
     <plurals name="idle_rate_sessions">
         <item quantity="one">%1$d treino em 7 dias</item>
+        <item quantity="many">%1$d treinos em 7 dias</item>
         <item quantity="other">%1$d treinos em 7 dias</item>
     </plurals>
     <plurals name="idle_rate_sessions__t">
         <item quantity="one">%1$d prova em 7 dias</item>
+        <item quantity="many">%1$d provas em 7 dias</item>
         <item quantity="other">%1$d provas em 7 dias</item>
     </plurals>
     <plurals name="idle_rate_streak">
         <item quantity="one">sequência de %1$d dia</item>
+        <item quantity="many">sequência de %1$d dias</item>
         <item quantity="other">sequência de %1$d dias</item>
     </plurals>
     <plurals name="idle_rate_streak__t">
         <item quantity="one">juramento de %1$d dia</item>
+        <item quantity="many">juramento de %1$d dias</item>
         <item quantity="other">juramento de %1$d dias</item>
     </plurals>
     <plurals name="idle_rate_skills_unlocked">
         <item quantity="one">%1$d habilidade desbloqueada para sempre</item>
+        <item quantity="many">%1$d habilidades desbloqueadas para sempre</item>
         <item quantity="other">%1$d habilidades desbloqueadas para sempre</item>
     </plurals>
     <plurals name="idle_rate_skills_unlocked__t">
         <item quantity="one">%1$d domínio desbloqueado para sempre</item>
+        <item quantity="many">%1$d domínios desbloqueados para sempre</item>
         <item quantity="other">%1$d domínios desbloqueados para sempre</item>
     </plurals>
     <string name="idle_rate_relics_none">Nenhuma relíquia ainda. Sua primeira inscrição é uma relíquia.</string>
     <plurals name="idle_rate_relics_feeds">
         <item quantity="one">%1$d relíquia. A mais forte, %2$s, aumenta a taxa em %3$d%%.</item>
+        <item quantity="many">%1$d relíquias. A mais forte, %2$s, aumenta a taxa em %3$d%%.</item>
         <item quantity="other">%1$d relíquias. A mais forte, %2$s, aumenta a taxa em %3$d%%.</item>
     </plurals>
     <plurals name="idle_rate_echoes_feeds">
         <item quantity="one">%1$,d eco. Cada %2$d acrescentam %3$s%%, até %4$d%%.</item>
+        <item quantity="many">%1$,d ecos. Cada %2$d acrescentam %3$s%%, até %4$d%%.</item>
         <item quantity="other">%1$,d ecos. Cada %2$d acrescentam %3$s%%, até %4$d%%.</item>
     </plurals>
     <string name="idle_rate_houses_header">Bônus das casas</string>
@@ -4678,10 +4979,12 @@
     <string name="idle_rate_term_return">Fator de retorno, sobre o tempo ausente</string>
     <plurals name="idle_rate_next_gain">
         <item quantity="one">Mais %1$d relíquia acrescenta %2$s</item>
+        <item quantity="many">Mais %1$d relíquias acrescentam %2$s</item>
         <item quantity="other">Mais %1$d relíquias acrescentam %2$s</item>
     </plurals>
     <plurals name="idle_rate_next_term">
         <item quantity="one">Mais %1$d relíquia acrescenta +5%% ao fator %2$s</item>
+        <item quantity="many">Mais %1$d relíquias acrescentam +5%% ao fator %2$s</item>
         <item quantity="other">Mais %1$d relíquias acrescentam +5%% ao fator %2$s</item>
     </plurals>
     <string name="idle_rate_house_in_force">%1$s. %2$s.</string>
@@ -4703,6 +5006,7 @@
     <string name="health_read_failed">falha na leitura: %1$s</string>
     <plurals name="health_no_activity">
         <item quantity="one">O Health Connect não retornou atividade no último dia</item>
+        <item quantity="many">O Health Connect não retornou atividade nos últimos %d dias</item>
         <item quantity="other">O Health Connect não retornou atividade nos últimos %d dias</item>
     </plurals>
     <string name="health_writeback_unavailable">O Health Connect não está disponível</string>
@@ -4736,6 +5040,7 @@
     <string name="program_extra_summary_upper_lower_size__t">Superiores e inferiores duas vezes por semana, cada rito começa com um grande levantamento e termina com exercícios focados no alongamento (Pelland 2026; Maeo 2021).</string>
     <plurals name="program_extra_over_budget">
         <item quantity="one">Passa de %d minuto mesmo com 2 séries por exercício.</item>
+        <item quantity="many">Passa de %d minutos mesmo com 2 séries por exercício.</item>
         <item quantity="other">Passa de %d minutos mesmo com 2 séries por exercício.</item>
     </plurals>
     <string name="program_extra_eases_load">Reduz a carga: substitui %1$s exigindo menos do músculo mais sobrecarregado</string>
@@ -4772,10 +5077,12 @@
     <string name="cloud_name_length__t">Seu nome verdadeiro deve ter de %1$d a %2$d caracteres</string>
     <plurals name="cloud_name_letters">
         <item quantity="one">Seu nome de exibição precisa ter pelo menos %1$d letra ou número</item>
+        <item quantity="many">Seu nome de exibição precisa ter pelo menos %1$d letras ou números</item>
         <item quantity="other">Seu nome de exibição precisa ter pelo menos %1$d letras ou números</item>
     </plurals>
     <plurals name="cloud_name_letters__t">
         <item quantity="one">Seu nome verdadeiro precisa ter pelo menos %1$d letra ou número</item>
+        <item quantity="many">Seu nome verdadeiro precisa ter pelo menos %1$d letras ou números</item>
         <item quantity="other">Seu nome verdadeiro precisa ter pelo menos %1$d letras ou números</item>
     </plurals>
     <string name="cloud_sync_deleted_failed">Treinos excluídos não foram removidos da nuvem: %1$s</string>
@@ -4793,7 +5100,11 @@
     <string name="cloud_workout_xp_needs_schema">O ranking de XP de treinos dos últimos 7 dias exige o esquema 33 na nuvem. Aplique a atualização mais recente do banco; o ranking de XP total continua disponível.</string>
     <string name="cloud_workout_xp_needs_schema__t">O ranking de XP de provas dos últimos 7 dias exige o esquema 33 na nuvem. Aplique a atualização mais recente do banco; o ranking de XP total continua disponível.</string>
     <string name="cloud_sync_web_snapshot_failed">As estatísticas da web não foram sincronizadas: %1$s</string>
-    <string name="cloud_sync_web_snapshot_too_large">As estatísticas da web são grandes demais para sincronizar (%1$d bytes).</string>
+    <plurals name="cloud_sync_web_snapshot_too_large">
+        <item quantity="one">As estatísticas da web são grandes demais para sincronizar (%1$d byte).</item>
+        <item quantity="many">As estatísticas da web são grandes demais para sincronizar (%1$d bytes).</item>
+        <item quantity="other">As estatísticas da web são grandes demais para sincronizar (%1$d bytes).</item>
+    </plurals>
     <string name="cloud_sync_tiers_failed">Os níveis dos levantamentos não foram sincronizados: %1$s</string>
     <string name="cloud_sync_tiers_failed__t">Os degraus dos levantamentos não foram sincronizados: %1$s</string>
     <string name="cloud_sync_trial_hidden">Este treino não está visível para você</string>
@@ -4825,10 +5136,12 @@
     <string name="cloud_remark_empty">Escreva algo primeiro</string>
     <plurals name="cloud_remark_too_long">
         <item quantity="one">Comentários têm no máximo %1$d caractere</item>
+        <item quantity="many">Comentários têm no máximo %1$d caracteres</item>
         <item quantity="other">Comentários têm no máximo %1$d caracteres</item>
     </plurals>
     <plurals name="cloud_remark_too_long__t">
         <item quantity="one">Observações têm no máximo %1$d caractere</item>
+        <item quantity="many">Observações têm no máximo %1$d caracteres</item>
         <item quantity="other">Observações têm no máximo %1$d caracteres</item>
     </plurals>
     <string name="cloud_remark_gone">Esse comentário já foi removido ou não é seu para remover</string>
@@ -4838,6 +5151,7 @@
     <string name="cloud_report_self">Você não pode denunciar a si mesmo</string>
     <plurals name="cloud_report_note_too_long">
         <item quantity="one">Limite a nota a %1$d caractere</item>
+        <item quantity="many">Limite a nota a %1$d caracteres</item>
         <item quantity="other">Limite a nota a %1$d caracteres</item>
     </plurals>
     <string name="acct_failure_unknown">Falha desconhecida</string>
@@ -4900,10 +5214,12 @@
     <string name="acct_invite_button">Convidar</string>
     <plurals name="acct_requests_count">
         <item quantity="one">%1$d pedido de amizade</item>
+        <item quantity="many">%1$d pedidos de amizade</item>
         <item quantity="other">%1$d pedidos de amizade</item>
     </plurals>
     <plurals name="acct_requests_count__t">
         <item quantity="one">%1$d pedido de aliança</item>
+        <item quantity="many">%1$d pedidos de aliança</item>
         <item quantity="other">%1$d pedidos de aliança</item>
     </plurals>
     <string name="acct_requests_open_description">Abrir mensagens</string>
@@ -4935,22 +5251,27 @@
     <string name="acct_sync_caption__t">Envia após cada prova</string>
     <plurals name="acct_sync_pushed">
         <item quantity="one">%1$d treino enviado</item>
+        <item quantity="many">%1$d treinos enviados</item>
         <item quantity="other">%1$d treinos enviados</item>
     </plurals>
     <plurals name="acct_sync_pushed__t">
         <item quantity="one">%1$d prova enviada</item>
+        <item quantity="many">%1$d provas enviadas</item>
         <item quantity="other">%1$d provas enviadas</item>
     </plurals>
     <plurals name="acct_sync_restored">
         <item quantity="one">%1$d treino restaurado</item>
+        <item quantity="many">%1$d treinos restaurados</item>
         <item quantity="other">%1$d treinos restaurados</item>
     </plurals>
     <plurals name="acct_sync_restored__t">
         <item quantity="one">%1$d prova restaurada</item>
+        <item quantity="many">%1$d provas restauradas</item>
         <item quantity="other">%1$d provas restauradas</item>
     </plurals>
     <plurals name="acct_titles_count">
         <item quantity="one">%1$d título</item>
+        <item quantity="many">%1$d títulos</item>
         <item quantity="other">%1$d títulos</item>
     </plurals>
     <string name="acct_sync_skipped">%1$d ignorados</string>
@@ -5017,6 +5338,7 @@
     <string name="acct_metric_last7_value">%1$d em 7 dias</string>
     <plurals name="always_acct_deeds_count">
         <item quantity="one">%1$d proeza</item>
+        <item quantity="many">%1$d proezas</item>
         <item quantity="other">%1$d proezas</item>
     </plurals>
     <string name="acct_ranked_by_label">Ordenar por</string>
@@ -5039,6 +5361,7 @@
     <string name="acct_selected_description">Selecionado</string>
     <plurals name="always_acct_echoes_rate">
         <item quantity="one">%1$d eco · %2$s</item>
+        <item quantity="many">%1$d ecos · %2$s</item>
         <item quantity="other">%1$d ecos · %2$s</item>
     </plurals>
     <string name="always_acct_essence_value">%1$s de essência</string>
@@ -5053,31 +5376,35 @@
     <string name="acct_board_search__t">Buscar Acertos</string>
     <plurals name="acct_boards_count">
         <item quantity="one">%1$d ranking</item>
+        <item quantity="many">%1$d rankings</item>
         <item quantity="other">%1$d rankings</item>
     </plurals>
     <plurals name="acct_boards_count__t">
         <item quantity="one">%1$d Acerto</item>
+        <item quantity="many">%1$d Acertos</item>
         <item quantity="other">%1$d Acertos</item>
     </plurals>
     <string name="acct_lift_bodyweight">Níveis por peso corporal</string>
     <string name="acct_lift_bodyweight__t">Degraus por peso corporal</string>
     <plurals name="acct_lift_rungs">
         <item quantity="one">%1$d nível · %2$s a %3$s</item>
+        <item quantity="many">%1$d níveis · %2$s a %3$s</item>
         <item quantity="other">%1$d níveis · %2$s a %3$s</item>
     </plurals>
     <plurals name="acct_lift_rungs__t">
         <item quantity="one">%1$d degrau · %2$s a %3$s</item>
+        <item quantity="many">%1$d degraus · %2$s a %3$s</item>
         <item quantity="other">%1$d degraus · %2$s a %3$s</item>
     </plurals>
     <string name="acct_lift_none_ranked">nenhum ainda</string>
     <plurals name="acct_lift_ranked">
         <item quantity="one">%1$d classificado</item>
+        <item quantity="many">%1$d classificados</item>
         <item quantity="other">%1$d classificados</item>
     </plurals>
     <string name="cloud_account_signup_no_profile">Conta criada, mas não foi possível carregar seu perfil — entre novamente</string>
     <string name="cloud_account_signin_no_profile">Você entrou, mas não foi possível carregar seu perfil — tente novamente</string>
     <string name="cloud_account_reset_no_profile">Senha alterada, mas não foi possível carregar seu perfil — entre novamente</string>
-    <string name="cloud_account_google_no_user">A entrada com Google não retornou nenhum usuário</string>
     <string name="cloud_account_google_no_profile">Você entrou com Google, mas não foi possível carregar seu perfil — tente novamente</string>
     <string name="cloud_account_claim_signed_out">Entre antes de escolher um nome de exibição</string>
     <string name="cloud_account_claim_signed_out__t">Entre antes de escolher um nome verdadeiro</string>
@@ -5142,10 +5469,12 @@
     <string name="circle_manage_value_member">Sair</string>
     <plurals name="circle_goal_rail_description">
         <item quantity="one">Meta do grupo, %1$d de %2$d dia</item>
+        <item quantity="many">Meta do grupo, %1$d de %2$d dias</item>
         <item quantity="other">Meta do grupo, %1$d de %2$d dias</item>
     </plurals>
     <plurals name="circle_goal_rail_description__t">
         <item quantity="one">Meta do círculo, %1$d de %2$d dia</item>
+        <item quantity="many">Meta do círculo, %1$d de %2$d dias</item>
         <item quantity="other">Meta do círculo, %1$d de %2$d dias</item>
     </plurals>
     <string name="circle_member_you">Você</string>
@@ -5153,6 +5482,7 @@
     <string name="circle_manage_title">Gerenciar %1$s</string>
     <plurals name="circle_manage_each">
         <item quantity="one">%1$d dia cada</item>
+        <item quantity="many">%1$d dias cada</item>
         <item quantity="other">%1$d dias cada</item>
     </plurals>
     <string name="circle_manage_pending">%1$d a partir da próxima semana</string>
@@ -5175,6 +5505,7 @@
     <string name="circle_goal_raise_description">Aumentar a meta semanal, atualmente %1$d</string>
     <plurals name="circle_goal_value_description">
         <item quantity="one">%1$d dia por semana</item>
+        <item quantity="many">%1$d dias por semana</item>
         <item quantity="other">%1$d dias por semana</item>
     </plurals>
     <string name="comments_unknown_failure">Falha desconhecida</string>
@@ -5256,6 +5587,7 @@
     <string name="feed_reaction_flame">Chama</string>
     <plurals name="feed_stat_attempts">
         <item quantity="one">%1$d tentativa</item>
+        <item quantity="many">%1$d tentativas</item>
         <item quantity="other">%1$d tentativas</item>
     </plurals>
     <string name="feed_stat_held">%1$ds sustentados</string>
@@ -5330,10 +5662,12 @@
     <string name="lifter_nothing_shared__t">Nada compartilhado. Não há provas deste Forjado que você possa ler: nenhuma foi selada ou a visibilidade delas não inclui você.</string>
     <plurals name="lifter_summary_shared">
         <item quantity="one">%1$d treino compartilhado</item>
+        <item quantity="many">%1$d treinos compartilhados</item>
         <item quantity="other">%1$d treinos compartilhados</item>
     </plurals>
     <plurals name="lifter_summary_shared__t">
         <item quantity="one">%1$d prova compartilhada</item>
+        <item quantity="many">%1$d provas compartilhadas</item>
         <item quantity="other">%1$d provas compartilhadas</item>
     </plurals>
     <string name="lifter_xp_gain">+%1$s XP</string>
@@ -5344,10 +5678,12 @@
     <string name="lifter_summary_last_yesterday__t">última prova ontem</string>
     <plurals name="lifter_summary_last_days_ago">
         <item quantity="one">último treino há %1$d dia</item>
+        <item quantity="many">último treino há %1$d dias</item>
         <item quantity="other">último treino há %1$d dias</item>
     </plurals>
     <plurals name="lifter_summary_last_days_ago__t">
         <item quantity="one">última prova há %1$d dia</item>
+        <item quantity="many">última prova há %1$d dias</item>
         <item quantity="other">última prova há %1$d dias</item>
     </plurals>
     <string name="lifter_strength_title">Evolução da força</string>
@@ -5390,50 +5726,62 @@
     <string name="recap_range_compact">%1$s–%2$s</string>
     <plurals name="recap_workouts_count">
         <item quantity="one">%1$d treino</item>
+        <item quantity="many">%1$d treinos</item>
         <item quantity="other">%1$d treinos</item>
     </plurals>
     <plurals name="recap_workouts_count__t">
         <item quantity="one">%1$d prova</item>
+        <item quantity="many">%1$d provas</item>
         <item quantity="other">%1$d provas</item>
     </plurals>
     <plurals name="recap_records_count">
         <item quantity="one">%1$d recorde</item>
+        <item quantity="many">%1$d recordes</item>
         <item quantity="other">%1$d recordes</item>
     </plurals>
     <plurals name="recap_hero_unit">
         <item quantity="one">treino</item>
+        <item quantity="many">treinos</item>
         <item quantity="other">treinos</item>
     </plurals>
     <plurals name="recap_hero_unit__t">
         <item quantity="one">prova</item>
+        <item quantity="many">provas</item>
         <item quantity="other">provas</item>
     </plurals>
     <plurals name="recap_streak_days">
         <item quantity="one">Sequência de %1$d dia</item>
+        <item quantity="many">Sequência de %1$d dias</item>
         <item quantity="other">Sequência de %1$d dias</item>
     </plurals>
     <plurals name="recap_streak_days__t">
         <item quantity="one">Juramento de %1$d dia</item>
+        <item quantity="many">Juramento de %1$d dias</item>
         <item quantity="other">Juramento de %1$d dias</item>
     </plurals>
     <plurals name="recap_streak_count">
         <item quantity="one">%1$d dia</item>
+        <item quantity="many">%1$d dias</item>
         <item quantity="other">%1$d dias</item>
     </plurals>
     <plurals name="recap_next_planned">
         <item quantity="one">%1$d treino planejado, começando com %2$s em %3$s.</item>
+        <item quantity="many">%1$d treinos planejados, começando com %2$s em %3$s.</item>
         <item quantity="other">%1$d treinos planejados, começando com %2$s em %3$s.</item>
     </plurals>
     <plurals name="recap_next_planned__t">
         <item quantity="one">%1$d prova planejada, começando com %2$s em %3$s.</item>
+        <item quantity="many">%1$d provas planejadas, começando com %2$s em %3$s.</item>
         <item quantity="other">%1$d provas planejadas, começando com %2$s em %3$s.</item>
     </plurals>
     <plurals name="recap_light_body">
         <item quantity="one">Um dia de %1$s manteve sua sequência em %2$d dia. Sem barras de comparação nesta semana, para que uma semana tranquila não pareça uma perda.</item>
+        <item quantity="many">Um dia de %1$s manteve sua sequência em %2$d dias. Sem barras de comparação nesta semana, para que uma semana tranquila não pareça uma perda.</item>
         <item quantity="other">Um dia de %1$s manteve sua sequência em %2$d dias. Sem barras de comparação nesta semana, para que uma semana tranquila não pareça uma perda.</item>
     </plurals>
     <plurals name="recap_light_body__t">
         <item quantity="one">Uma prova de %1$s manteve seu juramento em %2$d dia. Sem barras de comparação nesta semana, para que uma semana tranquila não pareça uma derrota.</item>
+        <item quantity="many">Uma prova de %1$s manteve seu juramento em %2$d dias. Sem barras de comparação nesta semana, para que uma semana tranquila não pareça uma derrota.</item>
         <item quantity="other">Uma prova de %1$s manteve seu juramento em %2$d dias. Sem barras de comparação nesta semana, para que uma semana tranquila não pareça uma derrota.</item>
     </plurals>
     <string name="recap_stat_sets_label">Séries</string>
@@ -5507,10 +5855,12 @@
     <string name="recap_notify_lifted_flat">%1$s levantados.</string>
     <plurals name="recap_notify_streak">
         <item quantity="one">Sequência de %1$d dia.</item>
+        <item quantity="many">Sequência de %1$d dias.</item>
         <item quantity="other">Sequência de %1$d dias.</item>
     </plurals>
     <plurals name="recap_notify_streak__t">
         <item quantity="one">Juramento de %1$d dia.</item>
+        <item quantity="many">Juramento de %1$d dias.</item>
         <item quantity="other">Juramento de %1$d dias.</item>
     </plurals>
     <string name="recap_notify_big_totals">%1$s · %2$s</string>
@@ -5548,6 +5898,7 @@
     <string name="live_rest_then">Descanso · depois série %1$d de %2$d · %3$s</string>
     <plurals name="live_figure_reps">
         <item quantity="one">%d repetição</item>
+        <item quantity="many">%d repetições</item>
         <item quantity="other">%d repetições</item>
     </plurals>
     <string name="live_figure_reps_load">%1$d × %2$s</string>
@@ -5556,6 +5907,7 @@
     <string name="live_next_up">A seguir: %1$s, %2$d × %3$s</string>
     <plurals name="live_progress_named">
         <item quantity="one">%3$s · %1$d / %2$d série</item>
+        <item quantity="many">%3$s · %1$d / %2$d séries</item>
         <item quantity="other">%3$s · %1$d / %2$d séries</item>
     </plurals>
     <string name="live_chip_set">Série %1$d de %2$d</string>
@@ -5616,6 +5968,7 @@
     <string name="review_lift_new_badge">Novo</string>
     <plurals name="review_lifts_more">
         <item quantity="one">e mais %1$d exercício</item>
+        <item quantity="many">e mais %1$d exercícios</item>
         <item quantity="other">e mais %1$d exercícios</item>
     </plurals>
     <string name="review_muscles_title">Músculos mais treinados</string>
@@ -5627,18 +5980,22 @@
     <string name="review_per_week">%1$s por semana</string>
     <plurals name="review_streak_month_end">
         <item quantity="one">Sequência de %1$d dia no fim do mês</item>
+        <item quantity="many">Sequência de %1$d dias no fim do mês</item>
         <item quantity="other">Sequência de %1$d dias no fim do mês</item>
     </plurals>
     <plurals name="review_streak_month_end__t">
         <item quantity="one">Juramento de %1$d dia no fim do mês</item>
+        <item quantity="many">Juramento de %1$d dias no fim do mês</item>
         <item quantity="other">Juramento de %1$d dias no fim do mês</item>
     </plurals>
     <plurals name="review_streak_year_end">
         <item quantity="one">Sequência de %1$d dia no fim do ano</item>
+        <item quantity="many">Sequência de %1$d dias no fim do ano</item>
         <item quantity="other">Sequência de %1$d dias no fim do ano</item>
     </plurals>
     <plurals name="review_streak_year_end__t">
         <item quantity="one">Juramento de %1$d dia no fim do ano</item>
+        <item quantity="many">Juramento de %1$d dias no fim do ano</item>
         <item quantity="other">Juramento de %1$d dias no fim do ano</item>
     </plurals>
     <string name="review_streak_going_longest">Continua. A mais longa até agora.</string>
@@ -5646,10 +6003,12 @@
     <string name="review_streak_longest">A mais longa até agora.</string>
     <plurals name="review_month_bar_description">
         <item quantity="one">%1$s: %2$d treino</item>
+        <item quantity="many">%1$s: %2$d treinos</item>
         <item quantity="other">%1$s: %2$d treinos</item>
     </plurals>
     <plurals name="review_month_bar_description__t">
         <item quantity="one">%1$s: %2$d prova</item>
+        <item quantity="many">%1$s: %2$d provas</item>
         <item quantity="other">%1$s: %2$d provas</item>
     </plurals>
     <string name="review_skills_title">Habilidades desbloqueadas</string>
@@ -5687,6 +6046,7 @@
     <string name="review_today_dismiss_description">Dispensar o resumo</string>
     <plurals name="review_lifts_gained_count">
         <item quantity="one">%1$d exercício com progresso</item>
+        <item quantity="many">%1$d exercícios com progresso</item>
         <item quantity="other">%1$d exercícios com progresso</item>
     </plurals>
     <string name="muscles_title">Músculos</string>
@@ -5775,10 +6135,12 @@
     <string name="fatigue_footprint_typical_note">Menos se parar com três ou mais reps na reserva. Mais na primeira vez ou após três semanas sem fazê-lo.</string>
     <plurals name="fatigue_footprint_hours">
         <item quantity="one">%d hora</item>
+        <item quantity="many">%d horas</item>
         <item quantity="other">%d horas</item>
     </plurals>
     <plurals name="fatigue_footprint_days">
         <item quantity="one">%d dia</item>
+        <item quantity="many">%d dias</item>
         <item quantity="other">%d dias</item>
     </plurals>
     <string name="fatigue_footprint_muscle_line">%1$s: %2$s</string>
@@ -5813,18 +6175,22 @@
     <string name="twinconvert_history_heading__t">Histórico de provas</string>
     <plurals name="twinconvert_routine_heading">
         <item quantity="one">Rotinas salvas · %1$d entrada</item>
+        <item quantity="many">Rotinas salvas · %1$d entradas</item>
         <item quantity="other">Rotinas salvas · %1$d entradas</item>
     </plurals>
     <plurals name="twinconvert_routine_heading__t">
         <item quantity="one">Ritos salvos · %1$d entrada</item>
+        <item quantity="many">Ritos salvos · %1$d entradas</item>
         <item quantity="other">Ritos salvos · %1$d entradas</item>
     </plurals>
     <plurals name="twinconvert_routine_done">
         <item quantity="one">%1$d entrada de rotina salva movida.</item>
+        <item quantity="many">%1$d entradas de rotinas salvas movidas.</item>
         <item quantity="other">%1$d entradas de rotinas salvas movidas.</item>
     </plurals>
     <plurals name="twinconvert_routine_done__t">
         <item quantity="one">%1$d entrada de rito salvo movida.</item>
+        <item quantity="many">%1$d entradas de ritos salvos movidas.</item>
         <item quantity="other">%1$d entradas de ritos salvos movidas.</item>
     </plurals>
     <string name="twinconvert_review_button">Mover exercícios</string>
@@ -5836,6 +6202,7 @@
     <string name="twinconvert_note">Primeiro, um backup completo é salvo neste celular e na sua pasta de backup, se configurada. Outros modificadores e pontuações salvas não mudam.</string>
     <plurals name="twinconvert_button">
         <item quantity="one">Mover %1$d série</item>
+        <item quantity="many">Mover %1$d séries</item>
         <item quantity="other">Mover %1$d séries</item>
     </plurals>
     <string name="twinconvert_running">Movendo…</string>
@@ -5844,6 +6211,7 @@
     <string name="twinconvert_card_title">Algumas séries anteriores podem ser movidas para seus próprios exercícios</string>
     <plurals name="twinconvert_card_body">
         <item quantity="one">%1$d série foi registrada como exercício base com modificador ou carga. Revise e mova em uma etapa.</item>
+        <item quantity="many">%1$d séries foram registradas como exercício base com modificador ou carga. Revise e mova em uma etapa.</item>
         <item quantity="other">%1$d séries foram registradas como exercício base com modificador ou carga. Revise e mova em uma etapa.</item>
     </plurals>
     <string name="twinconvert_card_review">Revisar</string>
@@ -5858,24 +6226,25 @@
     <string name="fatigue_advice_title_projected">%1$s provavelmente ainda está %2$s</string>
     <plurals name="fatigue_advice_leans">
         <item quantity="one">%1$d exercício depende dele</item>
+        <item quantity="many">%1$d exercícios dependem dele</item>
         <item quantity="other">%1$d exercícios dependem dele</item>
     </plurals>
     <string name="fatigue_advice_projected">Projetado</string>
     <string name="fatigue_advice_sub">%1$s · %2$s</string>
     <string name="fatigue_advice_adjust_button">Ajustar</string>
-    <string name="fatigue_advice_adjust_description">Ajustar o treino de hoje. %1$s</string>
-    <string name="fatigue_advice_adjust_description__t">Ajustar a prova de hoje. %1$s</string>
     <string name="fatigue_adjust_title">Ajustar hoje</string>
     <string name="fatigue_adjust_caption">%1$s ainda está %2$s por causa de %3$s. Só o treino de hoje muda; %4$s continua igual.</string>
     <string name="fatigue_adjust_caption__t">%1$s ainda está %2$s após %3$s. Apenas a prova de hoje muda; %4$s permanece intacto.</string>
     <string name="fatigue_adjust_keep">Manter</string>
     <plurals name="fatigue_adjust_keep_caption">
         <item quantity="one">%1$d série conforme planejado</item>
+        <item quantity="many">%1$d séries conforme planejado</item>
         <item quantity="other">%1$d séries conforme planejado</item>
     </plurals>
     <string name="fatigue_adjust_lighten">Aliviar</string>
     <plurals name="fatigue_adjust_lighten_caption">
         <item quantity="one">%1$d série, mais uma rep na reserva</item>
+        <item quantity="many">%1$d séries, mais uma rep na reserva</item>
         <item quantity="other">%1$d séries, mais uma rep na reserva</item>
     </plurals>
     <string name="fatigue_adjust_swap">Trocar por %1$s</string>
@@ -5883,6 +6252,7 @@
     <string name="fatigue_adjust_swap_light">%1$s; %2$s apenas levemente</string>
     <plurals name="fatigue_adjust_begin_changes">
         <item quantity="one">Começar com %1$d alteração</item>
+        <item quantity="many">Começar com %1$d alterações</item>
         <item quantity="other">Começar com %1$d alterações</item>
     </plurals>
     <string name="fatigue_adjust_not_today">Hoje não</string>
@@ -5901,11 +6271,13 @@
     <string name="fatigue_rest_anyway">Começar %1$s mesmo assim</string>
     <plurals name="settings_photos_missing_label">
         <item quantity="one">%1$d foto para restaurar</item>
+        <item quantity="many">%1$d fotos para restaurar</item>
         <item quantity="other">%1$d fotos para restaurar</item>
     </plurals>
     <string name="settings_photos_missing_caption">Escolha sua pasta de backup. As imagens são copiadas da pasta de fotos dentro dela.</string>
     <plurals name="settings_photos_restored">
         <item quantity="one">%1$d foto restaurada</item>
+        <item quantity="many">%1$d fotos restauradas</item>
         <item quantity="other">%1$d fotos restauradas</item>
     </plurals>
     <string name="photo_offer_title">Adicionar uma foto?</string>

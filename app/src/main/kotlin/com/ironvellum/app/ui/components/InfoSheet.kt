@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -52,7 +54,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
@@ -119,7 +121,7 @@ fun InfoSheet(
 ) {
     require(actions.size <= 3) { "An info sheet pins at most three actions" }
     val compact = size == InfoSheetSize.Compact
-    val maxHeight = LocalConfiguration.current.screenHeightDp.dp * size.maxHeightFraction
+    val maxHeight = usableWindowHeight() * size.maxHeightFraction
     // An empty page is dropped; a lone survivor is not worth a tab row, so it renders flat.
     val built = pages
         .map { BuiltPage(it.label, it.summary, InfoSheetBuilder().apply(it.content).sections) }
@@ -220,14 +222,23 @@ fun InfoSheet(
     }
 }
 
+/** Window height excluding system bars, captured before entering a dialog window. */
+@Composable
+internal fun usableWindowHeight(): Dp {
+    val density = LocalDensity.current
+    val bars = WindowInsets.systemBars
+    val pixels = LocalWindowInfo.current.containerSize.height - bars.getTop(density) - bars.getBottom(density)
+    return with(density) { pixels.coerceAtLeast(0).toDp() }
+}
+
 /** The same detail as an info sheet, embedded beside a map on a wide screen. */
 @Composable
 fun InfoSheetInline(
     title: String,
+    modifier: Modifier = Modifier,
     subtitle: String? = null,
     chips: List<InfoChip> = emptyList(),
     actions: List<InfoAction> = emptyList(),
-    modifier: Modifier = Modifier,
     content: InfoSheetScope.() -> Unit = {},
 ) {
     require(actions.size <= 2) { "An info sheet pins at most two actions" }

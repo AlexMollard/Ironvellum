@@ -33,9 +33,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.ui.components.usableWindowHeight
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -146,6 +146,8 @@ internal fun SetsSheet(
     val loadLabel = stringResource(if (lift.bodyweightLift) R.string.setssheet_load_added_label else R.string.setssheet_load_label)
     val loadEmpty = LoadTargetStepperPlaceholder(lift.bodyweightLift)
 
+    val viewportHeight = usableWindowHeight()
+
     IronvellumDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -159,7 +161,7 @@ internal fun SetsSheet(
         },
         text = {
             // Tall enough to fill the sheet whatever the scheme, so switching schemes never changes its height.
-            Column(Modifier.heightIn(min = LocalConfiguration.current.screenHeightDp.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.heightIn(min = viewportHeight), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 val tiles: @Composable (List<SchemeType>) -> Unit = { types ->
                     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         types.forEach { type ->

@@ -60,7 +60,7 @@ internal fun MusclesScreen(
         ) { page ->
             when (MusclesView.entries[page]) {
                 MusclesView.FATIGUE -> FatiguePane(expanded = expanded)
-                MusclesView.COVERAGE -> MuscleCoverageContent(onGenerateSession, onOpenRite, onOpenRites, onOptimise, expanded = expanded)
+                MusclesView.COVERAGE -> MuscleCoverageContent(onGenerateSession, onOpenRite = onOpenRite, onOpenRites = onOpenRites, onOptimise = onOptimise, expanded = expanded)
             }
         }
     }

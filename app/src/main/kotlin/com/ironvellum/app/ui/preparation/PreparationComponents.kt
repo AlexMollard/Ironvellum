@@ -39,9 +39,9 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 
 /** The pushed header, scrollable ink content and thumb-reachable action shared by this flow. */
 @Composable internal fun PreparationFrame(
-    title: String, onBack: () -> Unit, primary: String? = null, onPrimary: () -> Unit = {},
+    title: String, onBack: () -> Unit, modifier: Modifier = Modifier, primary: String? = null, onPrimary: () -> Unit = {},
     enabled: Boolean = true, actions: @Composable RowScope.() -> Unit = {},
-    dock: (@Composable () -> Unit)? = null, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit,
+    dock: (@Composable () -> Unit)? = null, content: @Composable ColumnScope.() -> Unit,
 ) {
     BackHandler(onBack = onBack)
     Column(modifier.fillMaxSize().imePadding()) {

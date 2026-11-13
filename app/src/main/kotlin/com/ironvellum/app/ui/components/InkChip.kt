@@ -46,10 +46,10 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 @Composable
 fun InkChip(
     label: String,
+    modifier: Modifier = Modifier,
     clickLabel: String? = null,
     icon: ImageVector? = null,
     description: String? = null,
-    modifier: Modifier = Modifier,
     /** The drawn height; 36dp by default, 48dp where the chip is the one control a card is for. */
     height: androidx.compose.ui.unit.Dp = 36.dp,
     selected: Boolean? = null,

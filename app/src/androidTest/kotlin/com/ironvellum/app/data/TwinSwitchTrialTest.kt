@@ -141,7 +141,7 @@ class TwinSwitchTrialRecreationTest {
     }
     // Built on first use and kept in the owner's store, so tearDown can let its start-up load finish and then clear it.
     private val sessionModel = lazy {
-        ViewModelProvider(owner, viewModelFactory { initializer { SessionViewModel(repo, context, sessionId) } })["session", SessionViewModel::class.java]
+        ViewModelProvider(owner, viewModelFactory { initializer { SessionViewModel(repo, context, sessionId, SavedStateHandle()) } })["session", SessionViewModel::class.java]
     }
     private val vm: SessionViewModel get() = sessionModel.value
     private var sessionId = 0L

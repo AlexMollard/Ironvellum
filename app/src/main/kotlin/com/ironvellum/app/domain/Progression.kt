@@ -185,7 +185,7 @@ object Progression {
                 val backedOff = nextLoad(weight, step, unit)
                 return Recommendation(
                     backedOff, band.first,
-                    Words.text(UiText.res(R.string.progression_assistance_deload, Loads.withUnit(backedOff, unit), band.first)),
+                    Words.text(UiText.plural(R.plurals.progression_assistance_deload, band.first, Loads.withUnit(backedOff, unit), band.first)),
                     deload = true, changed = true, assisted = true,
                 )
             }
@@ -283,7 +283,7 @@ object Progression {
             if (weight == null || weight < 0.0) return Recommendation(weight, lastReps, "", assisted = true)
             if ((range != null || mode == TrainingMode.HYPERTROPHY) && lastReps < band.last) {
                 val nextReps = (lastReps + REP_STEP).coerceAtMost(band.last)
-                return Recommendation(weight, nextReps, Words.text(UiText.res(R.string.progression_assistance_reps, nextReps)), changed = true, assisted = true)
+                return Recommendation(weight, nextReps, Words.text(UiText.plural(R.plurals.progression_assistance_reps, nextReps)), changed = true, assisted = true)
             }
             if (weight == 0.0) {
                 return Recommendation(weight, lastReps, Words.text(UiText.res(R.string.progression_assistance_zero)), changed = true, cueOnly = true, assisted = true)
@@ -297,8 +297,8 @@ object Progression {
             ).coerceAtLeast(0.0)
             val nextWeight = if (unit == LoadUnit.LB) Loads.toKg(reduced, unit) else reduced
             val nextReps = if (range != null || mode == TrainingMode.HYPERTROPHY) targetReps else band.first
-            return Recommendation(nextWeight, nextReps, Words.text(UiText.res(
-                R.string.progression_assistance_less, Loads.withUnit(nextWeight, unit), nextReps,
+            return Recommendation(nextWeight, nextReps, Words.text(UiText.plural(
+                R.plurals.progression_assistance_less, nextReps, Loads.withUnit(nextWeight, unit), nextReps,
             )), changed = true, assisted = true)
         }
         // Bodyweight work progresses in reps. Adding a step to a null load

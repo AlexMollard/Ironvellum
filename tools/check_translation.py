@@ -30,13 +30,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 RES = ROOT / "app" / "src" / "main" / "res"
 
-# Android <plurals> only accepts the English grammatical categories: `one` and
-# `other` (docs/TRANSLATING.md). ja/ko/zh have no singular form, so `other` only.
+# Match Android's CLDR cardinal categories, including `many` at million boundaries
+# in Spanish, French and Portuguese. Japanese, Korean and Chinese use `other` only.
 CLDR = {
-    "es": {"one", "other"},
+    "es": {"one", "many", "other"},
     "de": {"one", "other"},
-    "fr": {"one", "other"},
-    "pt-rBR": {"one", "other"},
+    "fr": {"one", "many", "other"},
+    "pt-rBR": {"one", "many", "other"},
     "ja": {"other"},
     "ko": {"other"},
     "zh": {"other"},
@@ -157,9 +157,7 @@ def check(english, translation, code):
             continue
         if tr.is_plural:
             for quantity, text in tr.items.items():
-                en_text = en.items.get(quantity)
-                if en_text is None:
-                    continue
+                en_text = en.items.get(quantity, en.items["other"])
                 if placeholders(text) != placeholders(en_text):
                     errors.append(f"placeholders for {key}[{quantity}]: translation has "
                                   f"{placeholders(text)}, English has {placeholders(en_text)}")

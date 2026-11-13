@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 """Install one square PNG as Ironvellum's adaptive launcher icon.
 
-Takes a generated emblem and writes every mipmap the manifest actually
-references: `ic_launcher_foreground`, `ic_launcher_monochrome`, and the legacy
-`ic_launcher` / `ic_launcher_round` bitmaps for pre-26 launchers.
+Write the foreground and monochrome layers referenced by the adaptive icon XML.
+Every supported Android version (minSdk 29) renders the adaptive XML icon.
 
 Two rules this encodes, because both are easy to get wrong by hand:
 
@@ -23,10 +22,7 @@ Needs Pillow, pinned in tools/requirements.txt (pip install -r tools/requirement
 """
 import argparse
 import pathlib
-import xml.etree.ElementTree as ET
 
-# Launcher bitmap edge per density bucket, in px, for a 48dp icon.
-LEGACY = {"mdpi": 48, "hdpi": 72, "xhdpi": 96, "xxhdpi": 144, "xxxhdpi": 192}
 # Adaptive layers are 108dp.
 ADAPTIVE = {"mdpi": 108, "hdpi": 162, "xhdpi": 216, "xxhdpi": 324, "xxxhdpi": 432}
 # Fraction of the adaptive canvas the art may occupy: 72dp of 108dp.
@@ -73,7 +69,7 @@ def main() -> int:
     if alpha.getextrema()[1] == 0:
         print("refusing: the source is fully transparent")
         return 1
-    opaque = sum(1 for a in alpha.getdata() if a > 24) / (src.width * src.height)
+    opaque = sum(alpha.histogram()[25:]) / (src.width * src.height)
     if opaque > 0.9:
         print(f"refusing: {100 * opaque:.0f}% of the source is opaque — the ground was not keyed")
         return 1
@@ -86,21 +82,6 @@ def main() -> int:
         fg = shifted
         written.append((RES / f"mipmap-{bucket}" / "ic_launcher_foreground.png", fg))
         written.append((RES / f"mipmap-{bucket}" / "ic_launcher_monochrome.png", monochrome(fg)))
-    from PIL import ImageDraw
-
-    # Legacy launchers do not compose the adaptive background for us.
-    background = ET.parse(RES / "drawable" / "ic_launcher_background.xml").getroot()
-    colour = background.find("solid").attrib["{http://schemas.android.com/apk/res/android}color"]
-    for bucket, edge in LEGACY.items():
-        # Legacy bitmaps have no mask, so the art may use more of the square.
-        legacy = Image.new("RGBA", (edge, edge), colour)
-        legacy.alpha_composite(fit_into(src, edge, 0.84), (round(edge * args.offset_x), 0))
-        written.append((RES / f"mipmap-{bucket}" / "ic_launcher.png", legacy))
-        rounded = legacy.copy()
-        mask = Image.new("L", (edge * 4, edge * 4))
-        ImageDraw.Draw(mask).ellipse((0, 0, edge * 4 - 1, edge * 4 - 1), fill=255)
-        rounded.putalpha(mask.resize((edge, edge), Image.Resampling.LANCZOS))
-        written.append((RES / f"mipmap-{bucket}" / "ic_launcher_round.png", rounded))
 
     for path, im in written:
         print(f"{'would write' if args.dry_run else 'wrote'} {path} {im.width}x{im.height}")

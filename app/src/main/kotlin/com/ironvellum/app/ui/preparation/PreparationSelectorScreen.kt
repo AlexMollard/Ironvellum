@@ -37,7 +37,7 @@ fun PreparationSelectorScreen(
     }
     PreparationFrame(
         preparationText(R.string.preparation_choose, R.string.preparation_choose__t, kindLabel(kind)), onBack,
-        preparationText(R.string.preparation_use_kind, R.string.preparation_use_kind__t, kindLabel(kind)), { onSelected(ui.choice) }, enabled = ui.loaded,
+        primary = preparationText(R.string.preparation_use_kind, R.string.preparation_use_kind__t, kindLabel(kind)), onPrimary = { onSelected(ui.choice) }, enabled = ui.loaded,
     ) {
         if (ui.failed) PreparationCaption(preparationText(R.string.preparation_error, R.string.preparation_error__t), error = true)
         Column(Modifier.selectableGroup()) {

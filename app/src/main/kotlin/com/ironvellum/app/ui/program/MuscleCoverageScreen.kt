@@ -200,7 +200,7 @@ fun MuscleCoverageScreen(
             PushedHeader(stringResource(R.string.coverage_screen_title), onBack)
             Spacer(Modifier.height(12.dp))
         }
-        MuscleCoverageContent(onGenerateSession, onOpenRite, onOpenRites, onOptimise, viewModel, Modifier.weight(1f))
+        MuscleCoverageContent(onGenerateSession, Modifier.weight(1f), onOpenRite, onOpenRites, onOptimise, viewModel)
     }
 }
 
@@ -211,6 +211,7 @@ fun MuscleCoverageScreen(
 @Composable
 internal fun MuscleCoverageContent(
     onGenerateSession: () -> Unit,
+    modifier: Modifier = Modifier,
     onOpenRite: (Long) -> Unit = {},
     onOpenRites: () -> Unit = {},
     onOptimise: () -> Unit = {},
@@ -218,7 +219,6 @@ internal fun MuscleCoverageContent(
         viewModel(factory = viewModelFactory {
             initializer { MuscleCoverageViewModel(ironvellumRepository()) }
         }),
-    modifier: Modifier = Modifier,
     expanded: Boolean = false,
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
@@ -356,8 +356,8 @@ internal fun CoveragePage(
     onOpenExercise: (String?) -> Unit,
     dismissed: Set<Muscle>,
     onDismiss: (Muscle) -> Unit,
-    onOpenUncounted: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onOpenUncounted: () -> Unit = {},
     expanded: Boolean = false,
 ) {
     val week = ui.week

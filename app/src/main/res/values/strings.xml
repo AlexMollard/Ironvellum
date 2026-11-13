@@ -2806,12 +2806,21 @@
     <!-- Temper's recovery finding: a routine that keeps starting with a muscle still tired. -->
     <string name="optimise_recovery_label">Starts tired</string>
     <string name="optimise_recovery_title">%1$s keeps starting with %2$s still tired</string>
-    <string name="optimise_recovery_detail">High at %1$d of its last %2$d starts</string>
-    <string name="optimise_recovery_subline">%1$s High at %2$d of its last %3$d starts</string>
+    <plurals name="optimise_recovery_detail">
+        <item quantity="one">High at %1$d of its last %2$d start</item>
+        <item quantity="other">High at %1$d of its last %2$d starts</item>
+    </plurals>
+    <plurals name="optimise_recovery_subline">
+        <item quantity="one">%1$s High at %2$d of its last %3$d start</item>
+        <item quantity="other">%1$s High at %2$d of its last %3$d starts</item>
+    </plurals>
     <string name="optimise_recovery_subtitle">%1$s still tired at the start</string>
     <string name="optimise_recovery_open_label">Open %1$s recovery</string>
     <string name="optimise_recovery_description">%1$s starts tired. %2$s</string>
-    <string name="optimise_recovery_intro">High or more at the start for %1$s, %2$d of the last %3$d times. Pick a change, or keep it as it is.</string>
+    <plurals name="optimise_recovery_intro">
+        <item quantity="one">High or more at the start for %1$s, %2$d of the last %3$d time. Pick a change, or keep it as it is.</item>
+        <item quantity="other">High or more at the start for %1$s, %2$d of the last %3$d times. Pick a change, or keep it as it is.</item>
+    </plurals>
     <string name="optimise_recovery_starts_label">When it began</string>
     <string name="optimise_recovery_cause">Most of it came from %1$s on %2$s (%3$s).</string>
     <string name="optimise_recovery_cause_free">Most of it came from a workout on %1$s (%2$s).</string>
@@ -2944,7 +2953,6 @@
     <!-- Legend range for Planned. %1$d is the weekly floor, so it reads "to 4+". -->
     <string name="coverage_week_legend_to">to %1$d+</string>
     <string name="coverage_week_caption">This week, Monday to Sunday: done so far, plus what your plan still has</string>
-    <string name="coverage_week_caption__t">This week, Monday to Sunday: done so far, plus what your cycle still has</string>
     <!-- A muscle's sets for the week. %1$s and %2$s are numbers as written ("16", "3.5"). -->
     <string name="coverage_week_sets_done">%1$s done</string>
     <string name="coverage_week_sets_planned">%1$s planned</string>
@@ -3006,11 +3014,6 @@
         <item quantity="other">Open your rites to give them days</item>
     </plurals>
     <string name="coverage_covered_empty">Every muscle covered</string>
-    <!-- Muscle coverage: the folded row of covered muscles. %d is how many. -->
-    <plurals name="coverage_covered_count">
-        <item quantity="one">%1$d muscle covered</item>
-        <item quantity="other">%1$d muscles covered</item>
-    </plurals>
     <string name="coverage_covered_hide_hint">Hide the covered muscles</string>
     <string name="coverage_covered_show_hint">Show the covered muscles</string>
     <string name="coverage_by_exercise_label">By exercise</string>
@@ -3406,9 +3409,18 @@
     <!-- %1$s the load added, %2$d the reps to drop to. -->
     <string tools:ignore="PluralsCandidate" name="progression_add_drop">Target cleared — add %1$s, drop to %2$d reps</string>
     <string tools:ignore="PluralsCandidate" name="progression_ceiling_add">Rep ceiling reached — add %1$s, back to %2$d reps</string>
-    <string name="progression_assistance_less">Reduce assistance to %1$s and return to %2$d reps</string>
-    <string name="progression_assistance_deload">Increase assistance to %1$s and return to %2$d reps</string>
-    <string name="progression_assistance_reps">Keep the same assistance and climb to %1$d reps</string>
+    <plurals name="progression_assistance_less">
+        <item quantity="one">Reduce assistance to %1$s and return to %2$d rep</item>
+        <item quantity="other">Reduce assistance to %1$s and return to %2$d reps</item>
+    </plurals>
+    <plurals name="progression_assistance_deload">
+        <item quantity="one">Increase assistance to %1$s and return to %2$d rep</item>
+        <item quantity="other">Increase assistance to %1$s and return to %2$d reps</item>
+    </plurals>
+    <plurals name="progression_assistance_reps">
+        <item quantity="one">Keep the same assistance and climb to %1$d rep</item>
+        <item quantity="other">Keep the same assistance and climb to %1$d reps</item>
+    </plurals>
     <string name="progression_assistance_zero">No assistance remains; choose a harder variation when ready</string>
     <string name="session_suggestion_less_assistance">Less assistance: %1$s × %2$d</string>
     <string name="session_suggestion_more_assistance">More assistance: %1$s × %2$d</string>
@@ -4344,8 +4356,7 @@
     <!-- %1$d and %2$d are the lowest and highest accepted weight in kg. -->
     <!-- %1$d and %2$d are the ends of a range in kg, not a count of a noun, so no plural. -->
     <string name="stats_add_weight_error" tools:ignore="PluralsCandidate">Enter a weight between %1$d and %2$d kg.</string>
-    <!-- The percent sign is not a count of a noun, so no plural. -->
-    <string name="stats_add_body_fat_label" tools:ignore="PluralsCandidate">Body fat % (optional)</string>
+    <string name="stats_add_body_fat_label">Body fat (%) (optional)</string>
     <!-- %1$d and %2$d are the lowest and highest accepted body fat percentage. -->
     <!-- %1$d and %2$d are the ends of a percent range, not a count of a noun, so no plural. -->
     <string name="stats_add_body_fat_error" tools:ignore="PluralsCandidate">Enter a body fat between %1$d and %2$d%%, or leave it blank.</string>
@@ -5684,7 +5695,10 @@
     <string name="cloud_workout_xp_needs_schema">Rolling workout XP needs cloud schema 33. Apply the latest hosted update; lifetime rankings still work.</string>
     <string name="cloud_workout_xp_needs_schema__t">Rolling trial XP needs cloud schema 33. Apply the latest hosted update; lifetime rankings still work.</string>
     <string name="cloud_sync_web_snapshot_failed">Web stats were not synced: %1$s</string>
-    <string name="cloud_sync_web_snapshot_too_large">Web stats are too large to sync (%1$d bytes).</string>
+    <plurals name="cloud_sync_web_snapshot_too_large">
+        <item quantity="one">Web stats are too large to sync (%1$d byte).</item>
+        <item quantity="other">Web stats are too large to sync (%1$d bytes).</item>
+    </plurals>
     <string name="cloud_sync_tiers_failed">Lift tiers were not synced: %1$s</string>
     <string name="cloud_sync_tiers_failed__t">Lift rungs were not synced: %1$s</string>
     <string name="cloud_sync_trial_hidden">This workout is not visible to you</string>
@@ -6005,7 +6019,6 @@
     <string name="cloud_account_signup_no_profile">Account created, but your profile could not be loaded — sign in again</string>
     <string name="cloud_account_signin_no_profile">Signed in, but your profile could not be loaded — try again</string>
     <string name="cloud_account_reset_no_profile">Password changed, but your profile could not be loaded — sign in again</string>
-    <string name="cloud_account_google_no_user">Google sign-in returned no user</string>
     <string name="cloud_account_google_no_profile">Signed in with Google, but your profile could not be loaded — try again</string>
     <string name="cloud_account_claim_signed_out">Sign in before taking a display name</string>
     <string name="cloud_account_claim_signed_out__t">Sign in before taking a true name</string>
@@ -7029,8 +7042,6 @@
     <!-- Two parts of one quiet line, joined with a middle dot. -->
     <string name="fatigue_advice_sub">%1$s · %2$s</string>
     <string name="fatigue_advice_adjust_button">Adjust</string>
-    <string name="fatigue_advice_adjust_description">Adjust today\'s workout. %1$s</string>
-    <string name="fatigue_advice_adjust_description__t">Adjust today\'s trial. %1$s</string>
 
     <!-- The adjust sheet. %1$s a muscle, %2$s its level, %3$s the day of the session behind it, %4$s the routine. -->
     <string name="fatigue_adjust_title">Adjust today</string>
@@ -7131,7 +7142,7 @@
     <string name="photos_compare_description">%1$s photo, week of %2$s</string>
     <!-- The compare slider: %1$s and %2$s are the two weeks, %3$d a percentage, %4$s a pose name. -->
     <string name="photos_compare_handle_description">Divider between the week of %1$s and the week of %2$s</string>
-    <string name="photos_compare_state">%1$d percent from the left</string>
+    <string name="photos_compare_state">%1$d%% from the left</string>
     <string name="photos_compare_move_left">Move the divider left</string>
     <string name="photos_compare_move_right">Move the divider right</string>
     <string name="photos_compare_only">Only the week of %1$s has a %2$s photo.</string>

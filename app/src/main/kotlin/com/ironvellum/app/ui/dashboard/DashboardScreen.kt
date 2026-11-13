@@ -1363,8 +1363,8 @@ private fun TodayPage(
     plain: @Composable () -> Unit,
     rows: @Composable () -> Unit,
     veil: (@Composable () -> Unit)?,
-    live: Boolean = false,
     modifier: Modifier = Modifier,
+    live: Boolean = false,
 ) {
     // Only the page that is shown is live: a measuring probe must neither animate nor spend a one-off.
     CompositionLocalProvider(LocalTodayLive provides live) {

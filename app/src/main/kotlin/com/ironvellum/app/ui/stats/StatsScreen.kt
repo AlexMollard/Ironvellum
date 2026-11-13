@@ -621,7 +621,7 @@ private fun TrainingTab(
                 fun day(i: Int) = formatDate(scored[i].completedAtMs ?: scored[i].startedAtMs, "d MMM")
                 TrendChart(
                     scores,
-                    IronvellumColors.Emerald,
+                    color = IronvellumColors.Emerald,
                     fromZero = false,
                     startLabel = day(0),
                     endLabel = day(scored.lastIndex),
@@ -700,7 +700,7 @@ private fun StatDrillSheet(
             if (series.size >= 2) {
                 TrendChart(
                     series,
-                    IronvellumColors.Emerald,
+                    color = IronvellumColors.Emerald,
                     fromZero = false,
                     recordMarker = false,
                     valueText = { "$metric ${formatBodyValue(it)}" },

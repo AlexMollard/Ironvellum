@@ -1610,8 +1610,8 @@
     <string name="amend_confirm_marked">Freunde sehen es als geändert markiert.</string>
     <string name="amend_confirm_marked__t">Verbündete sehen sie als geändert markiert.</string>
     <string name="always_amend_confirm_deeds">Errungene Heldentaten bleiben bestehen; es werden keine Inschriften vergeben.</string>
-    <string name="amend_confirm_window">Binnen 48 h nach Abschluss können Änderungen die XP höchstens verdoppeln. Danach können sie sie nur senken.</string>
-    <string name="amend_confirm_window__t">Binnen 48 h nach dem Besiegeln können Änderungen die XP der Prüfung höchstens verdoppeln. Danach können sie sie nur senken.</string>
+    <string name="amend_confirm_window">Binnen 48 h nach Abschluss können Änderungen die XP höchstens verdoppeln. Danach können Änderungen die XP nur senken.</string>
+    <string name="amend_confirm_window__t">Binnen 48 h nach dem Besiegeln können Änderungen die XP der Prüfung höchstens verdoppeln. Danach können Änderungen die XP nur senken.</string>
     <string name="amend_keep_editing_button">Weiter bearbeiten</string>
     <string name="workoutlog_empty_title">Dein Verlauf ist leer.</string>
     <string name="workoutlog_empty_title__t">Die Chronik ist leer.</string>
@@ -2519,12 +2519,21 @@
     <string name="optimise_heavy_label">Hohe Last</string>
     <string name="optimise_recovery_label">Startet müde</string>
     <string name="optimise_recovery_title">%1$s beginnt immer wieder mit noch müdem %2$s</string>
-    <string name="optimise_recovery_detail">Hoch bei %1$d der letzten %2$d Starts</string>
-    <string name="optimise_recovery_subline">%1$s Hoch bei %2$d der letzten %3$d Starts</string>
+    <plurals name="optimise_recovery_detail">
+        <item quantity="one">Hoch bei %1$d des letzten %2$d Starts</item>
+        <item quantity="other">Hoch bei %1$d der letzten %2$d Starts</item>
+    </plurals>
+    <plurals name="optimise_recovery_subline">
+        <item quantity="one">%1$s Hoch bei %2$d des letzten %3$d Starts</item>
+        <item quantity="other">%1$s Hoch bei %2$d der letzten %3$d Starts</item>
+    </plurals>
     <string name="optimise_recovery_subtitle">%1$s zu Beginn noch müde</string>
     <string name="optimise_recovery_open_label">Erholung von %1$s öffnen</string>
     <string name="optimise_recovery_description">%1$s startet müde. %2$s</string>
-    <string name="optimise_recovery_intro">Bei %1$s zu Beginn hoch oder mehr, %2$d der letzten %3$d Male. Wähle eine Änderung oder lass alles wie es ist.</string>
+    <plurals name="optimise_recovery_intro">
+        <item quantity="one">Bei %1$s zu Beginn hoch oder mehr, %2$d des letzten %3$d Mals. Wähle eine Änderung oder lass alles wie es ist.</item>
+        <item quantity="other">Bei %1$s zu Beginn hoch oder mehr, %2$d der letzten %3$d Male. Wähle eine Änderung oder lass alles wie es ist.</item>
+    </plurals>
     <string name="optimise_recovery_starts_label">Beim Start</string>
     <string name="optimise_recovery_cause">Der Großteil stammt von %1$s am %2$s (%3$s).</string>
     <string name="optimise_recovery_cause_free">Der Großteil stammt von einem Training am %1$s (%2$s).</string>
@@ -2625,7 +2634,6 @@
     <string name="coverage_week_state_none">Keine</string>
     <string name="coverage_week_legend_to">bis %1$d+</string>
     <string name="coverage_week_caption">Diese Woche, Montag bis Sonntag: bisher erledigt und noch im Plan</string>
-    <string name="coverage_week_caption__t">Diese Woche, Montag bis Sonntag: bisher vollbracht und noch im Zyklus</string>
     <string name="coverage_week_sets_done">%1$s erledigt</string>
     <string name="coverage_week_sets_planned">%1$s geplant</string>
     <string name="coverage_week_sets_both">%1$s erledigt + %2$s geplant</string>
@@ -2679,10 +2687,6 @@
         <item quantity="other">Öffne deine Riten, um ihnen Tage zu geben</item>
     </plurals>
     <string name="coverage_covered_empty">Alle Muskeln abgedeckt</string>
-    <plurals name="coverage_covered_count">
-        <item quantity="one">%1$d Muskel abgedeckt</item>
-        <item quantity="other">%1$d Muskeln abgedeckt</item>
-    </plurals>
     <string name="coverage_covered_hide_hint">Abgedeckte Muskeln verbergen</string>
     <string name="coverage_covered_show_hint">Abgedeckte Muskeln anzeigen</string>
     <string name="coverage_by_exercise_label">Nach Übung</string>
@@ -2975,9 +2979,18 @@
     <string name="progression_climb_reps">Ziel erreicht — steigere auf %1$d Wdh.</string>
     <string name="progression_add_drop">Ziel erreicht — erhöhe um %1$s, zurück auf %2$d Wdh.</string>
     <string name="progression_ceiling_add">Wdh.-Limit erreicht — erhöhe um %1$s, zurück auf %2$d Wdh.</string>
-    <string name="progression_assistance_less">Reduziere die Unterstützung auf %1$s und gehe zurück auf %2$d Wdh.</string>
-    <string name="progression_assistance_deload">Erhöhe die Unterstützung auf %1$s und gehe zurück auf %2$d Wdh.</string>
-    <string name="progression_assistance_reps">Gleiche Unterstützung — steigere auf %1$d Wdh.</string>
+    <plurals name="progression_assistance_less">
+        <item quantity="one">Reduziere die Unterstützung auf %1$s und gehe zurück auf %2$d Wiederholung.</item>
+        <item quantity="other">Reduziere die Unterstützung auf %1$s und gehe zurück auf %2$d Wdh.</item>
+    </plurals>
+    <plurals name="progression_assistance_deload">
+        <item quantity="one">Erhöhe die Unterstützung auf %1$s und gehe zurück auf %2$d Wiederholung.</item>
+        <item quantity="other">Erhöhe die Unterstützung auf %1$s und gehe zurück auf %2$d Wdh.</item>
+    </plurals>
+    <plurals name="progression_assistance_reps">
+        <item quantity="one">Gleiche Unterstützung — steigere auf %1$d Wiederholung.</item>
+        <item quantity="other">Gleiche Unterstützung — steigere auf %1$d Wdh.</item>
+    </plurals>
     <string name="progression_assistance_zero">Keine Unterstützung mehr — wähle eine schwerere Variante, wenn du bereit bist</string>
     <string name="session_suggestion_less_assistance">Weniger Unterstützung: %1$s × %2$d</string>
     <string name="session_suggestion_more_assistance">Mehr Unterstützung: %1$s × %2$d</string>
@@ -3648,7 +3661,7 @@
     <string name="stats_drill_from_reading__t">Aus deiner Messung vom %1$s, der jüngsten mit Körperfett.</string>
     <string name="stats_add_weight_label">Gewicht (kg)</string>
     <string name="stats_add_weight_error">Gib ein Gewicht zwischen %1$d und %2$d kg ein.</string>
-    <string name="stats_add_body_fat_label">Körperfett % (optional)</string>
+    <string name="stats_add_body_fat_label">Körperfettanteil (%) (optional)</string>
     <string name="stats_add_body_fat_error">Gib Körperfett zwischen %1$d und %2$d%% ein oder lass das Feld leer.</string>
     <string name="stats_add_height_hint">Deine Größe schaltet BMI und FFMI frei.</string>
     <string name="stats_add_set_height">Größe eingeben</string>
@@ -3905,12 +3918,12 @@
     <string name="veilreveal_run_note_ready">Deine nächste Inschrift ist ein Relikt oder ein Wappen.</string>
     <string name="veilreveal_run_note_after">Nach %1$d ist deine nächste Inschrift ein Relikt oder ein Wappen.</string>
     <plurals name="veilreveal_run_description">
-        <item quantity="one">%1$d von %2$d Echoziehungen in Folge</item>
-        <item quantity="other">%1$d von %2$d Echoziehungen in Folge</item>
+        <item quantity="one">%1$d von %2$d Echoziehungen hintereinander</item>
+        <item quantity="other">%1$d von %2$d Echoziehungen hintereinander</item>
     </plurals>
     <plurals name="veilreveal_run_title">
-        <item quantity="one">%1$d Echoziehung in Folge</item>
-        <item quantity="other">%1$d Echoziehungen in Folge</item>
+        <item quantity="one">%1$d Echoziehung hintereinander</item>
+        <item quantity="other">%1$d Echoziehungen hintereinander</item>
     </plurals>
     <string name="veilreveal_rate_moved">%1$s → %2$s pro Stunde</string>
     <string name="veilreveal_rate_unchanged">%1$s pro Stunde, unverändert</string>
@@ -3921,7 +3934,7 @@
     <string name="terminfo_what_is_description">Was ist %1$s?</string>
     <string name="terminfo_close_button">Schließen</string>
     <string name="terminfo_bmi_title">BMI</string>
-    <string name="terminfo_bmi_definition">Body-Mass-Index: Dein Gewicht geteilt durch deine Körpergröße zum Quadrat. Er schätzt deine Körpergröße grob ein und unterscheidet nicht zwischen Muskeln und Fett. Muskelreiche Menschen liegen oft hoch.</string>
+    <string name="terminfo_bmi_definition">Körpermasseindex: Dein Gewicht geteilt durch deine Körpergröße zum Quadrat. Er schätzt deine Körpergröße grob ein und unterscheidet nicht zwischen Muskeln und Fett. Muskelreiche Menschen liegen oft hoch.</string>
     <string name="terminfo_ffmi_title">FFMI</string>
     <string name="terminfo_ffmi_definition">Fettfreie-Masse-Index: Dein Gewicht ohne Körperfett, geteilt durch deine Körpergröße zum Quadrat. Er bewertet deine Muskelmasse im Verhältnis zur Größe. Dafür braucht er einen Körperfett-%1$s-Messwert.</string>
     <string name="terminfo_ffmi_definition__t">Fettfreie-Masse-Index: Dein Gewicht ohne Körperfett, geteilt durch deine Körpergröße zum Quadrat. Er bewertet deine Muskelmasse im Verhältnis zur Größe. Dafür braucht er eine Körperfett-%1$s-Messung.</string>
@@ -3933,8 +3946,8 @@
     <string name="terminfo_double_progression_definition">Behalte das Gewicht und steigere die Wiederholungen pro Training bis zum oberen Ende des Bereichs. Erhöhe dann das Gewicht und beginne unten erneut. So trainierst du im Muskelmodus.</string>
     <string name="terminfo_double_progression_definition__t">Behalte das Gewicht und steigere die Wiederholungen pro Prüfung bis zum oberen Ende des Bereichs. Erhöhe dann das Gewicht und beginne unten erneut. So trainierst du im Muskelmodus.</string>
     <string name="terminfo_deload_title">Entlastung</string>
-    <string name="terminfo_deload_definition">Scheiterst du drei Trainings in Folge am selben Gewicht, sinkt es beim nächsten um %1$d%%. So kannst du dich erholen und über deinen Stillstand hinauskommen. Das geschieht automatisch.</string>
-    <string name="terminfo_deload_definition__t">Scheiterst du drei Prüfungen in Folge am selben Gewicht, sinkt es bei der nächsten um %1$d%%. So kannst du dich erholen und über deinen Stillstand hinauskommen. Das geschieht von selbst.</string>
+    <string name="terminfo_deload_definition">Scheiterst du drei Trainings hintereinander am selben Gewicht, sinkt es beim nächsten um %1$d%%. So kannst du dich erholen und über deinen Stillstand hinauskommen. Das geschieht automatisch.</string>
+    <string name="terminfo_deload_definition__t">Scheiterst du drei Prüfungen hintereinander am selben Gewicht, sinkt es bei der nächsten um %1$d%%. So kannst du dich erholen und über deinen Stillstand hinauskommen. Das geschieht von selbst.</string>
     <string name="terminfo_ranks_title">Kraftrang und Aufstieg</string>
     <string name="terminfo_ranks_definition">Der Kraftrang zeigt deine aktuelle Stärke: Untrainiert, Anfänger, Fortgeschritten, Experten oder Elite. Er betrachtet Zug, Drücken und Beine über die letzten %1$s. Für jedes Muster zählt der beste Wert: Kniebeuge, Bankdrücken, Kreuzheben, Schulterdrücken, Klimmzug oder Dip, bewertet nach geschätztem 1RM im Verhältnis zum Körpergewicht, oder eine gemeisterte Fähigkeit des Musters auf ihrer Stufe. Dein Rang ist der abgerundete Durchschnitt der trainierten Muster. Nicht trainierte Muster bleiben außen vor; Rumpftraining senkt ihn nie. Dein Aufstieg folgt deinem Level, das mit den XP jedes Trainings steigt: %2$s.</string>
     <string name="terminfo_ranks_definition__t">Der Kraftrang zeigt deine aktuelle Stärke: Untrainiert, Anfänger, Fortgeschritten, Experten oder Elite. Er betrachtet Zug, Drücken und Beine über die letzten %1$s. Für jedes Muster zählt der beste Wert: Kniebeuge, Bankdrücken, Kreuzheben, Schulterdrücken, Klimmzug oder Dip, bewertet nach geschätztem 1RM im Verhältnis zum Körpergewicht, oder eine gemeisterte Kunst des Musters auf ihrer Rangstufe. Dein Rang ist der abgerundete Durchschnitt der trainierten Muster. Nicht trainierte Muster bleiben außen vor; Rumpftraining senkt ihn nie. Dein Aufstieg folgt deinem Level, das mit den XP jeder Prüfung steigt: %2$s.</string>
@@ -4793,7 +4806,10 @@
     <string name="cloud_workout_xp_needs_schema">Rollierende Trainings-XP benötigen Cloud-Schema 33. Wende das neueste Datenbank-Update an; die Gesamt-XP-Rangliste funktioniert weiterhin.</string>
     <string name="cloud_workout_xp_needs_schema__t">Rollierende Prüfungs-XP benötigen Cloud-Schema 33. Wende das neueste Datenbank-Update an; die Gesamt-XP-Rangliste funktioniert weiterhin.</string>
     <string name="cloud_sync_web_snapshot_failed">Web-Statistiken wurden nicht synchronisiert: %1$s</string>
-    <string name="cloud_sync_web_snapshot_too_large">Web-Statistiken sind zu groß zum Synchronisieren (%1$d Bytes).</string>
+    <plurals name="cloud_sync_web_snapshot_too_large">
+        <item quantity="one">Web-Statistiken sind zu groß zum Synchronisieren (%1$d Byte).</item>
+        <item quantity="other">Web-Statistiken sind zu groß zum Synchronisieren (%1$d Bytes).</item>
+    </plurals>
     <string name="cloud_sync_tiers_failed">Übungsstufen wurden nicht synchronisiert: %1$s</string>
     <string name="cloud_sync_tiers_failed__t">Übungsrangstufen wurden nicht synchronisiert: %1$s</string>
     <string name="cloud_sync_trial_hidden">Dieses Training ist für dich nicht sichtbar</string>
@@ -5077,7 +5093,6 @@
     <string name="cloud_account_signup_no_profile">Konto erstellt, aber dein Profil konnte nicht geladen werden — melde dich erneut an</string>
     <string name="cloud_account_signin_no_profile">Angemeldet, aber dein Profil konnte nicht geladen werden — versuch es erneut</string>
     <string name="cloud_account_reset_no_profile">Passwort geändert, aber dein Profil konnte nicht geladen werden — melde dich erneut an</string>
-    <string name="cloud_account_google_no_user">Google-Anmeldung lieferte keinen Nutzer</string>
     <string name="cloud_account_google_no_profile">Mit Google angemeldet, aber dein Profil konnte nicht geladen werden — versuch es erneut</string>
     <string name="cloud_account_claim_signed_out">Melde dich an, bevor du einen Anzeigenamen wählst</string>
     <string name="cloud_account_claim_signed_out__t">Melde dich an, bevor du einen Wahren Namen wählst</string>
@@ -5666,7 +5681,7 @@
     <string name="review_share_title">Rückblick teilen</string>
     <string name="review_share_lifts_label">Verbesserte Übungen</string>
     <string name="review_share_lifts_caption">Übung, e1RM vorher und nachher</string>
-    <string name="review_share_streak_caption">Tage in Folge</string>
+    <string name="review_share_streak_caption">Tage hintereinander</string>
     <string name="review_share_chooser_title">Rückblick teilen</string>
     <string name="review_card_this_month">diesen Monat</string>
     <string name="review_card_this_year">dieses Jahr</string>
@@ -5863,8 +5878,6 @@
     <string name="fatigue_advice_projected">Prognose</string>
     <string name="fatigue_advice_sub">%1$s · %2$s</string>
     <string name="fatigue_advice_adjust_button">Anpassen</string>
-    <string name="fatigue_advice_adjust_description">Heutiges Training anpassen. %1$s</string>
-    <string name="fatigue_advice_adjust_description__t">Heutige Prüfung anpassen. %1$s</string>
     <string name="fatigue_adjust_title">Heute anpassen</string>
     <string name="fatigue_adjust_caption">%1$s ist durch %3$s noch %2$s. Nur das heutige Training ändert sich; %4$s bleibt unverändert.</string>
     <string name="fatigue_adjust_caption__t">%1$s ist nach %3$s noch %2$s. Nur die heutige Prüfung ändert sich; %4$s bleibt unberührt.</string>

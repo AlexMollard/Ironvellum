@@ -6,8 +6,15 @@ import android.view.ViewGroup
 import android.view.Window
 import android.view.inspector.WindowInspector
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.WindowInfo
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.window.DialogWindowProvider
@@ -130,13 +137,22 @@ class ExerciseInfoSheetFitsTest {
         sheetPane = SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, exercise.name)
         if (!light) compose.activityRule.scenario.onActivity { ShotRecorder.darkWindow(it) }
         compose.setContent {
-            // InfoSheet derives its height from configuration; match it to the actual
-            // dialog window below rather than the emulator's larger display.
+            // The dialog viewport is 411x891dp of usable space. Supply a matching
+            // outer window, including the actual system bars the sheet subtracts.
             val phone = Configuration(LocalConfiguration.current).apply {
                 screenWidthDp = phoneWidthDp
                 screenHeightDp = phoneHeightDp
             }
-            CompositionLocalProvider(LocalConfiguration provides phone) {
+            val density = LocalDensity.current
+            val bars = WindowInsets.systemBars
+            val actualWindow = LocalWindowInfo.current
+            val phoneWindow = object : WindowInfo by actualWindow {
+                override val containerSize = IntSize(
+                    with(density) { phoneWidthDp.dp.roundToPx() },
+                    with(density) { phoneHeightDp.dp.roundToPx() } + bars.getTop(density) + bars.getBottom(density),
+                )
+            }
+            CompositionLocalProvider(LocalConfiguration provides phone, LocalWindowInfo provides phoneWindow) {
                 IronvellumTheme(light = light) {
                     ExerciseInfoSheet(exercise = exercise, lastLine = lastLine, onDismiss = {}, onPick = {}, why = when (exercise.name) { "Pull-up" -> worstWhy; "Hammer Curl" -> curlWhy; else -> null })
                 }

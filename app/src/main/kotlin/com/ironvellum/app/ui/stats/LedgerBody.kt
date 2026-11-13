@@ -173,8 +173,8 @@ internal fun BodyTab(
                     )
                     // The one way to log a weight once there is one, beside the
                     // readings behind the chart.
-                    InkChip(stringResource(R.string.ledger_log_chip), stringResource(R.string.ledger_log_weight_description), Icons.Outlined.Add, height = 48.dp, onClick = onLogWeight)
-                    InkChip(stringResource(R.string.ledger_history_chip), stringResource(R.string.ledger_history_description), height = 48.dp, onClick = onOpenHistory)
+                    InkChip(stringResource(R.string.ledger_log_chip), clickLabel = stringResource(R.string.ledger_log_weight_description), icon = Icons.Outlined.Add, height = 48.dp, onClick = onLogWeight)
+                    InkChip(stringResource(R.string.ledger_history_chip), clickLabel = stringResource(R.string.ledger_history_description), height = 48.dp, onClick = onOpenHistory)
                 }
                 Spacer(Modifier.height(4.dp))
                 when {
@@ -182,7 +182,7 @@ internal fun BodyTab(
                     plot.values.size < 2 -> ChartNote(UiText.themed(R.string.stats_chart_two_readings, R.string.stats_chart_two_readings__t).asString())
                     else -> TrendChart(
                         plot.values,
-                        IronvellumColors.Emerald,
+                        color = IronvellumColors.Emerald,
                         fromZero = false,
                         positions = plot.positions,
                         startLabel = shortDay(plot.startDate),

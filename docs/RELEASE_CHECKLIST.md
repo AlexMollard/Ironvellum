@@ -74,6 +74,26 @@ The original release artifacts remain unsigned. This smoke does not verify Play
 signing, Google sign-in, Health Connect, or authenticated production sync/social
 flows. No release tag or GitHub release has been created.
 
+Hardening update (2026-11-13): strict release lint reports zero findings. The
+fresh minified FOSS build also passed real production email signup, rejected
+wrong credentials, signed in again, synced a 40 kg × 5 workout worth 60 XP,
+and uploaded a 65,054-byte archive. A fresh local install restored the workout,
+XP and explicit pounds override; the recorded load stayed 40 kg. Two disposable
+accounts sent and accepted a friend request. The recipient's workout-XP view
+was unreadable before acceptance and returned 60 XP afterward. Recent and
+lifetime boards rendered independently, and authentication survived a cold restart.
+These checks ran on an isolated API 37 emulator; no owner account or phone was used.
+
+This does **not** clear the gate budget: the complete current gate must still
+finish below seven minutes before release. The published viewer also needs its
+approved manual deployment and authenticated check. The temporary accounts are
+retained only until that check, then deleted.
+
+Target SDK remains 36 by Alex's explicit 1.11 decision. This meets the current
+[Play target-API requirement](https://developer.android.com/google/play/requirements/target-sdk);
+the narrow `OldTargetApi` lint exception records that choice rather than claiming
+API 37 behavior has been migrated.
+
 ## 4. Supabase schema
 
 The whole schema is ONE file, `supabase/migrations/0001_baseline.sql`, the

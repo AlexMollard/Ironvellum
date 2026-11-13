@@ -2390,12 +2390,18 @@
     <string name="optimise_heavy_label">과다</string>
     <string name="optimise_recovery_label">피로한 채 시작</string>
     <string name="optimise_recovery_title">%1$s: %2$s 피로가 남은 채 자꾸 시작해요</string>
-    <string name="optimise_recovery_detail">최근 %2$d번 시작 중 %1$d번 높음</string>
-    <string name="optimise_recovery_subline">%1$s 최근 %3$d번 시작 중 %2$d번 높음</string>
+    <plurals name="optimise_recovery_detail">
+        <item quantity="other">최근 %2$d번 시작 중 %1$d번 높음</item>
+    </plurals>
+    <plurals name="optimise_recovery_subline">
+        <item quantity="other">%1$s 최근 %3$d번 시작 중 %2$d번 높음</item>
+    </plurals>
     <string name="optimise_recovery_subtitle">%1$s 시작 시 피로 남음</string>
     <string name="optimise_recovery_open_label">%1$s 회복 열기</string>
     <string name="optimise_recovery_description">%1$s 피로한 채 시작. %2$s</string>
-    <string name="optimise_recovery_intro">최근 %3$d번 중 %2$d번, 시작할 때 %1$s 피로도가 높음 이상이었어요. 변경을 고르거나 그대로 두세요.</string>
+    <plurals name="optimise_recovery_intro">
+        <item quantity="other">최근 %3$d번 중 %2$d번, 시작할 때 %1$s 피로도가 높음 이상이었어요. 변경을 고르거나 그대로 두세요.</item>
+    </plurals>
     <string name="optimise_recovery_starts_label">시작 시점</string>
     <string name="optimise_recovery_cause">주로 %2$s(%3$s) %1$s 때문이에요.</string>
     <string name="optimise_recovery_cause_free">주로 %1$s(%2$s) 운동 때문이에요.</string>
@@ -2492,7 +2498,6 @@
     <string name="coverage_week_state_none">없음</string>
     <string name="coverage_week_legend_to">%1$d+까지</string>
     <string name="coverage_week_caption">이번 주, 월요일부터 일요일까지: 지금까지 한 운동과 계획에 남은 운동</string>
-    <string name="coverage_week_caption__t">이번 주, 월요일부터 일요일까지: 지금까지 치른 시련과 주기에 남은 시련</string>
     <string name="coverage_week_sets_done">%1$s 완료</string>
     <string name="coverage_week_sets_planned">%1$s 예정</string>
     <string name="coverage_week_sets_both">%1$s 완료 + %2$s 예정</string>
@@ -2538,9 +2543,6 @@
         <item quantity="other">의식을 열어 요일을 정하세요</item>
     </plurals>
     <string name="coverage_covered_empty">모든 근육 충분</string>
-    <plurals name="coverage_covered_count">
-        <item quantity="other">근육 %1$d개 충분</item>
-    </plurals>
     <string name="coverage_covered_hide_hint">충분한 근육 숨기기</string>
     <string name="coverage_covered_show_hint">충분한 근육 보기</string>
     <string name="coverage_by_exercise_label">운동별</string>
@@ -2809,9 +2811,15 @@
     <string name="progression_climb_reps">목표 달성 — %1$d회까지 늘리세요</string>
     <string name="progression_add_drop">목표 달성 — %1$s 추가하고 %2$d회로 줄이세요</string>
     <string name="progression_ceiling_add">최대 횟수에 도달했어요 — %1$s 추가하고 %2$d회로 돌아가세요</string>
-    <string name="progression_assistance_less">보조 중량을 %1$s로 줄이고 %2$d회로 돌아가세요</string>
-    <string name="progression_assistance_deload">보조 중량을 %1$s로 늘리고 %2$d회로 돌아가세요</string>
-    <string name="progression_assistance_reps">같은 보조 중량으로 %1$d회까지 늘리세요</string>
+    <plurals name="progression_assistance_less">
+        <item quantity="other">보조 중량을 %1$s로 줄이고 %2$d회로 돌아가세요</item>
+    </plurals>
+    <plurals name="progression_assistance_deload">
+        <item quantity="other">보조 중량을 %1$s로 늘리고 %2$d회로 돌아가세요</item>
+    </plurals>
+    <plurals name="progression_assistance_reps">
+        <item quantity="other">같은 보조 중량으로 %1$d회까지 늘리세요</item>
+    </plurals>
     <string name="progression_assistance_zero">보조 중량이 더는 없어요. 준비되면 더 어려운 변형 동작을 선택하세요</string>
     <string name="session_suggestion_less_assistance">보조 줄이기: %1$s × %2$d</string>
     <string name="session_suggestion_more_assistance">보조 늘리기: %1$s × %2$d</string>
@@ -3446,7 +3454,7 @@
     <string name="stats_drill_from_reading__t">%1$s 기록 기준이에요(체지방률이 있는 최신 기록).</string>
     <string name="stats_add_weight_label">체중(kg)</string>
     <string name="stats_add_weight_error">체중을 %1$d~%2$d kg 사이로 입력하세요.</string>
-    <string name="stats_add_body_fat_label">체지방률 % (선택)</string>
+    <string name="stats_add_body_fat_label">체지방률 (%) (선택)</string>
     <string name="stats_add_body_fat_error">체지방률을 %1$d~%2$d%% 사이로 입력하거나 비워 두세요.</string>
     <string name="stats_add_height_hint">키를 입력하면 BMI와 FFMI를 볼 수 있어요.</string>
     <string name="stats_add_set_height">키 설정</string>
@@ -4504,7 +4512,9 @@
     <string name="cloud_workout_xp_needs_schema">최근 운동 XP 순위에는 클라우드 스키마 33이 필요해요. 최신 데이터베이스 업데이트를 적용하세요. 누적 XP 순위는 계속 사용할 수 있어요.</string>
     <string name="cloud_workout_xp_needs_schema__t">최근 시련 XP 순위에는 클라우드 스키마 33이 필요해요. 최신 데이터베이스 업데이트를 적용하세요. 누적 XP 순위는 계속 사용할 수 있어요.</string>
     <string name="cloud_sync_web_snapshot_failed">웹 통계를 동기화하지 못했어요: %1$s</string>
-    <string name="cloud_sync_web_snapshot_too_large">웹 통계가 너무 커서 동기화할 수 없어요(%1$d바이트).</string>
+    <plurals name="cloud_sync_web_snapshot_too_large">
+        <item quantity="other">웹 통계가 너무 커서 동기화할 수 없어요(%1$d바이트).</item>
+    </plurals>
     <string name="cloud_sync_tiers_failed">리프트 급을 동기화하지 못했어요: %1$s</string>
     <string name="cloud_sync_tiers_failed__t">리프트 품계를 동기화하지 못했어요: %1$s</string>
     <string name="cloud_sync_trial_hidden">볼 수 없는 운동이에요</string>
@@ -4771,7 +4781,6 @@
     <string name="cloud_account_signup_no_profile">계정을 만들었지만 프로필을 불러오지 못했어요. 다시 로그인하세요</string>
     <string name="cloud_account_signin_no_profile">로그인했지만 프로필을 불러오지 못했어요. 다시 시도하세요</string>
     <string name="cloud_account_reset_no_profile">비밀번호를 바꿨지만 프로필을 불러오지 못했어요. 다시 로그인하세요</string>
-    <string name="cloud_account_google_no_user">Google 로그인에서 사용자 정보를 받지 못했어요</string>
     <string name="cloud_account_google_no_profile">Google로 로그인했지만 프로필을 불러오지 못했어요. 다시 시도하세요</string>
     <string name="cloud_account_claim_signed_out">표시 이름을 정하기 전에 로그인하세요</string>
     <string name="cloud_account_claim_signed_out__t">참된 이름을 정하기 전에 로그인하세요</string>
@@ -5515,8 +5524,6 @@
     <string name="fatigue_advice_projected">예상</string>
     <string name="fatigue_advice_sub">%1$s · %2$s</string>
     <string name="fatigue_advice_adjust_button">조정</string>
-    <string name="fatigue_advice_adjust_description">오늘의 운동 조정. %1$s</string>
-    <string name="fatigue_advice_adjust_description__t">오늘의 시련 조정. %1$s</string>
     <string name="fatigue_adjust_title">오늘 조정</string>
     <string name="fatigue_adjust_caption">%3$s 운동 때문에 %1$s 피로도가 아직 %2$s 수준이에요. 오늘의 운동만 바뀌고 %4$s 루틴은 그대로예요.</string>
     <string name="fatigue_adjust_caption__t">%3$s 시련 때문에 %1$s 피로도가 아직 %2$s 수준이에요. 오늘의 시련만 바뀌고 %4$s 의식은 그대로예요.</string>

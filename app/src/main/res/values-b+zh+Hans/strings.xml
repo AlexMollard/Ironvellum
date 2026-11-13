@@ -2390,12 +2390,18 @@
     <string name="optimise_heavy_label">负荷偏高</string>
     <string name="optimise_recovery_label">开始时疲劳</string>
     <string name="optimise_recovery_title">开始 %1$s 时，%2$s 经常尚未恢复</string>
-    <string name="optimise_recovery_detail">最近 %2$d 次开始时有 %1$d 次疲劳度高</string>
-    <string name="optimise_recovery_subline">%1$s 最近 %3$d 次开始时有 %2$d 次疲劳度高</string>
+    <plurals name="optimise_recovery_detail">
+        <item quantity="other">最近 %2$d 次开始时有 %1$d 次疲劳度高</item>
+    </plurals>
+    <plurals name="optimise_recovery_subline">
+        <item quantity="other">%1$s 最近 %3$d 次开始时有 %2$d 次疲劳度高</item>
+    </plurals>
     <string name="optimise_recovery_subtitle">开始时 %1$s 尚未恢复</string>
     <string name="optimise_recovery_open_label">查看 %1$s 的恢复情况</string>
     <string name="optimise_recovery_description">%1$s 开始时尚未恢复。%2$s</string>
-    <string name="optimise_recovery_intro">%1$s 最近 %3$d 次开始时，有 %2$d 次疲劳度达到高或更高。请选择更改，或保持原样。</string>
+    <plurals name="optimise_recovery_intro">
+        <item quantity="other">%1$s 最近 %3$d 次开始时，有 %2$d 次疲劳度达到高或更高。请选择更改，或保持原样。</item>
+    </plurals>
     <string name="optimise_recovery_starts_label">开始时</string>
     <string name="optimise_recovery_cause">主要来自 %2$s 的 %1$s（%3$s）。</string>
     <string name="optimise_recovery_cause_free">主要来自 %1$s 的一次训练（%2$s）。</string>
@@ -2492,7 +2498,6 @@
     <string name="coverage_week_state_none">无</string>
     <string name="coverage_week_legend_to">至 %1$d+</string>
     <string name="coverage_week_caption">本周（周一至周日）：已完成的训练，加上计划中尚未完成的部分</string>
-    <string name="coverage_week_caption__t">本周（周一至周日）：已完成的训练，加上循环中尚待完成的部分</string>
     <string name="coverage_week_sets_done">已完成 %1$s</string>
     <string name="coverage_week_sets_planned">已安排 %1$s</string>
     <string name="coverage_week_sets_both">已完成 %1$s + 已安排 %2$s</string>
@@ -2538,9 +2543,6 @@
         <item quantity="other">打开仪轨并指定日期</item>
     </plurals>
     <string name="coverage_covered_empty">所有肌肉均已覆盖</string>
-    <plurals name="coverage_covered_count">
-        <item quantity="other">已覆盖 %1$d 块肌肉</item>
-    </plurals>
     <string name="coverage_covered_hide_hint">隐藏已覆盖的肌肉</string>
     <string name="coverage_covered_show_hint">显示已覆盖的肌肉</string>
     <string name="coverage_by_exercise_label">按动作查看</string>
@@ -2809,9 +2811,15 @@
     <string name="progression_climb_reps">目标达成——增加到 %1$d 次</string>
     <string name="progression_add_drop">目标达成——增加 %1$s，次数降至 %2$d 次</string>
     <string name="progression_ceiling_add">达到次数上限——增加 %1$s，回到 %2$d 次</string>
-    <string name="progression_assistance_less">将辅助重量降至 %1$s，回到 %2$d 次</string>
-    <string name="progression_assistance_deload">将辅助重量增加至 %1$s，回到 %2$d 次</string>
-    <string name="progression_assistance_reps">保持相同辅助重量，增加到 %1$d 次</string>
+    <plurals name="progression_assistance_less">
+        <item quantity="other">将辅助重量降至 %1$s，回到 %2$d 次</item>
+    </plurals>
+    <plurals name="progression_assistance_deload">
+        <item quantity="other">将辅助重量增加至 %1$s，回到 %2$d 次</item>
+    </plurals>
+    <plurals name="progression_assistance_reps">
+        <item quantity="other">保持相同辅助重量，增加到 %1$d 次</item>
+    </plurals>
     <string name="progression_assistance_zero">已无辅助重量，准备好后选择更难的变式</string>
     <string name="session_suggestion_less_assistance">减少辅助重量：%1$s × %2$d</string>
     <string name="session_suggestion_more_assistance">增加辅助重量：%1$s × %2$d</string>
@@ -3446,7 +3454,7 @@
     <string name="stats_drill_from_reading__t">源自你于 %1$s 记下的读数，为最近一条含体脂率的记录。</string>
     <string name="stats_add_weight_label">体重（kg）</string>
     <string name="stats_add_weight_error">请输入 %1$d 至 %2$d kg 的体重。</string>
-    <string name="stats_add_body_fat_label">体脂率 % （可选）</string>
+    <string name="stats_add_body_fat_label">体脂率 (%)（可选）</string>
     <string name="stats_add_body_fat_error">请输入 %1$d 至 %2$d%% 的体脂率，或留空。</string>
     <string name="stats_add_height_hint">填写身高后即可查看 BMI 和 FFMI。</string>
     <string name="stats_add_set_height">设置身高</string>
@@ -4504,7 +4512,9 @@
     <string name="cloud_workout_xp_needs_schema">滚动训练 XP 排名需要云端架构 33。请应用最新数据库更新；累计 XP 排名仍可使用。</string>
     <string name="cloud_workout_xp_needs_schema__t">滚动试炼 XP 排名需要云端架构 33。请应用最新数据库更新；累计 XP 排名仍可使用。</string>
     <string name="cloud_sync_web_snapshot_failed">网页版统计未同步：%1$s</string>
-    <string name="cloud_sync_web_snapshot_too_large">网页版统计数据过大，无法同步（%1$d 字节）。</string>
+    <plurals name="cloud_sync_web_snapshot_too_large">
+        <item quantity="other">网页版统计数据过大，无法同步（%1$d 字节）。</item>
+    </plurals>
     <string name="cloud_sync_tiers_failed">动作段位未同步：%1$s</string>
     <string name="cloud_sync_tiers_failed__t">动作之阶未同步：%1$s</string>
     <string name="cloud_sync_trial_hidden">你无权查看此训练</string>
@@ -4771,7 +4781,6 @@
     <string name="cloud_account_signup_no_profile">账号已创建，但无法加载你的个人主页，请重新登录</string>
     <string name="cloud_account_signin_no_profile">已登录，但无法加载你的个人主页，请重试</string>
     <string name="cloud_account_reset_no_profile">密码已更改，但无法加载你的个人主页，请重新登录</string>
-    <string name="cloud_account_google_no_user">Google 登录未返回用户信息</string>
     <string name="cloud_account_google_no_profile">已使用 Google 登录，但无法加载你的个人主页，请重试</string>
     <string name="cloud_account_claim_signed_out">请先登录，再选择显示名称</string>
     <string name="cloud_account_claim_signed_out__t">请先登录，再选定真名</string>
@@ -5515,8 +5524,6 @@
     <string name="fatigue_advice_projected">预计</string>
     <string name="fatigue_advice_sub">%1$s · %2$s</string>
     <string name="fatigue_advice_adjust_button">调整</string>
-    <string name="fatigue_advice_adjust_description">调整今日训练。%1$s</string>
-    <string name="fatigue_advice_adjust_description__t">调整今日试炼。%1$s</string>
     <string name="fatigue_adjust_title">调整今日训练</string>
     <string name="fatigue_adjust_caption">%1$s 在 %3$s 后仍处于%2$s状态。只调整今日训练；%4$s 保持不变。</string>
     <string name="fatigue_adjust_caption__t">%1$s 在 %3$s 后仍处于%2$s状态。只调整今日试炼；%4$s 仍按原样留存。</string>

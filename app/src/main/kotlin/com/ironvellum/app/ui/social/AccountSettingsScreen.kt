@@ -188,8 +188,8 @@ fun AccountSettingsScreen(
                         onValueChange = { on ->
                             allyAlerts = on
                             InboxNotifier.setEnabled(context, on)
-                            if (on && !InboxNotifier.hasPermission(context) &&
-                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                            if (on && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                !InboxNotifier.hasPermission(context)
                             ) {
                                 askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                             }

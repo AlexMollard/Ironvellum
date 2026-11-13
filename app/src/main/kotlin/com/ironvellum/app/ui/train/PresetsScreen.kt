@@ -300,8 +300,8 @@ fun PresetsScreen(
                 modifier = Modifier.weight(1f).semantics { heading() },
             )
             // Sit with the list they add to and export.
-            InkChip(stringResource(R.string.presets_new_button), UiText.themed(R.string.presets_new_description, R.string.presets_new_description__t).asString(), Icons.Outlined.Add) { showNewChooser = true }
-            InkChip(stringResource(R.string.common_share), UiText.themed(R.string.routineshare_share_title, R.string.routineshare_share_title__t).asString(), Icons.Outlined.Share, onClick = share)
+            InkChip(stringResource(R.string.presets_new_button), clickLabel = UiText.themed(R.string.presets_new_description, R.string.presets_new_description__t).asString(), icon = Icons.Outlined.Add) { showNewChooser = true }
+            InkChip(stringResource(R.string.common_share), clickLabel = UiText.themed(R.string.routineshare_share_title, R.string.routineshare_share_title__t).asString(), icon = Icons.Outlined.Share, onClick = share)
         }
         shareRefusal?.let { line ->
             Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed, modifier = Modifier.padding(bottom = 8.dp))
@@ -340,7 +340,7 @@ fun PresetsScreen(
                 // Named for where it goes: "All" alone says nothing to a screen reader.
                 InkChip(
                     stringResource(R.string.presets_recent_all_button),
-                    stringResource(R.string.presets_recent_open_action),
+                    clickLabel = stringResource(R.string.presets_recent_open_action),
                     description = UiText.themed(R.string.explorer_full_history, R.string.explorer_full_history__t).asString(),
                     onClick = onOpenLog,
                 )

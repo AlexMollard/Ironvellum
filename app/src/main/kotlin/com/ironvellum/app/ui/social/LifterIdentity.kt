@@ -79,6 +79,7 @@ internal fun IdentityRow(
     userId: String,
     wornTitle: String?,
     level: Int?,
+    modifier: Modifier = Modifier,
     size: IdentitySize = IdentitySize.Standard,
     isMe: Boolean = false,
     avatarUrl: String? = null,
@@ -87,7 +88,6 @@ internal fun IdentityRow(
     ring: AvatarRing = AvatarRing.Iron,
     trailing: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier,
 ) {
     val badgeSize = when (size) {
         IdentitySize.Compact -> 32.dp

@@ -2,7 +2,7 @@ package com.ironvellum.app.ui.settings
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Spacer
@@ -66,7 +66,7 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit, shar
             (!sharedConsumed || (viewModel.importReview.value == null && viewModel.import.value.summary == null))
         ) {
             val csv = try {
-                IncomingWorkoutShare.readText(context, Uri.parse(sharedCsvUri))
+                IncomingWorkoutShare.readText(context, sharedCsvUri.toUri())
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {

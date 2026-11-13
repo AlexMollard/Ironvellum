@@ -54,9 +54,7 @@ android {
     defaultConfig {
         applicationId = "com.ironvellum.app"
         minSdk = 29
-        // 36 (Android 16) is the newest STABLE level and Play's floor from
-        // Aug 2026. 37 is Android 17 beta: a production upload targeting a
-        // non-final platform is not distributable. compileSdk may stay ahead.
+        // Keep API 36 for 1.11; API 37 needs a separate LAN-permission/auth migration.
         targetSdk = 36
         // versionCode MUST be incremented for every Play Store upload; a reused
         // versionCode is rejected by the store. Keep versionName in sync with
@@ -143,13 +141,16 @@ android {
         it.systemProperty("golden.update", System.getProperty("golden.update", "false"))
     }
     lint {
+        warningsAsErrors = true
+        // Alex approved API 36 for 1.11; it meets Play's current target requirement.
+        disable += "OldTargetApi"
         // ImpliedQuantity fires when an `one` plural item carries no number, which is the
         // design for unit-noun plurals (`REP` / `REPS`) and no-count sentences (`Deed
         // earned`). The caller passes the count via getQuantityString, so the text is
         // right; en never trips the rule because 1 is not a "special" one-number in
         // English, and fr/pt (0, 1 both `one`) flag every such item, including faithful
-        // translations. StringsXmlTest and tools/check_translation.py still require the
-        // quantity set and placeholders to match English.
+        // translations. StringsXmlTest and tools/check_translation.py still validate
+        // each locale's quantities and the formatting placeholders.
         disable += "ImpliedQuantity"
     }
     compileOptions {

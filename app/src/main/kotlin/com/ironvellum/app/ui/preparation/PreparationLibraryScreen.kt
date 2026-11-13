@@ -37,7 +37,7 @@ fun PreparationLibraryScreen(
     var preview by rememberSaveable(kind) { mutableStateOf<Long?>(null) }
     PreparationFrame(
         preparationText(R.string.preparation_library, R.string.preparation_library__t), onBack,
-        preparationText(R.string.preparation_create, R.string.preparation_create__t), { onEdit(null, kind) }, enabled = ui.loaded,
+        primary = preparationText(R.string.preparation_create, R.string.preparation_create__t), onPrimary = { onEdit(null, kind) }, enabled = ui.loaded,
     ) {
         InkTabs(
             listOf(preparationText(R.string.preparation_warmups, R.string.preparation_warmups__t), preparationText(R.string.preparation_cooldowns, R.string.preparation_cooldowns__t)),

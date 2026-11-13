@@ -57,8 +57,8 @@ fun TrainScreen(
                 if (live == null) {
                     InkChip(
                         Words.openTrial.s.replaceFirstChar { it.uppercase() },
-                        UiText.themed(R.string.presets_begin_open_description, R.string.presets_begin_open_description__t).asString(),
-                        Icons.Outlined.PlayArrow,
+                        clickLabel = UiText.themed(R.string.presets_begin_open_description, R.string.presets_begin_open_description__t).asString(),
+                        icon = Icons.Outlined.PlayArrow,
                     ) { viewModel.beginQuick(onQuickSession) }
                 }
             }

@@ -251,7 +251,7 @@ fun MeasurementDetailScreen(
                             // Narrow band: a zero-based axis would flatten the line into nothing.
                             TrendChart(
                                 chartEntries.map { it.valueCm },
-                                IronvellumColors.Emerald,
+                                color = IronvellumColors.Emerald,
                                 fromZero = false,
                                 positions = Ledger.datePositions(dates),
                                 startLabel = formatDate(chartEntries.first().takenAtMs, shortPattern),

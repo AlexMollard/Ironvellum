@@ -113,7 +113,7 @@ fun RiteDetailScreen(
                 PushedHeader(
                     preset?.name ?: Words.rite.c,
                     onBack,
-                    actions = { if (preset != null) InkChip(stringResource(R.string.ritedetail_edit_button), stringResource(R.string.ritedetail_edit_description, preset.name)) { onEdit(preset.id) } },
+                    actions = { if (preset != null) InkChip(stringResource(R.string.ritedetail_edit_button), clickLabel = stringResource(R.string.ritedetail_edit_description, preset.name)) { onEdit(preset.id) } },
                 )
                 if (preset == null) return@Column
                 // "Wed · 6 exercises · ~54 min": the day folded into the plan line, no chip.
@@ -220,7 +220,7 @@ private fun SectionHeader(label: String, action: String? = null, actionLabel: St
             letterSpacing = IronvellumTracking.SectionHeader,
             modifier = Modifier.weight(1f).semantics { heading() },
         )
-        if (action != null) InkChip(action, actionLabel, onClick = onAction)
+        if (action != null) InkChip(action, clickLabel = actionLabel, onClick = onAction)
     }
 }
 

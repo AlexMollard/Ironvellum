@@ -753,7 +753,7 @@ class CloudSync private constructor(
                         .select(Columns.list("content_hash")) { filter { eq("user_id", me.userId) } }
                         .decodeList<JsonObject>().singleOrNull()?.get("content_hash")?.jsonPrimitive?.content
                     when (snapshotDecision(json, hash)) {
-                        is SnapshotDecision.TooLarge -> problems += cloudText(R.string.cloud_sync_web_snapshot_too_large, bytes)
+                        is SnapshotDecision.TooLarge -> problems += UiText.plural(R.plurals.cloud_sync_web_snapshot_too_large, bytes, bytes)
                         SnapshotDecision.Unchanged -> Unit
                         SnapshotDecision.Upload -> client.postgrest.from("web_snapshots").upsert(
                             WebSnapshotRowDto(me.userId, 1, Json.parseToJsonElement(json), WebSnapshotJson.contentHash(json), bytes),

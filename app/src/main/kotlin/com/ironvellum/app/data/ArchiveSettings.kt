@@ -1,5 +1,6 @@
 package com.ironvellum.app.data
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import com.ironvellum.app.domain.EffortScale
@@ -61,6 +62,8 @@ class ArchiveSettings(
      */
     // shortcut: SharedPreferences has no cross-file transaction, so a failing disk commit on file N still
     // leaves files 1..N-1 restored; a journal-and-rollback pass if that ever shows up in the wild.
+    // Lint cannot follow the editors through the map; every editor is committed below.
+    @SuppressLint("CommitPrefEdits")
     suspend fun restore(settings: Map<String, Map<String, String>>, includeDeviceOnly: Boolean = true) {
         val accepted = sanitize(settings).accepted
         val edits = accepted.map { (file, values) ->

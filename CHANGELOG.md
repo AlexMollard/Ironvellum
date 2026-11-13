@@ -16,6 +16,10 @@ store listing; this is the whole list.
 - Share set reindexing after removals without changing last-set protection, undo indices or sibling read timing.
 - Make the SDK-pause recovery regression use a normally expiring session, avoiding a race with immediate token refresh while retaining background-recovery checks.
 - Run exercise-sheet fit regressions in a real 411×891dp dialog viewport on larger emulators, keeping no-scroll checks and restoring the previous text-size setting.
+- Complete locale-specific plural forms and validate placeholders in categories English does not use.
+- Size sheets from the current window and retain checked preference commits during backup restoration.
+- Keep adaptive launcher art without obsolete pre-Android-8 fallback icons.
+- Update Android tooling and dependencies, and make release lint fail on warnings.
 
 ### Rolling workout XP
 - Rank the Training board by workout XP earned in the rolling last seven days, with Lifetime XP still available in the metric picker.
