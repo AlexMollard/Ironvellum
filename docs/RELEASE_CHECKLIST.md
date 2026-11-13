@@ -98,17 +98,20 @@ Both disposable accounts were then deleted through their own authenticated
 `invalid_credentials`; their profiles, sessions, cloud archives and web snapshots
 contained zero owned rows. The isolated browser was signed out and closed.
 
-Complete follow-up verification (2026-11-13) passed all 2,865 unit, 832 instrumented
-and 374 web tests, with no instrumented skips, no lint findings and all backend
-assertions passed. The most recent complete run took 8m55s and correctly reported
-**GATE RED**. Its web/backend concurrency experiment did not improve the overall
-runtime and was reverted. Clock-batching, reduced-resolution and CPU-affinity
-experiments were also discarded; the gate retains the original full-resolution
-viewport, assertions and timing checks. Only the account fixture's SDK retry waits
-use virtual coroutine time; production retry behavior remains unchanged.
+Final verification (2026-11-13): `python3 tools/gate.py --backend` completed on the
+warm emulator with **GATE GREEN**. All 2,865 unit, 832 instrumented and 374 web tests
+passed, with no instrumented skips, no lint findings and all backend assertions passed.
+The original full-resolution viewport, assertions and timing checks remain intact.
 
-This does **not** clear the gate budget: the complete current gate must still
-finish below seven minutes before release.
+| Run | Wall clock | Verdict |
+|---|---|---|
+| Warm emulator | 9m57s | GREEN |
+| Cold boot | 11m08s | RED — exceeds the ceiling |
+
+Alex approved a strict ten-minute ceiling on 2026-11-13 for the enlarged suite.
+Exactly 10m00s remains red even when all checks pass; the CLI boundary regression
+verified success just below the ceiling and failure at or above it. Cold starts
+currently exceed the ceiling and must not be reported as green.
 
 Target SDK remains 36 by Alex's explicit 1.11 decision. This meets the current
 [Play target-API requirement](https://developer.android.com/google/play/requirements/target-sdk);

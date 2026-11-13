@@ -43,8 +43,8 @@ import xml.etree.ElementTree as ET
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import device  # noqa: E402
 
-# Wall-clock budget for one gate; raised from 5 to 7 minutes by the owner on 2026-10-27 as the suite grew.
-BUDGET_S = 7 * 60
+# Wall-clock budget; owner approved ten minutes on 2026-11-13 for the 832-scenario suite.
+BUDGET_S = 10 * 60
 
 
 def within_budget(elapsed: float) -> bool:

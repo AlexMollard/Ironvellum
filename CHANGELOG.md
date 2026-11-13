@@ -21,7 +21,7 @@ store listing; this is the whole list.
 - Keep adaptive launcher art without obsolete pre-Android-8 fallback icons.
 - Update Android tooling and dependencies, and make release lint fail on warnings.
 - Keep the web bonus-list read-only regression independent of the host's date format.
-- Fail the local gate when it reaches its seven-minute budget instead of reporting an over-budget run as green.
+- Fail the local gate when it reaches its owner-approved ten-minute budget instead of reporting an over-budget run as green.
 - Keep human screenshots opt-in and synchronize instrumented interactions without removing layout, timing or pixel checks.
 - Use virtual coroutine time for profile-retry checks without changing SDK retries.
 

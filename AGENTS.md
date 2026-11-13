@@ -32,7 +32,7 @@ python3 tools/gate.py --no-device  # no emulator: compiles instrumented instead
 ```
 
 It finishes in 3.5 to 4 minutes on this machine (3m36s and 3m51s measured after a source edit on a warm
-emulator, 3m58s with a cold boot in the run; 2026-10-16). The budget is 7 minutes (raised from 5 on 2026-10-27) and the
+emulator, 3m58s with a cold boot in the run; 2026-10-16). The budget is strictly under 10 minutes (raised from 7 by the owner on 2026-11-13 for 832 instrumented tests) and the
 summary prints the wall clock and goes red for a budget miss. It also goes red when any test fails or fewer tests
 ran than the sources declare: a test process that crashes on start reports zero tests and zero failures,
 which used to read as green.
@@ -44,7 +44,9 @@ assertions overlap the web build inside the same window). Runs of 7m06s and 8m12
 shared the machine: run the gate alone.
 
 The figures above are historical, not 1.11 acceptance proof. The 2026-11-13 follow-up
-runs contain 832 instrumented tests and still miss the unchanged seven-minute budget.
+runs contain 832 instrumented tests and missed the previous seven-minute budget.
+Alex approved a strict ten-minute ceiling on 2026-11-13. The complete warm run passed
+in 9m57s; a cold-boot run took 11m08s and remained red.
 See `docs/RELEASE_CHECKLIST.md` for actual release evidence; passing test counts alone
 do not make the gate green.
 
