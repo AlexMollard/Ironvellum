@@ -146,18 +146,14 @@ interface SessionDao {
     @Query("DELETE FROM session_exercise_notes WHERE sessionId = :sessionId AND exerciseId = :exerciseId")
     suspend fun deleteExerciseNote(sessionId: Long, exerciseId: Long)
 
-    /**
-     * The note left on this exercise at its latest sealed trial that has one
-     * (a trial where it went unannotated is skipped), never the live trial
-     * itself. The EXISTS keeps a note whose exercise was later taken out of
-     * that trial from surfacing.
-     */
+    /** The note from the latest completed workout containing this exercise, never an older annotated one. */
     @Query(
-        "SELECT n.note FROM session_exercise_notes n JOIN sessions x ON n.sessionId = x.id " +
-            "WHERE n.exerciseId = :exerciseId AND n.sessionId != :excludeSessionId " +
-            "AND x.completedAtMs IS NOT NULL AND TRIM(n.note) != '' " +
-            "AND EXISTS (SELECT 1 FROM set_logs l WHERE l.sessionId = n.sessionId AND l.exerciseId = n.exerciseId) " +
-            "ORDER BY x.startedAtMs DESC, x.id DESC LIMIT 1",
+        "SELECT n.note FROM session_exercise_notes n " +
+            "WHERE n.exerciseId = :exerciseId AND TRIM(n.note) != '' " +
+            "AND n.sessionId = (SELECT x.id FROM sessions x " +
+            "WHERE x.id != :excludeSessionId AND x.completedAtMs IS NOT NULL " +
+            "AND EXISTS (SELECT 1 FROM set_logs l WHERE l.sessionId = x.id AND l.exerciseId = :exerciseId AND l.done = 1) " +
+            "ORDER BY x.startedAtMs DESC, x.id DESC LIMIT 1)",
     )
     suspend fun lastExerciseNote(exerciseId: Long, excludeSessionId: Long): String?
 

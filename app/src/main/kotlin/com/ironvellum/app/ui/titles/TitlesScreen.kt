@@ -104,6 +104,8 @@ data class TitlesUi(
     val bestEffort: Map<String, SkillGuidance.Effort> = emptyMap(),
     /** Every rite as id to name, for "Train it". */
     val rites: List<Pair<Long, String>> = emptyList(),
+    /** Exercise catalogue supplies the same artwork and facts as exercise info. */
+    val exercises: Map<String, Exercise> = emptyMap(),
 )
 
 class TitlesViewModel(private val repo: Repository) : ViewModel() {
@@ -183,6 +185,7 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
                 female = bodyProfile.second == Sex.FEMALE,
             ),
             rites = presets.map { it.id to it.name },
+            exercises = exercises.associateBy { Titles.normaliseName(it.name) },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TitlesUi())
 
@@ -254,8 +257,10 @@ internal fun bestEfforts(
         .groupBy { it.skillName }
         .mapValues { (_, list) -> list.map { SkillGuidance.Effort(it.value, it.weightKg) } }
     return Skills.ALL.mapNotNull { def ->
-        val trained = training[Titles.normaliseName(def.name)]?.let { SkillGuidance.Effort(it.value, it.weightKg) }
-        val efforts = practiced[def.name].orEmpty() + listOfNotNull(trained)
+        val evidence = training[Titles.normaliseName(def.name)]
+        val trained = evidence?.attempts.orEmpty().map { SkillGuidance.Effort(it.value, it.weightKg) }
+            .ifEmpty { listOfNotNull(evidence?.let { SkillGuidance.Effort(it.value, it.weightKg) }) }
+        val efforts = practiced[def.name].orEmpty() + trained
         SkillGuidance.bestEffort(def, efforts, bodyweightKg, female)?.let { def.name to it }
     }.toMap()
 }
@@ -325,6 +330,7 @@ fun TitlesScreen(
                 unclaimReverts = unclaimPlan?.reverts?.size ?: 0,
                 unlocked = Skills.unlocked(def, mastered),
                 entries = entries,
+                exercise = ui.exercises[Titles.normaliseName(name)],
                 training = ui.training[Titles.normaliseName(name)],
                 sexBar = if (ui.sex == Sex.FEMALE) Skills.femaleStandard(name) else null,
                 sexHeld = sexUnset && SexHold.skillScaled(name),

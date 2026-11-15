@@ -15,42 +15,48 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 /** Strength Rank written out: each pattern's mark, what earned it, and what lifts it next. */
 @Composable
 fun RankSheet(breakdown: RankBreakdown?, onDismiss: () -> Unit) {
+    val overview = stringResource(R.string.rank_sheet_overview)
+    val marks = stringResource(R.string.rank_sheet_current_marks)
+    val targets = stringResource(R.string.rank_sheet_raise_pattern)
+    val rules = stringResource(R.string.rank_sheet_how_it_works)
+    val pages = if (breakdown == null) {
+        emptyList()
+    } else {
+        listOf(
+            InfoPage(overview, summary = { RankProgress(breakdown) }) {
+                rows(marks, breakdown.patterns.map { p ->
+                    p.pattern.label to Words.text(UiText.res(R.string.rank_sheet_step_from, Rank.label(Rank.forStep(p.step)), p.source))
+                })
+                text(null, Words.text(UiText.plural(R.plurals.rank_sheet_window_note, Rank.WINDOW_DAYS)), color = IronvellumColors.InkMuted)
+            },
+        ) + breakdown.patterns.map { p ->
+            InfoPage(p.pattern.label) {
+                text(marks, Words.text(UiText.res(R.string.rank_sheet_step_from, Rank.label(Rank.forStep(p.step)), p.source)))
+                bullets(
+                    targets,
+                    listOfNotNull(
+                        p.liftTarget?.let { Words.text(UiText.res(R.string.rank_sheet_next_lift, it)) },
+                        p.skillTarget?.let { Words.text(UiText.themed(R.string.rank_sheet_next_skill, R.string.rank_sheet_next_skill__t, it)) },
+                        if (p.step >= LiftBoards.MAX_STEP) {
+                            Words.text(UiText.res(R.string.rank_sheet_next_top))
+                        } else if (p.liftTarget == null) {
+                            Words.text(UiText.res(R.string.rank_sheet_next_log, RankPatterns.lifts(p.pattern).joinToString(" or ") { it.label }))
+                        } else null,
+                    ),
+                )
+            }
+        } + InfoPage(rules) { explainer() }
+    }
     InfoSheet(
         title = Rank.label(breakdown?.band ?: Rank.UNRANKED),
         subtitle = stringResource(R.string.rank_sheet_subtitle),
         onDismiss = onDismiss,
-        summary = if (breakdown != null) ({ RankProgress(breakdown) }) else null,
+        pages = pages,
     ) {
         if (breakdown == null) {
             text(null, Words.text(UiText.themed(R.string.rank_sheet_empty, R.string.rank_sheet_empty__t)))
             explainer()
-            return@InfoSheet
         }
-        breakdown.patterns.forEach { p ->
-            bullets(
-                p.pattern.label,
-                listOfNotNull(
-                    Words.text(UiText.res(R.string.rank_sheet_step_from, Rank.label(Rank.forStep(p.step)), p.source)),
-                    p.liftTarget?.let { Words.text(UiText.res(R.string.rank_sheet_next_lift, it)) },
-                    p.skillTarget?.let { Words.text(UiText.themed(R.string.rank_sheet_next_skill, R.string.rank_sheet_next_skill__t, it)) },
-                    if (p.liftTarget == null && p.skillTarget == null) {
-                        if (p.step >= LiftBoards.MAX_STEP) {
-                            Words.text(UiText.res(R.string.rank_sheet_next_top))
-                        } else {
-                            Words.text(UiText.res(R.string.rank_sheet_next_log, RankPatterns.lifts(p.pattern).joinToString(" or ") { it.label }))
-                        }
-                    } else {
-                        null
-                    },
-                ),
-            )
-        }
-        text(
-            null,
-            Words.text(UiText.plural(R.plurals.rank_sheet_window_note, Rank.WINDOW_DAYS)),
-            color = IronvellumColors.InkMuted,
-        )
-        explainer()
     }
 }
 
@@ -65,7 +71,7 @@ private fun RankProgress(b: RankBreakdown) {
         line = if (b.nextBand == null || steps == null) {
             stringResource(R.string.rank_sheet_top_of_scale)
         } else {
-            UiText.plural(R.plurals.rank_sheet_steps_to_next, steps, steps, b.nextBand).asString()
+            UiText.plural(R.plurals.rank_sheet_steps_to_next, steps, steps, Rank.label(b.nextBand)).asString()
         },
         caption = UiText.plural(R.plurals.rank_sheet_progress_caption, Rank.WINDOW_DAYS, b.patterns.size, Rank.WINDOW_DAYS).asString(),
     )

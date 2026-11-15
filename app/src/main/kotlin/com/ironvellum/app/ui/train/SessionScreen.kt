@@ -2919,7 +2919,7 @@ internal fun OpenExerciseCard(
                     color = IronvellumColors.InkMuted,
                 )
             }
-            // What the last trial that left a note on this exercise said.
+            // Only the previous completed workout of this exercise supplies a note.
             if (lastNote != null) {
                 Text(
                     stringResource(R.string.session_last_note, lastNote),

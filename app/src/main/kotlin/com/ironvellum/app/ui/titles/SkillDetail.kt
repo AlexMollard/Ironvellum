@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import com.ironvellum.app.ui.components.PanelLabel
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -52,7 +51,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.data.SkillTrainingEvidence
-import com.ironvellum.app.domain.SkillClaimResult
+import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.ui.components.ExerciseArtSlot
+import com.ironvellum.app.ui.components.fatigueFacts
+import com.ironvellum.app.domain.Variation
 import com.ironvellum.app.domain.SkillPractice
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
@@ -115,6 +117,7 @@ fun SkillDetailSheet(
     mastered: Boolean,
     unlocked: Boolean,
     entries: List<SkillPractice>,
+    exercise: Exercise? = null,
     /** Marked passed by a harder claim ([impliedBy]); claiming it for real pays nothing more. */
     passed: Boolean = false,
     impliedBy: String? = null,
@@ -147,18 +150,21 @@ fun SkillDetailSheet(
 ) {
     var confirmUnclaim by rememberSaveable { mutableStateOf(false) }
     val practiced = remember(entries) { entries.filterNot { it.claimed } }
-    val bestEntry = remember(practiced) { practiced.maxByOrNull { it.value } }
-    val recent = remember(entries) { entries.sortedByDescending { it.practicedAtMs } }
-    val best = bestEntry?.value ?: 0
-    // The standard is judged on the better of practice and real training: a
-    // lifter who already hit it in a session must not read "to go".
     val trained = training
-    val bestOverall = maxOf(best, trained?.value ?: 0)
+    val practiceEfforts = remember(practiced) { practiced.map { SkillGuidance.Effort(it.value, it.weightKg) } }
+    val trainingEfforts = remember(trained) {
+        trained?.attempts.orEmpty().map { SkillGuidance.Effort(it.value, it.weightKg) }
+            .ifEmpty { listOfNotNull(trained?.let { SkillGuidance.Effort(it.value, it.weightKg) }) }
+    }
+    val bestPractice = SkillGuidance.bestEffort(skill, practiceEfforts, bodyweightKg, female)
+    val bestTraining = SkillGuidance.bestEffort(skill, trainingEfforts, bodyweightKg, female)
+    val bestEffort = SkillGuidance.bestEffort(skill, practiceEfforts + trainingEfforts, bodyweightKg, female)
+    val bestOverall = bestEffort?.value ?: 0
+    val recent = remember(entries) { entries.sortedByDescending { it.practicedAtMs } }
     val clearedAtDefault = remember(skill, practiced, trained, bodyweightKg, female) {
         SkillGuidance.cleared(
             skill,
-            practiced.map { SkillGuidance.Effort(it.value, it.weightKg) } +
-                listOfNotNull(trained?.let { SkillGuidance.Effort(it.value, it.weightKg) }),
+            practiceEfforts + trainingEfforts,
             bodyweightKg,
             female,
         )
@@ -182,7 +188,7 @@ fun SkillDetailSheet(
     var showLoad by rememberSaveable(skill.name) { mutableStateOf(false) }
     val barLoad = Skills.loadBar(skill.name, female)?.added == false
 
-    val hasEvidence = best > 0 || trained != null
+    val hasEvidence = bestEffort != null
     val standardWord = run {
         val needKg = SkillGuidance.requiredKg(skill, bodyweightKg, female)
         val added = Skills.loadBar(skill.name, female)?.added == true
@@ -202,16 +208,10 @@ fun SkillDetailSheet(
         {
             InfoProgress(
                 fraction = if (cleared) 1f else if (skill.target <= 0) 0f else (bestOverall.toFloat() / skill.target).coerceIn(0f, 1f),
-                line = "${SkillGuidance.withUnit(bestOverall, skill)} / ${SkillGuidance.withUnit(skill.target, skill)} · $standardWord",
+                line = "${bestEffort?.let { SkillGuidance.effortText(skill, it, female) } ?: SkillGuidance.withUnit(0, skill)} / ${SkillGuidance.withUnit(skill.target, skill)} · $standardWord",
                 caption = listOfNotNull(
-                    if (best > 0) UiText.res(R.string.skilldetail_caption_practice_best, SkillGuidance.withUnit(best, skill)).asString() else null,
-                    trained?.let { t ->
-                        buildString {
-                            append(UiText.res(R.string.skilldetail_caption_from_training, SkillGuidance.withUnit(t.value, skill)).asString())
-                            val w = t.weightKg
-                            if (w != null && w > 0.0) append(" @ ${Units.withUnit(w)}")
-                        }
-                    },
+                    bestPractice?.let { UiText.res(R.string.skilldetail_caption_practice_best, SkillGuidance.effortText(skill, it, female)).asString() },
+                    bestTraining?.let { UiText.res(R.string.skilldetail_caption_from_training, SkillGuidance.effortText(skill, it, female)).asString() },
                 ).joinToString(" · "),
                 fill = if (cleared) Metal.Fabled.bounds() else emeraldRamp(),
             )
@@ -253,14 +253,25 @@ fun SkillDetailSheet(
         R.plurals.skilldetail_claim_passes, R.plurals.skilldetail_claim_passes__t, claimPasses, claimPasses, claimXp,
     ).asString()
     val attemptTimePattern = UiText.res(R.string.skilldetail_attempt_time_pattern).asString()
-    val attemptRows = recent.map { entry ->
-        formatDate(entry.practicedAtMs, attemptTimePattern) to when {
-            entry.passed -> UiText.res(R.string.skilldetail_chip_passed).asString()
-            entry.claimed -> Words.claimed.u
-            entry.weightKg != null -> "${SkillGuidance.withUnit(entry.value, skill)} @ ${Units.withUnit(entry.weightKg)}"
-            else -> SkillGuidance.withUnit(entry.value, skill)
+    val attemptRows = (
+        recent.map { entry ->
+            entry.practicedAtMs to (formatDate(entry.practicedAtMs, attemptTimePattern) to when {
+                entry.passed -> UiText.res(R.string.skilldetail_chip_passed).asString()
+                entry.claimed -> Words.claimed.u
+                else -> {
+                    val effort = SkillGuidance.withUnit(entry.value, skill) +
+                        (entry.weightKg?.let { " @ ${Units.withUnit(it)}" } ?: "")
+                    "${UiText.res(R.string.skilldetail_source_practice).asString()} · $effort"
+                }
+            })
+        } + trained?.attempts.orEmpty().map { attempt ->
+            val effort = SkillGuidance.withUnit(attempt.value, skill) +
+                (attempt.weightKg?.takeIf { it > 0.0 }?.let { " @ ${Units.withUnit(it)}" } ?: "")
+            val variation = attempt.variation.takeIf { it.isNotBlank() }?.let { " · ${Variation.label(skill.name, it)}" } ?: ""
+            attempt.achievedAtMs to (formatDate(attempt.achievedAtMs, attemptTimePattern) to
+                "${UiText.themed(R.string.skilldetail_source_workout, R.string.skilldetail_source_workout__t).asString()} · $effort$variation")
         }
-    }
+    ).sortedByDescending { it.first }.map { it.second }
     InfoSheet(
         title = skill.name,
         // Back steps out of the unclaim question first, as "Keep it" does.
@@ -316,41 +327,13 @@ fun SkillDetailSheet(
             InfoPage(aboutLabel, summary) {
                 // A female lifter reads her own published bar, not the male default.
                 val standard = if (sexHeld) SexHold.TEXT else sexBar ?: skill.standard
-                val drawing = techniqueDrawing(skill.name)
-                if (drawing != null) {
-                    // The drawing in its plate, with the standard and the reason beside it: the art fills
-                    // the width the text leaves, instead of a band of its own above the text. A proxy says what it shows.
+                if (exercise != null) {
                     section(null) {
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            val plateState = when {
-                                mastered -> ArtState.MASTERED
-                                passed -> ArtState.PASSED
-                                unlocked -> ArtState.OPEN
-                                else -> ArtState.LOCKED
-                            }
-                            Column(Modifier.weight(0.42f), horizontalAlignment = Alignment.CenterHorizontally) {
-                                TechniqueDrawingPlate(drawing, plateState, Modifier.fillMaxWidth())
-                                techniqueCaption(skill.name)?.let {
-                                    Spacer(Modifier.height(6.dp))
-                                    Text(it, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
-                                }
-                            }
-                            Spacer(Modifier.width(16.dp))
-                            Column(Modifier.weight(0.58f)) {
-                                PanelLabel(Lines.claimStandard)
-                                Spacer(Modifier.height(8.dp))
-                                Text(standard, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.SovereignGold)
-                                Spacer(Modifier.height(20.dp))
-                                PanelLabel(whyTitle)
-                                Spacer(Modifier.height(8.dp))
-                                Text(skill.why, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.InkMuted)
-                            }
-                        }
+                        ExerciseArtSlot(exercise.name, exercise.muscleGroup, Modifier.fillMaxWidth().height(180.dp))
                     }
-                } else {
-                    text(Lines.claimStandard, standard, IronvellumColors.SovereignGold)
-                    text(whyTitle, skill.why, IronvellumColors.InkMuted)
                 }
+                text(Lines.claimStandard, standard, IronvellumColors.SovereignGold)
+                text(whyTitle, skill.why, IronvellumColors.InkMuted)
                 // The same figure and gear line the exercise sheet shows.
                 muscleFacts(skill.name)
                 gearFacts(skill.name)
@@ -384,6 +367,17 @@ fun SkillDetailSheet(
                     text(null, claimPassesLine, IronvellumColors.InkMuted)
                 }
             },
+            InfoPage(formLabel) {
+                // How to do it: the same page the exercise info card shows.
+                formFacts(skill.name)
+                if (!mastered && unlocked) {
+                    text(
+                        beforeTitle,
+                        Lines.claimHelp(cleared, SkillGuidance.withUnit(skill.target, skill), skill.xp),
+                        IronvellumColors.InkMuted,
+                    )
+                }
+            },
             InfoPage(logLabel) {
                 if (!mastered && unlocked) {
                     section(logTitle) {
@@ -404,23 +398,12 @@ fun SkillDetailSheet(
                         )
                     }
                 }
-                if (entries.isNotEmpty()) {
-                    // Every attempt for this technique, newest first: the sheet folds the
-                    // list past six with its own "Show more". The Journal timeline only
-                    // holds the last fortnight, so this is the full record.
+                if (attemptRows.isNotEmpty()) {
                     rows(attemptsTitle, attemptRows, collapseAfter = 6)
                 }
             },
-            InfoPage(formLabel) {
-                // How to do it: the same page the exercise info card shows.
-                formFacts(skill.name)
-                if (!mastered && unlocked) {
-                    text(
-                        beforeTitle,
-                        Lines.claimHelp(cleared, SkillGuidance.withUnit(skill.target, skill), skill.xp),
-                        IronvellumColors.InkMuted,
-                    )
-                }
+            InfoPage(UiText.res(R.string.infosheet_page_fatigue).asString()) {
+                fatigueFacts(skill.name)
             },
         ),
     )

@@ -4074,8 +4074,12 @@
     <string name="settings_advanced_dev_apply_failed">The rescore failed</string>
     <!-- Strength Rank sheet: the subtitle under the rank band name. -->
     <string name="rank_sheet_subtitle">Strength Rank</string>
-    <string name="rank_sheet_empty">Finish a workout with a pull, push or leg skill you cleared, or with a squat, bench press, deadlift, overhead press, pull-up or dip after logging your bodyweight, to earn a rank.</string>
-    <string name="rank_sheet_empty__t">Seal a trial with a pull, push or leg technique you cleared, or with a squat, bench press, deadlift, overhead press, pull-up or dip after logging your bodyweight, to earn a rank.</string>
+    <string name="rank_sheet_overview">Overview</string>
+    <string name="rank_sheet_current_marks">Current marks</string>
+    <string name="rank_sheet_raise_pattern">Raise this pattern</string>
+    <string name="rank_sheet_how_it_works">How it works</string>
+    <string name="rank_sheet_empty">Clear a pull, push or leg skill through practice or a completed workout to earn a rank. For weighted lifts, log your bodyweight and finish a workout with a squat, bench press, deadlift, overhead press, pull-up or dip.</string>
+    <string name="rank_sheet_empty__t">Clear a pull, push or leg technique through practice or a sealed trial to earn a rank. For weighted lifts, log your bodyweight and seal a trial with a squat, bench press, deadlift, overhead press, pull-up or dip.</string>
     <!-- Strength Rank sheet, one line per movement pattern: %1$s is the rank name, %2$s what earned it (a lift or skill name). -->
     <string name="rank_sheet_step_from">%1$s, from %2$s</string>
     <!-- %1$s is the name of the lift to improve next. -->
@@ -4085,7 +4089,7 @@
     <string name="rank_sheet_next_skill__t">Next technique: %1$s</string>
     <string name="rank_sheet_next_top">Next: Top of the scale</string>
     <!-- %1$s is one or more lift names joined with "or". -->
-    <string name="rank_sheet_next_log">Next: Log a %1$s to climb further</string>
+    <string name="rank_sheet_next_log">Log a qualifying %1$s with your bodyweight to see a lift target.</string>
     <!-- %1$d is the number of days a pattern may go untrained before it is left out. -->
     <plurals name="rank_sheet_window_note">
         <item quantity="one">A pattern you have not trained in %1$d day is left out, not counted as zero. Core work never lowers your rank.</item>
@@ -4926,6 +4930,9 @@
     <string name="skilldetail_locked_until">Locked until %1$s is mastered.</string>
     <string name="skilldetail_log_title">LOG AN ATTEMPT</string>
     <string name="skilldetail_attempts_title">ATTEMPTS</string>
+    <string name="skilldetail_source_practice">Practice</string>
+    <string name="skilldetail_source_workout">Workout</string>
+    <string name="skilldetail_source_workout__t">Trial</string>
     <!-- Date and time pattern of an attempt row (java.time letters). -->
     <string name="skilldetail_attempt_time_pattern" translatable="false">EEE d MMM · HH:mm</string>
     <string name="skilldetail_before_title">BEFORE YOU MARK AS MASTERED</string>

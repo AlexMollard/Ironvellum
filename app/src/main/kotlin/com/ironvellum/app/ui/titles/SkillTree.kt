@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -91,9 +90,8 @@ private val PassedInk get() = IronvellumColors.SovereignGold.copy(alpha = 0.7f)
 
 /**
  * One path as a node graph: game-style discs in tier rows, each carrying the
- * pictogram of its movement and a tier chip, joined by ink lines from the
- * bottom of each prerequisite to the top of its dependants. The edges are
- * drawn on a canvas behind the nodes.
+ * pictogram of its movement and a tier chip, joined by ink lines from each
+ * prerequisite to its dependants. Edges are drawn behind the nodes.
  */
 @Composable
 fun SkillTreeGraph(
@@ -170,17 +168,7 @@ fun SkillTreeGraph(
                 ).lineCount.coerceAtLeast(1)
             }
         }
-        // The marker under a name ("needs L-sit (Core)") wraps too, at its own size; its longest form is reserved.
         val crossStyle = MaterialTheme.typography.labelSmall.copy(fontSize = CrossSize, lineHeight = LabelLine, letterSpacing = 0.sp)
-        val measuredCross = remember(layout, cellW, uiDensity, crossStyle) {
-            val textW = with(uiDensity) { (cellW - LabelPad * 2).roundToPx() }.coerceAtLeast(1)
-            layout.nodes.associate { n ->
-                n.skill.name to (layout.crossMarker(n.skill.name)?.let {
-                    measurer.measure(it, crossStyle, constraints = Constraints(maxWidth = textW))
-                        .lineCount.coerceAtLeast(1)
-                } ?: 0)
-            }
-        }
         // The visible progress line under an open node ("best 6/8 reps"): the same cue its description reads out.
         val cues = remember(layout, mastered, best, bodyweightKg, female) {
             layout.nodes.mapNotNull { n ->
@@ -196,10 +184,10 @@ fun SkillTreeGraph(
                     .lineCount.coerceAtLeast(1)
             }
         }
-        val metrics = remember(layout, cellW, lineH, measured, measuredCross, measuredCue) {
+        val metrics = remember(layout, cellW, lineH, measured, measuredCue) {
             treeMetrics(
                 layout, cellW.value, lineH,
-                crossLinesOf = { measuredCross.getValue(it.skill.name) },
+                crossLinesOf = { 0 },
                 cueLinesOf = { measuredCue[it.skill.name] ?: 0 },
             ) {
                 measured.getValue(it.skill.name)
@@ -216,6 +204,17 @@ fun SkillTreeGraph(
         // is left alone. Saved with the page, so swiping back to a path does not yank it again.
         val openTarget = remember(layout, mastered) { layout.openTarget(mastered) }
         val density = LocalDensity.current.density
+        val edgePaths = remember(layout, metrics, density) {
+            layout.edges.associateWith { edge ->
+                Path().apply {
+                    layout.edgeCurve(edge, metrics).forEachIndexed { i, c ->
+                        if (i == 0) moveTo(c.p0.x * density, c.p0.y * density)
+                        cubicTo(c.c1.x * density, c.c1.y * density, c.c2.x * density, c.c2.y * density, c.p3.x * density, c.p3.y * density)
+                    }
+                }
+            }
+        }
+        val orderedEdges = remember(layout, mastered) { layout.edges.sortedBy { edgeRank(it.to, mastered) } }
         val openedAt = rememberSaveable(line) { SystemClock.uptimeMillis() }
         // A focus request names any technique; only the page that owns it acts on it.
         val focusName = focus?.takeIf { f -> layout.nodes.any { it.skill.name == f } }
@@ -232,61 +231,62 @@ fun SkillTreeGraph(
             if (focusName != null) onFocusHandled()
         }
 
-        Box(Modifier.fillMaxWidth().height(tops.last().dp)) {
-            Canvas(Modifier.fillMaxSize()) {
-                val stroke = EdgeW.toPx()
-                val dp = density
-                // Dim lines first, so the lit ones win where they share a stretch.
-                layout.edges.sortedBy { edgeRank(it.to, mastered) }.forEach { e ->
-                    val path = Path()
-                    layout.edgeCurve(e, metrics).forEachIndexed { i, c ->
-                        if (i == 0) path.moveTo(c.p0.x * dp, c.p0.y * dp)
-                        path.cubicTo(c.c1.x * dp, c.c1.y * dp, c.c2.x * dp, c.c2.y * dp, c.p3.x * dp, c.p3.y * dp)
+        Column {
+            Box(Modifier.fillMaxWidth().height(tops.last().dp)) {
+                Canvas(Modifier.fillMaxSize()) {
+                    val stroke = EdgeW.toPx()
+                    // Dim lines first, so the lit ones win where they share a stretch.
+                    orderedEdges.forEach { edge ->
+                        drawPath(edgePaths.getValue(edge), edgeBrush(edge.to, mastered), style = Stroke(stroke, cap = StrokeCap.Round))
                     }
-                    drawPath(path, edgeBrush(e.to, mastered), style = Stroke(stroke, cap = StrokeCap.Round))
+                }
+
+                layout.nodes.forEach { node ->
+                    val skill = node.skill
+                    val isMastered = skill.name in mastered
+                    val isPassed = isMastered && skill.name in passed
+                    val unlocked = Skills.unlocked(skill, mastered)
+                    val needs = skill.firstUnmetPrerequisite(mastered)
+                    val cue = if (isMastered) null else SkillGuidance.progressCue(skill, best[skill.name], bodyweightKg, female)
+                    Column(
+                        Modifier.offset(x = cellW * node.x, y = tops[node.level].dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        SkillNode(
+                            skill = skill,
+                            state = when {
+                                isPassed -> NodeState.PASSED
+                                isMastered -> NodeState.MASTERED
+                                unlocked -> NodeState.NEXT
+                                else -> NodeState.LOCKED
+                            },
+                            description = rowDescription(skill, isMastered, unlocked, needs, cue, isPassed),
+                            width = cellW,
+                            lines = levelLines[node.level],
+                            labelSize = labelSize,
+                            cue = cues[skill.name],
+                            cueLines = measuredCue[skill.name] ?: 0,
+                            onClick = { onSelect(skill.name) },
+                        )
+                    }
                 }
             }
-
             layout.nodes.forEach { node ->
-                val skill = node.skill
-                val isMastered = skill.name in mastered
-                val isPassed = isMastered && skill.name in passed
-                val unlocked = Skills.unlocked(skill, mastered)
-                val needs = skill.firstUnmetPrerequisite(mastered)
-                val cue = if (isMastered) null else SkillGuidance.progressCue(skill, best[skill.name], bodyweightKg, female)
-                val openNeeds = if (isMastered) emptyList() else layout.crossNeeds[skill.name].orEmpty().filter { it.skill !in mastered }
-                val crossLines = if (skill.name in layout.crossNeeds) metrics.crossLines[node.level] else 0
-                // The caption is a sibling of the node, not a child: the node merges its
-                // descendants into one button, which would swallow the caption's own tap.
-                Column(
-                    Modifier.offset(x = cellW * node.x, y = tops[node.level].dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    SkillNode(
-                        skill = skill,
-                        state = when {
-                            isPassed -> NodeState.PASSED
-                            isMastered -> NodeState.MASTERED
-                            unlocked -> NodeState.NEXT
-                            else -> NodeState.LOCKED
-                        },
-                        description = rowDescription(skill, isMastered, unlocked, needs, cue, isPassed),
-                        width = cellW,
-                        lines = levelLines[node.level],
-                        labelSize = labelSize,
-                        cue = cues[skill.name],
-                        cueLines = measuredCue[skill.name] ?: 0,
-                        onClick = { onSelect(skill.name) },
+                val openNeeds = if (node.skill.name in mastered) emptyList()
+                    else layout.crossNeeds[node.skill.name].orEmpty().filter { it.skill !in mastered }
+                if (openNeeds.isNotEmpty()) {
+                    Text(
+                        node.skill.name,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = IronvellumColors.InkMuted,
+                        modifier = Modifier.padding(top = 12.dp),
                     )
-                    // The marker room is always reserved, so the line leaving this node starts below it
-                    // whether or not anything is still outstanding.
-                    if (crossLines > 0) {
-                        val marker = crossNeedMarker(openNeeds, mastered)
-                        if (marker != null) {
-                            CrossNeedCaption(marker, openNeeds.first(), cellW, crossLines) { onOpenPrerequisite(openNeeds.first().skill) }
-                        } else {
-                            Spacer(Modifier.height(with(LocalDensity.current) { (LabelLine * crossLines).toDp() }))
-                        }
+                    openNeeds.forEach { need ->
+                        CrossNeedCaption(
+                            Words.text(UiText.res(R.string.skilltree_needs_marker, need.skill, need.line)),
+                            need,
+                        ) { onOpenPrerequisite(need.skill) }
                     }
                 }
             }
@@ -520,14 +520,9 @@ private fun SkillNode(
     }
 }
 
-/**
- * The "needs L-sit (Core)" line under a locked node, as a link to that technique. It fills the
- * lines the tree's rows reserve for it; the touch target is Compose's own 48dp minimum around
- * it, so the rows do not grow.
- */
+/** A separate, full-height link to one prerequisite on another path. */
 @Composable
-private fun CrossNeedCaption(text: String, need: CrossNeed, width: Dp, lines: Int, onClick: () -> Unit) {
-    val textH = with(LocalDensity.current) { (LabelLine * 2f).toDp() }
+private fun CrossNeedCaption(text: String, need: CrossNeed, onClick: () -> Unit) {
     Text(
         text,
         style = MaterialTheme.typography.labelSmall,
@@ -536,11 +531,10 @@ private fun CrossNeedCaption(text: String, need: CrossNeed, width: Dp, lines: In
         letterSpacing = 0.sp,
         color = IronvellumColors.SystemGreen,
         textDecoration = TextDecoration.Underline,
-        textAlign = TextAlign.Center,
+        textAlign = TextAlign.Start,
         modifier = Modifier
-            .widthIn(max = width)
-            // The rows reserve [lines] for this marker; a minimum, so a rounding pixel never cuts the last line.
-            .heightIn(min = textH / 2 * lines)
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
             .clip(TileShape)
             .background(MaterialTheme.colorScheme.background)
             .clickable(role = Role.Button, onClickLabel = UiText.themed(R.string.skilltree_need_open_description, R.string.skilltree_need_open_description__t, need.skill, need.line).asString()) { onClick() }

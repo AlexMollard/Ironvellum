@@ -5,6 +5,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.MainActivity
 import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.data.db.SessionEntity
+import com.ironvellum.app.data.db.SetLogEntity
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -70,5 +74,42 @@ class SkillPracticeFlowTest {
         driver.click(driver.awaitAnyText { it == "JOURNAL" })
         // The timeline lists the attempt under its day.
         driver.awaitAnyText { it == "Dead Hang" }
+    }
+
+    @Test
+    fun workoutAttemptsAppearInSkillDetailsWithoutReloggingPractice() {
+        val app = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as IronvellumApp
+        val dao = app.database.sessionDao()
+        val id = runBlocking {
+            val exercise = checkNotNull(app.database.exerciseDao().byName("Dead Hang"))
+            val now = System.currentTimeMillis()
+            val session = dao.insertSession(SessionEntity(presetId = null, label = "Skill evidence", startedAtMs = now - 60_000, completedAtMs = now, xpAwarded = 0))
+            dao.insertSets(listOf(
+                SetLogEntity(sessionId = session, exerciseId = exercise.id, setIndex = 0, reps = 0, durationSec = 37, weightKg = null, modifiers = "", done = true),
+                SetLogEntity(sessionId = session, exerciseId = exercise.id, setIndex = 1, reps = 0, durationSec = 23, weightKg = null, modifiers = "", done = true),
+            ))
+            session
+        }
+        try {
+            driver.tab("Codex")
+            driver.click(driver.awaitAnyText { it == "PATHS" })
+            driver.click(driver.awaitAnyText { it == "Pull" })
+            driver.click(driver.awaitAnyText { it == "Dead Hang" })
+            ShotRecorder.take(compose, "skill-exercise-about")
+            driver.click(driver.awaitAnyText { it == "LOG" })
+            driver.awaitText("Trial · 37s")
+            driver.awaitText("Trial · 23s")
+            ShotRecorder.take(compose, "skill-workout-attempts")
+            val count = app.database.openHelper.readableDatabase.query("SELECT COUNT(*) FROM skill_practices").use {
+                it.moveToFirst()
+                it.getInt(0)
+            }
+            assertEquals("reading workout evidence must not insert practice", 0, count)
+        } finally {
+            runBlocking {
+                dao.deleteSetsFor(id)
+                dao.deleteCompleted(id)
+            }
+        }
     }
 }

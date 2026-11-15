@@ -33,6 +33,9 @@ store listing; this is the whole list.
 - Require the optional schema 33 hosted update for recent rankings; existing sync and lifetime rankings remain available on older supported backends.
 
 ### Skill paths
+- Attach prerequisite connectors to skill discs and move cross-path requirements into separate, tappable links.
+- Use the exercise artwork, form and fatigue sections in skill details, while retaining mastery standards and claim controls.
+- Include eligible workout sets automatically in skill attempts and progress, alongside separately labelled practice; keep loads, hold durations and variations without duplicating practice or awarding XP.
 - Keep skill names and prerequisite captions at a 12sp base size that respects system text scaling, instead of shrinking labels to 8sp.
 - Give large text wider cells and enough row height for every measured line; keep nodes and prerequisite routes within the graph when fewer columns fit.
 - Explain the Roman-numeral difficulty tiers on every open path.
@@ -57,11 +60,17 @@ store listing; this is the whole list.
 - Preserve the chosen unit in PR chips when a custom exercise name contains spaced dots.
 
 ### Exercise details
+- Show an exercise's previous note only when its most recent completed workout had one; do not revive older notes after an unannotated workout.
 - Open a custom exercise's About page from the picker without a crash, then use Edit to change or delete it. Exercises already in use remain protected to preserve their history.
 
 ### The Veil
+- Bank earned essence once when returning to Today, resetting the full-strength countdown without opening the Veil; preview ticks never collect again.
+- Update inscription affordability from live projected essence rather than the last banked balance.
 - Start the Veil's accrual clock at app startup, so the home bar and essence can update without first opening the Veil.
 - Repair missing clocks on older installs and restored backups without collecting rewards, resetting an existing away interval or changing banked essence.
+
+### Strength Rank
+- Separate current standing, pattern-specific next lift and skill targets, and the calculation guide into focused pages.
 
 ### Notifications
 - Check social activity when signing in, returning to the app or allowing notifications, rather than waiting for the next background poll.

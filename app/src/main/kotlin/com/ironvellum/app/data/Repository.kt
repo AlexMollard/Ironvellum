@@ -187,6 +187,15 @@ data class SkillTrainingEvidence(
     val value: Int,
     val weightKg: Double?,
     val achievedAtMs: Long,
+    /** Eligible workout sets, newest first, including efforts below the personal best. */
+    val attempts: List<SkillTrainingAttempt> = emptyList(),
+)
+
+data class SkillTrainingAttempt(
+    val value: Int,
+    val weightKg: Double?,
+    val achievedAtMs: Long,
+    val variation: String = "",
 )
 
 /** The stored kind; an unknown name reads as a plain working set. */
@@ -238,6 +247,31 @@ internal fun skillTrainingEvidence(
         isBodyweight = { weightedByName[Titles.normaliseName(it)] == false },
         exists = { Titles.normaliseName(it) in metricByName },
     )
+    val attempts = mutableMapOf<String, MutableList<SkillTrainingAttempt>>()
+    fun addAttempts(sessions: List<Pair<WorkoutSession, List<SessionSet>>>, twinsOnly: Boolean = false) {
+        sessions.forEachIndexed { sessionIndex, (session, sets) ->
+            if (session.completedAtMs == null) return@forEachIndexed
+            sets.forEachIndexed setLoop@{ setIndex, set ->
+                val name = Titles.normaliseName(set.exerciseName)
+                if (twinsOnly && name == Titles.normaliseName(history[sessionIndex].second[setIndex].exerciseName)) return@setLoop
+                val metric = metricByName[name]
+                if (name !in skillByName || !set.done || set.warmup ||
+                    metric?.isStrength == false || Variation.eases(Variation.key(set.modifiers))
+                ) return@setLoop
+                val hold = MovementDifficulty.isHoldSet(metric, set.exerciseName, set.modifiers)
+                attempts.getOrPut(name) { mutableListOf() }.add(
+                    SkillTrainingAttempt(
+                        value = if (hold) set.durationSec ?: set.reps else set.reps,
+                        weightKg = set.weightKg,
+                        achievedAtMs = session.startedAtMs,
+                        variation = Variation.key(set.modifiers),
+                    ),
+                )
+            }
+        }
+    }
+    addAttempts(history)
+    addAttempts(twinned, twinsOnly = true)
     return (recordsOf(history) + recordsOf(twinned))
         .filter { !Variation.eases(it.variation) }
         .groupBy { Titles.normaliseName(it.exerciseName) }
@@ -247,6 +281,7 @@ internal fun skillTrainingEvidence(
                 value = top.reps,
                 weightKg = top.weightKg,
                 achievedAtMs = top.achievedAtMs,
+                attempts = attempts[name].orEmpty().sortedByDescending { it.achievedAtMs },
             )
         }
 }

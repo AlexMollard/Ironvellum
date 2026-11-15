@@ -12,10 +12,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * A trial's note on an exercise comes back as "Last time" at the next trial
- * that has the exercise, skipping any trial where it went unannotated.
- */
+/** Only the latest completed workout containing the exercise supplies its "Last time" note. */
 @RunWith(AndroidJUnit4::class)
 class ExerciseNoteLastTimeTest {
 
@@ -58,14 +55,13 @@ class ExerciseNoteLastTimeTest {
     private suspend fun lastFor(exerciseId: Long, live: Long) = repo.lastExerciseNotes(live, listOf(exerciseId))[exerciseId]
 
     @Test
-    fun theLastTrialThatLeftANoteSpeaksSkippingTheOnesThatDidNot() = runBlocking {
+    fun anUnannotatedWorkoutDoesNotReviveAnOlderNote() = runBlocking {
         sealedTrial(mapOf(squat to "Left shoulder twinged"))
         sealedTrial(mapOf(bench to "Paused reps"))
-        sealedTrial(emptyMap())
         val live = repo.startFreeformSession("Live")
 
-        assertEquals("two trials on, the squat note still speaks", "Left shoulder twinged", lastFor(squat, live))
-        assertEquals("the bench note is its own", "Paused reps", lastFor(bench, live))
+        assertNull("the latest squat workout had no note", lastFor(squat, live))
+        assertEquals("Paused reps", lastFor(bench, live))
     }
 
     @Test
@@ -94,6 +90,27 @@ class ExerciseNoteLastTimeTest {
 
         assertNull(lastFor(squat, live))
         assertEquals(emptyMap<Long, String>(), repo.observeExerciseNotes(first).first())
+    }
+
+    @Test
+    fun aWorkoutWithoutTheExerciseDoesNotHideItsLatestNote() = runBlocking {
+        sealedTrial(mapOf(squat to "Keep this cue"))
+        val other = repo.startFreeformSession("Bench only")
+        repo.addExtraSet(other, bench, 5, 60.0, "")
+        val set = db.sessionDao().setsFor(other).single()
+        repo.updateSet(set.id, reps = 5, weightKg = 60.0, done = true)
+        repo.completeSession(other)
+
+        assertEquals("Keep this cue", lastFor(squat, repo.startFreeformSession("Live")))
+    }
+
+    @Test
+    fun clearingTheLatestNoteDoesNotFallBackToAnOlderWorkout() = runBlocking {
+        sealedTrial(mapOf(squat to "Old cue"))
+        val latest = sealedTrial(mapOf(squat to "New cue"))
+        repo.setExerciseNote(latest, squat, "")
+
+        assertNull(lastFor(squat, repo.startFreeformSession("Live")))
     }
 
     @Test

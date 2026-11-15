@@ -317,6 +317,13 @@ class DashboardViewModel(
 
     private val selectedDay = MutableStateFlow(LocalDate.now().dayOfWeek.value)
 
+    /** Returning to Today banks the away interval once, just as entering the Veil does. */
+    fun collectVeil() {
+        viewModelScope.launchGuarded("collect veil essence") {
+            repo.collectIdle(System.currentTimeMillis())
+        }
+    }
+
     /** The unfinished session: the day card continues it instead of starting another. */
     val live: StateFlow<WorkoutSession?> = repo.observeLiveSession()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -403,10 +410,10 @@ class DashboardViewModel(
 
     /** The Veil at a glance: its snapshot (essence, rate, echoes, relic) and the inscriptions waiting. */
     val veil: StateFlow<VeilGlance?> = combine(repo.observeIdleSnapshot(), repo.observeRolls(), repo.observeVault(), repo.observeOfferingsMade(), repo.observeCrestWorth()) { snapshot, rolls, vault, offerings, worth ->
-        // The price rides the slot only when none wait and one is affordable on the banked essence.
+        // Affordability is evaluated against live projected essence in the Veil section.
         val price = Veil.offeringCost(offerings, snapshot.rate.effects.crest)
         val worn = Crests.byId(snapshot.rate.effects.crest.wornId)
-        VeilGlance(snapshot, rolls, vault.active, buyPrice = price.takeIf { rolls == 0 && snapshot.state.essence >= it }, worn = worn, wornWorth = worn?.let { worth[it.id] } ?: 0.0)
+        VeilGlance(snapshot, rolls, vault.active, buyPrice = price, worn = worn, wornWorth = worn?.let { worth[it.id] } ?: 0.0)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /**
@@ -610,6 +617,9 @@ fun DashboardScreen(
     // day she was reading.
     val launchDay = remember { LocalDate.now().dayOfWeek.value }
     val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+        viewModel.collectVeil()
+    }
     androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             if (event == androidx.lifecycle.Lifecycle.Event.ON_START &&

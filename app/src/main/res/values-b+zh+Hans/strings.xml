@@ -3272,14 +3272,18 @@
     <string name="settings_advanced_dev_preview_failed">预览失败</string>
     <string name="settings_advanced_dev_apply_failed">重新计算失败</string>
     <string name="rank_sheet_subtitle">力量等级</string>
-    <string name="rank_sheet_empty">完成包含已掌握的拉、推或腿部技法的训练，即可获得等级。也可先记录体重，再完成包含深蹲、卧推、硬拉、过头推举、引体向上或双杠臂屈伸的训练。</string>
-    <string name="rank_sheet_empty__t">封存包含已掌握的拉、推或腿部绝技的试炼，即可获得等级。也可先记下体重，再封存包含深蹲、卧推、硬拉、过头推举、引体向上或双杠臂屈伸的试炼。</string>
+    <string name="rank_sheet_overview">概览</string>
+    <string name="rank_sheet_current_marks">当前成绩</string>
+    <string name="rank_sheet_raise_pattern">提升此动作模式</string>
+    <string name="rank_sheet_how_it_works">计算方式</string>
+    <string name="rank_sheet_empty">在练习或已完成的训练中达到拉、推或腿部技法的标准，即可获得等级。对于负重动作，请先记录体重，再完成包含深蹲、卧推、硬拉、过头推举、引体向上或双杠臂屈伸的训练。</string>
+    <string name="rank_sheet_empty__t">在练习或已封存的试炼中达到拉、推或腿部绝技的标准，即可获得等级。对于负重动作，请先记录体重，再封存包含深蹲、卧推、硬拉、过头推举、引体向上或双杠臂屈伸的试炼。</string>
     <string name="rank_sheet_step_from">%1$s，起于 %2$s</string>
     <string name="rank_sheet_next_lift">下一个动作：%1$s</string>
     <string name="rank_sheet_next_skill">下一项技法：%1$s</string>
     <string name="rank_sheet_next_skill__t">下一项绝技：%1$s</string>
     <string name="rank_sheet_next_top">下一阶段：最高等级</string>
-    <string name="rank_sheet_next_log">下一阶段：记录 %1$s 以继续提升</string>
+    <string name="rank_sheet_next_log">记录符合条件的动作（%1$s）和体重，即可查看目标负重。</string>
     <plurals name="rank_sheet_window_note">
         <item quantity="other">超过 %1$d 天未训练的动作模式会被排除，而非计为零。核心训练不会降低你的等级。</item>
     </plurals>
@@ -3941,6 +3945,9 @@
     <string name="skilldetail_locked_until">掌握 %1$s 后解锁。</string>
     <string name="skilldetail_log_title">记录一次尝试</string>
     <string name="skilldetail_attempts_title">尝试记录</string>
+    <string name="skilldetail_source_practice">练习</string>
+    <string name="skilldetail_source_workout">训练</string>
+    <string name="skilldetail_source_workout__t">试炼</string>
     <string name="skilldetail_before_title">标记为已掌握之前</string>
     <string name="skilldetail_before_title__t">领悟之前</string>
     <string name="skilldetail_step_fewer">减少</string>

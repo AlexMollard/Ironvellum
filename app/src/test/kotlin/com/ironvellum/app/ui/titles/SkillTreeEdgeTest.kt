@@ -19,21 +19,16 @@ class SkillTreeEdgeTest {
         fun contains(p: Pt) = p.x in l..r && p.y in t..b
     }
 
-    private fun labelRects(layout: TreeLayout, m: TreeMetrics, n: PlacedSkill): List<Rect> {
+    private fun labelRects(m: TreeMetrics, n: PlacedSkill): List<Rect> {
         val cx = m.centreX(n.x)
         val top = m.discBottom(n.level) + TEXT_GAP_DP
         val w = min(n.skill.name.length * 6.5f, m.cellW) / 2f + textPad
-        val rects = mutableListOf(Rect(cx - w, top - textPad, cx + w, top + m.lineH * m.levelLines[n.level] + textPad))
-        if (n.skill.name in layout.crossNeeds) {
-            val y = top + m.lineH * m.levelLines[n.level]
-            rects += Rect(cx - m.cellW / 2f, y - textPad, cx + m.cellW / 2f, y + m.lineH * 2 + textPad)
-        }
-        return rects
+        return listOf(Rect(cx - w, top - textPad, cx + w, top + m.lineH * m.levelLines[n.level] + textPad))
     }
 
     private fun violations(line: String, columns: Int, lineH: Float): List<String> {
         val layout = treeLayout(line, columns)
-        val m = treeMetrics(layout, cellWidth(columns), lineH)
+        val m = treeMetrics(layout, cellWidth(columns), lineH, crossLinesOf = { 0 })
         val out = mutableListOf<String>()
         for (e in layout.edges) {
             val pts = layout.edgeCurve(e, m).flatMap { c -> (0..32).map { c.at(it / 32f) } }
@@ -42,7 +37,12 @@ class SkillTreeEdgeTest {
                 val c = m.discCentre(n)
                 val d = pts.minOf { hypot(it.x - c.x, it.y - c.y) }
                 if (d < NODE_DP / 2f + margin) out += "${e.from}->${e.to} hits disc of ${n.skill.name} (${"%.0f".format(d)}dp)"
-                if (labelRects(layout, m, n).any { r -> pts.any(r::contains) }) out += "${e.from}->${e.to} crosses label of ${n.skill.name}"
+                labelRects(m, n).forEach { rect ->
+                    pts.firstOrNull(rect::contains)?.let { point ->
+                        val source = layout.nodes.first { it.skill.name == e.from }
+                        out += "${e.from}->${e.to} crosses ${n.skill.name} at $point; source=$source; obstacle=$n; rect=$rect"
+                    }
+                }
             }
         }
         return out
@@ -112,8 +112,8 @@ class SkillTreeEdgeTest {
         val allowed = mapOf("Handstand" to 1)
         val bad = buildList {
             for (w in phones) for (line in Skills.LINES) {
-                val n = Drawn(line, w).crossings()
-                if (n > (allowed[line] ?: 0)) add("$line @${w.toInt()}dp: $n")
+                val crossings = Drawn(line, w).crossings()
+                if (crossings.size > (allowed[line] ?: 0)) add("$line @${w.toInt()}dp: $crossings")
             }
         }
         assertTrue("crossings:\n" + bad.joinToString("\n"), bad.isEmpty())
@@ -145,14 +145,15 @@ class SkillTreeEdgeTest {
     }
 
     @Test
-    fun `a wrapped label grows its row and the edge still starts below it`() {
+    fun `wrapped labels grow rows while connectors stay attached to discs`() {
         val layout = treeLayout("Pull", 4)
         val one = treeMetrics(layout, 82f, 12f, linesOf = { 1 })
         val three = treeMetrics(layout, 82f, 12f, linesOf = { 3 })
         assertTrue(three.tops.last() - one.tops.last() >= 2 * 12f * layout.levels.size)
         val n = layout.nodes.first { it.skill.name == "Dead Hang" }
         val start = layout.edgeCurve(layout.edges.first { it.from == "Dead Hang" }, three).first().p0
-        assertTrue(start.y >= three.discBottom(n.level) + 3 * 12f)
+        val centre = three.discCentre(n)
+        assertTrue(kotlin.math.abs(hypot(start.x - centre.x, start.y - centre.y) - NODE_DP / 2f) < 0.01f)
     }
 
     @Test
@@ -165,7 +166,14 @@ class SkillTreeEdgeTest {
         }
         layout.edges.forEach { edge ->
             val node = layout.nodes.first { it.skill.name == edge.from }
-            assertTrue(layout.edgeCurve(edge, m).first().p0.y >= layout.nodeBottom(node, m))
+            val curve = layout.edgeCurve(edge, m)
+            val centre = m.discCentre(node)
+            val start = curve.first().p0
+            assertTrue(kotlin.math.abs(hypot(start.x - centre.x, start.y - centre.y) - NODE_DP / 2f) < 0.01f)
+            val child = layout.nodes.first { it.skill.name == edge.to }
+            val end = curve.last().p3
+            val target = m.discCentre(child)
+            assertTrue(kotlin.math.abs(hypot(end.x - target.x, end.y - target.y) - NODE_DP / 2f) < 0.01f)
         }
     }
 }
@@ -182,7 +190,7 @@ private class Drawn(val line: String, width: Float) {
     val columns = columnsFor(avail, 72f)
     val cellW = avail / columns
     val layout = treeLayout(line, columns)
-    val m = treeMetrics(layout, cellW, 12f)
+    val m = treeMetrics(layout, cellW, 12f, crossLinesOf = { 0 })
 
     fun disc(n: PlacedSkill): Box {
         val c = m.discCentre(n)
@@ -240,16 +248,16 @@ private class Drawn(val line: String, width: Float) {
     }
 
     /** Pairs of edges, not sharing an end, that meet or run within 1.5dp of each other. */
-    fun crossings(): Int {
+    fun crossings(): List<String> {
         val polys = layout.edges.associateWith { points(it) }
-        var count = 0
+        val crossings = mutableListOf<String>()
         for (i in layout.edges.indices) for (j in i + 1 until layout.edges.size) {
             val a = layout.edges[i]
             val b = layout.edges[j]
             if (a.from == b.from || a.to == b.to || a.from == b.to || a.to == b.from) continue
-            if (polylineGap(polys.getValue(a), polys.getValue(b)) < 1.5f) count++
+            if (polylineGap(polys.getValue(a), polys.getValue(b)) < 1.5f) crossings += "$a crosses $b"
         }
-        return count
+        return crossings
     }
 }
 

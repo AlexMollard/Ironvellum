@@ -110,11 +110,7 @@ internal fun TreeMetrics.discBottom(level: Int): Float = discTop(level) + NODE_D
 
 internal fun TreeMetrics.discCentre(n: PlacedSkill) = Pt(centreX(n.x), discTop(n.level) + NODE_DP / 2f)
 
-/**
- * Where a node's own caption ends: the line leaves from here. Its name plate
- * spans the row's tallest name, and a node with a marker adds the row's marker
- * height, so the line is hidden behind its own text and emerges clean below it.
- */
+/** Bottom of the space reserved for this node's captions. */
 internal fun TreeLayout.nodeBottom(n: PlacedSkill, m: TreeMetrics): Float =
     m.discBottom(n.level) + TEXT_GAP_DP + m.lineH * (m.levelLines[n.level] + (m.nodeCue[n.skill.name] ?: 0) + if (n.skill.name in crossNeeds) m.crossLines[n.level] else 0)
 
@@ -126,11 +122,8 @@ internal fun TreeLayout.discTopOf(name: String, m: TreeMetrics): Float? =
 internal fun TreeMetrics.rowBottom(level: Int): Float = tops[level + 1] - EDGE_GAP_DP
 
 /**
- * The path of one edge, as drawn. It leaves the bottom of the prerequisite's
- * own caption, drops straight down, and bends only in the gap between rows,
- * so a bend can never meet a label. A long edge repeats that on every row it
- * crosses, dropping straight down its own lane, and finally lands on the top of
- * the dependant's disc.
+ * Leave the disc at its side and run down the edge of its cell, outside the
+ * caption plate. Waypoints keep long edges clear of intermediate nodes.
  */
 internal fun TreeLayout.edgeCurve(edge: TreeEdge, m: TreeMetrics): List<Cubic> {
     val at = nodes.associateBy { it.skill.name }
@@ -138,10 +131,47 @@ internal fun TreeLayout.edgeCurve(edge: TreeEdge, m: TreeMetrics): List<Cubic> {
     val child = at.getValue(edge.to)
     val xs = listOf(parent.x) + lanes[edge].orEmpty() + child.x
     val out = ArrayList<Cubic>()
-    var here = Pt(m.centreX(xs[0]), nodeBottom(parent, m))
+    val centre = m.centreX(xs[0])
+    val next = m.centreX(xs[1])
+    val preferred = if (next < centre || (next == centre && parent.x >= (columns - 1) / 2f)) -1f else 1f
+    val extent = maxOf(NODE_DP / 2f, m.cellW / 2f - 3f)
+    // A side exit must also clear other nodes and through-lanes in this row.
+    // Among clear exits, preserve the order of the edges in the next gap.
+    fun cost(direction: Float): Int {
+        val x = centre + direction * extent
+        var score = 0
+        nodes.filter { it.level == parent.level && it != parent }.forEach { other ->
+            val distance = kotlin.math.abs(x - m.centreX(other.x))
+            if (distance <= m.cellW / 2f + 2.1f) score += 100
+            if (distance < NODE_DP / 2f + 6f) score += 100
+        }
+        edges.forEach { other ->
+            if (other == edge || other.from == edge.from || other.to == edge.to ||
+                other.from == edge.to || other.to == edge.from) return@forEach
+            val from = at.getValue(other.from)
+            val to = at.getValue(other.to)
+            val level = parent.level
+            if (level !in from.level until to.level) return@forEach
+            val otherXs = listOf(from.x) + lanes[other].orEmpty() + to.x
+            val index = level - from.level
+            val start = m.centreX(otherXs[index])
+            val end = m.centreX(otherXs[index + 1])
+            if (index > 0 && start in minOf(centre, x)..maxOf(centre, x)) score += 100
+            if ((x - start) * (next - end) < 0f) score += 10
+        }
+        return score
+    }
+    val direction = if (cost(-preferred) < cost(preferred)) -preferred else preferred
+    val side = centre + direction * NODE_DP / 2f
+    val lane = centre + direction * extent
+    val middle = m.discTop(parent.level) + NODE_DP / 2f
+    var here = Pt(side, middle)
+    val beside = Pt(lane, middle)
+    out += Cubic(here, here, beside, beside)
+    here = beside
     for (i in 0 until xs.size - 1) {
         val level = parent.level + i
-        val leave = Pt(m.centreX(xs[i]), m.rowBottom(level))
+        val leave = Pt(if (i == 0) lane else m.centreX(xs[i]), m.rowBottom(level))
         val arrive = Pt(m.centreX(xs[i + 1]), m.discTop(level + 1))
         out += Cubic(here, here, leave, leave)
         val ym = (leave.y + arrive.y) / 2f

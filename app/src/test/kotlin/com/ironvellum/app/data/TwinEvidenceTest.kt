@@ -6,6 +6,7 @@ import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.domain.WorkoutSession
+import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.ui.titles.SkillGuidance
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -23,7 +24,7 @@ class TwinEvidenceTest {
         Exercise(3, "Push-up", MuscleGroup.PUSH, isWeighted = false),
         Exercise(4, "Archer Push-up", MuscleGroup.PUSH, isWeighted = false),
         Exercise(5, "Incline Push-up", MuscleGroup.PUSH, isWeighted = false),
-        Exercise(6, "Plank", MuscleGroup.CORE, isWeighted = false, metric = ExerciseMetric.HOLD),
+        Exercise(6, "Dead Hang", MuscleGroup.PULL, isWeighted = false, metric = ExerciseMetric.HOLD),
     )
 
     private val bodyweightKg = 80.0
@@ -99,5 +100,45 @@ class TwinEvidenceTest {
         )
         assertNull(found["weighted pull-up"])
         assertNotNull(found["pull-up"])
+    }
+
+    @Test
+    fun `workout attempts retain repeated and below-best efforts without duplicating plain sets`() {
+        val sets = listOf(
+            set(1, "Pull-up", 10, index = 0),
+            set(1, "Pull-up", 6, index = 1),
+            set(1, "Pull-up", 6, index = 2),
+        )
+        val found = skillTrainingEvidence(trial(*sets.toTypedArray()), { bodyweightKg }, exercises)
+        assertEquals(listOf(10, 6, 6), found.getValue("pull-up").attempts.map { it.value })
+        assertEquals(10, found.getValue("pull-up").value)
+    }
+
+    @Test
+    fun `workout attempts exclude pending warmup and eased sets and retain twin identity`() {
+        val found = evidence(
+            set(3, "Push-up", 12, modifiers = "archer"),
+            set(3, "Push-up", 8, modifiers = "archer", index = 1),
+            set(3, "Push-up", 99, index = 2).copy(done = false),
+            set(3, "Push-up", 99, index = 3).copy(kind = SetKind.WARMUP),
+            set(3, "Push-up", 99, modifiers = "assisted", index = 4),
+        )
+        assertEquals(listOf(12, 8), found.getValue("archer push-up").attempts.map { it.value })
+        assertEquals(listOf(12, 8), found.getValue("push-up").attempts.map { it.value })
+        assertTrue(found.getValue("push-up").attempts.all { it.variation.contains("archer") })
+        assertTrue(found.getValue("archer push-up").attempts.all { it.variation.isEmpty() })
+    }
+
+    @Test
+    fun `hold attempts use seconds and are newest first while incomplete sessions stay out`() {
+        val first = set(6, "Dead Hang", 0).copy(durationSec = 40)
+        val later = first.copy(durationSec = 25)
+        val history = trial(first) + listOf(
+            WorkoutSession(id = 2, label = "later", startedAtMs = 3_000, completedAtMs = 4_000) to listOf(later),
+            WorkoutSession(id = 3, label = "live", startedAtMs = 5_000) to listOf(first.copy(durationSec = 90)),
+        )
+        val attempts = skillTrainingEvidence(history, { bodyweightKg }, exercises).getValue("dead hang").attempts
+        assertEquals(listOf(25, 40), attempts.map { it.value })
+        assertEquals(listOf(3_000L, 1_000L), attempts.map { it.achievedAtMs })
     }
 }

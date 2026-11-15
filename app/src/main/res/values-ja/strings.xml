@@ -3272,14 +3272,18 @@
     <string name="settings_advanced_dev_preview_failed">プレビューに失敗しました</string>
     <string name="settings_advanced_dev_apply_failed">再計算に失敗しました</string>
     <string name="rank_sheet_subtitle">筋力ランク</string>
-    <string name="rank_sheet_empty">ランクを得るには、体重を記録したうえで、達成したプル・プッシュ・脚のスキル、またはスクワット、ベンチプレス、デッドリフト、オーバーヘッドプレス、懸垂、ディップスを含むワークアウトを終了してください。</string>
-    <string name="rank_sheet_empty__t">位を得るには体重を記録し、達成したプル・プッシュ・脚の技、またはスクワット、ベンチプレス、デッドリフト、オーバーヘッドプレス、懸垂、ディップスを含む試練を封じてください。</string>
+    <string name="rank_sheet_overview">概要</string>
+    <string name="rank_sheet_current_marks">現在の記録</string>
+    <string name="rank_sheet_raise_pattern">この動作を伸ばす</string>
+    <string name="rank_sheet_how_it_works">仕組み</string>
+    <string name="rank_sheet_empty">練習または完了したワークアウトでプル・プッシュ・脚のスキル基準を達成するとランクを得られます。加重種目では体重を記録し、スクワット、ベンチプレス、デッドリフト、オーバーヘッドプレス、懸垂、ディップスのいずれかを含むワークアウトを完了してください。</string>
+    <string name="rank_sheet_empty__t">練習または封じた試練でプル・プッシュ・脚の技の基準を達成すると位を得られます。加重種目では体重を記録し、スクワット、ベンチプレス、デッドリフト、オーバーヘッドプレス、懸垂、ディップスのいずれかを含む試練を封じてください。</string>
     <string name="rank_sheet_step_from">%1$s、%2$sから</string>
     <string name="rank_sheet_next_lift">次のリフト：%1$s</string>
     <string name="rank_sheet_next_skill">次のスキル：%1$s</string>
     <string name="rank_sheet_next_skill__t">次の技：%1$s</string>
     <string name="rank_sheet_next_top">次：最高段階</string>
-    <string name="rank_sheet_next_log">次：%1$sを記録してさらに上へ</string>
+    <string name="rank_sheet_next_log">対象種目（%1$s）と体重を記録すると、目標重量が表示されます。</string>
     <plurals name="rank_sheet_window_note">
         <item quantity="other">%1$d日間鍛えていないパターンはゼロとはせず除外します。体幹運動でランクが下がることはありません。</item>
     </plurals>
@@ -3941,6 +3945,9 @@
     <string name="skilldetail_locked_until">%1$s がマスターされるまでロックされます。</string>
     <string name="skilldetail_log_title">試みを記録する</string>
     <string name="skilldetail_attempts_title">試み</string>
+    <string name="skilldetail_source_practice">練習</string>
+    <string name="skilldetail_source_workout">ワークアウト</string>
+    <string name="skilldetail_source_workout__t">試練</string>
     <string name="skilldetail_before_title">マスター済みとしてマークする前に</string>
     <string name="skilldetail_before_title__t">請求する前に</string>
     <string name="skilldetail_step_fewer">少ない</string>

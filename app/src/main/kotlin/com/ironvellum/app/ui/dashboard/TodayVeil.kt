@@ -191,7 +191,7 @@ internal fun VeilSection(
                 }
             }
             veil?.worn?.takeIf { form != VeilForm.COMPACT }?.let { PerkChip(it, veil.wornWorth, onOpenCrest) }
-            InscriptionsSlot(veil?.inscriptions, veil?.buyPrice, onOpen)
+            InscriptionsSlot(veil?.inscriptions, veil?.buyPrice?.takeIf { essence != null && essence >= it }, onOpen)
         }
     }
 }

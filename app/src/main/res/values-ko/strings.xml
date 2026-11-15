@@ -3272,14 +3272,18 @@
     <string name="settings_advanced_dev_preview_failed">미리보기에 실패했어요</string>
     <string name="settings_advanced_dev_apply_failed">XP 재계산에 실패했어요</string>
     <string name="rank_sheet_subtitle">근력 등급</string>
-    <string name="rank_sheet_empty">등급을 받으려면 달성한 당기기·밀기·하체 숙련 기술이 들어간 운동을 마무리하거나, 체중을 기록한 뒤 스쿼트, 벤치프레스, 데드리프트, 오버헤드 프레스, 풀업, 딥스 중 하나가 들어간 운동을 마무리하세요.</string>
-    <string name="rank_sheet_empty__t">등급을 받으려면 달성한 당기기·밀기·하체 절기가 들어간 시련을 봉인하거나, 체중을 기록한 뒤 스쿼트, 벤치프레스, 데드리프트, 오버헤드 프레스, 풀업, 딥스 중 하나가 들어간 시련을 봉인하세요.</string>
+    <string name="rank_sheet_overview">개요</string>
+    <string name="rank_sheet_current_marks">현재 기록</string>
+    <string name="rank_sheet_raise_pattern">이 패턴 향상하기</string>
+    <string name="rank_sheet_how_it_works">계산 방식</string>
+    <string name="rank_sheet_empty">연습이나 완료한 운동에서 당기기·밀기·하체 숙련 기술의 기준을 달성하면 등급을 받아요. 중량 운동은 체중을 기록하고 스쿼트, 벤치프레스, 데드리프트, 오버헤드 프레스, 풀업, 딥스 중 하나를 포함한 운동을 완료하세요.</string>
+    <string name="rank_sheet_empty__t">연습이나 봉인한 시련에서 당기기·밀기·하체 절기의 기준을 달성하면 등급을 받아요. 중량 운동은 체중을 기록하고 스쿼트, 벤치프레스, 데드리프트, 오버헤드 프레스, 풀업, 딥스 중 하나를 포함한 시련을 봉인하세요.</string>
     <string name="rank_sheet_step_from">%1$s · %2$s 기준</string>
     <string name="rank_sheet_next_lift">다음 종목: %1$s</string>
     <string name="rank_sheet_next_skill">다음 숙련 기술: %1$s</string>
     <string name="rank_sheet_next_skill__t">다음 절기: %1$s</string>
     <string name="rank_sheet_next_top">다음: 최고 등급</string>
-    <string name="rank_sheet_next_log">다음: %1$s 세트를 기록해 더 올라가세요</string>
+    <string name="rank_sheet_next_log">대상 종목(%1$s)과 체중을 기록하면 목표 중량을 볼 수 있어요.</string>
     <plurals name="rank_sheet_window_note">
         <item quantity="other">%1$d일 동안 훈련하지 않은 동작 패턴은 0점으로 계산하지 않고 제외해요. 코어 운동은 등급을 낮추지 않아요.</item>
     </plurals>
@@ -3941,6 +3945,9 @@
     <string name="skilldetail_locked_until">%1$s 마스터 후 잠금 해제돼요.</string>
     <string name="skilldetail_log_title">시도 기록</string>
     <string name="skilldetail_attempts_title">시도</string>
+    <string name="skilldetail_source_practice">연습</string>
+    <string name="skilldetail_source_workout">운동</string>
+    <string name="skilldetail_source_workout__t">시련</string>
     <string name="skilldetail_before_title">마스터 표시 전에</string>
     <string name="skilldetail_before_title__t">습득 전에</string>
     <string name="skilldetail_step_fewer">줄이기</string>
