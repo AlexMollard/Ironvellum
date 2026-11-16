@@ -1,14 +1,17 @@
 # Translating Ironvellum
 
-Ironvellum ships in English today. This is how a translation works, and what the project owner has to set up to
-take one in. No translations are accepted before 1.9, and no Weblate project exists yet: this page is the
-preparation.
+Ironvellum ships in English, Spanish, German, French, Brazilian Portuguese,
+Japanese, Korean and Simplified Chinese. All seven translations include plain
+and themed wording. Contributions can improve these or add another language;
+Weblate setup remains owner-managed. Direct changes to resource files are welcome.
 
 ## What a translator edits
 
-One file per language: `app/src/main/res/values-<code>/strings.xml`, translated from the English
-`app/src/main/res/values/strings.xml` (the Weblate "monolingual base"). Do not edit the English file in a
-translation. Read the comment above a string first: it says what each placeholder is and where the text shows.
+Translate `app/src/main/res/values/strings.xml` into the language's
+`values-<code>/strings.xml` (for example `values-de`, `values-pt-rBR` or
+`values-b+zh+Hans`). Do not edit the English base as part of a translation.
+Read each entry's comment for placeholder meanings and screen context.
+Shared terminology lives in [`translation-terms/`](translation-terms/).
 
 ### Plain first, themed optional
 
@@ -62,8 +65,8 @@ and the title, skill and crest catalogues stay English data for now and are not 
 ## Placeholders and formatting
 
 - Placeholders are positional: `%1$s`, `%2$d`. Keep all of them, and reorder freely to suit your grammar.
-- `<plurals>` need every quantity your language uses (CLDR categories: zero, one, two, few, many, other). English
-  provides `one` and `other`; Weblate adds the rest.
+- `<plurals>` need every quantity your language uses (CLDR categories: zero, one, two, few, many, other).
+  Add those items explicitly when editing XML; do not copy only English's `one` and `other`.
 - `%%` is a literal percent sign. Escape an apostrophe as `\'` and a quote as `\"`, write `&amp;` and `&lt;`.
 - Entries marked `translatable="false"` (separators, number patterns, the app name) are not translated.
 - A translated string must keep the same placeholders as its source; Android lint flags a mismatch.
@@ -101,13 +104,15 @@ Do not set up a GitHub Action or any automatic trigger for this: the repository'
 
 ### Checklist for each new language
 
-1. Weblate creates `values-<code>/strings.xml`. Add `values-<code>/bools.xml` with `themed_strings_complete`
-   (`false` until every `__t` is done). Without it `StringsXmlTest` fails.
+1. Create `values-<code>/strings.xml` directly or through Weblate. Add `bools.xml` with
+   `themed_strings_complete` (`false` until every `__t` is done). Without it `StringsXmlTest` fails.
 2. The language appears in Android's per-app language list as soon as its folder exists: the build generates the
    locale list from the `values-*` folders (`androidResources.generateLocaleConfig`, with English as the default
    in `res/resources.properties`). A half-translated language is therefore offered to users. Decide a completeness
    threshold (for example, merge the folder only once the plain strings are 100% done).
-3. Run `python3 tools/gate.py` and check the pseudolocale screens still fit with the real text.
+3. Run `python tools/check_translation.py <code>` (for example `de`, `pt-rBR` or
+   `b+zh+Hans`) to check keys, escapes, placeholders and locale-specific plurals.
+   Run `python3 tools/gate.py` and check the running screens in both wording modes.
 
 ## Testing with pseudolocales
 
@@ -115,7 +120,9 @@ Debug builds ship the `en-XA` (accented, about 30% longer) and `ar-XB` (right to
 (`isPseudoLocalesEnabled`). Set one for the app without touching the system language:
 
 ```
-adb shell cmd locale set-app-locales com.ironvellum.app --locales en-XA
+python tools/device.py lock -- adb -s emulator-5554 shell cmd locale set-app-locales com.ironvellum.app --locales en-XA
 ```
 
-Any English text that stays unaccented is a string that is still hard-coded in Kotlin.
+UI copy that stays unaccented may be hard-coded; exercise names, guides and
+catalogue names intentionally remain English. Restore the app locale after
+checking with `--locales ""` in the same command.

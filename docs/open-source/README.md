@@ -1,5 +1,13 @@
 # Ironvellum goes open source: roadmap
 
+> Historical planning record, written in September 2026. The implementation and
+> status claims below are not current setup instructions. Start with the
+> [main README](../../README.md), [development guide](../DEVELOPMENT.md),
+> [self-hosting guide](../../supabase/SELF_HOSTING.md), [cost ledger](../../COSTS.md)
+> and [current roadmap](../TODO.md). The app now has build flavours, runtime
+> backend selection and seven translated UI languages. Supabase Pro was a
+> hosting target, not proof of the shared project's billing plan.
+
 Ironvellum becomes free and open source. Donations pay for its upkeep. A public
 ledger shows what the shared cloud costs and where every dollar goes. Anyone
 who would rather not use the shared cloud can point the app at their own
@@ -28,7 +36,7 @@ money, history rewrites, tags, releases, repository visibility) are marked
 A shared instance only makes sense while donations roughly cover it. If the
 ledger runs a deficit for three months in a row, fall back to **BYO-only**: the
 shared instance goes read-only, then shuts down after the notice period in
-[04](04-funding-and-costs.md#continuity-promise). BYO keeps the cloud features
+[the cost ledger](../../COSTS.md#the-continuity-promise). BYO keeps the cloud features
 alive at no cost to the maintainer. Plan 03 is what makes that fallback cheap,
 so it ships before the shared cloud is promoted to strangers.
 

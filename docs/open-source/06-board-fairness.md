@@ -1,5 +1,10 @@
 # 06: Board fairness before strangers compete
 
+> Historical scoring and visibility decision record, not the current board
+> specification. The app now also offers rolling seven-day workout XP rankings
+> with schema 33. See [Features](../FEATURES.md), the [glossary](../GLOSSARY.md)
+> and [self-hosting](../../supabase/SELF_HOSTING.md) for current behaviour.
+
 **Goal:** before the shared cloud is advertised, no board rewards not
 training, and the docs describe the scoring the code actually runs.
 

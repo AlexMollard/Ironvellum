@@ -1,5 +1,11 @@
 # 01: Go public safely
 
+> Historical pre-publication plan from September 2026, not a current security
+> attestation or licence inventory. The repository is now public. For current
+> release checks see [the release checklist](../RELEASE_CHECKLIST.md); for
+> third-party artwork and licences see [art attribution](../ART_ATTRIBUTION.md)
+> and [third-party notices](../../THIRD_PARTY_NOTICES.md).
+
 **Goal:** the repository can be made public without exposing a live security
 hole, a secret, or unlicensed third-party work.
 

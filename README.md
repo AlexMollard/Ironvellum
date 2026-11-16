@@ -57,7 +57,7 @@ Plain gym words by default; turn on **Themed names** for the fantasy version. Th
   <img src="docs/images/web-routines.png" width="45%" alt="The web routines page with example data: the week's plan, one routine's exercises and the muscles the week covers">
 </p>
 
-Signed-in lifters can read their training on a computer at **[alexmollard.github.io/Ironvellum](https://alexmollard.github.io/Ironvellum/)**: overview, workouts, lifts, trends and routines, plus your friends' feed with reactions and comments, the inbox, boards and your group. Your own training is private to you, and logging and editing stay in the app.
+Signed-in lifters can read their synced training on a computer at **[alexmollard.github.io/Ironvellum](https://alexmollard.github.io/Ironvellum/)**: overview, workouts, lifts, trends and routines, plus your friends' feed with reactions and comments, the inbox, boards and your group. Your private training pages are visible only to you; workout sharing follows your audience settings. Logging and editing training stay in the app.
 
 ## Install
 
@@ -75,11 +75,14 @@ Ironvellum works with no account and no network. If you sign in, it syncs your t
 | [Features](docs/FEATURES.md) | Everything the app does, by area |
 | [Glossary](docs/GLOSSARY.md) | Every word the app shows, plain and themed |
 | [Development](docs/DEVELOPMENT.md) | Stack, building from source, the local test gate |
-| [Web dashboard](web/README.md) | The web viewer's code, fixtures and deployment |
-| [Self-hosting](supabase/SELF_HOSTING.md) | Running the cloud on your own Supabase project |
+| [Web dashboard](web/README.md) | Training viewer, social features, local fixtures and deployment |
+| [Self-hosting](supabase/SELF_HOSTING.md) | Fresh Supabase setup, safe upgrades, email auth and connecting the app |
 | [Design](docs/DESIGN.md) | The look, themes and components |
 | [Translating](docs/TRANSLATING.md) | Helping translate the app |
 | [Roadmap](docs/TODO.md) | What is planned next |
+| [Privacy](PRIVACY.md) | What stays local, what syncs and how to delete cloud data |
+| [Costs](COSTS.md) | Shared-cloud costs, funding and continuity |
+| [Release checklist](docs/RELEASE_CHECKLIST.md) | Release commands, owner checks and dated verification evidence |
 
 Tests run locally with `python3 tools/gate.py`. GitHub workflows are manual-only; pushing runs no checks.
 

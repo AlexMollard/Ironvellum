@@ -1,8 +1,9 @@
 # Ironvellum release checklist
 
-Ordered steps to ship `com.ironvellum.app` to Google Play. Execute top to bottom.
-Written 2026-09-15. Verification commands run from the repo root on Windows:
-`.\gradlew.bat <task>`.
+Ordered release steps for `com.ironvellum.app`, including F-Droid and Google Play.
+Current instructions reviewed 2026-11-17. Dated 1.11 evidence is retained below
+as a release record, not fresh verification of subsequent changes.
+Commands run from the repo root on Windows with `.\gradlew.bat <task>`.
 
 ## 1. Signing key
 
@@ -26,11 +27,12 @@ Written 2026-09-15. Verification commands run from the repo root on Windows:
    `supabase.url` and `supabase.key`. The release validation task rejects blank
    values. Never embed a service-role or server secret key in an APK.
    The `play` flavour also requires `google.webClientId`; `foss` does not use it.
-4. Build `:app:assembleFossRelease` and `:app:bundleFossRelease`. Without signing
-   credentials these produce unsigned artifacts, which are suitable for local
-   verification but not direct installation or a Play upload. Sign a separate
-   copy with the existing debug key for emulator smoke checks only. F-Droid
-   builds and signs its own package from the release tag.
+4. For Google Play, build `:app:bundlePlayRelease` with the owner's signing
+   credentials; an unsigned bundle cannot be uploaded. For F-Droid preparation,
+   build `:app:assembleFossRelease :app:bundleFossRelease`; F-Droid builds and
+   signs its own package from the owner-approved tag. Unsigned FOSS artifacts
+   can be inspected locally; sign a separate copy with the existing debug key
+   only for isolated emulator smoke checks, never for publishing.
 
 ## 2. Version bump
 
@@ -41,17 +43,25 @@ Written 2026-09-15. Verification commands run from the repo root on Windows:
 
 ## 3. Local validation
 
-Run all three; all must pass before anything is uploaded:
+Run the full gate and the release checks before uploading:
 
-```
-.\gradlew.bat :app:testFossDebugUnitTest
-.\gradlew.bat :app:lintFossRelease        # must report zero errors
+```powershell
+python tools/gate.py --backend       # full Android/web gate plus disposable SQL checks
+.\gradlew.bat :app:lintFossRelease    # zero errors and warnings
 .\gradlew.bat :app:assembleFossRelease :app:bundleFossRelease --no-configuration-cache
+# For a Play release, also validate its proprietary sign-in flavour and bundle:
+.\gradlew.bat :app:lintPlayRelease :app:bundlePlayRelease --no-configuration-cache
 ```
 
 Use the non-cached release invocation above: the backend-validation task actions
 capture Gradle script objects and are not configuration-cache compatible.
 R8 minification and resource shrinking remain enabled.
+
+### Recorded 1.11 verification (2026-11-12 to 2026-11-13)
+
+These results, artifact hashes and deployment references belong to the dated
+source revisions below. Rebuild and rerun acceptance for a new release; do not
+reuse these as proof for later changes.
 
 Pre-hardening baseline (2026-11-12), `python3 tools/gate.py --backend`: all
 checks passed without an instrumented retry, but the run missed its budget.
@@ -145,22 +155,17 @@ is upgraded in place: a schema change edits the baseline, bumps the
 `schema_version()` literal, and ships an idempotent patch in `supabase/hosted/`
 cut from the baseline. Raise `NEEDED_SCHEMA_VERSION` only when the whole app
 requires it. `python3 tools/gate.py --backend` exercises the baseline, hosted
-patch replay and reset round trip against real Postgres. The hosted
-project was at schema 30 before the snapshot cap patch
-(`supabase/hosted/2026-10-28-web-snapshot-cap.sql`, schema 31) and the hardening patch
-(`2026-10-28-web-snapshot-hardening.sql`: 8 MiB text bound, owner-only snapshot delete,
-cheaper RLS; no schema bump, four web tables only); both are applied.
+patch replay and reset round trip against real Postgres.
 
-The owner applied `supabase/hosted/2026-10-29-feed-card.sql` (after the hardening patch)
-to the hosted project on 2026-10-30, establishing schema 32. The patch adds
-`sessions.feed_card` and the last column of `public_feed`. It stays optional for the app:
-`NEEDED_SCHEMA_VERSION` is 31, so a phone on a backend at 31 keeps syncing and simply sends
-no card (`CloudSync.feedReady` needs 32), and the web viewer's Friends area needs 32.
-Alex applied `supabase/hosted/2026-11-12-workout-xp.sql` for 1.11. The minified
-release's read-only backend test independently returned schema 33 on 2026-11-12.
-This confirms reachability, the public key and schema version, not end-to-end
-hosted leaderboard or authenticated sync behavior.
-The patch adds the rolling workout-XP view without raising the app-wide minimum of 31.
+The current baseline returns **33**; the app minimum is **31**. Schema 32
+adds feed cards; 33 adds rolling workout-XP rankings. See
+[self-hosting](../supabase/SELF_HOSTING.md) for fresh setup and upgrade paths.
+
+Recorded hosted evidence: the owner applied the schema-32 feed-card patch on
+2026-10-30 and the schema-33 workout-XP patch for 1.11. The minified app's probe
+returned 33 on 2026-11-12; authenticated sync and recent/lifetime standings were
+separately exercised on 2026-11-13 as recorded above. None of this proves every
+future authenticated path from a version beacon alone.
 
 **Never paste `supabase/reset.sql` into the hosted project.** It deletes every
 account. It exists for a throwaway project and for the gate's round trip.
@@ -181,16 +186,20 @@ account. It exists for a throwaway project and for the gate's round trip.
    ```
 
    That stands up `postgres:16` in Docker, applies the stub and the baseline,
-   re-applies it, runs `assert_all.sql`, applies the newest hosted patch twice
-   and asserts again, then seeds data, runs `reset.sql`, checks it left nothing
+   re-applies it, runs `assert_all.sql`, replays all compatible hosted patches
+   and the newest one again, then asserts, seeds data, runs `reset.sql` and checks it left nothing
    behind, re-applies the baseline and asserts again. It never touches the
    hosted project. By hand, if you want the steps separately:
 
-   ```bash
-   docker run -d --rm --name pg -e POSTGRES_PASSWORD=probe -p 5432:5432 postgres:16
-   psql -h localhost -U postgres -f supabase/test/supabase_stub.sql
-   psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/migrations/0001_baseline.sql
-   psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/test/assert_all.sql
+   ```powershell
+   docker run -d --rm --name ironvellum-docs-pg -e POSTGRES_PASSWORD=probe postgres:16
+   # Wait until pg_isready succeeds before applying SQL:
+   docker exec ironvellum-docs-pg pg_isready -U postgres
+   # PowerShell: stream each file into psql inside the container (no host port or psql install):
+   Get-Content -Raw supabase/test/supabase_stub.sql | docker exec -i ironvellum-docs-pg psql -U postgres -v ON_ERROR_STOP=1
+   Get-Content -Raw supabase/migrations/0001_baseline.sql | docker exec -i ironvellum-docs-pg psql -U postgres -v ON_ERROR_STOP=1
+   Get-Content -Raw supabase/test/assert_all.sql | docker exec -i ironvellum-docs-pg psql -U postgres -v ON_ERROR_STOP=1
+   docker rm -f ironvellum-docs-pg
    ```
 3. Smoke-test sign-in, a sync, and one friend request against production with a
    dedicated test account before release. The read-only schema probe above does
@@ -204,24 +213,25 @@ account. It exists for a throwaway project and for the gate's round trip.
    release keystore (add the release SHA-1 fingerprint; debug SHA-1 only works
    for debug builds).
 2. **Health Connect**: the Google Health Connect API Request form must cover
-   the seven declared data types (steps, distance, active calories, sleep,
-   resting heart rate, weight, body fat). See
-   `docs/PLAY_DATA_SAFETY.md` Q5.
+   the eight declared read data types (steps, distance, active calories, sleep,
+   resting heart rate, heart rate, weight, body fat), history/background access
+   and the opt-in exercise-session write permission. See
+   [the Data Safety answer sheet](PLAY_DATA_SAFETY.md) Q5.
 
 ## 6. Play Console
 
-1. **Privacy policy**: host `PRIVACY.md` on a public, non-editable,
-   non-geofenced HTTPS URL (no PDF); put the URL in Play Console App content
-   AND link it inside the app (Settings). Identical URL in all three places.
+1. **Privacy policy**: the app already links the public HTTPS
+   `https://github.com/AlexMollard/Ironvellum/blob/main/PRIVACY.md`
+   from Settings > Support. Confirm the identical URL in Play Console App content.
 2. **Data safety form**: fill from `docs/PLAY_DATA_SAFETY.md`. Resolve its
-   remaining OPEN QUESTIONS first. Deletion (Q1) is answered: the app deletes
-   cloud data from Allies → ALLIES, so the form's deletion question is "yes".
+   remaining OPEN QUESTIONS first. Deletion (Q1) is answered: Settings → Account
+   → Delete my cloud account removes the auth identity and cloud data.
 3. **Health apps declaration**: required (App content → Health apps) because
    the app reads health data; a fitness/tracking app falls under the Health
    Content and Services policy.
 4. Store listing, content rating, target audience (health app: mind the
-   families/ads policies), and upload the signed `app-release.apk` /
-   `.aab` from step 3.
+   families/ads policies), and upload the signed
+   `app/build/outputs/bundle/playRelease/app-play-release.aab` from step 3.
 
 
 ## 7. F-Droid
@@ -241,7 +251,7 @@ so a release needs no merge request:
 5. Never rename or delete a store screenshot file. F-Droid keeps a screenshot
    that was deleted from the repository (fdroidserver issue 490), so it stays on
    the listing beside the new ones. A new set reuses the existing file names,
-   `01-today.png` to `08-veil.png`: overwrite each file in place. If the set
+   `01-today.png` through `13-languages.png`: overwrite each file in place. If the set
    shrinks, overwrite the surplus names with copies of screenshots you still
    want (a repeat reads better than a stale image) and say so in the commit
    message; removing the file would not remove it from the listing.

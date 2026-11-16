@@ -6,6 +6,7 @@ store listing; this is the whole list.
 ## 1.11
 
 ### Maintenance
+- Refresh setup, self-hosting, upgrade, translation, privacy and release documentation against current code; label historical plans explicitly.
 - Use one session-set projection for live logging, history and exports, preserving their existing ordering and recorded fields.
 - Render worked front/back body maps through one shared web component, keeping layout, labels and keyboard access unchanged.
 - Share social-screen notice construction while preserving each screen's existing live-region role.

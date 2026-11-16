@@ -3,38 +3,29 @@
 What is genuinely left, why, and who can do it. Items are here because
 something verifiable is missing, not because they sound like good ideas.
 
-Every claim below was checked against the repo or a run; anything unproven says
-so. Release mechanics live in `docs/RELEASE_CHECKLIST.md` — this file is the
-open-work list. Last rewritten 2026-10-02; the history that used to fill it
-lives in git (`git log`, `git log -S`), not here.
+Current-status documentation reviewed 2026-11-17 against the repository and
+the dated evidence in [the release checklist](RELEASE_CHECKLIST.md). Console
+state not recorded there remains unverified. Older version plans below are
+historical records, not a claim that those checks were rerun today.
 
 ## Hosted schema: how a change reaches the live project
 
-The hosted project reports `schema_version()` 31 (HTTP 200). The circles,
-release, crests, web-viewer and snapshot-cap patches are applied; `circle_draw_code()` works,
-`sessions` and `public_feed` carry `edited_at`, warbands are gone, and the worn
-crest is on profiles, the boards, the feed and `my_circle()`. The version probe
-confirms the reported schema version, not live mutation or phone installation.
-The 4 MiB snapshot uploader's schema prerequisite is satisfied. The baseline is now at
-schema 33 (rolling workout XP). The release checklist records the owner applying
-the schema-32 feed-card patch on 2026-10-30 and confirming the schema-33 workout-XP
-patch now returns 33. The app minimum stays 31.
-The updated
-phone build synced successfully, and the deployed viewer's history, set details,
-profile XP, lift variations and trends were verified against a read-only local
-backup. Temporary browser credentials were cleared without signing out the phone.
+The current baseline is **schema 33**, and the minified release's read-only
+probe returned 33 on 2026-11-12. The app minimum remains **31**; schema 32 adds
+friend-safe workout cards and schema 33 adds rolling seven-day workout-XP
+rankings. A beacon probe alone is not an authenticated sync test.
 
-The read-only viewer is implemented under `web/`: Overview, Workouts, workout
-details, Lifts and Trends, with generated phone appearance, art and both figures.
-Local browser verification covers desktop and phone widths in dark and light.
-The site is published at https://alexmollard.github.io/Ironvellum/ by the
-manual-only `pages.yml` workflow. The first deployment succeeded and its
-sign-in surface was verified in a browser. Live email/password reads across
-all five pages were verified using disposable accounts, including private-row
-isolation and colliding workout IDs; the test accounts were deleted afterward.
-The Google OAuth roundtrip acceptance is still outstanding; phase two remains
-gated on that acceptance. Design data contracts and offline
-fixture instructions are in `web/README.md`.
+The 2026-11-13 release record separately verifies disposable-account signup,
+sync, archive restore, friendship and recent/lifetime rankings, plus the deployed
+viewer reading that data. See [the release evidence](RELEASE_CHECKLIST.md);
+Google OAuth and Play/Health Connect acceptance are separate owner checks.
+
+The viewer under `web/` is published at
+https://alexmollard.github.io/Ironvellum/ by the manual-only `pages.yml`
+workflow. It includes training history, lifts, trends and routines, plus
+friends, reactions/comments, inbox, boards and groups. Logging and editing
+training remain in the app. [The viewer guide](../web/README.md) documents
+fixtures, backend requirements and deployment.
 
 A schema change edits `supabase/migrations/0001_baseline.sql`, bumps its
 `schema_version()` literal and ships an idempotent patch in `supabase/hosted/`.
@@ -86,11 +77,15 @@ The short view, by version; the detail of each item is in the sections below.
 - [x] 2 Progress photos, on the phone and in the folder backup, never the cloud (090e160b, 2dcafeb1); archive format 14, database 46; photo rows ride in the archive, the pictures are copied to an ironvellum_photos folder beside the folder backup and restored from it (a share-sheet export carries rows only):
   - workout photo: optional "Add a photo?" at the end of a workout, of anything (a thumbs-up is fine), at most one a day, kept with that workout
   - weekly poses: front, side and back on a day you pick (Sunday by default), separate from the workout photo, compared week to week in Stats > Body
-- [ ] 3 Translations by Haiku agents, back-translated and checked by Sonnet, plus the long-text layout sweep: Spanish, German, French, Portuguese (BR), Japanese, Korean, Chinese (Simplified). Arabic waits for the RTL leftovers
-- [ ] 4 Upkeep: Gradle 9.8, WorkManager 2.12, Ktor 3.6; gate back under 5 minutes and the instrumented flake found
+- [x] 3 Seven UI translations with plain and themed strings: Spanish, German, French,
+  Portuguese (BR), Japanese, Korean and Simplified Chinese. Further linguistic review
+  and layout checks remain ongoing; Arabic is not shipped.
+- [ ] 4 Upkeep: Gradle 9.7.1, WorkManager 2.12.0 and Ktor 3.6.1 are in the tree.
+  The strict gate budget is now ten minutes: the recorded warm run passed at
+  9m57s; cold boot was red at 11m08s. Improve cold-start gate time without weakening checks.
 - [ ] Owner: Play developer account ($25, identity check)
 - [ ] Owner: release signing keystore
-- [ ] Owner: confirm the public privacy policy URL (default: PRIVACY.md on GitHub)
+- [ ] Owner: confirm the public privacy-policy URL in Play Console; the app already links PRIVACY.md on GitHub
 - [ ] Owner: Play health-data declaration, including the 1.8 write permission
 - [ ] Owner: Google sign-in OAuth consent screen out of Testing
 - [ ] Play store listing
@@ -103,11 +98,15 @@ The short view, by version; the detail of each item is in the sections below.
 - [ ] Production release on Play
 - [ ] Launch posts (r/bodyweightfitness, r/fdroid, "free Strong alternative" threads)
 
+### Planned investigation, not shipped
+- Wear OS: the [approved companion plan](superpowers/plans/2026-11-13-fdroid-wear-os-companion.md)
+  has an isolated transport prototype under `tools/watch-spike/`. Hardware
+  transport proof and production workout integration remain unpassed gates.
+
 ### Not planned
-- Wear OS
 - iPhone (revisit if Play shows traction)
 
-## 1.8 plan (owner agreed 2026-10-16, built in this order, one build at a time)
+## Historical 1.8 plan (owner agreed 2026-10-16)
 
 Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
 2026-10-16 (GymMane, Flexify, wger, LibreFit, Bati, RepForge and others).
@@ -248,9 +247,9 @@ Phase 8 done: the screens no phase covered moved to resources: social (account, 
    Built before item 8 (owner, 2026-10-16); palette mocked up and approved first.
    Done: Vellum tokens, per-theme accents, themed widgets (47d97395, 384353ba, fbd34fa7).
 
-Skipped deliberately: Wear OS.
+Wear OS was deliberately skipped for 1.8; the later prototype investigation is listed above.
 
-## 1.9 and 2.0: Google Play (owner agreed 2026-10-16)
+## Historical 1.9 and 2.0 Play plan (owner agreed 2026-10-16)
 
 1.9 prepares, 2.0 launches. The `play` flavour, Google sign-in and
 `docs/PLAY_DATA_SAFETY.md` already exist; the owner items below (keystore,
@@ -280,10 +279,10 @@ privacy-policy URL, health-data form, OAuth out of Testing) are the blockers.
 | Item | Why it is blocking | Notes |
 |---|---|---|
 | Signing keystore | Release builds are unsigned: `app/build.gradle.kts` only wires a signing config when all four `ironvellum.keystore.*` keys (or `IRONVELLUM_KEYSTORE_*` env vars) resolve to a real file, and `local.properties` holds none of them. The build warns and names the keys | A credential the owner must own — never generated here. Env vars were not inspected |
-| Hosted privacy-policy URL | Play requires a URL, not an in-app document. The content exists in `PRIVACY.md`; no URL to it is recorded anywhere, and the app has no in-app link to the policy (the checklist asks for one: `RELEASE_CHECKLIST.md` section 6) | The GitHub URL of `PRIVACY.md` is public and not editable by third parties (`docs/open-source/02-distribution-and-flavours.md`). Same URL in Play Console and in the app |
-| Play health-data declaration | All seven Health Connect read permissions need the form, and so does the 1.8 write permission `WRITE_EXERCISE` (exercise sessions, opt-in); whether any was submitted is unknown from the repo | Mapping in `docs/PLAY_DATA_SAFETY.md` (Q5) |
+| Hosted privacy-policy URL | The app already links the public GitHub `PRIVACY.md` URL from Settings > Support in both flavours (`SupportLinks.PRIVACY_POLICY`) | Confirm the same permanent URL in Play Console; console state is not proven by the repository |
+| Play health-data declaration | Eight Health Connect read data types plus history/background access and opt-in `WRITE_EXERCISE` need declaration; submission status is unknown from the repo | Mapping in `docs/PLAY_DATA_SAFETY.md` (Q5) |
 | OAuth consent screen out of **Testing** | In Testing, only listed test users can sign in. The docs still say Testing; nothing in the repo proves it moved | Also needs the release keystore SHA-1 on the Android OAuth client |
-| "Confirm email" in Supabase Auth | Unknown whether it was switched off; nothing proves either state | Optional: the sign-up trigger makes the profile either way |
+| Supabase Auth configuration | Current hosted email-confirmation settings are not established by source | Custom backends support confirmation on or off; configure email delivery when it is on |
 
 ## Open decisions (deliberately not taken here)
 
@@ -294,13 +293,10 @@ privacy-policy URL, health-data form, OAuth out of Testing) are the blockers.
 
 ## Verification gaps (honest, not deferred work)
 
-- `find_lifter()` and `push_aggregates()` have no proven PostgREST round trip
-  against the deployed project, and no local harness speaks it. Argument names
-  are declared in `PushAggregatesArgs` / `FindLifterArgs` and checked against
-  the SQL signatures; the SQL halves are proven in `supabase/test/assert_all.sql`.
-  Only the transport is unproven. A signed-in sync, one friend request and one
-  circle action against production are still the smoke test
-  (`RELEASE_CHECKLIST.md` section 4).
+- The 2026-11-13 release record verifies real email signup, sync, restore and a
+  friend request with disposable accounts. This is dated evidence, not a
+  blanket claim about every RPC or later code change. Circle actions and
+  Google OAuth still need their own recorded release smoke.
 - Real-device jank is measured on a debug build only (item 4); no release-build
   number yet, and no per-screen attribution. Emulator frame stats (software
   renderer) varied 11 points between identical runs, so they attribute nothing.

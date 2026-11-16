@@ -1,5 +1,11 @@
 # Social plan
 
+> Design and decision record, not a current setup guide. The dated phases below
+> include implemented features and unimplemented proposals. Current user-facing
+> behaviour is in [Features](FEATURES.md); backend installation and upgrades are
+> in [Self-hosting](../supabase/SELF_HOSTING.md). Historical free-tier usage
+> figures are not current hosting measurements.
+
 Owner decisions (2026-09-29):
 
 - **Friends first.** Built for people the owner knows. If they like it, it opens up

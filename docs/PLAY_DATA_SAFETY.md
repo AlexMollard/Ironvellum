@@ -1,7 +1,8 @@
 # Play Data Safety form — answer sheet for Ironvellum
 
 Filled-in answers for Play Console → Policy → App content → Data safety, with
-the code that justifies each answer. Written 2026-09-15 against commit HEAD.
+the code that justifies each answer. Documentation reviewed 2026-11-17.
+Console submissions and provider settings still require owner confirmation.
 
 Code references:
 - `AM` = `app/src/main/AndroidManifest.xml`
@@ -20,7 +21,7 @@ Code references:
   (`CS`; Supabase project URL is HTTPS). Health Connect reads are on-device
   IPC, no network involved.
 - **Do you provide a way for users to request that their data is deleted?**
-  **Yes — in-app deletion.** Allies → ALLIES → DELETE MY CLOUD ACCOUNT calls
+  **Yes — in-app deletion.** Settings → Account → Delete my cloud account calls
   the `delete_my_account()` RPC (`M1`), which deletes the caller's
   auth identity; the profile, every social table and the cloud backup archive
   cascade from it (`AccountRepository.deleteCloudData()`).
@@ -114,18 +115,18 @@ Code references:
   "photos and videos" data type answer: nothing is collected or sent off the
   device by the app.
 
-### Fitness info — idle-game aggregates (collected, shared)
-- Garrison essence / figure count / figure rate are pushed as profile columns.
-  Optional (sign-in only), shared per visibility.
-- Also pushed as profile columns by the same call: **level, total XP, earned
-  title count, lifetime strength and the training streak in days** — derived
-  numbers rather than new measurements, but they do leave the device and they
-  are what the leaderboard ranks on, so they are declared here rather than
-  treated as internal. Code: `CS` `pushDerivedAggregates()` →
-  `push_aggregates(p_level, p_total_xp, p_titles_count, p_strength,
-  p_streak_days)`; `M11` grants that RPC and revokes direct column writes.
-- Code: `CS` `ShadowPushDto`; `M1` `profiles` shadow columns; `M1` comment on them: "the cloud
-  never holds the accrual clock".
+### Fitness info — Veil and training aggregates (collected, shared)
+- Lifetime essence earned, echo count and the current essence-per-hour rate
+  are pushed as profile columns. The spendable balance and idle accrual clock
+  are not part of this profile aggregate call (idle state is also present in
+  an owner-only manual cloud archive).
+- Also pushed: **total XP, lifetime strength and training streak days**.
+  The server derives level from XP and title count from earned-title rows.
+  These are collected derived training/progression figures, not raw body
+  readings. Optional (sign-in only), shared according to profile visibility;
+  purpose: app functionality, progression and rankings.
+- Code: `CS` `pushDerivedAggregates()` → `PushAggregatesArgs` →
+  `push_aggregates()`; `M1` defines the RPC and profile shadow columns.
 
 ### Identifiers — Google account user ID (collected, not shared beyond backend)
 - Sign-in is Google via Credential Manager, or email/password via Supabase
@@ -145,9 +146,22 @@ Code references:
 - Deletion: in-app cloud account deletion removes the auth identity and its
   dependent rows through `delete_my_account()`.
 
-### App interactions — likes, friend requests (collected, shared)
-- `session_likes`, `friendships` (`M1`). Optional; purpose: social
-  features.
+### App interactions and user-generated content (collected, shared as described)
+- Reactions, friend requests and comments (including comment text and author
+  name) are collected for social features and shared with the permitted
+  workout audience: `session_likes`, `friendships`, `session_comments` (`M1`).
+- Group names, membership, invitation codes, weekly goals and participation
+  history support group features and are exposed according to group permissions:
+  `circles`, `circle_members`, `circle_weeks`, `circle_week_members`, `circle_events`.
+- Lift tier marks (lifetime/recent step and recent timestamp) are derived
+  fitness/progression data, shared under visibility rules: `lift_marks`.
+- Blocks, mutes and inbox read timestamps are collected for personal social
+  controls, not published as public lists: `blocks`, `mutes`, `inbox_seen`.
+- Reports collect the target, reason, optional note and workout/comment reference
+  for moderation. The server retains an excerpt; only the backend operator can
+  read reports, not other app users: `reports`.
+- All are optional signed-in functionality. Code: `CS` writes the social tables
+  and calls group/inbox RPCs; `M1` defines their policies and moderation triggers.
 
 ### Inferred / advertising data
 - **None.** No analytics, ads, or ad ID usage anywhere in
@@ -157,36 +171,28 @@ Code references:
 
 - **Local data:** uninstall (or Android "clear storage") removes `ironvellum.db`
   and everything else in the app's private storage.
-- **Cloud data:** in-app deletion exists — Allies → ALLIES → DELETE MY CLOUD
-  ACCOUNT calls `AccountRepository.deleteCloudData()`, which runs the
+- **Cloud data:** Settings → Account → Delete my cloud account calls
+  `AccountRepository.deleteCloudData()`, which runs the
   signed-in-only `delete_my_account()` RPC (`M1`). It deletes the caller's
   auth identity, and the profile, every synced table and `cloud_archives`
   cascade from it. Asserted in `supabase/test/assert_all.sql`.
 
 ## OPEN QUESTIONS (owner must decide; do not submit the form until resolved)
 
-- **Q1 — Deletion mechanism: RESOLVED, and now asserted.** In-app cloud deletion exists
-  (`AccountRepository.deleteCloudData()`, surfaced in Allies → ALLIES). The
-  server-side capability is in `M1` via the
-  `profiles_delete` policy plus `on delete cascade`; only the UI was missing.
-  The promise is executed rather than assumed: `supabase/test/assert_all.sql`
-  deletes a lifter's profile as that lifter and asserts no rows survive in
-  `sessions`, `session_sets`, `earned_titles`, `friendships`, `session_likes` or
-  `level_ups`. Proven both ways against a real Postgres — a broken cascade fails
-  on the foreign key, and a MISSING one (the silent case, which orphans rows
-  while the app reports success) fails with
-  `erasing a profile left rows behind in another table`.
-  Remaining owner decision: whether to also offer removal of the auth identity,
-  which requires service-role credentials and therefore a server-side action.
-- **Q2 — Privacy policy URL:** must be a public, non-geofenced, non-editable
-  URL identical in Play Console, in-app, and on the web. Owner must host
-  `PRIVACY.md` somewhere permanent. Open.
-- **Q3 — Google OAuth consent screen:** currently in Testing mode; only test
-  users can sign in. Publishing it (and whether it needs verification for the
-  requested scopes) is an owner decision. Open.
-- **Q4 — Supabase project contact/retention policy:** how long the project
-  owner retains cloud data for inactive accounts is not encoded anywhere; the
-  privacy policy currently says "while the project exists". Confirm or amend.
+- **Q1 — Deletion mechanism: RESOLVED.** In-app deletion calls
+  `delete_my_account()` to delete the caller's auth identity and cascade through
+  owned cloud data. It does not need a service-role key on the client.
+  The local SQL assertions exercise the deletion cascade.
+- **Q2 — Privacy policy URL:** the app already links
+  `https://github.com/AlexMollard/Ironvellum/blob/main/PRIVACY.md`
+  (`SupportLinks.PRIVACY_POLICY`). Confirm the same permanent public HTTPS URL
+  in Play Console before submission; the repository does not prove console state.
+- **Q3 — Google OAuth consent screen:** confirm production status, permitted
+  scopes and release signing fingerprints in the owner's consoles. Historical
+  notes reported Testing mode; current provider state is not proven by source.
+- **Q4 — Supabase project retention:** the policy describes persistence until
+  account deletion. No inactive-account purge schedule is implemented in the
+  repository. Confirm the operator's actual retention practices match it.
 - **Q5 — Health Connect permissions declaration:** the Google Health Connect
   API Request form must have been submitted for these eight data types (the
   history and background scopes need no separate data type), including heart

@@ -1,5 +1,10 @@
 # 04: Funding and costs
 
+> Historical implementation plan from September 2026. The Support screen and
+> funding links now exist. Prices and console status below are dated planning
+> inputs, not live billing evidence. See the [cost ledger](../../COSTS.md) and
+> [privacy policy](../../PRIVACY.md) for current public guidance.
+
 **Goal:** anyone can see what the shared cloud costs, who pays for it, and what
 the maintainer keeps. Anyone who wants to help can donate in two taps from the
 `foss` build, and the `play` build stays inside Google's payments policy.

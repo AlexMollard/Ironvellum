@@ -1,5 +1,10 @@
 # 02: Distribution and build flavours
 
+> Historical implementation plan from September 2026. Both build flavours and
+> F-Droid distribution now exist; the “today” claims and proposed commands below
+> describe the pre-implementation tree. Use [Development](../DEVELOPMENT.md)
+> and the [release checklist](../RELEASE_CHECKLIST.md) for current commands.
+
 **Goal:** one source tree produces two builds:
 
 - `foss`: no proprietary libraries, donation links on. Ships on F-Droid and

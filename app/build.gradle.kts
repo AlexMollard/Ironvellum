@@ -48,7 +48,7 @@ android {
     androidResources {
         // Builds res/xml/_generated_res_locales.xml from the values-xx folders (plus the
         // default language named in res/resources.properties), so per-app language on
-        // Android 13+ lists a language the day its translation lands. English only today.
+        // Android 13+ lists a language when its translation folder is included.
         generateLocaleConfig = true
     }
     defaultConfig {

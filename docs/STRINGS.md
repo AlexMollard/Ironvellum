@@ -1,8 +1,9 @@
 # Strings: where screen text lives
 
-Screen text lives in `app/src/main/res/values/strings.xml`, not in Kotlin. This is the developer guide for item 8 of
-the 1.8 plan (docs/TODO.md); docs/GLOSSARY.md says which word each concept uses. Phase 1 built the machinery; the
-screens move over phase by phase, and the guard below keeps new text from landing in Kotlin meanwhile.
+Screen text lives in `app/src/main/res/values/strings.xml`, not in Kotlin.
+The resource migration shipped in 1.8; the guard below prevents new UI literals.
+[GLOSSARY.md](GLOSSARY.md) defines the vocabulary and
+[TRANSLATING.md](TRANSLATING.md) covers the seven shipped translations and new locales.
 
 Scope: every screen, dialog, notification, widget, setting, error and generated hint. Not in scope (English data,
 a later step): exercise names, the exercise guides (`ExerciseGuides.kt`, `LibraryGuides.kt`), and the title, skill

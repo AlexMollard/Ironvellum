@@ -1,5 +1,10 @@
 # 03: Bring your own backend
 
+> Historical implementation plan from September 2026, not current deployment
+> instructions. Runtime backend selection is implemented. Use the
+> [self-hosting guide](../../supabase/SELF_HOSTING.md) for schema installation,
+> upgrades, authentication and switching backends.
+
 **Goal:** a lifter can point Ironvellum at their own Supabase project, hosted
 by Supabase or self-hosted with Docker, from inside the app. Their training
 then never reaches the shared instance, and costs the maintainer nothing.

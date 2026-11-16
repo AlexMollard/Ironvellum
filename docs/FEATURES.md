@@ -32,12 +32,13 @@ Everything Ironvellum does, by area. The words are the plain ones; [GLOSSARY.md]
 - **Guided warmups and cooldowns:** reusable routines, workout-based suggestions or None,
   separately attached to each saved workout. Edit copies of full-body, upper-body and lower-body
   starters using existing gallery movements. Timers include five seconds to get ready; rep targets,
-  rounds and both sides or directions are tracked separately. Complete or skip each unit yourself.
+  rounds and both sides or directions are tracked separately. Timed units advance automatically;
+  complete rep targets manually, or skip a unit.
   Progress survives rotation and app restarts. The final workout summary offers cooldown after
   awards, without adding sets or changing XP, strength or rewards.
-- **905 exercises**: 584 movements, each with a line drawing and an info
-  sheet: why to do it and when to pick it, the muscles it works on both sides
-  of the body, how to do it, your history with it and the fatigue it leaves.
+- **905 exercises**: 584 movements with info sheets covering why to do them and
+  when to pick them, muscles on both sides of the body, instructions, history
+  and fatigue. Exercise illustrations are shown where available.
   Then 321 variations of them (deficit,
   archer, one-arm, incline, assisted and their combinations), each with its own
   records and progression. Add your own exercises with their muscles and gear.
@@ -56,6 +57,7 @@ Everything Ironvellum does, by area. The words are the plain ones; [GLOSSARY.md]
   - Notes per exercise, Undo on removal, and continue a workout you left.
   - Follow it from the lock screen (a Live Update on Android 16), and start
     or resume it from an app shortcut or a Quick Settings tile.
+  Wear OS controls are not shipped; an isolated companion prototype is under investigation.
 - **Progression is a suggestion.** A workout starts on exactly what the
   routine says; when you are ready for more, accept the suggestion or undo it.
 - **When you finish**, tick which of today's changes go back into the
@@ -82,7 +84,7 @@ Everything Ironvellum does, by area. The words are the plain ones; [GLOSSARY.md]
   weight the movement lifts.
 - **Health Connect** (optional) reads weight and heart rate, syncs whenever
   you return to the app, and can save your finished workouts.
-- **125 skills** on progression paths (pull, push, handstand, lever, planche,
+- **126 skills** on progression paths (pull, push, handstand, lever, planche,
   rings, legs, core, mobility and the barbell ladders), each gated on the one
   before it with a written standard, and **121 deeds** to earn.
 - **Progress photos:** an optional photo after a workout, once a day, and a
@@ -91,8 +93,12 @@ Everything Ironvellum does, by area. The words are the plain ones; [GLOSSARY.md]
   backup folder; they are never synced.
 - **Share a workout** as plain text in the shape of a Wordle grid: a row per
   movement, a square per set, a trophy on a record set. No link, no image.
-- **The Veil** is an idle layer: workouts leave echoes, echoes gather essence
-  while you are away, and you spend it on relics in houses with set bonuses.
+- **The Veil:** recent training drives your essence rate, with bonuses from skills,
+  echoes, relic houses and your worn crest. By default, output stays full for 24 hours,
+  tapers over the next 48, then continues at 10% until the absence reaches a cap of
+  72 effective hours of work. House and crest perks can alter those defaults.
+  Earn inscriptions on level-ups or buy them with essence; draws award echoes,
+  relics or crests. Returning to Today banks accrued essence automatically.
   **28 crests** are worn for a small Veil-only perk and shown to your friends.
 
 ## Friends
@@ -101,7 +107,9 @@ Optional, and only with an account.
 
 - Add friends and read their feed, with kudos and comments.
 - Form a **group** of 2 to 8 with a shared weekly goal.
-- Climb **the leaderboard** for each lift.
+- **Leaderboards:** lift standings, lifetime XP, rolling seven-day workout XP
+  and lifetime Veil essence. Recent workout XP excludes imported workouts and
+  non-workout bonuses, and needs backend schema 33.
 
 ## Your data
 

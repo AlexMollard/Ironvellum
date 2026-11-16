@@ -1,5 +1,10 @@
 # 05: Import from Strong, Hevy and FitNotes
 
+> Historical implementation plan from September 2026. CSV import and weight-unit
+> preferences are now implemented; the proposed design and “no unit setting”
+> claim below describe the old tree. See [Features](../FEATURES.md) for current
+> import support and [Development](../DEVELOPMENT.md) for contributor checks.
+
 **Goal:** a lifter switching from Strong, Hevy or FitNotes brings their whole history,
 and arrives with their PRs, strength history and level intact. Losing years
 of logged sets is what keeps people on the tracker they already use.

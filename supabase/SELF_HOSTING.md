@@ -1,76 +1,141 @@
 # Self-hosting / bring your own backend
 
-Ironvellum's cloud is optional, and it does not have to be ours. Settings →
-CLOUD accepts any Supabase project you control: a hosted free-tier project or
-a fully self-hosted Docker stack. Once a custom backend is configured, your
-training syncs to YOUR project and never to the shared Ironvellum instance.
+Ironvellum's cloud is optional. You can use your own managed Supabase project
+or run Supabase yourself with Docker. Configure it under **Settings → Advanced
+→ Use my own backend**. Training then syncs to that project, not the shared
+Ironvellum backend. No custom Android build is required.
 
-## 1. Create a project
+This guide describes the current schema **33**. The app requires **31** for
+core sync; **32** adds friend-safe workout cards and **33** adds rolling
+seven-day workout-XP rankings.
 
-**Hosted (easiest, free tier is fine for one person):** create a project at
-[supabase.com](https://supabase.com/dashboard).
+## 1. Create and secure a Supabase project
 
-**Self-hosted:** follow the official Docker guide at
-https://supabase.com/docs/guides/self-hosting/docker — it stands up the whole
-stack (Postgres, GoTrue auth, PostgREST, Studio) behind a single host.
+**Managed (easiest):** create a project at
+[supabase.com](https://supabase.com/dashboard). A free project can be enough
+for personal use, but may pause after a week of inactivity and has no automatic
+database backups. Keep an independent file backup.
 
-## 2. Apply the schema
+**Docker:** follow Supabase's
+[self-hosting guide](https://supabase.com/docs/guides/self-hosting/docker).
+Ironvellum needs Supabase Auth, PostgREST and Postgres, not just a bare Postgres
+database. Follow the upstream instructions for generating secrets, securing
+Studio and configuring the public URLs before exposing the stack.
 
-The whole schema is `supabase/migrations/0001_baseline.sql`. Re-apply this
-idempotent baseline to upgrade a self-hosted project to schema 33. The app
-itself works from 31; 32 adds friend-safe workout cards, and 33 adds the
-rolling seven-day workout-XP leaderboard:
+Use an **HTTPS API URL reachable from your phone** with a trusted certificate,
+such as `https://supabase.example.org`. Do not enter a Studio-only address,
+database connection string or `localhost`: on a phone, `localhost` means the
+phone itself. A default Docker HTTP endpoint is not a production-ready app URL.
+
+## 2. Install the schema on a fresh project
+
+From the Ironvellum repository root, apply
+[`migrations/0001_baseline.sql`](migrations/0001_baseline.sql) as the database
+administrator. You can paste the file into Supabase Studio's SQL editor.
+Alternatively, with `psql` installed, use your project's database connection
+string (not its API URL):
 
 ```bash
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/0001_baseline.sql
 ```
 
-Alternatively, paste the baseline into the project's SQL editor. Its
-`schema_version()` beacon lets the app check the project is ready.
+In PowerShell, use `$env:DATABASE_URL` instead of `$DATABASE_URL`. Get the
+connection string from your project's connection settings; if the direct
+managed endpoint is not reachable over IPv6, use its session pooler connection.
+Keep database passwords out of source control and shared logs.
 
-For an existing hosted schema-32 project, apply the additive, idempotent
-`supabase/hosted/2026-11-12-workout-xp.sql` patch instead. It preserves accounts
-and workouts. Recent rankings need that view; a missing view produces an
-explicit error while lifetime rankings and existing sync remain usable.
+The baseline installs tables, row-level security, functions and the
+`auth.users` signup trigger that creates app profiles. Apply it **before**
+creating app accounts. It is idempotent on the same schema, but **not a
+universal upgrade migration for older installations**.
 
-To wipe a throwaway project back to empty first, run `supabase/reset.sql`.
-**It deletes every account and every app table**, so never run it on a project
-holding anyone's real data.
-
-Afterwards you can verify with the SQL editor:
+Verify in the SQL editor:
 
 ```sql
-select schema_version();  -- 33 after applying the current baseline or workout-XP patch
+select public.schema_version();  -- 33
 ```
 
-## 3. Point the app at it
+**Never run [`reset.sql`](reset.sql) on a project holding real data.** It
+deletes every account and every app table. It is only for disposable projects
+and the local SQL test harness; it is not an upgrade step.
 
-Copy two values from the project dashboard (Project Settings → API, or your
-Docker `.env` for self-hosting):
+### Upgrading an existing project
 
-- the **Project URL** (`https://<your-project>.supabase.co`)
-- the **publishable ("anon") key** — the public one, never the service secret
+Back up the database first, then read `public.schema_version()` and the
+prerequisites in [`hosted/`](hosted/). These in-place patches also apply to
+self-hosted Supabase. Apply the applicable patches in chronological order,
+not every historical patch on top of a current baseline.
 
-Then in Ironvellum: Settings → **CLOUD** → **USE MY OWN BACKEND**, paste both,
-press **TEST** (it should say "Backend ready"), then **SAVE**. You'll be
-signed out of the shared cloud; your training stays on this phone and uploads
-to your project once you sign in there (email sign-in — Google sign-in is tied
-to the shared backend). Switching back is **USE SHARED CLOUD**, and every
-session re-uploads to whichever backend you land on.
+- **Schema 31:** apply `2026-10-28-web-snapshot-hardening.sql` if it is not
+  already installed (it does not bump the beacon), then
+  `2026-10-29-feed-card.sql` for schema 32.
+- **Schema 32:** apply `2026-11-12-workout-xp.sql` for schema 33. It requires
+  the feed-card patch first and preserves accounts and workouts.
+- **Earlier schemas:** review the earlier patches and their prerequisites
+  before proceeding. Do not assume that re-running the baseline upgrades an
+  old table shape or that the latest patch includes every earlier change.
 
-## 4. Free projects pause — that reads as "Unreachable"
+Run each applicable patch with `ON_ERROR_STOP=1` or in the SQL editor, and
+check the beacon afterward. A missing schema-33 view produces an explicit
+error for recent rankings; lifetime rankings and core sync still work on
+supported older backends.
 
-A hosted free-tier project pauses after about a week of inactivity. While it
-is paused, the app's TEST (and every sync) reads as **Unreachable**. Resume
-the project in the Supabase dashboard and it answers again; nothing is lost.
+## 3. Configure email authentication
 
-## Notes
+Enable email/password signup in Supabase Auth. The app supports either
+immediate sign-in or email confirmation. If confirmation is enabled, configure
+SMTP and email delivery for your deployment and test the confirmation flow;
+creating the SQL schema alone does not configure email.
 
-- The publishable key is public by definition — storing it in the app is safe.
-  It is kept in the app's private preferences, is never exported with your
-  data archive, and never leaves your device except to your own project.
-- Body measurements never sync to any backend, yours or ours — the schema has
-  no table for them, by design.
-- The SQL assertions the project tests its own backend with live in
-  `supabase/test/assert_all.sql` and run against a throwaway Postgres via
-  `python tools/gate.py --backend`.
+Custom backends use **email and password**. The shipped app does not enable
+Google sign-in on a custom backend, even if that project has a Google provider.
+Accounts and friendships belong to each backend separately; switching does
+not migrate an account or its social relationships.
+
+## 4. Connect the app
+
+Copy the **Project/API URL** and **publishable key** from your project. A
+legacy public `anon` key is also supported. For Docker, use the public URL and
+client key configured by your Supabase deployment. **Never use a secret or
+`service_role` key in the app or web viewer**: those bypass row-level security.
+
+1. Open **Settings → Advanced → Use my own backend**.
+2. Enter the URL and public key, then press **Test**.
+3. Expect **Backend ready** with schema 33. **Save** is enabled only for the
+   tested URL/key pair on a supported schema.
+4. Press **Save** and confirm **Switch**. You are signed out of the old
+   backend; your local training stays on the phone.
+5. Create an account or sign in on your own backend, then allow sync to finish.
+   Completed sessions are re-uploaded to the selected backend. Switching back
+   uses **Settings → Advanced → Use shared cloud** and signs you out again.
+
+Switching does not erase data already uploaded to the previous backend.
+Delete that cloud account separately if you want its remote data removed.
+
+The URL and public key are stored in private app preferences, not in exported
+training archives. Raw Health Connect data, measurements, private notes and
+progress photos are not synced to either backend. The owner-only web snapshot
+can contain strength estimates derived from body weight. See the
+[privacy policy](../PRIVACY.md) for the complete upload boundary.
+
+## 5. Verify and troubleshoot
+
+The app's **Test** probes the public `schema_version()` RPC. It checks
+reachability, the key and the beacon, not signup, every table or a complete sync.
+Before relying on your deployment, create a disposable account, sync a completed
+workout, and check it in the [web viewer](../web/README.md) using the same backend.
+If you use manual cloud archives, also test backing up and restoring on a
+disposable install. Do not clear or uninstall your real training app to test.
+
+| Test result | Check |
+|---|---|
+| Could not reach the backend | URL, DNS, TLS certificate, network and gateway; resume a paused managed project |
+| Key refused | Copy the project's public publishable/anon key, not a secret key |
+| Migrations not applied | Install the schema in the same project the API URL points to |
+| Schema out of date | Follow the applicable upgrade patches; core sync needs at least 31 |
+
+For contributors, `python3 tools/gate.py --backend` runs the full local gate
+plus [`test/assert_all.sql`](test/assert_all.sql) against disposable Postgres.
+It checks SQL grants, RLS, signup triggers, patch replay and the reset round
+trip using a Supabase stub. It does **not** deploy Supabase or prove real
+GoTrue/PostgREST, email delivery or your server's TLS configuration.

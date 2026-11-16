@@ -4,17 +4,17 @@ Updated monthly. All amounts USD. Invoices: Supabase dashboard → Billing.
 
 ## Current state
 
-No donations have been received yet, and no months have been recorded. The
-table below starts filling in the month the shared cloud moves to Supabase Pro.
+No donations, invoices or monthly totals have been recorded in this repository.
+The last recorded hosting plan was the Supabase free tier; this document is not
+evidence of the project's current billing dashboard or donation balances.
 
-Until then the shared cloud runs on the Supabase free tier, which is a stopgap,
-not a promise: free projects pause after a week of inactivity and have no
-backups. That is the wrong place for someone's only restore copy, which is why
-the target below exists.
+Free projects may pause after a week of inactivity and have no automatic
+database backups. Keep a separate file backup rather than relying on cloud
+sync as your only restore copy. Pro remains the budget target below.
 
 ## The bill
 
-Source: https://supabase.com/pricing, read 2026-09-23.
+Source: [Supabase pricing](https://supabase.com/pricing), checked 2026-11-17.
 
 | Line | Cost | Notes |
 |---|---|---|
@@ -25,7 +25,9 @@ Source: https://supabase.com/pricing, read 2026-09-23.
 | Google Play registration | $25 once | Only if the Play build ships |
 | F-Droid, GitHub, public CI | $0 | |
 
-Monthly cost: `25 + max(0, diskGB - 8) × 0.125 + max(0, egressGB - 250) × 0.09`.
+Budget estimate for one Micro project, before tax or optional add-ons:
+`25 + max(0, diskGB - 8) × 0.125 + max(0, egressGB - 250) × 0.09`.
+Additional projects add compute charges; this is not a complete invoice formula.
 
 ## The ledger
 
@@ -37,11 +39,9 @@ Reserve target: 3 months of hosting (75.00). Surplus beyond the reserve may be
 paid to the maintainer and is always shown in its own column. Nothing is taken
 until the reserve is full.
 
-Lifters on the shared cloud: N · Database disk: X GB of 8 · Egress: Y GB of 250
-(These figures are filled in from the Supabase dashboard each month. The
-README's earlier 0.5 MB-per-lifter estimate is an assumption, not a
-measurement; a measured per-lifter figure replaces it as soon as real archives
-exist to measure.)
+Active lifters, database size, egress and a measured per-lifter storage figure
+are not recorded yet. Fill them from the dashboard and actual archives when
+publishing monthly figures; do not substitute the old 0.5 MB estimate.
 
 ## Donations
 
@@ -59,5 +59,6 @@ A donor-funded service has to say what happens if the money stops:
 2. If this ledger runs a deficit for three consecutive months, the shared
    cloud gets 60 days' notice through the Support screen and the README, then
    becomes read-only (restore still works), then shuts down.
-3. Bring-your-own-backend (see `docs/open-source/03`) keeps every cloud
-   feature working for anyone who wants it afterwards.
+3. [Bring your own backend](supabase/SELF_HOSTING.md) keeps cloud features
+   available on an independently operated project. Accounts and social
+   relationships do not migrate automatically between backends.

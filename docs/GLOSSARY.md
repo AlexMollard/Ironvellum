@@ -169,7 +169,7 @@ Support's public cost page is **"View the costs"**, never "the Ledger".
 | **Circle** | group | A group of 2-8 allies sharing a weekly goal of days trained | "YOUR CIRCLE", "Form a circle", "Join a circle", "Circle code", "CIRCLE'S GOAL MET" |
 | **Keeper** | owner | The Ironbound who runs a circle | badge "KEEPER" |
 | **Tidings** | feed | What allies have done | "TIDINGS", "Every Ironbound's public trials" |
-| **The Reckoning** | leaderboard | A leaderboard; each lift and the Veil have their own | "THE RECKONING", "Choose a reckoning", "the Pull-up reckoning" |
+| **The Reckoning** | leaderboard | Standings for lifts, training XP (rolling seven days or lifetime) and lifetime Veil essence | "THE RECKONING", "Choose a reckoning", "the Pull-up reckoning" |
 | **Rung** | tier | One tier on a lift's reckoning: Initiate · Ash I–II · Bone I–II · Silver I–II · Gold I–II · Umbral I–II | "rung 4 of 11", "Counts toward the Pull-up reckoning" |
 | **Standing** | position (never "rank": Strength Rank is its own label on the same screens) | Your place in a reckoning | "YOUR STANDING", "#4" |
 | **Tribute** | kudos | A reaction: Honour, Iron or Flame | "3 tributes", "WHO PAID TRIBUTE", "Your tribute: Iron" |
@@ -181,8 +181,8 @@ Support's public cost page is **"View the costs"**, never "the Ledger".
 | Term | Plain (default) | Means | Use |
 |---|---|---|---|
 | **The Veil** (both modes) | same (screen title "The Veil") | The idle screen, opened from Today | "Open the Veil", "THE VEIL" |
-| **Echo** | same | One unit beyond the veil; trials leave them | "+40 ECHOES", "The echoes are gathering…" |
-| **Essence** | same | What echoes gather while you are away | "ESSENCE", "ESS" in tight columns |
+| **Echo** | same | A Veil reward that adds a capped bonus to the essence rate; recent training remains the main driver | "+40 ECHOES" |
+| **Essence** | same | Currency accrued over time at your training-driven Veil rate; returning to Today banks it automatically | "ESSENCE", "ESS" in tight columns |
 | **Inscribe** | same | Spend an inscription to draw a reward | "INSCRIBE", "3 INSCRIPTIONS WAITING", each level-up earns one |
 | **Relic** | same | A permanent multiplier, kept in **the Vault** | "RELIC VAULT", "Greater Crown of the Abyss" |
 | **Crest** | same | A medallion worn on the folio; its perk works only in the Veil, and allies see it on your avatar. 28 of them: ladder (levels), deeds, houses, and six from the Veil | "Wear", "Iron crest", "CREST INSCRIBED", "NOT YET INSCRIBED" |

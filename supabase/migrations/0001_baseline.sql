@@ -1,14 +1,13 @@
 -- 0001_baseline.sql
--- Ironvellum's whole Supabase schema, as ONE file, for a freshly reset project.
--- Paste order on the hosted project: supabase/reset.sql, then this file.
+-- Ironvellum's whole Supabase schema, as ONE file, for a fresh project.
+-- Never reset a project holding real accounts. See supabase/SELF_HOSTING.md.
 --
 -- Idempotent: every statement guards itself (create ... if not exists, create
 -- or replace, drop policy/trigger if exists), so re-applying it to a project
 -- that already carries this exact schema is a no-op. It does NOT upgrade an
--- older shape: it replaces the eighteen incremental migrations this project
--- used to carry, and the cloud is disposable debug data (the device's Room
--- database is the record), so a schema change is made by editing THIS file
--- and bumping schema_version(). Raise Cloud.kt's NEEDED_SCHEMA_VERSION only
+-- arbitrary older shape. Existing deployments keep their accounts and use
+-- the applicable ordered patches in supabase/hosted/. Keep this baseline in
+-- sync with each patch and bump schema_version(). Raise Cloud.kt's NEEDED_SCHEMA_VERSION only
 -- for changes required by the whole app; optional boards can report an
 -- upgrade requirement while older features keep working.
 --
@@ -2914,7 +2913,7 @@ revoke execute on function public.circle_bonuses() from public, anon;
 grant execute on function public.circle_bonuses() to authenticated;
 
 -- The version beacon. The app probes schema_version() as anon before pointing a
--- lifter's training at a custom backend (Settings -> CLOUD, TEST), so a
+-- lifter's training at a custom backend (Settings -> Advanced, Test), so a
 -- half-set-up project is reported before any data is sent to it. The anon
 -- grant is load-bearing. Every schema change bumps this literal; the app's
 -- minimum is raised only when older schemas cannot support its core features.

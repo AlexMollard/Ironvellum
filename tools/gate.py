@@ -1,9 +1,8 @@
 """Run Ironvellum's whole gate locally.
 
-This is the replacement for CI, not a convenience wrapper. The repository is
-private, so every GitHub runner minute is billed, and the work is identical to
-what this machine can do: `.github/workflows/ci.yml` is manual-only and this
-script covers all three of its jobs.
+This is the replacement for automatic CI, not a convenience wrapper. The
+repository is public, but workflows remain manual-only by account policy.
+This script covers the local Android, web and optional backend checks.
 
     python3 tools/gate.py              # build, unit, lint, instrumented
     python3 tools/gate.py --backend    # plus the Supabase assertions

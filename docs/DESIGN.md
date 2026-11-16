@@ -4,6 +4,12 @@ Where the app's look is heading. Clean is the app's only appearance and the base
 words on screen are governed separately by [GLOSSARY.md](GLOSSARY.md), which
 still applies in full.
 
+Clean is the shape/component language, not a dark-only theme. Settings offers
+System, Dark and Light (Vellum). Hex values below describe the default dark
+palette unless marked otherwise; `ui/theme/Theme.kt` is authoritative for
+both paper palettes and the user's accent pair. Verify screen changes in
+both themes and both wording modes.
+
 The reference mockup is the in-progress trial screen (2026-10-06), built from
 these rules: one exercise open, the rest folded, a split action bar and slide
 to seal.
@@ -391,5 +397,5 @@ Screen by screen, each as its own commit. For each screen:
 Order: the trial screen (the reference), then Today, Train, the Ledger, the
 Codex, Allies and Settings.
 
-Decided (2026-10-06): Ink is retired and removed completely. Clean is the only
-appearance, so screens no longer need checking in two styles.
+Decided (2026-10-06): the old Ink/Clean appearance toggle is retired. Clean is
+the only component style; Dark and Light are still separate themes to verify.

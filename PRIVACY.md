@@ -4,7 +4,7 @@ Ironvellum (package `com.ironvellum.app`) is a training tracker. This policy des
 what the app stores, what leaves your device, and what never does. It is written
 from the app's actual behaviour; nothing here is aspirational.
 
-Cloud workout upload details checked against the codebase on 2026-10-28.
+Documentation reviewed against the codebase on 2026-11-17.
 
 ## The short version
 
@@ -109,9 +109,10 @@ backend (PostgreSQL over HTTPS/TLS) exactly these things
 (`data/cloud/CloudSync.kt`):
 
 | Data | Cloud table(s) |
+|---|---|
 | Email address — your sign-in identity, held by Supabase Auth (from email/password sign-up, or your Google account on Google sign-in) | Supabase `auth.users`; the app never reads it back beyond restoring its own session (`AccountRepository.kt`) |
 | Display name, profile visibility setting, level, total XP, streak days, title count, lifetime strength, worn title, worn crest | `profiles` |
-| Idle-game aggregates (muster essence, figure count, figure rate) — the idle accrual clock itself stays on-device | `profiles` columns (migration `0008`) |
+| Veil aggregates (lifetime essence earned, echo count and current essence-per-hour rate); the balance and accrual clock are not part of this profile aggregate upload | `profiles` shadow columns, through `push_aggregates()` |
 | Completed sessions: label, public title (≤80 chars), public note (≤500 chars), timestamps, XP, strength score | `sessions` |
 | Set rows: exercise name, position, set index, reps, weight, modifiers, done, duration, distance and grade | `session_sets` |
 | A card of each completed workout, on schema 32 or newer: hard sets, tonnes of loaded work, the lifts that set a record with the load and reps as logged, and muscle levels from 0 to 3. It never holds a strength estimate or any figure derived from body weight, and it is visible exactly as the workout is (your profile and workout visibility settings decide who sees it) | `sessions.feed_card` |
@@ -119,9 +120,13 @@ backend (PostgreSQL over HTTPS/TLS) exactly these things
 | Completed imported workouts and their sets, including set kind, effort and superset group | `imported_sessions`, `imported_session_sets`, readable only by you and never in feeds |
 | Web stats snapshot: phone-computed workout and lift figures, including bodyweight-lift strength estimates, weekly sets, fatigue, streak, level and deed names; muscle-map figure (male or female) and appearance settings | `web_snapshots`, one owner-only row replaced when its contents change |
 | Unlocked titles with timestamps | `earned_titles` |
-| Likes you give/receive | `session_likes` |
+| Lift leaderboard marks: lifetime/recent tier steps and the recent mark's timestamp, computed on the phone without uploading raw bodyweight | `lift_marks` |
+| Reactions you give/receive and comments you post, including comment text and author name; visible to the workout's permitted audience | `session_likes`, `session_comments` |
 | Friend requests / friendships | `friendships` |
-| Cloud backup, only when you tap BACK UP NOW: a copy of your training record (presets, completed sessions and sets with public notes, titles, skill practice, idle-game state, display name, XP) and portable settings such as appearance, training equipment and notification preferences. It leaves out private notes, body readings, measurements, height, sex and Health Connect data; restoring it keeps whatever of those is already on the phone | `cloud_archives` (migration `0013`), readable only by you |
+| Group membership, name, invitation code, weekly goal and participation/bonus history; exposed through the group's permission-checked functions | `circles`, `circle_members`, `circle_weeks`, `circle_week_members`, `circle_events` |
+| Block/mute choices and the last-seen inbox timestamp; personal lists are not published to other users | `blocks`, `mutes`, `inbox_seen` |
+| Reports you submit: target, reason, optional note and referenced workout/comment. The server retains a content excerpt for moderation; reports are readable by the backend operator, not app clients | `reports` |
+| Cloud backup, only when you tap BACK UP NOW: a copy of your training record (presets, completed sessions and sets with public notes, titles, skill practice, idle-game state, display name, XP) and portable settings such as appearance, training equipment and notification preferences. It leaves out private notes, body readings, measurements, height, sex and Health Connect data; restoring it keeps whatever of those is already on the phone | `cloud_archives`, readable only by you |
 
 Access to all of it is governed by row-level security on the server; every
 table is RLS-enabled (`0001_baseline.sql`). Your profile `visibility` setting
@@ -134,11 +139,11 @@ do not receive set details or imported workouts; snapshots require schema 31. Th
 is not removed when you sign out: the app has no switch for it yet. Your account can delete it
 (the backend grants the owner, and only the owner, a delete on it), and deleting your account removes it.
 
-**Using your own backend:** Settings → CLOUD lets you point the app at your
+**Using your own backend:** Settings → Advanced → Use my own backend lets you point the app at your
 own Supabase project instead of the shared one. When a custom backend is
 configured, everything listed above goes to YOUR project — nothing is sent to
 the maintainer's shared instance — and Google sign-in is unavailable there
-(email sign-in only). See `supabase/SELF_HOSTING.md`.
+(email sign-in only). See [self-hosting](supabase/SELF_HOSTING.md).
 
 **Not uploaded:** progress photos (the pictures and their list), raw body readings and measurements, height, private notes,
 in-progress (abandoned) sessions, device identifiers, or raw Health Connect
@@ -161,7 +166,8 @@ cloud backup leaves out device-only readings, sex and private notes.
 - **Local data** persists until you uninstall the app or clear its storage from
   Android system settings. Uninstalling removes `ironvellum.db` and everything in
   the app's private storage.
-- **Cloud data:** Allies → ALLIES → **DELETE MY CLOUD ACCOUNT** deletes your
+- **Cloud data:** Settings → Account (also available from the Friends/Allies
+  account-settings gear) → **Delete my cloud account** deletes your
   sign-in identity itself (`delete_my_account()` in the baseline schema), which
   cascades to your lifter row and from there to every synced workout, set,
   earned title, level-up, like and ally link, and to your cloud backup archive

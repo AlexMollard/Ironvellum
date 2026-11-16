@@ -1,10 +1,34 @@
 # Ironvellum web viewer
 
-The viewer is read-only. Sign in with the same backend and account as the app; workout and derived statistics are uploaded by the phone. The shared backend comes from the repository's public `cloud-defaults.properties`; a self-hosted backend can be entered on the sign-in page. Backend and appearance preferences stay in browser storage. No analytics or external fonts are used.
+Training history and statistics are read-only; social features support reactions,
+comments and group actions. Sign in with the same backend and account as the app;
+the phone uploads workouts and computes the derived training statistics. The shared
+backend comes from the public `cloud-defaults.properties`; a custom backend can
+be entered on the sign-in page. See [self-hosting](../supabase/SELF_HOSTING.md)
+for setup. Backend and appearance preferences stay in browser storage. No
+analytics or external fonts are used.
 
 Google sign-in is off by default (email sign-in is the supported route; the Google provider is unverified). Build with `VITE_GOOGLE_SIGNIN=true` to show it on the shared backend, once its Google provider and OAuth client are configured and the deployed viewer URL is allowed in Supabase's redirect URLs. It uses the PKCE flow. Self-hosted backends use email and password.
 
 Signing out clears this browser's session without signing the phone out. Backends older than schema 30 can still show synced workouts and sets, but need updating before phone snapshots and imported workouts are available.
+
+Schema 31 supplies owner-only phone snapshots; 32 supplies friend-safe feed cards,
+and 33 supplies rolling workout-XP standings. Core phone sync requires at least 31.
+Social permissions still follow server-side profile, workout and relationship rules.
+
+## Local development
+
+From the repository root, initialize the pinned art source and enter the viewer:
+
+```bash
+git submodule update --init art
+cd web
+npm ci
+npm run dev
+```
+
+Run the following npm/Vite commands from `web/`; run the Gradle and Python
+asset-generation commands from the repository root.
 
 Use Node 22.12 or newer: `npm ci`, `npm run dev`, `npm test`, and `npm run build`. In the development server, `?fixture=1` opens the signed-in screens offline from the synthetic "Fictional lifter" fixtures (plus `web/dev/screenshotOverlay.js`, which adds records, deeds and a streak so every card has content), `?fixture=signin` opens the sign-in page without contacting the backend, and `&theme=light` or `&theme=dark` (default dark) picks the theme. These entry points exist only where `import.meta.env.DEV` is true, so a production build contains none of the fixtures, the overlay or the entry code; `test/productionBuild.test.js` builds and checks that. The text is set in Chakra Petch, self-hosted from the pinned `@fontsource/chakra-petch` package (SIL OFL, licence in `public/licenses/`), four weights, latin only, because the page's content security policy allows no external font or stylesheet host.
 
