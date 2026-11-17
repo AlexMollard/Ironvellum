@@ -301,15 +301,15 @@ def backend() -> int:
         print("!! no migrations found")
         return 1
 
-    undeclared = []
-    for path in migrations:
+    def declares(path: str, pattern: str) -> bool:
         with open(path, encoding="utf-8", errors="replace") as handle:
-            if not re.search(r"idempotent", handle.read(), re.I):
-                undeclared.append(os.path.basename(path))
+            return re.search(pattern, handle.read(), re.I) is not None
+
+    undeclared = [os.path.basename(path) for path in migrations if not declares(path, r"idempotent|immutable")]
     if undeclared:
-        # The re-apply below keys off that word, so a file that does not say it
-        # would silently opt out of the idempotency check.
-        print(f"!! migrations do not declare themselves idempotent: {undeclared}")
+        # Same rule as ci.yml: the re-apply below keys off that word, so a file
+        # that declares neither would silently opt out of the idempotency check.
+        print(f"!! migrations declare neither idempotent nor immutable: {undeclared}")
         return 1
 
     name = "ironvellum-gate-pg"
@@ -349,8 +349,9 @@ def backend() -> int:
 
         test = lambda fname: os.path.join(ROOT, "supabase/test", fname)
         steps = [test("supabase_stub.sql")] + migrations
-        # Re-apply every file: each one declares itself idempotent (checked above).
-        steps += migrations
+        # Re-apply only the files that claim to be idempotent, as ci.yml does: an
+        # immutable ("already applied") migration is not expected to replay.
+        steps += [path for path in migrations if declares(path, r"idempotent")]
         steps.append(test("assert_all.sql"))
         # The owner pastes supabase/hosted/ patches into the live project, in date
         # order. Every one that can run on top of the baseline is replayed, and the
