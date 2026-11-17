@@ -52,7 +52,7 @@ universal upgrade migration for older installations**.
 Verify in the SQL editor:
 
 ```sql
-select public.schema_version();  -- 33
+select public.schema_version();  -- 34
 ```
 
 **Never run [`reset.sql`](reset.sql) on a project holding real data.** It
@@ -71,6 +71,9 @@ not every historical patch on top of a current baseline.
   `2026-10-29-feed-card.sql` for schema 32.
 - **Schema 32:** apply `2026-11-12-workout-xp.sql` for schema 33. It requires
   the feed-card patch first and preserves accounts and workouts.
+- **Schema 33:** apply `2026-11-17-hardening.sql` for schema 34. It repairs
+  invalid session clocks/XP, preserves existing oversized backups while
+  bounding new writes, and retains departed-circle bonuses for collection.
 - **Earlier schemas:** review the earlier patches and their prerequisites
   before proceeding. Do not assume that re-running the baseline upgrades an
   old table shape or that the latest patch includes every earlier change.
@@ -101,7 +104,7 @@ client key configured by your Supabase deployment. **Never use a secret or
 
 1. Open **Settings → Advanced → Use my own backend**.
 2. Enter the URL and public key, then press **Test**.
-3. Expect **Backend ready** with schema 33. **Save** is enabled only for the
+3. Expect **Backend ready** with schema 34. **Save** is enabled only for the
    tested URL/key pair on a supported schema.
 4. Press **Save** and confirm **Switch**. You are signed out of the old
    backend; your local training stays on the phone.

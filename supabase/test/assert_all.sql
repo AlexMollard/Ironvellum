@@ -538,6 +538,12 @@ begin
     -- Accepting stamps the server's clock, whatever the client sends.
     perform must_run(fenn, format('insert into friendships (requester_id, addressee_id) values (%L, %L)', fenn, eli),
         'a second ally request is refused');
+    perform assert_true(refused_as(eli, format(
+        'update friendships set accepted = true, requester_id = %L where requester_id = %L and addressee_id = %L',
+        gus, fenn, eli), array['P0001']), 'accepting a request can rewrite its requester');
+    perform assert_true(refused_as(eli, format(
+        'update friendships set accepted = true, addressee_id = %L where requester_id = %L and addressee_id = %L',
+        gus, fenn, eli), array['P0001']), 'accepting a request can rewrite its addressee');
     perform must_run(eli, format('update friendships set accepted = true, accepted_at = ''2000-01-01'' where requester_id = %L and addressee_id = %L', fenn, eli),
         'the addressee cannot accept');
     perform assert_true((select accepted_at from friendships where requester_id = fenn and addressee_id = eli) > now() - interval '1 minute',
@@ -1312,12 +1318,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 33,
-        format('schema_version() reports %s, not 33 — the rolling-board patch is not advertised', public.schema_version())
+        (select public.schema_version()) = 34,
+        format('schema_version() reports %s, not 34 — the hardening patch is not advertised', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 33,
+        (select public.schema_version()) = 34,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;
@@ -2400,6 +2406,10 @@ begin
 
     delete from sessions where user_id in (ava, ben, cy, dee, eli, fay, gus);
     delete from auth.users where id in (ava, ben, cy, dee, eli, fay, gus);
+    -- Retained bonus evidence has no personal data after every roster account is erased.
+    delete from circle_weeks w where not exists (
+        select 1 from circle_week_members wm where wm.circle_id = w.circle_id and wm.week = w.week)
+        and not exists (select 1 from circles c where c.id = w.circle_id);
     perform assert_true(
         (select count(*) from circles) = 0
             and (select count(*) from circle_weeks) = 0
@@ -2753,6 +2763,89 @@ begin
     delete from auth.users where id in(owner_id,ally,stranger) or id::text like 'b7331111-%';
     perform set_config('probe.uid','',true);
 end $workout_xp$;
+
+-- --------------------------------------------------------- schema 34 hardening
+do $hardening$
+declare
+    a uuid := 'b7340000-0000-4000-8000-000000000001';
+    b uuid := 'b7340000-0000-4000-8000-000000000002';
+    cid uuid;
+    cur date := (circle_week_start(now()) at time zone 'utc')::date;
+    ws timestamptz := circle_week_start(now()) - interval '14 days';
+    sid uuid;
+begin
+    perform sign_up(a, '{"display_name":"HardeningA"}');
+    perform sign_up(b, '{"display_name":"HardeningB"}');
+    insert into sessions(user_id,local_id,label,started_at,completed_at)
+    values(a,1,'Boundaries',now()-interval '1 hour',now()) returning id into sid;
+    perform assert_true(refused_as(a, format(
+        'update sessions set started_at = ''1900-01-01'' where id = %L', sid), array['P0001']),
+        'an ancient start can poison feed duration casts');
+    perform assert_true(refused_as(a, format(
+        'update sessions set completed_at = ''1900-01-01'' where id = %L', sid), array['P0001']),
+        'an ancient completion is accepted');
+    perform must_run(a, format(
+        'update sessions set started_at = ''2000-01-01 00:00:00+00'' where id = %L', sid),
+        'the supported timestamp boundary is refused');
+    perform assert_true(value_as(a, format('select duration_sec from public_feed where session_id = %L', sid))::int > 0,
+        'a supported old session cannot be read from the feed');
+    perform assert_true(refused_as(a, format(
+        'update sessions set xp_awarded = 2147483647 where id = %L', sid), array['23514'])
+        and refused_as(a, format('update sessions set xp_awarded = -1 where id = %L', sid), array['23514']),
+        'session XP is unbounded or negative');
+    perform must_run(a, format('update sessions set xp_awarded = 1000000 where id = %L', sid),
+        'the maximum session XP is refused');
+    insert into sessions(user_id,local_id,label,started_at,completed_at,xp_awarded)
+    select a,100+i,'Weekly cap',now()-interval '1 hour',now(),1000000 from generate_series(1,100) i;
+    perform assert_true(value_as(a, format(
+        'select workout_xp_last_7d from workout_xp_leaderboard where id = %L', a))::bigint = 100000000,
+        'weekly session XP sum exceeds its ceiling');
+    perform assert_true(refused_as(a, format(
+        'insert into cloud_archives(user_id,archive,size_bytes) values (%L,repeat(''x'',8388609),1)', a), array['23514']),
+        'a false client size bypasses the archive payload cap');
+    perform must_run(a, format(
+        'insert into cloud_archives(user_id,archive,size_bytes) values (%L,repeat(''x'',8388608),8388608)', a),
+        'an archive at the byte cap is refused');
+    perform assert_true(refused_as(a, format(
+        'update cloud_archives set archive = repeat(''é'',4194305), size_bytes = 1 where user_id = %L', a), array['23514']),
+        'the archive cap measures characters instead of bytes');
+
+    perform must_run(a, 'select create_circle(''Retained bonuses'')', 'cannot create bonus fixture');
+    select circle_id into cid from circle_members where user_id = a;
+    perform assert_true(value_as(b, format('select join_circle(%L)', (select invite_code from circles where id = cid))) = 'joined',
+        'cannot join bonus fixture');
+    insert into circle_weeks(circle_id,week,per_member,members,goal) values(cid,cur-14,1,2,2);
+    insert into circle_week_members(circle_id,week,user_id,joined_at,left_at)
+    values(cid,cur-14,a,ws-interval '1 day',ws+interval '5 days'),
+          (cid,cur-14,b,ws-interval '1 day',ws+interval '7 days');
+    perform circle_test_trial(a,ws+interval '1 day 10 hours',true,'profile');
+    perform circle_test_trial(b,ws+interval '2 days 10 hours',true,'private');
+    perform must_run(a, 'select leave_circle()', 'first member cannot leave');
+    perform must_run(b, 'select leave_circle()', 'last member cannot leave');
+    perform assert_true(not exists(select 1 from circles where id=cid)
+        and (select met from circle_weeks where circle_id=cid and week=cur-14),
+        'emptying a circle erased its settled bonus evidence');
+    perform assert_true(value_as(a, format(
+        'select count(*) from circle_bonuses() where week = %L and days = 1 and circle_name is null', cur-14))='1',
+        'a former member cannot collect a deleted circle''s settled bonus');
+    -- Replay a week still awaiting settlement when its circle disappeared.
+    update circle_weeks set total=null,met=null,settled_at=null where circle_id=cid and week=cur-14;
+    update circle_week_members set days=null where circle_id=cid and week=cur-14;
+    perform assert_true(value_as(a, format(
+        'select count(*) from circle_bonuses() where week = %L and days = 1', cur-14))='1',
+        'an orphaned week cannot settle from its frozen goal and roster');
+    insert into circle_weeks(circle_id,week,per_member,members,goal) values(cid,cur-21,1,0,0);
+    perform must_run(a,'select circle_bonuses()','bonus pruning fails');
+    perform assert_true(not exists(select 1 from circle_weeks where circle_id=cid and week=cur-21)
+        and exists(select 1 from circle_weeks where circle_id=cid and week=cur-14),
+        'deleted-circle bonus evidence is pruned outside, or inside, the collection window');
+    delete from auth.users where id in(a,b);
+    perform assert_true(not exists(select 1 from circle_week_members where circle_id=cid),
+        'erased accounts left personal bonus roster data');
+    delete from circle_weeks where circle_id=cid;
+    perform set_config('probe.uid','',true);
+    raise notice 'SCHEMA 34 HARDENING ASSERTIONS PASSED';
+end $hardening$;
 
 drop function if exists assert_true(boolean, text);
 drop function if exists refused_as(uuid, text, text[]);

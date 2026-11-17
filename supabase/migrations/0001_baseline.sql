@@ -236,6 +236,9 @@ create table if not exists sessions (
     started_at       timestamptz not null,
     completed_at     timestamptz,
     xp_awarded       int not null default 0,
+    -- Xp: <=405 per hardest set, 265 bonuses incl. quest; amendments can double.
+    -- 1M leaves room for >1,200 such sets; activities have no app-wide row cap.
+    constraint sessions_xp_awarded_cap check (xp_awarded between 0 and 1000000),
     strength_score   int not null default 0,
     -- 'profile' follows the profile visibility. 'friends' narrows a public
     -- profile to allies. 'private' is owner-only. The stricter of profile and
@@ -428,7 +431,8 @@ create table if not exists cloud_archives (
     updated_at timestamptz not null default now(),
     -- 8 MiB covers years of training. When a real archive outgrows this the
     -- write fails loudly rather than silently truncating a partial save.
-    constraint cloud_archives_size_cap check (size_bytes > 0 and size_bytes <= 8 * 1024 * 1024)
+    constraint cloud_archives_size_cap check (size_bytes > 0 and size_bytes <= 8 * 1024 * 1024),
+    constraint cloud_archives_payload_cap check (octet_length(archive) <= 8 * 1024 * 1024)
 );
 
 -- Private web-viewer data never participates in social or ranking paths.
@@ -621,7 +625,8 @@ create index if not exists circle_members_circle_joined_idx
 -- (goal = per_member x members, the roster the week opened with); total and met
 -- are null until the week is settled, and settled_at says when.
 create table if not exists circle_weeks (
-    circle_id  uuid not null references circles (id) on delete cascade,
+    -- Keep frozen bonus evidence after the last member leaves and deletes the circle.
+    circle_id  uuid not null,
     week       date not null,
     per_member int  not null check (per_member between 1 and 7),
     members    int  not null check (members >= 0),
@@ -1411,6 +1416,10 @@ language plpgsql
 set search_path = pg_catalog, public
 as $$
 begin
+    if new.started_at < timestamptz '2000-01-01 00:00:00+00'
+       or new.completed_at < timestamptz '2000-01-01 00:00:00+00' then
+        raise exception 'trial timestamps cannot be before 2000';
+    end if;
     if new.started_at > now() + interval '1 day'
        or (new.completed_at is not null and new.completed_at > now() + interval '1 day') then
         raise exception 'trial timestamps cannot be in the future';
@@ -1465,6 +1474,7 @@ begin
         raise exception 'You can’t send an ally request to this Ironbound.';
     end if;
 
+    perform pg_advisory_xact_lock(hashtext('friend_requests:' || new.requester_id::text));
     delete from friend_request_log l
     where l.requester_id = new.requester_id and l.sent_at <= now() - interval '1 day';
     select count(*) into n from friend_request_log l where l.requester_id = new.requester_id;
@@ -1555,6 +1565,9 @@ begin
     new.created_at := now();
     new.author_name := coalesce((select p.display_name from profiles p where p.id = new.user_id), '');
 
+    -- Serialize both author limits and the shared thread before counting.
+    perform pg_advisory_xact_lock(hashtext('comment_author:' || new.user_id::text));
+    perform pg_advisory_xact_lock(hashtext('comment_thread:' || new.session_id::text));
     select count(*) into n from session_comments c
     where c.user_id = new.user_id and c.created_at > now() - interval '1 minute';
     if n >= 10 then
@@ -1659,6 +1672,7 @@ as $$
 declare
     n int;
 begin
+    perform pg_advisory_xact_lock(hashtext('reports:' || new.reporter_id::text));
     select count(*) into n from reports r
     where r.reporter_id = new.reporter_id and r.created_at > now() - interval '1 day';
     if n >= 20 then
@@ -1727,7 +1741,8 @@ join (
     select
         s.user_id,
         count(*) as sessions_last_7d,
-        sum(s.xp_awarded)::bigint as workout_xp_last_7d
+        -- 100 maximum-sized sessions per week, matching the lifetime XP ceiling.
+        least(sum(s.xp_awarded), 100000000)::bigint as workout_xp_last_7d
     from sessions s
     where s.completed_at > now() - interval '168 hours'
       and s.completed_at <= now()
@@ -2302,18 +2317,17 @@ begin
         return;
     end if;
     select * into c from circles where id = p_circle for update;
-    if not found then
-        return;
+    if found then
+        select max(w.week) into latest from circle_weeks w where w.circle_id = p_circle;
+        wk := greatest(
+            coalesce(latest + 7, (circle_week_start(coalesce(c.created_at, now())) at time zone 'utc')::date),
+            cur - 56
+        );
+        while wk <= cur loop
+            perform public.circle_open_week(p_circle, wk);
+            wk := wk + 7;
+        end loop;
     end if;
-    select max(w.week) into latest from circle_weeks w where w.circle_id = p_circle;
-    wk := greatest(
-        coalesce(latest + 7, (circle_week_start(coalesce(c.created_at, now())) at time zone 'utc')::date),
-        cur - 56
-    );
-    while wk <= cur loop
-        perform public.circle_open_week(p_circle, wk);
-        wk := wk + 7;
-    end loop;
     for wk in
         select w.week from circle_weeks w
         where w.circle_id = p_circle and w.settled_at is null and w.week < cur
@@ -2567,6 +2581,7 @@ begin
     end if;
     -- Throttle the one guessable door: failed attempts only, 50 a day, the
     -- same rolling-window pattern as ally requests.
+    perform pg_advisory_xact_lock(hashtext('circle_guesses:' || me::text));
     delete from circle_join_log l where l.user_id = me and l.tried_at <= now() - interval '1 day';
     select count(*) into n from circle_join_log l where l.user_id = me;
     if n >= 50 then
@@ -2887,6 +2902,10 @@ begin
     if me is null then
         raise exception 'Sign in to use a circle' using errcode = '42501';
     end if;
+    -- Deleted circles have no future weeks; retain only the payable bonus window.
+    delete from circle_weeks w
+    where w.week < cur - 14
+      and not exists (select 1 from circles c where c.id = w.circle_id);
     for cid in
         select distinct wm.circle_id from circle_week_members wm
         where wm.user_id = me and wm.week >= cur - 28
@@ -2918,7 +2937,7 @@ grant execute on function public.circle_bonuses() to authenticated;
 -- grant is load-bearing. Every schema change bumps this literal; the app's
 -- minimum is raised only when older schemas cannot support its core features.
 create or replace function public.schema_version() returns int
-language sql stable as $$ select 33 $$;
+language sql stable as $$ select 34 $$;
 revoke execute on function public.schema_version() from public;
 grant execute on function public.schema_version() to anon, authenticated;
 
