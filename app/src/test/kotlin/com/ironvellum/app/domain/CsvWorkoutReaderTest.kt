@@ -154,6 +154,16 @@ class CsvWorkoutReaderTest {
     }
 
     @Test
+    fun aFileEndingInsideAQuotedNoteIsRefusedRatherThanSwallowingRows() {
+        val text = "Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Reps,Distance,Seconds,Notes\n" +
+            "2020-12-30 18:51:52,Push,1h,Bench Press,1,60,5,,,\"cut short\n" +
+            "2020-12-30 18:51:52,Push,1h,Bench Press,2,60,5,,,\n"
+        val parsed = CsvWorkoutReader.read(text)
+        assertTrue(parsed.workouts.isEmpty())
+        assertTrue(parsed.problems.single().message.startsWith("Row 2 "))
+    }
+
+    @Test
     fun strongWeightsConvertWhenTheFileWasExportedInPounds() {
         val kg = CsvWorkoutReader.read(fixture("strong_synthetic.csv"), strongWeightIsLbs = false)
         assertEquals(60.0, kg.workouts.first().sets[0].weightKg!!, 0.001)

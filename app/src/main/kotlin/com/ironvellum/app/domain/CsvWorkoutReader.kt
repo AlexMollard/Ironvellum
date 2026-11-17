@@ -103,11 +103,18 @@ object CsvWorkoutReader {
             }
     }
 
-    /** RFC 4180: quoted commas, quoted newlines, doubled quotes. Hand-rolled. */
+    /** A quoted field still open at the end of the file; [row] is the 1-based row it opened on. */
+    class UnterminatedQuote(val row: Int) : IllegalArgumentException("Unterminated quoted field on row $row")
+
+    /**
+     * RFC 4180: quoted commas, quoted newlines, doubled quotes. Hand-rolled.
+     * Throws [UnterminatedQuote] when the file ends inside a quoted field.
+     */
     fun parseCsv(text: String): List<List<String>> {
         val rows = mutableListOf<MutableList<String>>(mutableListOf())
         val field = StringBuilder()
         var inQuotes = false
+        var quoteRow = 0
         var i = 0
         val n = text.length
         // A bare CR is a line terminator in classic Mac/Excel exports; CRLF and
@@ -134,7 +141,10 @@ object CsvWorkoutReader {
                 // (RFC 4180, and how Excel reads it). Mid-field it is a literal
                 // character, so one stray quote in a note cannot swallow every
                 // row after it.
-                c == '"' && field.isEmpty() -> inQuotes = true
+                c == '"' && field.isEmpty() -> {
+                    inQuotes = true
+                    quoteRow = rows.size
+                }
                 c == ',' -> {
                     rows.last().add(field.toString()); field.setLength(0)
                 }
@@ -147,6 +157,9 @@ object CsvWorkoutReader {
             }
             i++
         }
+        // A truncated export ending inside a quoted note would otherwise fold every
+        // row after the quote into that note and drop those sets without a word.
+        if (inQuotes) throw UnterminatedQuote(quoteRow)
         rows.last().add(field.toString())
         return rows.filter { it.any { f -> f.isNotBlank() } }
     }
@@ -154,7 +167,21 @@ object CsvWorkoutReader {
     fun read(text: String, strongWeightIsLbs: Boolean = false): ParsedImport {
         // A BOM (Excel's "CSV UTF-8") is dropped once here: left in, it hid the
         // Date column from the per-format column lookup and every row was skipped.
-        val rows = parseCsv(text.removePrefix("\uFEFF"))
+        val rows = try {
+            parseCsv(text.removePrefix("\uFEFF"))
+        } catch (e: UnterminatedQuote) {
+            return ParsedImport(
+                Source.STRONG,
+                emptyList(),
+                null,
+                listOf(
+                    unrelated(
+                        "Row ${e.row} opens a quoted field that never closes, so the rows after it cannot be " +
+                            "read. The file may be cut short: export it again.",
+                    ),
+                ),
+            )
+        }
         val header = rows.firstOrNull()?.map { it.trim() }
             ?: return ParsedImport(Source.STRONG, emptyList(), null, listOf(unrelated("The file is empty.")))
         return when {
