@@ -667,6 +667,7 @@ class SettingsViewModel(
             _cloud.value = CloudUi(switching = true)
             Cloud.reconfigure(CloudConfig(trimmedUrl, trimmedKey, isDefault = false)) {
                 cloudSync.forgetPushedState()
+                accountRepo.clearForBackendSwitch()
             }
             _cloud.value = CloudUi()
         }
@@ -679,6 +680,7 @@ class SettingsViewModel(
             _cloud.value = CloudUi(switching = true)
             Cloud.reconfigure(null) {
                 cloudSync.forgetPushedState()
+                accountRepo.clearForBackendSwitch()
             }
             _cloud.value = CloudUi()
         }

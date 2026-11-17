@@ -190,9 +190,9 @@ object Cloud {
      *    the lifter's other phones stay signed in there) — best effort, then
      *    always [Auth.clearSession] so the local session goes even when the
      *    old server is unreachable;
-     * 2. [beforeSwap] — the caller resets the push watermark here (see
-     *    `CloudSync.forgetPushedState`), so every session re-uploads to the
-     *    new backend instead of being skipped as "already pushed";
+     * 2. [beforeSwap] — the caller clears AccountRepository's published identity
+     *    and resets the push watermark (`CloudSync.forgetPushedState`), so the
+     *    old account cannot appear signed in and sessions re-upload to the new backend;
      * 3. under the client lock, drop the cached client and persist the new
      *    override;
      * 4. emit the new [config], redrawing every screen that collects it.

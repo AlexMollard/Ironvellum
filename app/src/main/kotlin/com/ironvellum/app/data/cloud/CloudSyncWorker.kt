@@ -25,12 +25,15 @@ class CloudSyncWorker(context: Context, params: WorkerParameters) :
 
     override suspend fun doWork(): Result {
         val app = applicationContext as? IronvellumApp ?: return Result.success()
-        // A signed-out lifter has nothing to push: enqueueing work that can
-        // only fail would burn a network slot every day for a refusal.
-        if (app.accountRepository.account.value == null) return Result.success()
-        // push() already returns a Result, so runCatching wraps a Result in a
-        // Result: flatten it before either branch can read the outcome.
-        return runCatching { app.cloudSync.push().getOrThrow() }
+        return runCatching {
+            val restored = app.accountRestore.await()
+            // A cold-start job must wait for stored credentials before deciding there is nothing to push.
+            if (restored.isFailure && app.accountRepository.account.value == null) {
+                app.accountRepository.restore().getOrThrow()
+            }
+            if (app.accountRepository.account.value == null) return Result.success()
+            app.cloudSync.push().getOrThrow()
+        }
             .fold(
                 onSuccess = { outcome ->
                     // A non-fatal problem (e.g. push_aggregates refused) still

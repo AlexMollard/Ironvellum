@@ -851,6 +851,68 @@ class AccountRestoreTest {
         }
     }
 
+    @Test fun backendSwitchClearsPublishedIdentityAndPreventsOldSessionRestore() = runBlocking {
+        val storage = MemorySessionManager(session())
+        val engine = MockEngine { request ->
+            check(request.url.encodedPath.endsWith("/profiles"))
+            respond(PROFILE, HttpStatusCode.OK, JSON_HEADERS)
+        }
+        val client = client(storage, engine)
+        try {
+            val accounts = AccountRepository(client)
+            accounts.restore().getOrThrow()
+            assertEquals(USER, accounts.account.value?.userId)
+
+            accounts.clearForBackendSwitch()
+
+            assertNull("The previous backend's account must not remain signed in", accounts.account.value)
+            accounts.restore().getOrThrow()
+            assertNull("A queued startup restore must not resurrect the old project", accounts.account.value)
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test fun accountDeletionClearsStoredCredentialsWhenSignOutTransportFails() = runBlocking {
+        val storage = MemorySessionManager(session())
+        var deleted = false
+        var signOutAttempted = false
+        val engine = MockEngine { request ->
+            when {
+                request.url.encodedPath.endsWith("/profiles") ->
+                    respond(PROFILE, HttpStatusCode.OK, JSON_HEADERS)
+                request.url.encodedPath.endsWith("/delete_my_account") -> {
+                    deleted = true
+                    respond("", HttpStatusCode.NoContent, JSON_HEADERS)
+                }
+                request.url.encodedPath.endsWith("/logout") -> {
+                    signOutAttempted = true
+                    throw IOException("revocation unavailable after deletion")
+                }
+                else -> error("Unexpected isolated request ${request.url}")
+            }
+        }
+        val client = client(storage, engine)
+        try {
+            val accounts = AccountRepository(client)
+            accounts.restore().getOrThrow()
+            assertEquals(USER, accounts.account.value?.userId)
+
+            accounts.deleteCloudData().getOrThrow()
+
+            assertTrue(deleted)
+            assertTrue(signOutAttempted)
+            assertNull(accounts.account.value)
+            assertNull(client.auth.currentSessionOrNull())
+            assertNull("Deleted credentials must not survive a failed remote logout", storage.loadSessionOrNull())
+            val restarted = AccountRepository(client)
+            restarted.restore().getOrThrow()
+            assertNull("A fresh repository must not resurrect the deleted account", restarted.account.value)
+        } finally {
+            client.close()
+        }
+    }
+
     companion object {
         private const val USER = "d23fd1d4-a085-456e-9ea9-b1214b464918"
         private const val PROFILE = "[{\"id\":\"$USER\",\"display_name\":\"Test Ally\",\"visibility\":\"private\"}]"

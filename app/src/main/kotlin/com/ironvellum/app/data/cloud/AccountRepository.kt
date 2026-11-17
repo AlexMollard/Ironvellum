@@ -480,13 +480,18 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
             ?: return Result.failure(MessageException(UiText.res(R.string.cloud_account_delete_signed_out)))
         return runCatching {
             client.postgrest.rpc("delete_my_account")
-            // The server session died with the user; a failed sign-out call
-            // must not report the deletion itself as failed.
-            runCatching { client.auth.signOut() }
-            synchronized(_account) {
-                _account.value = null
-                identityClient = null
-                identityGeneration++
+            // The deleted user's credentials must go even if revocation fails or this screen is cancelled.
+            withContext(NonCancellable) {
+                try {
+                    runCatching { client.auth.signOut() }
+                } finally {
+                    runCatching { client.auth.clearSession() }
+                    synchronized(_account) {
+                        _account.value = null
+                        identityClient = null
+                        identityGeneration++
+                    }
+                }
             }
             Unit
         }.recoverCatching { error ->
@@ -508,6 +513,20 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
             }
         } }.recoverCatching { error ->
             explainAuthFailure(error)
+        }
+    }
+
+    /** Invalidate old-project work before Cloud swaps clients, without a second network sign-out. */
+    internal suspend fun clearForBackendSwitch() {
+        synchronized(_account) {
+            automaticRestoreAllowed = false
+            _account.value = null
+            identityClient = null
+            identityGeneration++
+            ++transition
+        }
+        withContext(NonCancellable) {
+            sessionLock.withLock { cancelQueries() }
         }
     }
 
