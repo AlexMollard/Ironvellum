@@ -443,26 +443,8 @@ class CloudSync private constructor(
             for (batch in pending.chunked(SESSION_BATCH)) {
                 val pushedBatch = mutableListOf<Pair<WorkoutSession, List<SessionSet>>>()
                 val sessionDtos = batch.map { (session, _) -> sessionDto(me.userId, session, cards) }
-                chunks(sessionDtos).forEach { rows ->
-                    client.postgrest.from("sessions").upsert(rows) {
-                        onConflict = "user_id,local_id"
-                        // A field at its Kotlin default is left out of the JSON. In a batch where another
-                        // row carries it, PostgREST writes null for the missing key unless told to use the
-                        // column default: one titled trial beside an untitled one failed every sync (23502).
-                        defaultToNull = false
-                    }
-                }
-                // Nothing changed means no ids to resolve; an empty isIn() filter
-                // is not a valid PostgREST query, so skip the round trip outright.
                 val pendingIds = batch.map { it.first.id }
-                val cloudIds = chunks(pendingIds).flatMap { ids ->
-                    client.postgrest.from("sessions").select {
-                        filter {
-                            eq("user_id", me.userId)
-                            isIn("local_id", ids)
-                        }
-                    }.decodeList<SessionIdDto>()
-                }.associate { it.localId to it.id }
+                val cloudIds = uploadSessionRows(client, me.userId, sessionDtos, pendingIds)
 
                 val setDtos = buildList {
                     batch.forEach { (session, sets) ->
@@ -590,41 +572,7 @@ class CloudSync private constructor(
                                 completedAt = session.completedAtMs?.let { Instant.ofEpochMilli(it).toString() },
                                 editedAt = session.editedAtMs?.let { Instant.ofEpochMilli(it).toString() },
                             )
-                            client.postgrest.from("imported_sessions").upsert(dto) {
-                                onConflict = "user_id,local_id"
-                                defaultToNull = false
-                            }
-                            val cloudId = client.postgrest.from("imported_sessions").select {
-                                filter { eq("user_id", me.userId); eq("local_id", session.id) }
-                            }.decodeList<SessionIdDto>().single().id
-                            val indexes = wireSetIndexes(pushable)
-                            val rows = pushable.mapIndexed { index, set ->
-                                ImportedSetDto(
-                                    sessionId = cloudId, userId = me.userId, exerciseName = set.exerciseName,
-                                    exercisePosition = set.exercisePosition, setIndex = indexes[index], reps = set.reps,
-                                    weightKg = set.weightKg,
-                                    modifiers = WireLimits.clamp(set.modifiers, WireLimits.SET_MODIFIERS_MAX),
-                                    done = set.done, durationSec = set.durationSec, distanceM = set.distanceM, grade = set.grade,
-                                    kind = set.kind.wire, rpe = set.rpe, supersetGroup = set.supersetGroup,
-                                )
-                            }
-                            // Write first, delete after: a failed insert used to leave the workout with no sets
-                            // on the cloud, because its old ones had already gone.
-                            chunks(rows).forEach { batch ->
-                                client.postgrest.from("imported_session_sets").upsert(batch) {
-                                    onConflict = "session_id,exercise_name,set_index"
-                                    defaultToNull = false
-                                }
-                            }
-                            val stale = staleSetRowIds(
-                                current = mapOf(cloudId to pushable),
-                                onCloud = setKeysOf(client, "imported_session_sets", listOf(cloudId)),
-                            )
-                            chunks(stale, ID_FILTER_CHUNK).forEach { ids ->
-                                client.postgrest.from("imported_session_sets").delete {
-                                    filter { isIn("id", ids) }
-                                }
-                            }
+                            uploadImportedSession(client, dto, pushable)
                             importedPushed += session to sets
                             progress[session.id] = pushFingerprint(session, sets)
                             repo.recordPushWatermark(progress.filterKeys { it in completedIds })
@@ -666,43 +614,7 @@ class CloudSync private constructor(
             // schema 20 (no lift_marks table) costs one problem line, not the
             // sync. Only step integers leave the phone — never bodyweight.
             attempt {
-                val marks = LiftBoards.marks(
-                    history = history,
-                    bodyweightAt = SetRecords.bodyweightLookup(repo.observeStats().first()),
-                    sex = repo.observeBodyProfile().first().second,
-                    nowMs = System.currentTimeMillis(),
-                    practices = repo.observeSkillPractices().first(),
-                )
-                if (marks.isNotEmpty()) {
-                    client.postgrest.from("lift_marks").upsert(
-                        marks.map {
-                            LiftMarkDto(
-                                userId = me.userId,
-                                lift = it.lift.wire,
-                                step = it.step,
-                                recentStep = it.recentStep,
-                                recentAt = it.recentAtMs?.let { at -> Instant.ofEpochMilli(at).toString() },
-                            )
-                        },
-                    ) {
-                        onConflict = "user_id,lift"
-                    }
-                }
-                // A lift whose qualifying sets were all deleted or edited away
-                // must leave the board, or allies keep seeing a tier this
-                // lifter no longer holds.
-                val keep = marks.map { it.lift.wire }.toSet()
-                val stale = client.postgrest.from("lift_marks").select {
-                    filter { eq("user_id", me.userId) }
-                }.decodeList<LiftMarkDto>().map { it.lift }.filter { it !in keep }
-                if (stale.isNotEmpty()) {
-                    client.postgrest.from("lift_marks").delete {
-                        filter {
-                            eq("user_id", me.userId)
-                            isIn("lift", stale)
-                        }
-                    }
-                }
+                uploadLiftMarks(client, me.userId, history)
             }.onFailure { error ->
                 sideProblem(cloudThemed(R.string.cloud_sync_tiers_failed, R.string.cloud_sync_tiers_failed__t, Cloud.explain(error)))
             }
@@ -786,6 +698,113 @@ class CloudSync private constructor(
             cache.invalidate(CloudReadCache.KEY_LIFT_BOARD)
         }.recoverCatching { error ->
             throw MessageException(Cloud.explain(error), error)
+        }
+    }
+
+    // Keep reified HTTP serializers out of pushOnce: its 99k-instruction coroutine exceeded Android's compiler limit.
+    private suspend fun uploadSessionRows(
+        client: io.github.jan.supabase.SupabaseClient,
+        userId: String,
+        rows: List<SessionDto>,
+        localIds: List<Long>,
+    ): Map<Long, String> {
+        chunks(rows).forEach { batch ->
+            client.postgrest.from("sessions").upsert(batch) {
+                onConflict = "user_id,local_id"
+                // Untitled rows omit default fields; otherwise a mixed batch inserts null instead of the column default.
+                defaultToNull = false
+            }
+        }
+        return chunks(localIds).flatMap { ids ->
+            client.postgrest.from("sessions").select {
+                filter {
+                    eq("user_id", userId)
+                    isIn("local_id", ids)
+                }
+            }.decodeList<SessionIdDto>()
+        }.associate { it.localId to it.id }
+    }
+
+    private suspend fun uploadImportedSession(
+        client: io.github.jan.supabase.SupabaseClient,
+        dto: ImportedSessionDto,
+        sets: List<SessionSet>,
+    ) {
+        client.postgrest.from("imported_sessions").upsert(dto) {
+            onConflict = "user_id,local_id"
+            defaultToNull = false
+        }
+        val cloudId = client.postgrest.from("imported_sessions").select {
+            filter { eq("user_id", dto.userId); eq("local_id", dto.localId) }
+        }.decodeList<SessionIdDto>().single().id
+        val indexes = wireSetIndexes(sets)
+        val rows = sets.mapIndexed { index, set ->
+            ImportedSetDto(
+                sessionId = cloudId, userId = dto.userId, exerciseName = set.exerciseName,
+                exercisePosition = set.exercisePosition, setIndex = indexes[index], reps = set.reps,
+                weightKg = set.weightKg,
+                modifiers = WireLimits.clamp(set.modifiers, WireLimits.SET_MODIFIERS_MAX),
+                done = set.done, durationSec = set.durationSec, distanceM = set.distanceM, grade = set.grade,
+                kind = set.kind.wire, rpe = set.rpe, supersetGroup = set.supersetGroup,
+            )
+        }
+        // Write before deleting stale rows: a refused upload must leave the old workout's sets intact.
+        chunks(rows).forEach { batch ->
+            client.postgrest.from("imported_session_sets").upsert(batch) {
+                onConflict = "session_id,exercise_name,set_index"
+                defaultToNull = false
+            }
+        }
+        val stale = staleSetRowIds(
+            current = mapOf(cloudId to sets),
+            onCloud = setKeysOf(client, "imported_session_sets", listOf(cloudId)),
+        )
+        chunks(stale, ID_FILTER_CHUNK).forEach { ids ->
+            client.postgrest.from("imported_session_sets").delete {
+                filter { isIn("id", ids) }
+            }
+        }
+    }
+
+    private suspend fun uploadLiftMarks(
+        client: io.github.jan.supabase.SupabaseClient,
+        userId: String,
+        history: List<Pair<WorkoutSession, List<SessionSet>>>,
+    ) {
+        val marks = LiftBoards.marks(
+            history = history,
+            bodyweightAt = SetRecords.bodyweightLookup(repo.observeStats().first()),
+            sex = repo.observeBodyProfile().first().second,
+            nowMs = System.currentTimeMillis(),
+            practices = repo.observeSkillPractices().first(),
+        )
+        if (marks.isNotEmpty()) {
+            client.postgrest.from("lift_marks").upsert(
+                marks.map {
+                    LiftMarkDto(
+                        userId = userId,
+                        lift = it.lift.wire,
+                        step = it.step,
+                        recentStep = it.recentStep,
+                        recentAt = it.recentAtMs?.let { at -> Instant.ofEpochMilli(at).toString() },
+                    )
+                },
+            ) {
+                onConflict = "user_id,lift"
+            }
+        }
+        // Deleted or amended qualifying sets must also remove a tier the lifter no longer holds.
+        val keep = marks.map { it.lift.wire }.toSet()
+        val stale = client.postgrest.from("lift_marks").select {
+            filter { eq("user_id", userId) }
+        }.decodeList<LiftMarkDto>().map { it.lift }.filter { it !in keep }
+        if (stale.isNotEmpty()) {
+            client.postgrest.from("lift_marks").delete {
+                filter {
+                    eq("user_id", userId)
+                    isIn("lift", stale)
+                }
+            }
         }
     }
 

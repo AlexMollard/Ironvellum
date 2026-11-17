@@ -327,10 +327,13 @@ class CloudPushHardeningTest {
     fun anUnrelatedProblemDoesNotStopTheWebStats() = env("side") {
         session("One", morning - 3 * 24 * hour)
         cloud.failWhen = { it.table == "lift_marks" }
-        val outcome = sync.push().getOrThrow()
-        assertEquals("only the tier problem", 1, outcome.problems.size)
-        assertEquals("the stats were held back by a tier problem", 1, cloud.count("POST", "web_snapshots"))
-        assertTrue(Cloud.webCaughtUp(user))
+        sync.snapshotClock = { morning }
+        repeat(20) {
+            val outcome = sync.push().getOrThrow()
+            assertEquals("only the tier problem", 1, outcome.problems.size)
+            assertEquals("the stats were held back by a tier problem", 1, cloud.count("POST", "web_snapshots"))
+            assertTrue(Cloud.webCaughtUp(user))
+        }
     }
 
     @Test
