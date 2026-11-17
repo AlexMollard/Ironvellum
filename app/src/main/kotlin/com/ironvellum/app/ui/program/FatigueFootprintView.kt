@@ -185,7 +185,7 @@ internal fun ColumnScope.FootprintBody(footprint: FatigueFootprint) {
             worked.forEach { m -> FootprintRow(m, (m.dose / top).toFloat().coerceIn(0.05f, 1f), m.muscle == selected) { picked = m.muscle } }
         }
     }
-    Spacer(Modifier.size(10.dp))
+    Spacer(Modifier.size(4.dp))
     FootprintHeadline(footprint, selected) { picked = it }
 }
 
@@ -268,7 +268,7 @@ private fun FootprintTag(text: String) {
 private fun FootprintHeadline(footprint: FatigueFootprint, muscle: Muscle, onPick: (Muscle) -> Unit) {
     val dose = footprint.muscles.firstOrNull { it.muscle == muscle }?.dose ?: 0.0
     val hours = FatigueFootprints.lightInHours(muscle, dose)
-    InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 2.dp)) {
+    InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 2.dp)) {
         Text(
             Words.text(UiText.res(R.string.fatigue_footprint_typical_head)),
             style = MaterialTheme.typography.titleSmall,
@@ -393,7 +393,7 @@ private fun rule(x0: Float, y0: Float, x1: Float, y1: Float) = Path().apply { mo
 
 private const val CHART_HOURS = 24
 private val CHART_HEIGHT = 60.dp
-private val ROW_HEIGHT = 18.dp
+private val ROW_HEIGHT = 24.dp
 private const val NAME_SHARE = 0.56f
 
 /**
