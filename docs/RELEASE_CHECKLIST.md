@@ -142,6 +142,33 @@ Exactly 10m00s remains red even when all checks pass; the CLI boundary regressio
 verified success just below the ceiling and failure at or above it. Cold starts
 currently exceed the ceiling and must not be reported as green.
 
+### Audit hardening verification (2026-11-17)
+
+The latest `python tools/gate.py --backend` run passed all functional checks:
+
+| Check | Observed result |
+|---|---|
+| JVM unit tests | 2,869 passed |
+| Emulator instrumented tests | 846 passed, zero skipped |
+| Web tests | 374 passed; production build passed |
+| Release lint | No issues found |
+| Supabase | Baseline, hosted patch replay and reset assertions passed |
+| Wall clock | 11m45s — **GATE RED**, above the unchanged ten-minute ceiling |
+
+This is not green release evidence. Independent web/backend checks now overlap
+Android and their failures remain part of the gate verdict, but the latest run
+still missed the budget. Local evidence: `.tmp/gate-recovered.txt`.
+
+The cloud rejection regression also passed all nine hardening tests, including
+20 repeated optional-request rejections. Splitting upload steps reduced the
+reported `pushOnce` instruction count from 99,282 to 57,512; Android still logs
+its compiler-size warning. No JIT/verifier flags or test assertions were disabled.
+
+Schema 34 has been tested against disposable Postgres, including an upgrade
+from schema 33 and patch reapplication. The live project still needs
+`supabase/hosted/2026-11-17-hardening.sql`; these local checks do not prove it was
+applied there.
+
 Target SDK remains 36 by Alex's explicit 1.11 decision. This meets the current
 [Play target-API requirement](https://developer.android.com/google/play/requirements/target-sdk);
 the narrow `OldTargetApi` lint exception records that choice rather than claiming

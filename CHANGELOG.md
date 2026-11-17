@@ -3,6 +3,35 @@
 What changed in each release, grouped by what you will notice. The short version ships with the app
 store listing; this is the whole list.
 
+## Unreleased
+
+### Backups and sync
+- Keep each workout's identity through a restore, so a restored history updates its cloud copy instead of uploading a second one; workouts the restore removes leave the cloud too.
+- Rebuild lifetime strength on restore, including cloud restores that carry no weigh-ins.
+- Back up favourite exercises; older archives leave this phone's favourites alone.
+- Take each archive from one consistent snapshot, so a workout sealed during a backup cannot be saved without its XP.
+- Let the daily background sync wait for the saved sign-in, so workouts missed offline still reach the cloud when the app stays closed.
+- Sign out of the old account when switching backends, and clear the saved sign-in after deleting the cloud account even when the network drops.
+- Split the oversized sync coroutine while preserving upload order, retries and non-fatal failure handling.
+
+### Training record
+- Keep 0 kg on assisted machines when amending another set of a finished workout.
+- Never change a finished workout's modifiers from a save that raced the finish.
+- Refuse a CSV import that ends inside a quoted note instead of silently dropping the rows after it.
+- Give fatigue-panel muscle rows 24dp touch targets without making the normal-size sheet scroll.
+
+### Backend (schema 34)
+- Reject workout dates before 2000, which could break other lifters' feeds, and bound per-workout XP and the weekly XP board.
+- Measure cloud backups by their real size.
+- Keep a circle's settled weeks after its last member leaves, so earned bonuses can still be collected.
+- Serialize ally-request, remark, report and circle-code limits so simultaneous requests cannot pass them.
+- Assert that accepting an ally request cannot rewrite who it is between.
+- Apply `supabase/hosted/2026-11-17-hardening.sql` to existing projects; the app's minimum schema is unchanged.
+
+### Maintenance
+- Make the local gate accept and replay migrations by the same idempotent/immutable rule as CI.
+- Run independent web and backend checks alongside Android, keeping every failure, test-count check and the ten-minute ceiling in one verdict.
+
 ## 1.11
 
 ### Maintenance
