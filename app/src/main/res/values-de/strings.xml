@@ -1029,6 +1029,7 @@
     <string name="settings_import_failed">Import fehlgeschlagen: %1$s</string>
     <string name="settings_import_unreadable">Datei konnte nicht gelesen werden</string>
     <string name="settings_import_empty">Die Datei war leer oder konnte nicht gelesen werden. Nichts wurde geändert.</string>
+    <string name="settings_import_unterminated_quote_error">Zeile %1$d beginnt ein Feld in Anführungszeichen, das nicht geschlossen wird. Die folgenden Zeilen können deshalb nicht gelesen werden. Die Datei ist möglicherweise unvollständig. Exportiere sie erneut.</string>
     <string name="settings_import_more_problems">%1$s (+%2$d weitere)</string>
     <string name="settings_import_not_archive">Import fehlgeschlagen — die Datei ist möglicherweise kein Ironvellum-Archiv</string>
     <string name="settings_restore_settings_failed">Training wurde wiederhergestellt, aber Einstellungen konnten nicht vollständig wiederhergestellt oder aktualisiert werden.</string>

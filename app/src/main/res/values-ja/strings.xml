@@ -979,6 +979,7 @@
     <string name="settings_import_failed">インポートに失敗：%1$s</string>
     <string name="settings_import_unreadable">ファイルを読み取れませんでした</string>
     <string name="settings_import_empty">ファイルが空か、読み取れませんでした。変更はありません。</string>
+    <string name="settings_import_unterminated_quote_error">%1$d 行目の引用符付きフィールドが閉じられていないため、以降の行を読み取れません。ファイルが途中で切れている可能性があります。もう一度エクスポートしてください。</string>
     <string name="settings_import_more_problems">%1$s（他%2$d件）</string>
     <string name="settings_import_not_archive">インポートに失敗しました。Ironvellumのアーカイブではない可能性があります。</string>
     <string name="settings_restore_settings_failed">トレーニングは復元されましたが、設定を完全に復元または更新できませんでした。</string>

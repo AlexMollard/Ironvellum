@@ -979,6 +979,7 @@
     <string name="settings_import_failed">导入失败：%1$s</string>
     <string name="settings_import_unreadable">无法读取文件</string>
     <string name="settings_import_empty">文件为空或无法读取。未更改任何数据。</string>
+    <string name="settings_import_unterminated_quote_error">第 %1$d 行的带引号字段未闭合，因此无法读取后面的行。文件可能不完整，请重新导出。</string>
     <string name="settings_import_more_problems">%1$s（另有 %2$d 条）</string>
     <string name="settings_import_not_archive">导入失败——该文件可能不是 Ironvellum 存档</string>
     <string name="settings_restore_settings_failed">训练数据已恢复，但设置未能完全恢复或刷新。</string>

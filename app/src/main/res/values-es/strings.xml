@@ -1079,6 +1079,7 @@
     <string name="settings_import_failed">Falló la importación: %1$s</string>
     <string name="settings_import_unreadable">no se pudo leer el archivo</string>
     <string name="settings_import_empty">El archivo estaba vacío o no se pudo leer. No se cambió nada.</string>
+    <string name="settings_import_unterminated_quote_error">La fila %1$d abre un campo entre comillas que no se cierra, por lo que no se pueden leer las filas siguientes. Es posible que el archivo esté incompleto: vuelve a exportarlo.</string>
     <string name="settings_import_more_problems">%1$s (+%2$d más)</string>
     <string name="settings_import_not_archive">Falló la importación: puede que el archivo no sea de Ironvellum</string>
     <string name="settings_restore_settings_failed">Se restauró el entrenamiento, pero no se pudieron restaurar o actualizar todos los ajustes.</string>

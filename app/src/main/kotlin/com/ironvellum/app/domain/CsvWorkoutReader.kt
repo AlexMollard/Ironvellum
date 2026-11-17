@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -174,12 +176,7 @@ object CsvWorkoutReader {
                 Source.STRONG,
                 emptyList(),
                 null,
-                listOf(
-                    unrelated(
-                        "Row ${e.row} opens a quoted field that never closes, so the rows after it cannot be " +
-                            "read. The file may be cut short: export it again.",
-                    ),
-                ),
+                listOf(unrelated(Words.text(UiText.res(R.string.settings_import_unterminated_quote_error, e.row)))),
             )
         }
         val header = rows.firstOrNull()?.map { it.trim() }

@@ -979,6 +979,7 @@
     <string name="settings_import_failed">가져오기 실패: %1$s</string>
     <string name="settings_import_unreadable">파일을 읽지 못했어요</string>
     <string name="settings_import_empty">파일이 비어 있거나 읽을 수 없어요. 아무것도 바뀌지 않았어요.</string>
+    <string name="settings_import_unterminated_quote_error">%1$d행에서 시작한 따옴표 필드가 닫히지 않아 이후 행을 읽을 수 없어요. 파일이 중간에 잘렸을 수 있어요. 다시 내보내 주세요.</string>
     <string name="settings_import_more_problems">%1$s (외 %2$d개)</string>
     <string name="settings_import_not_archive">가져오기 실패 — Ironvellum 아카이브가 아닐 수 있어요</string>
     <string name="settings_restore_settings_failed">운동 데이터는 복원했지만 설정은 완전히 복원하거나 새로 고치지 못했어요.</string>
