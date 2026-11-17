@@ -18,15 +18,17 @@ Speed: the gate runs in two Gradle invocations. The first compiles what the
 instrumented suite needs while the emulator cold boots beside it; the second
 runs unit tests, lint, the instrumented suite and the other flavour's
 assembles at the same time (the configuration cache lets Gradle run
-independent tasks of one project in parallel). The emulator is cold booted
-whenever it has been up longer than UPTIME_LIMIT or answers slowly: a
-long-lived emulator degrades, and a cold boot costs about 30s. If it drops off
+independent tasks of one project in parallel). The independent web and optional
+Postgres checks run alongside Android and are joined before the verdict.
+The emulator is cold booted whenever it has been up longer than UPTIME_LIMIT or
+answers slowly: a long-lived emulator degrades, and a cold boot costs about 30s. If it drops off
 adb mid-run the gate restarts it and retries the instrumented phase once.
 Gradle output goes to .tmp/gate-*.log; the console gets one line per phase.
 """
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import argparse
 import contextlib
 import glob
@@ -407,6 +409,34 @@ def retry_instrumented(serial: str, fl: str) -> None:
         gradle([f":app:connected{fl}DebugAndroidTest"], serial, "retry", watch=True)
 
 
+def web_and_backend(include_backend: bool) -> list[str]:
+    failures = []
+    if include_backend:
+        print("-- backend: supabase migrations + assertions")
+        if backend():
+            failures.append("backend")
+
+    print("-- web: generated assets, tests and production build")
+    npm = shutil.which("npm")
+    if not npm:
+        failures.append("web: npm is not installed")
+    else:
+        web_commands = [
+            [sys.executable, "tools/bodymap_web.py", "--check"],
+            [sys.executable, "tools/web_art.py"],
+            [sys.executable, "tools/web_art.py", "--check"],
+            [sys.executable, "tools/test_web_art.py"],
+            [npm, "--prefix", "web", "ci", "--ignore-scripts"],
+            [npm, "--prefix", "web", "test"],
+            [npm, "--prefix", "web", "run", "build"],
+        ]
+        for command in web_commands:
+            if run(command):
+                failures.append("web: " + " ".join(command[1:]))
+                break
+    return failures
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the Ironvellum gate locally.")
     parser.add_argument("--serial", help="device to run instrumented tests on")
@@ -448,7 +478,10 @@ def main() -> int:
     failures = []
     retried = False
     first_failed: list[str] = []
-    with device.emulator_lock(f"gate.py {args.flavour}") if serial else contextlib.nullcontext():
+    # Web and Postgres use no emulator or Gradle outputs; join their verdicts before reporting the gate.
+    with ThreadPoolExecutor(max_workers=1) as checks, \
+            (device.emulator_lock(f"gate.py {args.flavour}") if serial else contextlib.nullcontext()):
+        independent = checks.submit(web_and_backend, args.backend)
         ready: dict[str, bool] = {}
         booting = None
         if serial:
@@ -483,29 +516,7 @@ def main() -> int:
         if code2 and (failures or inst_bad):
             print_failure(log2)
 
-    if args.backend:
-        print("-- backend: supabase migrations + assertions")
-        if backend():
-            failures.append("backend")
-
-    print("-- web: generated assets, tests and production build")
-    npm = shutil.which("npm")
-    if not npm:
-        failures.append("web: npm is not installed")
-    else:
-        web_commands = [
-            [sys.executable, "tools/bodymap_web.py", "--check"],
-            [sys.executable, "tools/web_art.py"],
-            [sys.executable, "tools/web_art.py", "--check"],
-            [sys.executable, "tools/test_web_art.py"],
-            [npm, "--prefix", "web", "ci", "--ignore-scripts"],
-            [npm, "--prefix", "web", "test"],
-            [npm, "--prefix", "web", "run", "build"],
-        ]
-        for command in web_commands:
-            if run(command):
-                failures.append("web: " + " ".join(command[1:]))
-                break
+    failures.extend(independent.result())
 
     unit_total, unit_failed = counts(
         f"app/build/test-results/test{fl}DebugUnitTest/*.xml"

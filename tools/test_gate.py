@@ -54,6 +54,20 @@ class BudgetVerdictTest(unittest.TestCase):
                     patch.object(gate, "lint_summary", return_value="0 errors, 0 warnings"):
                 self.assertEqual(expected, gate.main())
 
+    def test_failed_web_or_backend_check_keeps_the_whole_gate_red(self):
+        for fail_backend in (False, True):
+            with self.subTest(backend=fail_backend), \
+                    patch.object(sys, "argv", ["gate.py", "--no-device", "--backend"]), \
+                    patch.object(gate, "gradle", return_value=(0, False, "unused")), \
+                    patch.object(gate, "failed_tasks", return_value=[]), \
+                    patch.object(gate.shutil, "which", return_value="npm"), \
+                    patch.object(gate, "backend", return_value=int(fail_backend)), \
+                    patch.object(gate, "run", side_effect=lambda cmd: int(not fail_backend and cmd[-1] == "test")), \
+                    patch.object(gate, "counts", return_value=(1, 0)), \
+                    patch.object(gate, "declared_tests", return_value=1), \
+                    patch.object(gate, "lint_summary", return_value="0 errors, 0 warnings"):
+                self.assertEqual(1, gate.main())
+
 
 if __name__ == "__main__":
     unittest.main()
