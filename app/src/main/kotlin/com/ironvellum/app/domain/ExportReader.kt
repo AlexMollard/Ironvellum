@@ -51,6 +51,8 @@ object ExportReader {
         val preparationRoutines: List<PreparationRoutine> = emptyList(),
         val sessionPreparations: List<SessionPreparation> = emptyList(),
         val preparationProblems: List<String> = emptyList(),
+        /** Null in older archives: keep the device's favourites. */
+        val favourites: List<ExportWriter.FavouriteSnapshot>? = null,
     )
 
     fun read(json: String): Result<Archive> = runCatching {
@@ -107,6 +109,13 @@ object ExportReader {
             preparationRoutines = routines,
             sessionPreparations = sessionPreparations,
             preparationProblems = preparationProblems,
+            favourites = root.arr("favourites")?.map {
+                val favourite = it as Obj
+                ExportWriter.FavouriteSnapshot(
+                    favourite.str("exerciseName") ?: fail("favourite missing exerciseName"),
+                    favourite.long("addedAt") ?: fail("favourite missing addedAt"),
+                )
+            },
             // Legacy v4 archives may still carry a "measurementGoals" section;
             // the parser absorbs it and we deliberately ignore it — an old
             // backup must restore, not fail.

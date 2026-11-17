@@ -69,6 +69,12 @@ interface FavouriteExerciseDao {
     @Query("SELECT exerciseId FROM favourite_exercises")
     fun observeIds(): Flow<List<Long>>
 
+    @Query("SELECT * FROM favourite_exercises")
+    suspend fun all(): List<FavouriteExerciseEntity>
+
+    @Query("DELETE FROM favourite_exercises")
+    suspend fun clearAll()
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun add(favourite: FavouriteExerciseEntity)
 

@@ -210,7 +210,7 @@ class PreparationPersistenceTest {
         } finally { context.deleteDatabase(name) }
     }
 
-    @Test fun archiveRemapsAllIdentitiesAndKeepsUnusedCustomRoutinesAndSealedProgress() = runTest {
+    @Test fun archivePreservesSessionIdentityAndRemapsRoutinesWithSealedProgress() = runTest {
         val customId = db.exerciseDao().insertAll(listOf(com.ironvellum.app.data.db.ExerciseEntity(name = "Prep custom", muscleGroup = "CORE", isWeighted = false, custom = true))).single()
         val routineId = repo.preparations.saveRoutine(PreparationRoutine(kind = PreparationKind.COOLDOWN, name = "Custom only", steps = listOf(PreparationStep(customId, "Prep custom", PreparationMeasure.SECONDS, 35))))
         repo.preparations.saveRoutine(PreparationRoutine(kind = PreparationKind.WARMUP, name = "Unused custom", steps = listOf(PreparationStep(customId, "Prep custom", PreparationMeasure.REPS, 7))))
@@ -228,7 +228,9 @@ class PreparationPersistenceTest {
         val newRoutine = repo.preparations.observeRoutines(PreparationKind.COOLDOWN).first().single()
         assertEquals("Unused custom", repo.preparations.observeRoutines(PreparationKind.WARMUP).first().single().name)
         val newSession = db.sessionDao().completedSessions().single()
-        assertNotEquals(p, newPreset.id); assertNotEquals(routineId, newRoutine.id); assertNotEquals(session, newSession.id)
+        assertNotEquals(p, newPreset.id)
+        assertNotEquals(routineId, newRoutine.id)
+        assertEquals(session, newSession.id)
         assertEquals(newRoutine.id, newPreset.preparation[PreparationKind.COOLDOWN]?.routineId)
         assertEquals("Prep custom", db.exerciseDao().byId(newRoutine.steps.single().exerciseId)?.name)
         val preparation = repo.preparations.observeSession(newSession.id, PreparationKind.COOLDOWN).first()!!

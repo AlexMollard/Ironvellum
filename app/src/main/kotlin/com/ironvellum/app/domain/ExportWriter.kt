@@ -41,6 +41,9 @@ object ExportWriter {
         val muscles: String = "",
     )
 
+    /** Names survive catalogue IDs changing between installs. */
+    data class FavouriteSnapshot(val exerciseName: String, val addedAt: Long)
+
     data class IdleSnapshot(
         val essence: Long,
         val shadows: Int,
@@ -114,6 +117,7 @@ object ExportWriter {
         photos: List<PhotoSnapshot>? = null,
         preparationRoutines: List<PreparationRoutine> = emptyList(),
         sessionPreparations: List<SessionPreparation> = emptyList(),
+        favourites: List<FavouriteSnapshot>? = null,
     ): String = buildString {
         append("{")
         append("\"formatVersion\":$FORMAT_VERSION,")
@@ -168,6 +172,16 @@ object ExportWriter {
         }
         append(",\"exercises\":")
         appendExercises(exercises)
+        // Additive and optional: older readers ignore this key without refusing the training archive.
+        if (favourites != null) {
+            append(",\"favourites\":[")
+            favourites.forEachIndexed { i, favourite ->
+                if (i > 0) append(',')
+                append("{\"exerciseName\":"); appendEscaped(favourite.exerciseName)
+                append(",\"addedAt\":${favourite.addedAt}}")
+            }
+            append(']')
+        }
         if (idle != null) {
             append(",\"idle\":")
             appendIdle(idle)

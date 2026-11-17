@@ -10,6 +10,8 @@ import com.ironvellum.app.data.db.OwnedCrestFrameEntity
 import com.ironvellum.app.data.db.OwnedRelicEntity
 import com.ironvellum.app.data.db.PresetEntryEntity
 import com.ironvellum.app.data.db.PresetEntity
+import com.ironvellum.app.data.db.FavouriteExerciseEntity
+import com.ironvellum.app.data.db.SyncStateEntity
 import com.ironvellum.app.domain.Crests
 import com.ironvellum.app.domain.ExportWriter
 import com.ironvellum.app.domain.Sex
@@ -108,6 +110,100 @@ class ExportRoundTripTest {
         val logged = loggedSets.single()
         assertEquals(8, logged.reps)
         assertEquals(20.0, logged.weightKg!!, 0.001)
+    }
+
+    @Test
+    fun restoringOnTheSameDatabasePreservesSessionIdsAndWatermarks() = runTest {
+        val bench = db.exerciseDao().byName("Bench Press")!!.id
+        val id = repo.startFreeformSession("Keep cloud identity")
+        repo.addExtraSet(id, bench, reps = 8, weightKg = 60.0, modifiers = "")
+        val set = db.sessionDao().setsFor(id).single()
+        repo.updateSet(set.id, reps = 8, weightKg = 60.0, done = true)
+        repo.completeSession(id)
+        val watermark = SyncStateEntity(id, 1234)
+        db.syncStateDao().upsertAll(listOf(watermark))
+
+        repo.importArchive(repo.exportJson()).getOrThrow()
+
+        assertEquals(listOf(id), db.sessionDao().observeCompletedWithSets().first().map { it.session.id })
+        assertEquals(listOf(watermark), db.syncStateDao().all())
+    }
+
+    @Test
+    fun restoringAnOlderArchiveTombstonesCompletedWorkoutsItRemoves() = runTest {
+        val archive = repo.exportJson()
+        val bench = db.exerciseDao().byName("Bench Press")!!.id
+        val id = repo.startFreeformSession("Removed by restore")
+        repo.addExtraSet(id, bench, reps = 8, weightKg = 60.0, modifiers = "")
+        val set = db.sessionDao().setsFor(id).single()
+        repo.updateSet(set.id, reps = 8, weightKg = 60.0, done = true)
+        repo.completeSession(id)
+        db.syncStateDao().upsertAll(listOf(SyncStateEntity(id, 1234)))
+
+        repo.importArchive(archive).getOrThrow()
+
+        assertEquals(0, db.sessionDao().completedCount())
+        assertEquals(listOf(id), db.syncStateDao().tombstoned())
+    }
+
+    @Test
+    fun missingAndDuplicateSessionIdsGetFreshIdsWithoutStealingArchivedIds() = runTest {
+        val id = repo.startFreeformSession("Identity fixture")
+        val bench = db.exerciseDao().byName("Bench Press")!!.id
+        repo.addExtraSet(id, bench, reps = 8, weightKg = 60.0, modifiers = "")
+        val set = db.sessionDao().setsFor(id).single()
+        repo.updateSet(set.id, reps = 8, weightKg = 60.0, done = true)
+        repo.completeSession(id)
+        val archive = JSONObject(repo.exportJson())
+        val original = archive.getJSONArray("sessions").getJSONObject(0).toString()
+        val sessions = org.json.JSONArray()
+        sessions.put(JSONObject(original).put("id", 0).put("startedAtMs", 1))
+        sessions.put(JSONObject(original).put("id", 100).put("startedAtMs", 2).put("imported", true))
+        sessions.put(JSONObject(original).put("id", 100).put("startedAtMs", 3))
+        sessions.put(JSONObject(original).put("id", 101).put("startedAtMs", 4))
+        archive.put("sessions", sessions)
+
+        repo.importArchive(archive.toString()).getOrThrow()
+
+        val restored = db.sessionDao().observeCompletedWithSets().first().associateBy { it.session.startedAtMs }
+        assertEquals(4, restored.values.map { it.session.id }.distinct().size)
+        assertTrue(restored.values.all { it.session.id > 0 && it.sets.size == 1 })
+        assertEquals(100L, restored.getValue(2L).session.id)
+        assertTrue(restored.getValue(2L).session.imported)
+        assertEquals(101L, restored.getValue(4L).session.id)
+    }
+
+    @Test
+    fun favouritesRoundTripByNameInLocalAndCloudArchives() = runTest {
+        val bench = db.exerciseDao().byName("Bench Press")!!.id
+        val deadlift = db.exerciseDao().byName("Deadlift")!!.id
+        val favourites = listOf(FavouriteExerciseEntity(bench, 17L), FavouriteExerciseEntity(deadlift, 23L))
+        favourites.forEach { db.favouriteExerciseDao().add(it) }
+        val archives = listOf(repo.exportJson(), repo.exportArchive(includeDeviceOnly = false).json)
+
+        archives.forEach { archive ->
+            val section = JSONObject(archive).getJSONArray("favourites")
+            assertEquals(setOf("Bench Press", "Deadlift"), (0 until section.length()).map {
+                section.getJSONObject(it).getString("exerciseName")
+            }.toSet())
+            db.favouriteExerciseDao().clearAll()
+            repo.importArchive(archive).getOrThrow()
+            assertEquals(favourites.toSet(), db.favouriteExerciseDao().all().toSet())
+        }
+    }
+
+    @Test
+    fun archivesWithoutFavouritesKeepTheDevicesStarsButAnEmptySectionClearsThem() = runTest {
+        val bench = db.exerciseDao().byName("Bench Press")!!.id
+        repo.setFavourite(bench, true)
+        val archive = JSONObject(repo.exportJson()).apply { remove("favourites") }
+
+        repo.importArchive(archive.toString()).getOrThrow()
+        assertEquals(listOf(bench), db.favouriteExerciseDao().observeIds().first())
+
+        archive.put("favourites", org.json.JSONArray())
+        repo.importArchive(archive.toString()).getOrThrow()
+        assertTrue(db.favouriteExerciseDao().observeIds().first().isEmpty())
     }
 
     @Test
@@ -414,6 +510,8 @@ class ExportRoundTripTest {
 
         val restoredSession = db.sessionDao().observeCompletedWithSets().first().single()
         assertEquals("restored set rows", setsBefore, restoredSession.sets.size)
+        assertTrue("the fixture must restore nonzero strength", restoredSession.session.strengthScore > 0)
+        assertEquals("cloud restore rebuilds lifetime strength", db.sessionDao().lifetimeStrength(), db.profileDao().get()!!.lifetimeStrength)
         assertEquals("the public note must survive the round trip", "public: felt strong", restoredSession.session.note)
         // Empty, not the original: the cloud copy never held it.
         assertEquals("a restored cloud archive must not resurrect the note", "", restoredSession.session.privateNote)

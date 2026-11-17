@@ -2035,9 +2035,9 @@ class Repository(
      * that block (and not to another block of the same movement) — including ones already ticked off,
      * which is the point: you realise mid-session that you were working at a deficit all along.
      */
-    suspend fun setExerciseModifiers(sessionId: Long, block: BlockKey, modifiers: String) {
-        val session = sessionDao.byId(sessionId) ?: return
-        if (session.completedAtMs != null) return
+    suspend fun setExerciseModifiers(sessionId: Long, block: BlockKey, modifiers: String) = db.withTransaction {
+        val session = sessionDao.byId(sessionId) ?: return@withTransaction
+        if (session.completedAtMs != null) return@withTransaction
         sessionDao.setModifiers(sessionId, block.exerciseId, block.position, modifiers)
     }
 
@@ -3569,6 +3569,7 @@ class Repository(
         require(draft.blocks.all { it.exerciseId in known }) { "A movement is not in the catalogue" }
 
         val rows = draft.blocks.filter { it.sets.isNotEmpty() }.flatMapIndexed { position, block ->
+            val assisted = BodyShare.isAssisted(catalogue.first { it.id == block.exerciseId }.name)
             block.sets.mapIndexed { index, s ->
                 SetLogEntity(
                     sessionId = sessionId,
@@ -3576,7 +3577,7 @@ class Repository(
                     exercisePosition = position,
                     setIndex = index,
                     reps = s.reps.coerceAtLeast(0),
-                    weightKg = s.weightKg?.takeIf { it > 0.0 },
+                    weightKg = s.weightKg?.takeIf { it > 0.0 || (it == 0.0 && assisted) },
                     modifiers = block.modifiers,
                     // A warm-up never counts, however the editor left its tick.
                     done = s.done && !s.warmup,
@@ -3688,137 +3689,168 @@ class Repository(
     // Connect days are promised never to leave this device, so a cloud backup
     // omits them. Default true keeps exportJson()/EXPORT ARCHIVE complete.
     suspend fun exportArchive(includeDeviceOnly: Boolean = true): ExportResult {
-        val profileEntity = profileDao.get()
-        val profile = profileEntity?.let {
-            PlayerProfile(
-                it.name,
-                it.totalXp,
-                it.currentTitleId,
-                // Export must not be the one action a bad stored mode can kill:
-                // it is how a lifter rescues their data.
-                runCatching { TrainingMode.valueOf(it.trainingMode) }
-                    .getOrDefault(TrainingMode.STRENGTH),
-            )
-        } ?: PlayerProfile()
-        val exerciseRows = exerciseDao.observeAll().first()
-        val names = exerciseRows.associate { it.id to it.name }
-        val presets = presetDao.observePresets().first().map { pw ->
-            WorkoutPreset(
-                id = pw.preset.id,
-                name = pw.preset.name,
-                note = pw.preset.note,
-                scheduledDay = pw.preset.scheduledDay,
-                importKey = pw.preset.importKey,
-                preparation = preparations.choices(pw.preset.id),
-                entries = pw.entries.sortedBy { it.position }.map { it.toPresetEntry(names) },
-            )
-        }
-        val notesBySession = sessionDao.allExerciseNotes().groupBy { it.sessionId }
-        val sessions = completedSessionsWithSets(names).map { (session, sets) ->
-            val notes = notesBySession[session.id].orEmpty().map { ExerciseNote(names[it.exerciseId] ?: "Unknown", it.note) }
-            session.copy(exerciseNotes = notes) to sets
-        }
-        val stats = statDao.observeAll().first().map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) }
-        val skills = skillPracticeDao.observeAll().first().map {
-            SkillPractice(it.skillName, it.practicedAtMs, it.claimed, it.value, it.weightKg, it.passed)
-        }
-        val healthDays = healthDayDao.observeAll().first().map {
-            HealthDay(
-                date = LocalDate.ofEpochDay(it.epochDay),
-                steps = it.steps,
-                distanceKm = it.distanceKm,
-                activeKcal = it.activeKcal,
-                sleepMinutes = it.sleepMinutes,
-                restingHr = it.restingHr,
-            )
-        }
-        val titles = titleDao.observeAll().first().map { UnlockedTitle(it.titleId, it.unlockedAtMs) }
         val exportProblems = mutableListOf<String>()
-        val measurements = measurementDao.observeAll().first().mapNotNull { e ->
-            val site = MeasurementSite.entries.firstOrNull { it.name == e.site }
-            if (site == null) {
-                // The import side reports every guess it makes; the export must
-                // be equally honest about rows it cannot carry.
-                exportProblems.add(
-                    Words.text(
-                        UiText.themed(R.string.data_export_unknown_site, R.string.data_export_unknown_site__t, e.site, e.valueCm),
-                    ),
+        // Keep the training ledger and its awarded totals in the same Room snapshot.
+        val snapshot = db.withTransaction {
+            val profileEntity = profileDao.get()
+            val profile = profileEntity?.let {
+                PlayerProfile(
+                    it.name,
+                    it.totalXp,
+                    it.currentTitleId,
+                    // Export must not be the one action a bad stored mode can kill:
+                    // it is how a lifter rescues their data.
+                    runCatching { TrainingMode.valueOf(it.trainingMode) }
+                        .getOrDefault(TrainingMode.STRENGTH),
                 )
-                return@mapNotNull null
+            } ?: PlayerProfile()
+            val exerciseRows = exerciseDao.observeAll().first()
+            val names = exerciseRows.associate { it.id to it.name }
+            val presets = presetDao.observePresets().first().map { pw ->
+                WorkoutPreset(
+                    id = pw.preset.id,
+                    name = pw.preset.name,
+                    note = pw.preset.note,
+                    scheduledDay = pw.preset.scheduledDay,
+                    importKey = pw.preset.importKey,
+                    preparation = preparations.choices(pw.preset.id),
+                    entries = pw.entries.sortedBy { it.position }.map { it.toPresetEntry(names) },
+                )
             }
-            MeasurementEntry(id = e.id, site = site, valueCm = e.valueCm, takenAtMs = e.takenAtMs)
-        }
-        // Real catalogue attributes: on restore a user-created movement comes
-        // back as built, not as a guessed PULL/weighted default.
-        val exercises = exerciseRows.map {
-            ExportWriter.ExerciseMeta(
-                name = it.name,
-                muscleGroup = it.muscleGroup,
-                isWeighted = it.isWeighted,
-                metric = it.metric,
-                category = it.category,
-                custom = it.custom,
-                gear = it.gear,
-                muscles = it.muscles,
+            val notesBySession = sessionDao.allExerciseNotes().groupBy { it.sessionId }
+            val sessions = completedSessionsWithSets(names).map { (session, sets) ->
+                val notes = notesBySession[session.id].orEmpty().map { ExerciseNote(names[it.exerciseId] ?: "Unknown", it.note) }
+                session.copy(exerciseNotes = notes) to sets
+            }
+            val stats = statDao.observeAll().first().map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) }
+            val skills = skillPracticeDao.observeAll().first().map {
+                SkillPractice(it.skillName, it.practicedAtMs, it.claimed, it.value, it.weightKg, it.passed)
+            }
+            val healthDays = healthDayDao.observeAll().first().map {
+                HealthDay(
+                    date = LocalDate.ofEpochDay(it.epochDay),
+                    steps = it.steps,
+                    distanceKm = it.distanceKm,
+                    activeKcal = it.activeKcal,
+                    sleepMinutes = it.sleepMinutes,
+                    restingHr = it.restingHr,
+                )
+            }
+            val titles = titleDao.observeAll().first().map { UnlockedTitle(it.titleId, it.unlockedAtMs) }
+            val measurements = measurementDao.observeAll().first().mapNotNull { e ->
+                val site = MeasurementSite.entries.firstOrNull { it.name == e.site }
+                if (site == null) {
+                    // The import side reports every guess it makes; the export must
+                    // be equally honest about rows it cannot carry.
+                    exportProblems.add(
+                        Words.text(
+                            UiText.themed(R.string.data_export_unknown_site, R.string.data_export_unknown_site__t, e.site, e.valueCm),
+                        ),
+                    )
+                    return@mapNotNull null
+                }
+                MeasurementEntry(id = e.id, site = site, valueCm = e.valueCm, takenAtMs = e.takenAtMs)
+            }
+            // Real catalogue attributes: on restore a user-created movement comes
+            // back as built, not as a guessed PULL/weighted default.
+            val exercises = exerciseRows.map {
+                ExportWriter.ExerciseMeta(
+                    name = it.name,
+                    muscleGroup = it.muscleGroup,
+                    isWeighted = it.isWeighted,
+                    metric = it.metric,
+                    category = it.category,
+                    custom = it.custom,
+                    gear = it.gear,
+                    muscles = it.muscles,
+                )
+            }
+            val idleRow = idleDao.get()
+            val idle = idleRow?.let {
+                ExportWriter.IdleSnapshot(
+                    it.essence,
+                    it.shadows,
+                    it.relicMultiplier,
+                    it.lastCollectedAtMs,
+                    lifetimeEssence = maxOf(it.lifetimeEssence, it.essence),
+                )
+            }
+            val gachaRow = gachaDao.get()
+            val gacha = gachaRow?.let {
+                ExportWriter.GachaSnapshot(
+                    rolls = it.rolls,
+                    equippedFrame = it.equippedFrame,
+                    figureStreak = it.figureStreak,
+                    rollLevelMark = it.rollLevelMark,
+                    relicPity = it.relicPity,
+                    drawsSpent = it.drawsSpent,
+                    offeringsMade = it.offeringsMade,
+                    veilGrantVersion = it.veilGrantVersion,
+                )
+            }
+            val crestFrames = gachaDao.ownedFrames().map {
+                ExportWriter.CrestFrameSnapshot(it.frameId, it.ownedAtMs, it.source)
+            }
+            val relics = gachaDao.observeRelics().first().map {
+                ExportWriter.RelicSnapshot(it.name, it.multiplier, it.drawnAtMs, it.relicId, it.refinements)
+            }
+            ExportReader.Archive(
+                formatVersion = ExportWriter.FORMAT_VERSION,
+                profile = profile,
+                trainingMode = profile.trainingMode,
+                presets = presets,
+                sessions = sessions,
+                stats = stats,
+                titles = titles,
+                skills = skills,
+                healthDays = healthDays,
+                measurements = measurements,
+                exercises = exercises,
+                heightCm = profileEntity?.heightCm,
+                sex = profileEntity?.sex,
+                idle = idle,
+                gacha = gacha,
+                crestFrames = crestFrames,
+                relics = relics,
+                exportedAtMs = System.currentTimeMillis(),
+                deviceDataOmitted = !includeDeviceOnly,
+                // Rows only, and never in the cloud copy (the writer drops them there too).
+                photos = if (includeDeviceOnly) photoLibrary.snapshot { sessionDao.byId(it)?.startedAtMs } else null,
+                preparationRoutines = preparations.allRoutines().map { routine ->
+                    routine.copy(steps = routine.steps.map { it.copy(exerciseName = names[it.exerciseId] ?: it.exerciseName) })
+                },
+                sessionPreparations = preparations.allSessions(sessions.map { it.first.id }.toSet()).map { value ->
+                    value.copy(snapshot = value.snapshot.copy(steps = value.snapshot.steps.map { it.copy(exerciseName = names[it.exerciseId] ?: it.exerciseName) }))
+                },
+                favourites = favouriteExerciseDao.all().mapNotNull {
+                    names[it.exerciseId]?.let { name -> ExportWriter.FavouriteSnapshot(name, it.addedAtMs) }
+                },
             )
-        }
-        val idleRow = idleDao.get()
-        val idle = idleRow?.let {
-            ExportWriter.IdleSnapshot(
-                it.essence,
-                it.shadows,
-                it.relicMultiplier,
-                it.lastCollectedAtMs,
-                lifetimeEssence = maxOf(it.lifetimeEssence, it.essence),
-            )
-        }
-        val gachaRow = gachaDao.get()
-        val gacha = gachaRow?.let {
-            ExportWriter.GachaSnapshot(
-                rolls = it.rolls,
-                equippedFrame = it.equippedFrame,
-                figureStreak = it.figureStreak,
-                rollLevelMark = it.rollLevelMark,
-                relicPity = it.relicPity,
-                drawsSpent = it.drawsSpent,
-                offeringsMade = it.offeringsMade,
-                veilGrantVersion = it.veilGrantVersion,
-            )
-        }
-        val crestFrames = gachaDao.ownedFrames().map {
-            ExportWriter.CrestFrameSnapshot(it.frameId, it.ownedAtMs, it.source)
-        }
-        val relics = gachaDao.observeRelics().first().map {
-            ExportWriter.RelicSnapshot(it.name, it.multiplier, it.drawnAtMs, it.relicId, it.refinements)
         }
         val json = ExportWriter.write(
-            profile = profile,
-            trainingMode = profile.trainingMode,
-            presets = presets,
-            sessions = sessions,
-            stats = stats,
-            titles = titles,
-            skills = skills,
-            healthDays = healthDays,
-            measurements = measurements,
-            exercises = exercises,
-            heightCm = profileEntity?.heightCm,
-            sex = profileEntity?.sex,
-            idle = idle,
-            gacha = gacha,
-            crestFrames = crestFrames,
-            relics = relics,
-            exportedAtMs = System.currentTimeMillis(),
+            profile = snapshot.profile,
+            trainingMode = snapshot.trainingMode,
+            presets = snapshot.presets,
+            sessions = snapshot.sessions,
+            stats = snapshot.stats,
+            titles = snapshot.titles,
+            skills = snapshot.skills,
+            healthDays = snapshot.healthDays,
+            measurements = snapshot.measurements,
+            exercises = snapshot.exercises,
+            heightCm = snapshot.heightCm,
+            sex = snapshot.sex,
+            idle = snapshot.idle,
+            gacha = snapshot.gacha,
+            crestFrames = snapshot.crestFrames,
+            relics = snapshot.relics,
+            exportedAtMs = snapshot.exportedAtMs,
             settings = archiveSettings?.snapshot(includeDeviceOnly),
             includeDeviceOnly = includeDeviceOnly,
-            // Rows only, and never in the cloud copy (the writer drops them there too).
-            photos = if (includeDeviceOnly) photoLibrary.snapshot { sessionDao.byId(it)?.startedAtMs } else null,
-            preparationRoutines = preparations.allRoutines().map { routine ->
-                routine.copy(steps = routine.steps.map { it.copy(exerciseName = names[it.exerciseId] ?: it.exerciseName) })
-            },
-            sessionPreparations = preparations.allSessions(sessions.map { it.first.id }.toSet()).map { value ->
-                value.copy(snapshot = value.snapshot.copy(steps = value.snapshot.steps.map { it.copy(exerciseName = names[it.exerciseId] ?: it.exerciseName) }))
-            },
+            photos = snapshot.photos,
+            preparationRoutines = snapshot.preparationRoutines,
+            sessionPreparations = snapshot.sessionPreparations,
+            favourites = snapshot.favourites,
         )
         return ExportResult(json, exportProblems)
     }
@@ -3861,6 +3893,7 @@ class Repository(
                 // An archive with no photos section (older, or the cloud copy) keeps this device's photos: their rows are
                 // read now, before the workouts go, and put back against the workouts that come back.
                 val keptPhotos = if (archive.photos == null) photoLibrary.snapshot { sessionDao.byId(it)?.startedAtMs } else null
+                val previousCompletedIds = sessionDao.completedSessions().map { it.id }.toSet()
                 val sessionIdByStart = mutableMapOf<Long, Long>()
                 // User data goes; the seeded exercise catalogue stays.
                 presetDao.clearAll()
@@ -3941,6 +3974,14 @@ class Repository(
                 // A custom exercise nothing references yet is still the lifter's: restore it, not only the ones
                 // a set or rite names.
                 archive.exercises.filter { it.custom }.forEach { resolveExercise(it.name) }
+                archive.favourites?.let { favourites ->
+                    favouriteExerciseDao.clearAll()
+                    favourites.forEach { favourite ->
+                        resolveExercise(favourite.exerciseName)?.let {
+                            favouriteExerciseDao.add(FavouriteExerciseEntity(it, favourite.addedAt))
+                        }
+                    }
+                }
 
                 // Exercise identities always resolve by name, even if the archived numeric ID exists locally.
                 suspend fun remapPreparationSteps(steps: List<PreparationStep>): List<PreparationStep> =
@@ -4003,9 +4044,13 @@ class Repository(
                 }
 
                 val sessionIdByOldId = mutableMapOf<Long, Long>()
+                // Fresh fallback IDs must not steal an archived identity or a removed workout's pending deletion.
+                var nextSessionId = maxOf(archive.sessions.maxOfOrNull { it.first.id } ?: 0L, previousCompletedIds.maxOrNull() ?: 0L, 0L)
+                val usedSessionIds = mutableSetOf<Long>()
                 archive.sessions.forEach { (session, sets) ->
                     val newSessionId = sessionDao.insertSession(
                         SessionEntity(
+                            id = session.id.takeIf { it > 0 && usedSessionIds.add(it) } ?: (++nextSessionId),
                             presetId = session.presetId?.let { presetIdByOldId[it] },
                             label = session.label,
                             startedAtMs = session.startedAtMs,
@@ -4021,6 +4066,7 @@ class Repository(
                             sealedXp = session.sealedXp,
                         ),
                     )
+                    usedSessionIds.add(newSessionId)
                     sessionIdByStart[session.startedAtMs] = newSessionId
                     sessionIdByOldId[session.id] = newSessionId
                     session.exerciseNotes.forEach { n ->
@@ -4059,6 +4105,10 @@ class Repository(
                         },
                     ).size
                 }
+                profileDao.setLifetimeStrength(sessionDao.lifetimeStrength())
+                syncStateDao.upsertAll(
+                    (previousCompletedIds - usedSessionIds).map { SyncStateEntity(it, SyncStateEntity.TOMBSTONE) },
+                )
 
                 archive.sessionPreparations.forEach { value ->
                     runCatching {

@@ -98,6 +98,25 @@ class EditSealedTrialTest {
     }
 
     @Test
+    fun amendingAnotherSetKeepsZeroMachineAssistance() = runBlocking {
+        val id = repo.startFreeformSession("Unassisted pull-up")
+        val assisted = exerciseId("Assisted Pull-up")
+        val bench = exerciseId("Bench Press")
+        repo.addExtraSet(id, assisted, reps = 8, weightKg = 0.0, modifiers = "")
+        repo.addExtraSet(id, bench, reps = 8, weightKg = 60.0, modifiers = "")
+        db.sessionDao().setsFor(id).forEach {
+            repo.updateSet(it.id, reps = it.reps, weightKg = it.weightKg, done = true)
+        }
+        repo.completeSession(id)
+        assertEquals(0.0, db.sessionDao().setsFor(id).single { it.exerciseId == assisted }.weightKg!!, 0.0)
+
+        repo.editSealedTrial(id, draftOf(id).updateSet(1, 0) { it.copy(reps = 7) })
+
+        assertEquals(0.0, db.sessionDao().setsFor(id).single { it.exerciseId == assisted }.weightKg!!, 0.0)
+        assertEquals(7, db.sessionDao().setsFor(id).single { it.exerciseId == bench }.reps)
+    }
+
+    @Test
     fun removingTheBestSetRenumbersTheRestGapFree() = runBlocking {
         val id = sealedBench(sets = 3)
         // Set 2 becomes the peak, then is taken back out.
