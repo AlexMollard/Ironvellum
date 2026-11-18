@@ -34,9 +34,14 @@ class RiteMovementInfoTest {
     }
 
     private fun clickLabelled(prefix: String) {
-        compose.onAllNodes(SemanticsMatcher("clickable \"$prefix...\"") {
+        val nodes = compose.onAllNodes(SemanticsMatcher("clickable \"$prefix...\"") {
             it.config.getOrNull(SemanticsActions.OnClick)?.label?.startsWith(prefix) == true
-        }).onFirst().performSemanticsAction(SemanticsActions.OnClick)
+        })
+        compose.waitUntil(6_000) {
+            compose.mainClock.advanceTimeByFrame()
+            nodes.fetchSemanticsNodes().isNotEmpty()
+        }
+        nodes.onFirst().performSemanticsAction(SemanticsActions.OnClick)
         driver.settle()
     }
 

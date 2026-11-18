@@ -31,6 +31,7 @@ store listing; this is the whole list.
 ### Maintenance
 - Make the local gate accept and replay migrations by the same idempotent/immutable rule as CI.
 - Run independent web and backend checks alongside Android, keeping every failure, test-count check and the ten-minute ceiling in one verdict.
+- Cut repeated instrumented UI setup and animation settling without removing test assertions or changing the gate budget.
 
 ## 1.11
 

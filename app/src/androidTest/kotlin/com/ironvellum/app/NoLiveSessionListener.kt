@@ -1,6 +1,7 @@
 package com.ironvellum.app
 
 import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.data.Words
@@ -27,7 +28,9 @@ class NoLiveSessionListener : RunListener() {
     override fun testStarted(description: Description) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val app = instrumentation.targetContext.applicationContext as IronvellumApp
-        if (Build.VERSION.SDK_INT >= 33) {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
             instrumentation.uiAutomation.grantRuntimePermission(app.packageName, Manifest.permission.POST_NOTIFICATIONS)
         }
         Words.setThemed(app, true)

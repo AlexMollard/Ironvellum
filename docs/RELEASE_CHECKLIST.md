@@ -144,7 +144,7 @@ currently exceed the ceiling and must not be reported as green.
 
 ### Audit hardening verification (2026-11-17)
 
-The latest `python tools/gate.py --backend` run passed all functional checks:
+The 2026-11-17 `python tools/gate.py --backend` run passed all functional checks:
 
 | Check | Observed result |
 |---|---|
@@ -155,9 +155,9 @@ The latest `python tools/gate.py --backend` run passed all functional checks:
 | Supabase | Baseline, hosted patch replay and reset assertions passed |
 | Wall clock | 11m45s — **GATE RED**, above the unchanged ten-minute ceiling |
 
-This is not green release evidence. Independent web/backend checks now overlap
-Android and their failures remain part of the gate verdict, but the latest run
-still missed the budget. Local evidence: `.tmp/gate-recovered.txt`.
+This was not green release evidence. Independent web/backend checks overlapped
+Android and their failures remained part of the verdict, but that run still
+missed the budget. Local evidence: `.tmp/gate-recovered.txt`.
 
 The cloud rejection regression also passed all nine hardening tests, including
 20 repeated optional-request rejections. Splitting upload steps reduced the
@@ -173,6 +173,18 @@ Target SDK remains 36 by Alex's explicit 1.11 decision. This meets the current
 [Play target-API requirement](https://developer.android.com/google/play/requirements/target-sdk);
 the narrow `OldTargetApi` lint exception records that choice rather than claiming
 API 37 behavior has been migrated.
+
+### Local gate recovery (2026-11-18)
+
+`python tools/gate.py --backend` returned **GATE GREEN** in **8m05s** and
+**9m22s** on consecutive warm `swangle` runs, without retries. All 2,869 JVM,
+846 instrumented (zero skipped), and 374 web tests passed; the web production
+build, release lint, and disposable Postgres assertions passed. Test setup
+now reuses the app's catalogue initialization, avoids redundant permission
+grants and semantics queries, and advances fewer decorative animation frames.
+The test assertions, emulator viewport, and strict ten-minute ceiling are
+unchanged. Cold-boot timing was not verified with the final changes.
+Local evidence: `.tmp/gate-readiness.txt` and `.tmp/gate-readiness-confirmed.txt`.
 
 ## 4. Supabase schema
 

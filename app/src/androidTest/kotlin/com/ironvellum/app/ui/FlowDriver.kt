@@ -29,7 +29,7 @@ class FlowDriver(private val compose: ComposeTestRule) {
         settle()
     }
 
-    fun settle(times: Int = 4) {
+    fun settle(times: Int = 2) {
         repeat(times) { compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS) }
     }
 
@@ -86,8 +86,8 @@ class FlowDriver(private val compose: ComposeTestRule) {
     }
 
     private companion object {
-        /** Long enough for a destination swap to compose and lay out. */
-        const val FRAME_BUDGET_MS = 1_200L
+        /** Allow destination transitions to finish without replaying seconds of decorative animation. */
+        const val FRAME_BUDGET_MS = 400L
         const val POLL_MS = 100L
     }
 }

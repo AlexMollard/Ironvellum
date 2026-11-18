@@ -205,7 +205,9 @@ class TwinSwitchTrialRecreationTest {
             initializer { ExercisePickerViewModel(repo, context.applicationContext) }
         })["exercise_picker", ExercisePickerViewModel::class.java]
         show()
-        compose.onNodeWithText(context.getString(R.string.session_end_add_exercise)).performScrollTo().performClick()
+        val addExercise = context.getString(R.string.session_end_add_exercise)
+        awaitText(addExercise)
+        compose.onNodeWithText(addExercise).performScrollTo().performClick()
         awaitText(context.getString(R.string.picker_title_default))
     }
 

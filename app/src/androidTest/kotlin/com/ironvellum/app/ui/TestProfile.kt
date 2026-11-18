@@ -48,7 +48,7 @@ object TestProfile {
         FirstRunPrefs.setSexUnset(app, false)
         runBlocking {
             val repo = app.repository
-            repo.ensureSeeded()
+            app.awaitRepositoryReady()
             if (app.database.profileDao().get()?.heightCm == null) {
                 repo.setHeight(HEIGHT_CM)
             }

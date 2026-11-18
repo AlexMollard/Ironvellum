@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.first
 import org.junit.*
 import org.junit.Assert.*
 import org.junit.runner.RunWith
+import java.util.UUID
 
 /** Real app NavHost: selector nesting, retained session owner, and sealed cooldown round trips. */
 @RunWith(AndroidJUnit4::class)
@@ -454,15 +455,16 @@ class PreparationSessionFlowTest {
         driver.settle(8)
         Thread.sleep(300)
         preparationCapture(compose, "refinement-task2-nav-editor")
-        setField(text(R.string.preparation_name), "Created inside workout draft")
+        val routineName = "Workout draft ${UUID.randomUUID()}"
+        setField(text(R.string.preparation_name), routineName)
         // Actual root NavHost recreation while the workout owner sits below selector and creator.
         compose.activityRule.scenario.recreate()
         driver.awaitText(text(R.string.preparation_seconds))
-        compose.onNodeWithContentDescription(text(R.string.preparation_name)).assertTextEquals("Created inside workout draft")
+        compose.onNodeWithContentDescription(text(R.string.preparation_name)).assertTextEquals(routineName)
         driver.click(text(R.string.preparation_save))
         driver.awaitText(text(R.string.preparation_use_kind, text(R.string.preparation_warmup)))
-        val created = withTimeout(10000) { repo.preparations.observeRoutines(PreparationKind.WARMUP).first { rows -> rows.any { it.name == "Created inside workout draft" } } }
-            .single { it.name == "Created inside workout draft" }
+        val created = withTimeout(10000) { repo.preparations.observeRoutines(PreparationKind.WARMUP).first { rows -> rows.any { it.name == routineName } } }
+            .single { it.name == routineName }
         driver.awaitText(created.name)
         driver.click(created.name)
         driver.click(text(R.string.preparation_manage))

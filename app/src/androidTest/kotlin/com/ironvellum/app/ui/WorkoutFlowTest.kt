@@ -71,12 +71,7 @@ class WorkoutFlowTest {
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
     }
 
-    /**
-     * With the clock held, one advance is not always enough for a destination
-     * swap: the navigation animation and the first layout pass each need frames
-     * before a node counts as displayed.
-     */
-    private fun settle(times: Int = 4) {
+    private fun settle(times: Int = 1) {
         repeat(times) { compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS) }
     }
 
@@ -279,7 +274,7 @@ class WorkoutFlowTest {
     }
 
     private companion object {
-        const val FRAME_BUDGET_MS = 1_200L
+        const val FRAME_BUDGET_MS = 400L
         const val POLL_MS = 100L
     }
 }

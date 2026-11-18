@@ -3,6 +3,7 @@ package com.ironvellum.app.ui
 import android.util.Log
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.test.SemanticsMatcher
@@ -62,6 +63,9 @@ class AccessibilityChecksTest {
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
     }
 
+    private fun laidOutControls() =
+        compose.onAllNodes(hasClickAction()).fetchSemanticsNodes().filter { it.size.width > 0 }
+
     /**
      * Controls an accessibility service would announce as nothing useful.
      *
@@ -69,9 +73,8 @@ class AccessibilityChecksTest {
      * screen-reader user nothing: it is read as a punctuation character, not
      * as what the control does. An icon-forward UI has to name its glyphs.
      */
-    private fun unlabelledControls(): List<String> {
-        val nodes = compose.onAllNodes(hasClickAction()).fetchSemanticsNodes()
-        return nodes.filter { it.size.width > 0 }.mapNotNull { node ->
+    private fun unlabelledControls(nodes: List<SemanticsNode>): List<String> {
+        return nodes.mapNotNull { node ->
             val described = node.config.valueOrNull(SemanticsProperties.ContentDescription)
                 ?.any { it.saysSomething() } == true
             val texted = node.config.valueOrNull(SemanticsProperties.Text)
@@ -120,11 +123,10 @@ class AccessibilityChecksTest {
      * sit inside padded panels, and forcing them to 48dp would relayout the
      * information design. That is the owner's call, not a defect.
      */
-    private fun controlsBelowTheAccessibleFloor(): List<String> {
+    private fun controlsBelowTheAccessibleFloor(nodes: List<SemanticsNode>): List<String> {
         val density = compose.density.density
         val minPx = WCAG_FLOOR_DP * density
-        return compose.onAllNodes(hasClickAction()).fetchSemanticsNodes()
-            .filter { it.size.width > 0 }
+        return nodes
             .mapNotNull { node ->
                 // node.size is the LAID-OUT size; boundsInRoot is clipped to the
                 // visible region, so a control half-scrolled off the screen
@@ -199,8 +201,9 @@ class AccessibilityChecksTest {
         for (destination in DESTINATIONS) {
             compose.onNodeWithContentDescription(destination).performClick()
             compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-            unlabelled += unlabelledControls().map { "$destination: $it" }
-            tooSmall += controlsBelowTheAccessibleFloor().map { "$destination: $it" }
+            val controls = laidOutControls()
+            unlabelled += unlabelledControls(controls).map { "$destination: $it" }
+            tooSmall += controlsBelowTheAccessibleFloor(controls).map { "$destination: $it" }
         }
 
         assertEquals(
@@ -319,8 +322,9 @@ class AccessibilityChecksTest {
             compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
             val where = path.joinToString("/")
             visited += where
-            unlabelled += unlabelledControls().map { "$where: $it" }
-            tooSmall += controlsBelowTheAccessibleFloor().map { "$where: $it" }
+            val controls = laidOutControls()
+            unlabelled += unlabelledControls(controls).map { "$where: $it" }
+            tooSmall += controlsBelowTheAccessibleFloor(controls).map { "$where: $it" }
             if (path.first() == "Ledger") leaveLedgerPane()
         }
 
@@ -475,8 +479,9 @@ class AccessibilityChecksTest {
             compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
             val where = path.joinToString("/")
             visited += where
-            unlabelled += unlabelledControls().map { "$where: $it" }
-            tooSmall += controlsBelowTheAccessibleFloor().map { "$where: $it" }
+            val controls = laidOutControls()
+            unlabelled += unlabelledControls(controls).map { "$where: $it" }
+            tooSmall += controlsBelowTheAccessibleFloor(controls).map { "$where: $it" }
             // The buy and houses sheets are windows over a page, not routes: back would leave
             // the page with the sheet still up, so close each by its own button.
             for (dismiss in listOf("Cancel", "Got it")) {
@@ -654,7 +659,7 @@ class AccessibilityChecksTest {
             listOf("Today", "The Veil", "Buy an inscription"),
         )
         const val SEEDED_ESSENCE = 1_000_000L
-        const val FRAME_BUDGET_MS = 1_200L
+        const val FRAME_BUDGET_MS = 400L
         const val SURFACE_POLLS = 10
         const val SURFACE_POLL_MS = 200L
         const val MIN_TARGET_DP = 48f
