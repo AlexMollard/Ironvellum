@@ -1353,20 +1353,7 @@ class CloudSync private constructor(
             return Result.failure(MessageException(cloudThemed(R.string.cloud_ally_type_name, R.string.cloud_ally_type_name__t)))
         }
         return runCatching {
-            // Discovery goes through find_hunter(), not a select on `profiles`.
-            // A select is governed by `profiles_read using (can_view(id))`, and
-            // for a stranger can_view is false precisely BECAUSE you are not
-            // friends yet — so the lookup returned nothing and told the lifter
-            // that a real person did not exist. The RPC is an exact, trimmed,
-            // case-insensitive match returning only (id, display_name), so it
-            // cannot be walked to enumerate the roster and reveals nothing the
-            // caller did not already type.
-            val matches = client.postgrest.rpc(
-                RPC_FIND_HUNTER,
-                rpcArgs(FindHunterArgs(name = name)),
-            ).decodeList<ProfileNameDto>()
-            val exact = matches.firstOrNull { it.displayName.equals(name, ignoreCase = true) }
-                ?: throw MessageException(cloudThemed(R.string.cloud_ally_not_found, R.string.cloud_ally_not_found__t, name))
+            val exact = exactFriend(client, name)
             if (exact.id == me.userId) {
                 throw MessageException(cloudThemed(R.string.cloud_ally_self_request, R.string.cloud_ally_self_request__t))
             }
@@ -1383,6 +1370,28 @@ class CloudSync private constructor(
             throw MessageException(Cloud.explain(error), error)
         }
     }
+
+    internal suspend fun findFriend(displayName: String): Result<ProfileNameDto> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            exactFriend(client, displayName.trim()).also {
+                if (it.id == me.userId) {
+                    throw MessageException(cloudThemed(R.string.cloud_ally_self_request, R.string.cloud_ally_self_request__t))
+                }
+            }
+        }.recoverCatching { error ->
+            if (error is kotlinx.coroutines.CancellationException) throw error
+            throw MessageException(Cloud.explain(error), error)
+        }
+    }
+
+    // The exact-name RPC only reveals the id and name the caller already typed.
+    private suspend fun exactFriend(client: io.github.jan.supabase.SupabaseClient, name: String): ProfileNameDto =
+        client.postgrest.rpc(RPC_FIND_HUNTER, rpcArgs(FindHunterArgs(name = name)))
+            .decodeList<ProfileNameDto>()
+            .firstOrNull { it.displayName.equals(name, ignoreCase = true) }
+            ?: throw MessageException(cloudThemed(R.string.cloud_ally_not_found, R.string.cloud_ally_not_found__t, name))
 
     /**
      * Same semantics as [requestFriend], but keyed by id for feed

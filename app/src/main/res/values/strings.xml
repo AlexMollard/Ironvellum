@@ -5821,6 +5821,33 @@
 
     <!-- Account / Allies tab, signed in. -->
     <string name="acct_settings_description">Account settings</string>
+    <string name="social_title">Social</string>
+    <string name="social_find_friend">Find a friend</string>
+    <string name="social_find_friend__t">Find an ally</string>
+    <string name="social_search_name">Search</string>
+    <string name="social_inbox_filter_all">All activity</string>
+    <string name="social_inbox_filter_unread">Unread</string>
+    <string name="social_inbox_no_unread">No unread activity.</string>
+    <string name="social_inbox_requests">Requests</string>
+    <string name="own_social_profile">Your profile</string>
+    <string name="own_social_friend_preview">View as friend</string>
+    <string name="own_social_friend_preview__t">View as ally</string>
+    <string name="own_social_preview_unavailable">This profile is not visible to friends</string>
+    <string name="own_social_preview_unavailable__t">This profile is not visible to allies</string>
+    <string name="own_social_account_unavailable">Account profile unavailable</string>
+    <string name="own_social_total_xp">Total XP</string>
+    <string name="own_social_visibility">Profile visibility</string>
+    <string name="own_social_visibility_unknown">Unknown</string>
+    <string name="own_social_edit">Edit profile</string>
+    <string name="own_social_preview_explanation">Preview based on workouts on this device. Friends only see workouts that have synced.</string>
+    <string name="own_social_preview_explanation__t">Preview based on trials on this device. Allies only see trials that have synced.</string>
+    <string name="own_social_recent_workouts">Recent workouts</string>
+    <string name="own_social_recent_workouts__t">Recent trials</string>
+    <string name="own_social_loading">Loading workouts…</string>
+    <string name="own_social_loading__t">Loading trials…</string>
+    <string name="own_social_no_workouts">No workouts to show</string>
+    <string name="own_social_no_workouts__t">No trials to show</string>
+    <string name="own_social_workout_xp">%1$d XP</string>
     <!-- Read-only chip under your name: who can read your workouts. -->
     <string name="acct_visibility_public">Public</string>
     <string name="acct_visibility_friends">Friends only</string>
@@ -6272,12 +6299,6 @@
     <string name="feed_end__t">You\'ve reached the first page of the tidings.</string>
     <!-- Timestamp line of an edited workout. %1$s is the time, such as "2h ago". -->
     <string name="feed_stamp_amended">%1$s · amended</string>
-    <!-- Screen reader label of the reaction button when the lifter has reacted. %1$s is the reaction name (Honour, Iron or Flame). -->
-    <string name="feed_reaction_mine_description">Your kudos: %1$s</string>
-    <string name="feed_reaction_mine_description__t">Your tribute: %1$s</string>
-    <!-- Screen reader label of the reaction button before the lifter has reacted. -->
-    <string name="feed_reaction_pay_description">Pay kudos</string>
-    <string name="feed_reaction_pay_description__t">Pay tribute</string>
     <!-- Chip on a card offering a friend request. Short. -->
     <string name="feed_add_ally_button">Add friend</string>
     <string name="feed_add_ally_button__t">Add ally</string>
@@ -6288,8 +6309,6 @@
     <string name="feed_reaction_error__t">Tribute not saved: %1$s</string>
     <!-- Text link in the reaction picker that removes the lifter's reaction. -->
     <string name="feed_reaction_remove">Remove</string>
-    <!-- Picker option with its count. %1$s is the reaction name, %2$d how many people chose it. -->
-    <string name="feed_reaction_option_count">%1$s %2$d</string>
     <!-- The three reactions. Names of the wire values; keep short. -->
     <string name="feed_reaction_honour">Honour</string>
     <string name="feed_reaction_iron">Iron</string>

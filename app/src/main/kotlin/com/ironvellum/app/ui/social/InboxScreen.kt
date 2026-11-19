@@ -36,12 +36,16 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -68,12 +72,17 @@ import com.ironvellum.app.data.cloud.InboxItem
 import com.ironvellum.app.ui.components.InkChip
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.components.formatDate
+import com.ironvellum.app.ui.components.selectedUnderline
 import com.ironvellum.app.ui.components.UndoBar
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.IronvellumColors
+import java.time.Instant
+import java.time.ZoneId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -85,6 +94,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import androidx.compose.runtime.saveable.rememberSaveable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.isActive
 
@@ -259,9 +270,16 @@ internal fun InboxScreen(
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
-    // Every visit to the tab reads the inbox and clears the nav dot.
+    val scrollState = rememberScrollState()
+    var unreadOnly by rememberSaveable(ui.owner, active) { mutableStateOf(false) }
+    var visitSeenAt by rememberSaveable(ui.owner, active) { mutableStateOf<Long?>(null) }
+    // Back from a thread restores the visit snapshot instead of marking the same rows again.
     LaunchedEffect(ui.owner, active) {
-        if (ui.signedIn && active) viewModel.open()
+        if (ui.signedIn && active && visitSeenAt == null) {
+            viewModel.open()
+            val firstRead = viewModel.ui.first { it.owner == ui.owner && it.loaded && !it.loading && (it.error == null || it.items.isNotEmpty()) }
+            visitSeenAt = firstRead.seenAtMs ?: Long.MIN_VALUE
+        }
     }
     // Leaving the tab (a swipe or navigation) lets a waiting decline go through.
     val commit by rememberUpdatedState(viewModel::commitDecline)
@@ -314,36 +332,38 @@ internal fun InboxScreen(
                             )
                         },
                     ) {
-                        // The inbox is capped at 30 days, so one scrolling column inside one
-                        // card is enough: rows divided by InkDivider, as everywhere else.
-                        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                        val seenAt = visitSeenAt ?: ui.seenAtMs ?: Long.MIN_VALUE
+                        val visible = ui.items.filter { !unreadOnly || it.occurredAtMs > seenAt }
+                        val requests = visible.filterIsInstance<InboxItem.FriendRequest>()
+                        val activity = visible.filterNot { it is InboxItem.FriendRequest }
+                        Column(Modifier.fillMaxSize().verticalScroll(scrollState)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                listOf(false, true).forEach { unread ->
+                                    Text(
+                                        stringResource(if (unread) R.string.social_inbox_filter_unread else R.string.social_inbox_filter_all),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = if (unreadOnly == unread) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                                        modifier = Modifier.heightIn(min = 48.dp)
+                                            .selectedUnderline(unreadOnly == unread)
+                                            .selectable(selected = unreadOnly == unread, role = Role.Checkbox) { unreadOnly = unread }
+                                            .wrapContentHeight(),
+                                    )
+                                }
+                            }
                             if (ui.items.isEmpty()) {
                                 EmptyInbox()
+                            } else if (visible.isEmpty()) {
+                                Text(stringResource(R.string.social_inbox_no_unread), color = IronvellumColors.InkMuted, style = MaterialTheme.typography.bodySmall)
                             } else {
-                                InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
-                                    ui.items.forEachIndexed { index, item ->
-                                        if (index > 0) InkDivider()
-                                        InboxRow(
-                                            item = item,
-                                            unread = ui.seenAtMs == null || item.occurredAtMs > ui.seenAtMs!!,
-                                            answering = item.actorId in ui.answering,
-                                            answered = ui.answered[item.actorId]
-                                                ?: RequestAnswer.DECLINED.takeIf { ui.pendingDecline?.first == item.actorId },
-                                            onOpenLifter = { onOpenLifter(item.actorId, item.actorName) },
-                                            onOpenCircle = onOpenCircle,
-                                            onOpenComments = { sessionId, headline, mine ->
-                                                // Remarks and tributes are on the caller's own trials, so
-                                                // the caller is the owner. A reply sits on someone else's:
-                                                // it opens with no owner, and the thread reads the real
-                                                // one off the trial, rather than lending the caller the
-                                                // owner's moderation for a moment.
-                                                ui.owner.userId?.let { me -> onOpenComments(sessionId, if (mine) me else "", headline) }
-                                            },
-                                            onAccept = { viewModel.accept(item.actorId) },
-                                            onDecline = { viewModel.decline(item.actorId, item.actorName.ifBlank { "${Words.lifter.cat}" }) },
-                                        )
-                                    }
+                                if (requests.isNotEmpty()) {
+                                    SectionHeader(stringResource(R.string.social_inbox_requests))
+                                    InboxRows(requests, ui, seenAt, onOpenLifter, onOpenCircle, onOpenComments, viewModel)
                                 }
+                                activity.groupBy { Instant.ofEpochMilli(it.occurredAtMs).atZone(ZoneId.systemDefault()).toLocalDate() }
+                                    .forEach { (_, items) ->
+                                        SectionHeader(formatDate(items.first().occurredAtMs, "MMM d, yyyy"))
+                                        InboxRows(items, ui, seenAt, onOpenLifter, onOpenCircle, onOpenComments, viewModel)
+                                    }
                             }
                             Spacer(Modifier.height(28.dp))
                         }
@@ -357,6 +377,37 @@ internal fun InboxScreen(
                 onUndo = viewModel::undoDecline,
                 onExpired = viewModel::commitDecline,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun InboxRows(
+    items: List<InboxItem>,
+    ui: InboxUi,
+    seenAt: Long,
+    onOpenLifter: (String, String) -> Unit,
+    onOpenCircle: () -> Unit,
+    onOpenComments: (String, String, String) -> Unit,
+    viewModel: InboxViewModel,
+) {
+    InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+        items.forEachIndexed { index, item ->
+            if (index > 0) InkDivider()
+            InboxRow(
+                item = item,
+                unread = item.occurredAtMs > seenAt,
+                answering = item.actorId in ui.answering,
+                answered = ui.answered[item.actorId]
+                    ?: RequestAnswer.DECLINED.takeIf { ui.pendingDecline?.first == item.actorId },
+                onOpenLifter = { onOpenLifter(item.actorId, item.actorName) },
+                onOpenCircle = onOpenCircle,
+                onOpenComments = { sessionId, headline, mine ->
+                    ui.owner.userId?.let { me -> onOpenComments(sessionId, if (mine) me else "", headline) }
+                },
+                onAccept = { viewModel.accept(item.actorId) },
+                onDecline = { viewModel.decline(item.actorId, item.actorName.ifBlank { "${Words.lifter.cat}" }) },
             )
         }
     }

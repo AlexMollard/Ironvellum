@@ -3,6 +3,11 @@
 What changed in each release, grouped by what you will notice. The short version ships with the app
 store listing; this is the whole list.
 
+## Unreleased
+
+- Put Inbox and your training profile in the Social header, keep the bottom navigation in comment threads, and use icons for reactions and sending comments.
+- Give Circle its own screen and let you preview your profile without private workouts.
+
 ## 1.12
 
 ### Backups and sync

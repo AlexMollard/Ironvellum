@@ -13,10 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
@@ -43,9 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -364,6 +360,7 @@ fun FeedScreen(
             initializer { FeedViewModel(ironvellumCloudSync(), ironvellumAccount(), ironvellumRepository()) }
         },
     ),
+    onFindFriend: (() -> Unit)? = null,
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
@@ -375,7 +372,7 @@ fun FeedScreen(
         when {
             ui.loading && ui.entries.isEmpty() -> LoadingPanel()
             ui.entries.isEmpty() && err != null -> ErrorPanel(err, onRetry = { viewModel.load(force = true) })
-            ui.entries.isEmpty() -> EmptyFeed(onRefresh = { viewModel.load(force = true) })
+            ui.entries.isEmpty() -> EmptyFeed(onRefresh = { viewModel.load(force = true) }, onFindFriend = onFindFriend.takeIf { ui.exhausted })
             else -> {
                 // A failed refresh must not hide behind yesterday's rows: the
                 // banner rides above the list, rows stay in place.
@@ -416,13 +413,16 @@ private fun LoadingPanel() {
 }
 
 @Composable
-private fun EmptyFeed(onRefresh: () -> Unit) {
+private fun EmptyFeed(onRefresh: () -> Unit, onFindFriend: (() -> Unit)?) {
     Text(
         UiText.themed(R.string.feed_empty, R.string.feed_empty__t).asString(),
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
     SocialRefreshLink(onClick = onRefresh, label = stringResource(R.string.feed_check_again))
+    onFindFriend?.let {
+        InkChip(label = UiText.themed(R.string.social_find_friend, R.string.social_find_friend__t).asString(), icon = Icons.Outlined.PersonAdd, onClick = it)
+    }
 }
 
 /**
@@ -591,9 +591,6 @@ private fun FeedCard(
     onOpenComments: (FeedEntry) -> Unit,
     onAddAlly: (String) -> Unit,
 ) {
-    // The picker opens inline under the action row rather than as a popup:
-    // a menu anchored to a 44dp chip covered the stat strip it reacts to.
-    var picking by remember { mutableStateOf(false) }
     // The whole card opens the workout: the identity row, chips and ally chip
     // keep their own clickables, which consume the tap before the panel sees it.
     InkPanel(
@@ -680,22 +677,7 @@ private fun FeedCard(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Optimistic: the button shows the lifter's own reaction the
-                // moment it is picked; the VM reconciles or rolls back.
-                CountButton(
-                    icon = (entry.myReaction ?: Reaction.SALUTE).glyph(),
-                    iconDescription = entry.myReaction?.let {
-                        UiText.themed(
-                            R.string.feed_reaction_mine_description,
-                            R.string.feed_reaction_mine_description__t,
-                            it.displayName(),
-                        ).asString()
-                    } ?: UiText.themed(R.string.feed_reaction_pay_description, R.string.feed_reaction_pay_description__t).asString(),
-                    count = entry.likeCount,
-                    lit = entry.myReaction != null || picking,
-                    expanded = picking,
-                    onClick = { picking = !picking },
-                )
+                ReactionChoices(entry.myReaction, entry.reactions) { chosen -> onReact(entry, chosen) }
                 CountButton(
                     icon = Icons.Outlined.ChatBubbleOutline,
                     iconDescription = Words.remark.cpl,
@@ -703,6 +685,14 @@ private fun FeedCard(
                     lit = false,
                     onClick = { onOpenComments(entry) },
                 )
+            }
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (entry.myReaction != null) {
+                    SocialRefreshLink(onClick = { onReact(entry, null) }, label = stringResource(R.string.feed_reaction_remove))
+                }
                 Spacer(Modifier.weight(1f))
                 if (!isMe) {
                     // The one offer is a chip; a settled state is plain muted text.
@@ -712,16 +702,6 @@ private fun FeedCard(
                         AllyState.Ally -> AllyNote(Words.ally.c)
                     }
                 }
-            }
-            if (picking) {
-                ReactionPicker(
-                    current = entry.myReaction,
-                    counts = entry.reactions,
-                    onPick = { reaction ->
-                        picking = false
-                        onReact(entry, reaction)
-                    },
-                )
             }
             // The failure line takes space only while there is a failure: an empty
             // reserved strip left a blank band under every card.
@@ -741,10 +721,7 @@ private fun FeedCard(
 
 }
 
-/**
- * Icon + count as an unboxed 44dp button. [lit] (the lifter's own tribute, or the picker open)
- * reads in Ink; everything else is InkMuted. [expanded] tells a screen reader the picker is open.
- */
+/** A compact icon and count; reactions expose their selected state. */
 @Composable
 private fun CountButton(
     icon: ImageVector,
@@ -752,7 +729,7 @@ private fun CountButton(
     count: Int,
     lit: Boolean,
     onClick: () -> Unit,
-    expanded: Boolean? = null,
+    selected: Boolean? = null,
 ) {
     val tint = if (lit) IronvellumColors.Ink else IronvellumColors.InkMuted
     Row(
@@ -760,9 +737,10 @@ private fun CountButton(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier
             .heightIn(min = 48.dp)
+            .widthIn(min = 48.dp)
+            .selectedUnderline(lit)
             .clip(MaterialTheme.shapes.extraSmall)
-            .clickable(role = Role.Button) { onClick() }
-            .then(if (expanded != null) Modifier.semantics { stateDescription = Words.text(UiText.res(if (expanded) R.string.a11y_state_expanded else R.string.a11y_state_collapsed)) } else Modifier)
+            .then(if (selected != null) Modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onClick) else Modifier.clickable(role = Role.Button) { onClick() })
             .padding(horizontal = 8.dp),
     ) {
         Icon(icon, contentDescription = iconDescription, tint = tint, modifier = Modifier.size(18.dp))
@@ -790,71 +768,32 @@ private fun AllyNote(label: String) {
     )
 }
 
-/**
- * The three tributes plus Remove once one is set, as a row of 48dp radio options under a hairline;
- * the chosen one carries the shared primary underline. Tapping the lifter's current tribute again
- * is a no-op rather than a removal: a toggle hidden in the selected option deleted tributes people
- * meant to confirm.
- */
 @Composable
-internal fun ReactionPicker(current: Reaction?, counts: Map<Reaction, Int>, onPick: (Reaction?) -> Unit) {
-    InkDivider(Modifier.padding(top = 4.dp))
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .selectableGroup(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Reaction.entries.forEachIndexed { index, reaction ->
-            val on = reaction == current
-            val count = counts[reaction] ?: 0
-            PickerOption(
-                label = if (count > 0) stringResource(R.string.feed_reaction_option_count, reaction.displayName(), count) else reaction.displayName(),
+private fun ReactionChoices(current: Reaction?, counts: Map<Reaction, Int>, onPick: (Reaction) -> Unit) {
+    Row(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Reaction.entries.forEach { reaction ->
+            val selected = current == reaction
+            CountButton(
                 icon = reaction.glyph(),
-                on = on,
-                first = index == 0,
-                onClick = { onPick(reaction) },
-            )
-        }
-        Spacer(Modifier.weight(1f))
-        if (current != null) {
-            Text(
-                stringResource(R.string.feed_reaction_remove),
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-                modifier = Modifier
-                    .heightIn(min = 48.dp)
-                    .clickable(role = Role.Button) { onPick(null) }
-                    .padding(start = 12.dp)
-                    .wrapContentHeight(),
+                iconDescription = reaction.displayName(),
+                count = counts[reaction] ?: 0,
+                lit = selected,
+                selected = selected,
+                onClick = { if (!selected) onPick(reaction) },
             )
         }
     }
 }
 
 @Composable
-private fun PickerOption(label: String, icon: ImageVector, on: Boolean, first: Boolean, onClick: () -> Unit) {
-    val tint = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier
-            .heightIn(min = 48.dp)
-            .selectedUnderline(on)
-            .selectable(selected = on, role = Role.RadioButton, onClick = onClick)
-            .padding(start = if (first) 0.dp else 12.dp, end = 12.dp),
-    ) {
-        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
-            color = tint,
-            maxLines = 1,
-            softWrap = false,
-        )
+internal fun ReactionPicker(current: Reaction?, counts: Map<Reaction, Int>, onPick: (Reaction?) -> Unit) {
+    InkDivider(Modifier.padding(top = 4.dp))
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        ReactionChoices(current, counts, onPick)
+        Spacer(Modifier.weight(1f))
+        if (current != null) {
+            SocialRefreshLink(onClick = { onPick(null) }, label = stringResource(R.string.feed_reaction_remove))
+        }
     }
 }
 

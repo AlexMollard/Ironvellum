@@ -16,13 +16,6 @@ class AccountRoutesTest {
     }.readText().replace("\r\n", "\n")
 
     @Test
-    fun `every open-account lambda navigates the one Account route`() {
-        val lambdas = Regex("""onOpenAccount = \{([^}]*)\}""").findAll(nav).map { it.groupValues[1].trim() }.toList()
-        assertTrue("expected the Settings and Friends entries", lambdas.size >= 2)
-        lambdas.forEach { assertEquals("navController.navigate(Routes.ACCOUNT)", it) }
-    }
-
-    @Test
     fun `Account has a single destination and it hosts the settings screen`() {
         val destinations = Regex("""composable\(Routes\.ACCOUNT\)\s*\{([^}]*)\}""").findAll(nav).toList()
         assertEquals(1, destinations.size)

@@ -1,6 +1,19 @@
 package com.ironvellum.app.ui.social
 
-import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.ironvellum.app.ui.components.PushedHeader
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +33,6 @@ import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.ui.text.font.FontWeight
 import com.ironvellum.app.ui.theme.IronvellumColors
 import androidx.compose.runtime.mutableIntStateOf
 import com.ironvellum.app.data.InboxNotifier
@@ -45,7 +57,6 @@ import com.ironvellum.app.ui.components.InkTabbedPager
 
 private enum class GuildTab(private val labelText: () -> String) {
     FEED({ Words.tidings.c }),
-    INBOX({ Words.inbox.c }),
     BOARD({ Words.reckoning.c }),
     // "ALLIES", not "GUILD" — the bottom nav tab already says Allies; repeating
     // it here put the same word on screen three times.
@@ -53,6 +64,8 @@ private enum class GuildTab(private val labelText: () -> String) {
 
     val label: String get() = labelText()
 }
+
+private enum class SocialPage { HUB, INBOX, CIRCLE, FIND }
 
 /**
  * One home for everything social. Signed out (or with no backend) it is only
@@ -63,7 +76,7 @@ private enum class GuildTab(private val labelText: () -> String) {
 fun SocialScreen(
     onOpenLifter: (userId: String, displayName: String) -> Unit,
     onOpenComments: (sessionId: String, ownerId: String, headline: String) -> Unit,
-    onOpenAccount: () -> Unit,
+    onOpenProfile: () -> Unit,
     onOpenBoard: (BoardKind) -> Unit,
     inboxRequest: Int = 0,
 ) {
@@ -77,14 +90,25 @@ fun SocialScreen(
     // The pager state is saveable, so it carries the open tab too.
     val pager = rememberPagerState { GuildTab.entries.size }
     val scope = rememberCoroutineScope()
-    // Back walks a sub-tab home before it leaves the screen. Declared first,
-    // so any deeper page's own handler below still wins.
-    BackHandler(enabled = signedIn && pager.currentPage != 0) { scope.launch { pager.animateScrollToPage(0) } }
+    var page by rememberSaveable { mutableStateOf(SocialPage.HUB) }
+    val screens = rememberSaveableStateHolder()
+    var circleFromInbox by rememberSaveable { mutableStateOf(false) }
+    fun leavePage() {
+        if (page == SocialPage.INBOX) screens.removeState(SocialPage.INBOX)
+        page = if (page == SocialPage.CIRCLE && circleFromInbox) SocialPage.INBOX else SocialPage.HUB
+        circleFromInbox = false
+    }
+    BackHandler(enabled = signedIn && (page != SocialPage.HUB || pager.currentPage != 0)) {
+        if (page != SocialPage.HUB) leavePage()
+        else scope.launch { pager.animateScrollToPage(0) }
+    }
     // Signing in HERE lands on ALLIES, where a fresh Google account's
     // claim-your-name panel lives; a restored session keeps its tab.
     var sawSignedOut by remember { mutableStateOf(!signedIn) }
     LaunchedEffect(signedIn) {
         if (!signedIn) {
+            screens.removeState(SocialPage.INBOX)
+            page = SocialPage.HUB
             sawSignedOut = true
         } else if (sawSignedOut) {
             pager.scrollToPage(GuildTab.ALLIES.ordinal)
@@ -95,10 +119,10 @@ fun SocialScreen(
     // from a workout's comments (or a rotation) does not yank the lifter off
     // whichever tab they moved to since.
     var servedInboxRequest by rememberSaveable { mutableIntStateOf(0) }
-    LaunchedEffect(inboxRequest) {
-        if (inboxRequest > servedInboxRequest) {
+    LaunchedEffect(inboxRequest, signedIn) {
+        if (signedIn && inboxRequest > servedInboxRequest) {
             servedInboxRequest = inboxRequest
-            pager.scrollToPage(GuildTab.INBOX.ordinal)
+            page = SocialPage.INBOX
         }
     }
 
@@ -119,10 +143,8 @@ fun SocialScreen(
     val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) app.notificationsAllowed()
     }
-    // Settled, not current: half a swipe toward INBOX must not clear its notification.
-    val settledTab = GuildTab.entries[pager.settledPage]
-    LaunchedEffect(settledTab) {
-        if (settledTab != GuildTab.INBOX) return@LaunchedEffect
+    LaunchedEffect(page) {
+        if (page != SocialPage.INBOX) return@LaunchedEffect
         InboxNotifier.cancel(context)
         if (InboxNotifier.takeFirstAsk(context) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             explainNotifications = true
@@ -153,49 +175,90 @@ fun SocialScreen(
         )
     }
 
-    // Every tab gets the same margins and starts at the same spot under the
-    // pills; the tabs themselves add no outer padding or screen title. The
-    // pages run edge to edge so a swipe is not clipped inside the margins.
-    Column(Modifier.fillMaxSize()) {
-        // One shared title above the pills, the same weight as the other tabs' headers.
-        Text(
-            Words.ally.upl,
-            style = MaterialTheme.typography.headlineSmall,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 3.sp,
-            color = IronvellumColors.Ink,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 8.dp),
-        )
-        InkTabbedPager(
-            labels = GuildTab.entries.map { it.label },
-            badges = GuildTab.entries.map { if (it == GuildTab.INBOX) unread else 0 },
-            state = pager,
-            modifier = Modifier.weight(1f),
-            tabsModifier = Modifier.padding(horizontal = 16.dp),
-            tabsGap = 12.dp,
-            fillTabs = true,
-        ) { page ->
-            Box(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-                when (GuildTab.entries[page]) {
-                    GuildTab.FEED -> FeedScreen(
+    if (page != SocialPage.HUB) {
+        val title = when (page) {
+            SocialPage.INBOX -> Words.inbox.c
+            SocialPage.CIRCLE -> Words.circle.c
+            SocialPage.FIND -> UiText.themed(R.string.social_find_friend, R.string.social_find_friend__t).asString()
+            SocialPage.HUB -> error("Not a pushed page")
+        }
+        Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+            PushedHeader(title, ::leavePage, Modifier.padding(top = 8.dp))
+            screens.SaveableStateProvider(page) {
+                when (page) {
+                    SocialPage.INBOX -> InboxScreen(
                         onOpenLifter = onOpenLifter,
                         onOpenComments = onOpenComments,
+                        onOpenCircle = {
+                            circleFromInbox = true
+                            page = SocialPage.CIRCLE
+                        },
                     )
-                    GuildTab.INBOX -> InboxScreen(
-                        onOpenLifter = onOpenLifter,
-                        onOpenComments = onOpenComments,
-                        onOpenCircle = { scope.launch { pager.animateScrollToPage(GuildTab.ALLIES.ordinal) } },
-                        // Only once the page has settled: a peek mid-swipe must not read the inbox.
-                        active = settledTab == GuildTab.INBOX,
-                    )
-                    GuildTab.BOARD -> LeaderboardScreen(onOpenBoard = onOpenBoard)
-                    GuildTab.ALLIES -> AccountScreen(
-                        onBack = { scope.launch { pager.animateScrollToPage(GuildTab.FEED.ordinal) } },
-                        onOpenLifter = onOpenLifter,
-                        onOpenAccount = onOpenAccount,
-                        onOpenMissives = { scope.launch { pager.animateScrollToPage(GuildTab.INBOX.ordinal) } },
-                    )
+                    SocialPage.CIRCLE -> Column(Modifier.verticalScroll(rememberScrollState())) {
+                        CircleSection(onOpenLifter)
+                        Spacer(Modifier.height(16.dp))
+                    }
+                    SocialPage.FIND -> AccountScreen(onBack = {}, findOnly = true)
+                    SocialPage.HUB -> Unit
+                }
+            }
+        }
+        return
+    }
+
+    screens.SaveableStateProvider(SocialPage.HUB) {
+        Column(Modifier.fillMaxSize()) {
+            Row(
+                Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.social_title),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = IronvellumColors.Ink,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = { page = SocialPage.INBOX }) {
+                    BadgedBox(badge = { if (unread > 0) Badge { Text(if (unread > 99) "99+" else unread.toString()) } }) {
+                        Icon(
+                            Icons.Outlined.Notifications,
+                            if (unread == 0) Words.inbox.c else stringResource(R.string.nav_tab_unread_description, Words.inbox.c, unread),
+                            tint = IronvellumColors.Ink,
+                        )
+                    }
+                }
+                val profileLabel = stringResource(R.string.own_social_profile)
+                IconButton(onClick = onOpenProfile, modifier = Modifier.semantics { contentDescription = profileLabel }) {
+                    LifterAvatar(account?.displayName.orEmpty(), 34.dp, ring = AvatarRing.Own)
+                }
+            }
+            InkTabbedPager(
+                labels = GuildTab.entries.map { it.label },
+                state = pager,
+                modifier = Modifier.weight(1f),
+                tabsModifier = Modifier.padding(horizontal = 16.dp),
+                tabsGap = 12.dp,
+                fillTabs = true,
+            ) { index ->
+                Box(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                    when (GuildTab.entries[index]) {
+                        GuildTab.FEED -> FeedScreen(
+                            onOpenLifter = onOpenLifter,
+                            onOpenComments = onOpenComments,
+                            onFindFriend = {
+                                scope.launch { pager.scrollToPage(GuildTab.ALLIES.ordinal) }
+                                page = SocialPage.FIND
+                            },
+                        )
+                        GuildTab.BOARD -> LeaderboardScreen(onOpenBoard = onOpenBoard)
+                        GuildTab.ALLIES -> AccountScreen(
+                            onBack = {},
+                            onOpenLifter = onOpenLifter,
+                            onOpenMissives = { page = SocialPage.INBOX },
+                            onOpenCircle = { page = SocialPage.CIRCLE },
+                            onFindFriend = { page = SocialPage.FIND },
+                        )
+                    }
                 }
             }
         }

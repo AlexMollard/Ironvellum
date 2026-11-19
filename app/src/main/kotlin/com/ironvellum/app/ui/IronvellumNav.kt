@@ -151,6 +151,9 @@ object Routes {
     const val SHARED_CSV_URI = "sharedCsvUri"
     const val SUPPORT = "support"
     const val SOCIAL = "social"
+    internal const val OWN_SOCIAL_PROFILE = "social/profile"
+    internal const val FRIEND_PROFILE_PREVIEW = "social/profile/friend-preview"
+    internal const val EDIT_SOCIAL_PROFILE = "social/profile/edit"
     const val ACCOUNT = "account"
     const val SIGN_IN = "sign_in"
     const val WORKOUT_LOG = "workout_log"
@@ -387,13 +390,17 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 }
             }
         }
+        val socialChild = currentRoute in setOf(
+            Routes.BOARD, Routes.LIFTER, Routes.COMMENTS, Routes.OWN_SOCIAL_PROFILE,
+            Routes.FRIEND_PROFILE_PREVIEW, Routes.EDIT_SOCIAL_PROFILE,
+        ) || (currentRoute == Routes.ACCOUNT && navController.previousBackStackEntry?.destination?.route == Routes.OWN_SOCIAL_PROFILE)
         Scaffold(
             containerColor = Color.Transparent,
             bottomBar = {
-                if (currentRoute in destinations.map { it.route }) {
+                if (socialChild || destinations.any { it.route == currentRoute }) {
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                         Box(Modifier.widthIn(max = ContentMaxWidth).fillMaxWidth()) {
-                            IronvellumBottomBar(destinations, currentRoute, inboxUnread, navController)
+                            IronvellumBottomBar(destinations, if (socialChild) Routes.SOCIAL else currentRoute, inboxUnread, navController)
                         }
                     }
                 }
@@ -770,10 +777,33 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onOpenComments = { sessionId, ownerId, headline ->
                             navController.navigate(Routes.comments(sessionId, ownerId, headline))
                         },
-                        onOpenAccount = { navController.navigate(Routes.ACCOUNT) },
+                        onOpenProfile = { navController.navigate(Routes.OWN_SOCIAL_PROFILE) },
                         onOpenBoard = { kind -> navController.navigate(Routes.board(kind)) },
                         inboxRequest = inboxRequest,
                     )
+                }
+                composable(Routes.OWN_SOCIAL_PROFILE) {
+                    com.ironvellum.app.ui.social.OwnSocialProfileScreen(
+                        friendView = false,
+                        onBack = { navController.popBackStack() },
+                        onEdit = { navController.navigate(Routes.EDIT_SOCIAL_PROFILE) },
+                        onSettings = { navController.navigate(Routes.ACCOUNT) },
+                        onViewAsFriend = { navController.navigate(Routes.FRIEND_PROFILE_PREVIEW) },
+                        onWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
+                    )
+                }
+                composable(Routes.FRIEND_PROFILE_PREVIEW) {
+                    com.ironvellum.app.ui.social.OwnSocialProfileScreen(
+                        friendView = true,
+                        onBack = { navController.popBackStack() },
+                        onEdit = {},
+                        onSettings = {},
+                        onViewAsFriend = {},
+                        onWorkout = {},
+                    )
+                }
+                composable(Routes.EDIT_SOCIAL_PROFILE) {
+                    AccountSettingsScreen(onBack = { navController.popBackStack() }, profileOnly = true)
                 }
                 composable(
                     Routes.BOARD,

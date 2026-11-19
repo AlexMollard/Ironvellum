@@ -87,6 +87,7 @@ import java.util.Date
 @Composable
 fun AccountSettingsScreen(
     onBack: () -> Unit,
+    profileOnly: Boolean = false,
     viewModel: AccountViewModel = viewModel(
         factory = viewModelFactory {
             initializer { AccountViewModel(ironvellumAccount(), ironvellumCloudSync()) }
@@ -123,7 +124,7 @@ fun AccountSettingsScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
-        PushedHeader(stringResource(R.string.acct_title_upper), onBack)
+        PushedHeader(stringResource(if (profileOnly) R.string.own_social_edit else R.string.acct_title_upper), onBack)
 
         SettingsGroup(stringResource(R.string.acct_section_profile), rows = true) {
             TapRow(onClickLabel = UiText.themed(R.string.acct_edit_name_description, R.string.acct_edit_name_description__t).asString(), onClick = { editingName = true }) {
@@ -176,6 +177,7 @@ fun AccountSettingsScreen(
                     color = IronvellumColors.InkMuted,
                 )
             }
+            if (profileOnly) return@SettingsGroup
             InkDivider()
             // One row, one switch: the whole row toggles.
             Row(
@@ -231,6 +233,10 @@ fun AccountSettingsScreen(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
+        }
+        if (profileOnly) {
+            ui.error?.let { SocialErrorBanner(it.asString()) }
+            return@Column
         }
 
         SettingsGroup(stringResource(R.string.acct_section_cloud), rows = true) {

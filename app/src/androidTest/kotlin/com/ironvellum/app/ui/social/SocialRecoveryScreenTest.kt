@@ -6,12 +6,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -30,8 +32,14 @@ import com.ironvellum.app.data.cloud.FeedEntry
 import com.ironvellum.app.data.cloud.FriendRow
 import com.ironvellum.app.data.cloud.Liker
 import com.ironvellum.app.data.cloud.Reaction
+import com.ironvellum.app.domain.SessionAudience
+import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.data.cloud.ReportReason
 import com.ironvellum.app.ui.ShotRecorder
+import com.ironvellum.app.ui.IronvellumRoot
+import com.ironvellum.app.ui.RouteRequest
+import com.ironvellum.app.ui.Routes
+import com.ironvellum.app.ui.TestProfile
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.NonCancellable
@@ -61,6 +69,59 @@ class SocialRecoveryScreenTest {
     private fun shot(name: String) {
         ShotRecorder.take(compose, name)
         compose.mainClock.autoAdvance = true
+    }
+
+    @Test fun friendPreviewHasNoPrivateWorkoutOrOwnerControls() {
+        val preview = mutableStateOf(false)
+        val workouts = listOf(
+            WorkoutSession(id = 2, label = "Private lower body", startedAtMs = 1, completedAtMs = 3, audience = SessionAudience.PRIVATE),
+            WorkoutSession(id = 1, label = "Shared upper body", startedAtMs = 1, completedAtMs = 2, xpAwarded = 160),
+        )
+        compose.activityRule.scenario.onActivity { activity ->
+            ShotRecorder.darkWindow(activity)
+            activity.setContent {
+                IronvellumTheme(light = false) {
+                    Box(Modifier.fillMaxSize().statusBarsPadding()) {
+                        OwnSocialProfileContent(
+                            current = Account("profile", "profile@example.invalid", "Jules Mercer", "friends"),
+                            profile = null,
+                            crest = null,
+                            sessions = workouts,
+                            friendView = preview.value,
+                            onBack = { preview.value = false },
+                            onEdit = {},
+                            onSettings = {},
+                            onViewAsFriend = { preview.value = true },
+                            onWorkout = {},
+                        )
+                    }
+                }
+            }
+        }
+        compose.onNodeWithText("Private lower body").assertIsDisplayed()
+        shot("social-owner-profile-production")
+        compose.onNodeWithText(context.getString(R.string.own_social_friend_preview)).performClick()
+        compose.onNodeWithText("Shared upper body").assertIsDisplayed()
+        compose.onNodeWithText("Private lower body").assertDoesNotExist()
+        compose.onNodeWithText(context.getString(R.string.own_social_edit)).assertDoesNotExist()
+        compose.onNodeWithContentDescription(context.getString(R.string.acct_settings_description)).assertDoesNotExist()
+        shot("social-friend-preview-production")
+    }
+
+    @Test fun commentsKeepTheAppBottomBar() {
+        TestProfile.ensureSetUp()
+        compose.activityRule.scenario.onActivity { activity ->
+            ShotRecorder.darkWindow(activity)
+            activity.setContent {
+                IronvellumTheme(light = false) {
+                    IronvellumRoot(routeRequest = RouteRequest(1, Routes.comments("fixture", "", "Thread fixture")))
+                }
+            }
+        }
+        compose.onNodeWithText("Thread fixture").assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.nav_tab_train)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(context.getString(R.string.comments_send_button)).assertIsDisplayed()
+        shot("social-thread-bottom-bar-production")
     }
 
     private class FeedBackend : FeedGateway {
@@ -147,7 +208,7 @@ class SocialRecoveryScreenTest {
             }
         }
         compose.runOnIdle { vm.onDraft("Posted while loading") }
-        compose.onNodeWithText(context.getString(R.string.comments_send_button)).assertIsEnabled().performClick()
+        compose.onNodeWithContentDescription(context.getString(R.string.comments_send_button)).assertIsEnabled().performClick()
         val now = System.currentTimeMillis()
         compose.runOnIdle { backend.post.complete(Result.success(Comment("new", "session", "me", "Current Lifter", "Posted while loading", now))) }
         compose.onNodeWithText("Posted while loading").assertIsDisplayed()

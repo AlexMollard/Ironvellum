@@ -2430,6 +2430,10 @@ class Repository(
     fun observeLiveSession(): Flow<WorkoutSession?> =
         sessionDao.observeLiveSession().map { it?.toDomain() }
 
+    /** Bounded session metadata for the social profile; never loads set history. */
+    fun observeSocialProfileSessions(): Flow<List<WorkoutSession>> =
+        sessionDao.observeRecent(100).map { rows -> rows.map { it.toDomain() } }.distinctUntilChanged()
+
     /**
      * The unfinished session to reopen on launch, or null. Only one started
      * within [RESUME_WINDOW_MS]: an old trial left open is offered on Today,

@@ -3,8 +3,6 @@ package com.ironvellum.app.ui.social
 import android.util.Log
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
@@ -25,11 +23,9 @@ import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.ui.semantics.Role
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.ui.components.InkDivider
-import com.ironvellum.app.ui.components.InkTextLink
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.ListRowHeight
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -46,9 +42,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Group
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Public
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.outlined.Visibility
 import com.ironvellum.app.ui.components.InkIconButton
@@ -64,7 +57,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -99,6 +91,7 @@ import com.ironvellum.app.data.cloud.SyncOutcome
 import com.ironvellum.app.data.cloud.SignUpOutcome
 import com.ironvellum.app.data.cloud.isUnclaimedHandle
 import com.ironvellum.app.data.cloud.signUpNamePrefill
+import com.ironvellum.app.data.cloud.ProfileNameDto
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkSpinner
@@ -106,14 +99,12 @@ import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.theme.Metal
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.wholeKeyboard
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.ironvellumFieldColors
-import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.DecimalInput
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -517,10 +508,10 @@ fun AccountScreen(
     // No-op default keeps existing call sites compiling; the parent wires the
     // real lifter route in IronvellumNav.kt.
     onOpenLifter: (userId: String, displayName: String) -> Unit = { _, _ -> },
-    // Same no-op default reasoning; SocialScreen wires the ACCOUNT route.
-    onOpenAccount: () -> Unit = {},
-    // Ally requests live in Missives; the one row about them switches the pager there.
     onOpenMissives: () -> Unit = {},
+    onOpenCircle: () -> Unit = {},
+    onFindFriend: () -> Unit = {},
+    findOnly: Boolean = false,
     // Pushed from Settings rather than hosted as the Allies tab: the signed-out
     // form then carries its own BACK header.
     pushed: Boolean = false,
@@ -540,17 +531,14 @@ fun AccountScreen(
     // text link is gone. Hosting it here means the signed-in surface owns its
     // own scroll container — a PullToRefreshBox nested inside a verticalScroll
     // Column never sees the drag.
-    if (cloudConfigured && ui.account != null) {
+    val signedInAccount = ui.account
+    if (cloudConfigured && signedInAccount != null) {
         val pullState = rememberPullToRefreshState()
-        // A pull also forces a fresh circle read: the circle section owns its
-        // own view model, so the pull reaches it as a bumped counter.
-        var circleRefresh by remember { mutableIntStateOf(0) }
         PullToRefreshBox(
             isRefreshing = ui.friendsLoading,
             onRefresh = {
                 viewModel.refreshFriends()
                 viewModel.refreshBlocked(force = true)
-                circleRefresh++
             },
             state = pullState,
             modifier = Modifier.fillMaxSize(),
@@ -572,19 +560,20 @@ fun AccountScreen(
                     .imePadding()
                     .verticalScroll(rememberScrollState()),
             ) {
-                SignedInPanels(
-                    ui = ui,
-                    onOpenLifter = onOpenLifter,
-                    onOpenAccount = onOpenAccount,
-                    onOpenMissives = onOpenMissives,
-                    onRequest = viewModel::requestFriend,
-                    onClaim = viewModel::claimName,
-                    onSkipClaim = viewModel::skipClaim,
-                    circleRefreshSignal = circleRefresh,
-                )
-                // Clears the bottom nav bar: 28.dp left the last ally row half
-                // hidden behind it at the end of the scroll.
-                Spacer(Modifier.height(120.dp))
+                if (findOnly) {
+                    AddAllyPanel(signedInAccount.userId, ui.friends, viewModel::refreshFriends)
+                } else {
+                    SignedInPanels(
+                        ui = ui,
+                        onOpenLifter = onOpenLifter,
+                        onOpenMissives = onOpenMissives,
+                        onOpenCircle = onOpenCircle,
+                        onFindFriend = onFindFriend,
+                        onClaim = viewModel::claimName,
+                        onSkipClaim = viewModel::skipClaim,
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
             }
         }
         return
@@ -960,16 +949,14 @@ private fun PasswordField(
 private fun SignedInPanels(
     ui: AccountUi,
     onOpenLifter: (userId: String, displayName: String) -> Unit,
-    onOpenAccount: () -> Unit,
     onOpenMissives: () -> Unit,
-    onRequest: (String) -> Unit,
+    onOpenCircle: () -> Unit,
+    onFindFriend: () -> Unit,
     onClaim: (String) -> Unit,
     onSkipClaim: () -> Unit,
-    circleRefreshSignal: Int,
 ) {
     val acct = ui.account ?: return
 
-    ProfileHeader(acct = acct, onOpenAccount = onOpenAccount)
     // One-time claim prompt: visible after sign-in, but the surface around it
     // stays fully usable - skip hides it for the session, nothing nags twice.
     if (isUnclaimedHandle(acct.displayName) && !ui.claimSkipped) {
@@ -983,9 +970,6 @@ private fun SignedInPanels(
         )
     }
 
-    SectionHeader(Words.circle.c, topPadding = 20.dp)
-    CircleSection(onOpenLifter = onOpenLifter, refreshSignal = circleRefreshSignal)
-
     val incoming = ui.friends.filter { it.incoming && !it.accepted }
     val accepted = ui.friends.filter { it.accepted }
     if (incoming.isNotEmpty()) {
@@ -994,13 +978,12 @@ private fun SignedInPanels(
     }
 
     Spacer(Modifier.height(14.dp))
-    AddAllyPanel(loading = ui.friendsLoading, onRequest = onRequest)
-    // Right under the input: a refused invite (unknown name, rate limit) is
-    // the usual error here, and at the bottom of the list it went unseen.
-    ui.error?.let {
-        Spacer(Modifier.height(8.dp))
-        SocialErrorBanner(it.asString())
-    }
+    ListRow(
+        label = UiText.themed(R.string.social_find_friend, R.string.social_find_friend__t).asString(),
+        icon = Icons.Outlined.PersonAdd,
+        onClick = onFindFriend,
+    )
+    OutgoingRequests(ui.friends)
 
     SectionHeader(if (accepted.isEmpty()) Words.ally.cpl else UiText.themed(R.string.acct_allies_header, R.string.acct_allies_header__t, accepted.size).asString(), topPadding = 18.dp)
     AlliesPanel(
@@ -1008,71 +991,26 @@ private fun SignedInPanels(
         empty = incoming.isEmpty() && accepted.isEmpty() && !ui.friendsLoading,
         onOpenLifter = onOpenLifter,
     )
-}
-
-/**
- * The lifter's own card: crest, name, level and worn title from local state
- * (the profile is on this phone, no cloud read), the visibility they publish
- * at, and the gear to the account screen.
- */
-@Composable
-private fun ProfileHeader(acct: Account, onOpenAccount: () -> Unit) {
-    val app = LocalContext.current.applicationContext as IronvellumApp
-    val profile by remember(app) { app.repository.observeProfile() }
-        .collectAsStateWithLifecycle(initialValue = null)
-    val titleId = profile?.currentTitleId
-    val crestId by remember(app) { app.repository.observeEquippedFrame() }
-        .collectAsStateWithLifecycle(initialValue = null)
-
-    // Your own plate: a gold rim and wash, and a gold ring on your crest.
-    InkPanel(
-        Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(start = 14.dp, top = 14.dp, end = 6.dp, bottom = 12.dp),
-        metal = Metal.Fabled,
-    ) {
-        IdentityRow(
-            displayName = acct.displayName,
-            userId = acct.userId,
-            wornTitle = Titles.displayName(titleId),
-            level = profile?.let { Xp.progress(it.totalXp).level },
-            size = IdentitySize.Profile,
-            isMe = true,
-            frameId = crestId,
-            ring = AvatarRing.Own,
-            trailing = {
-                InkIconButton(onClick = onOpenAccount, modifier = Modifier.size(48.dp)) {
-                    Icon(
-                        Icons.Outlined.Settings,
-                        contentDescription = stringResource(R.string.acct_settings_description),
-                        tint = IronvellumColors.InkMuted,
-                    )
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(4.dp))
-        VisibilityChip(acct.visibility)
+    Spacer(Modifier.height(16.dp))
+    InkPanel(onClick = onOpenCircle) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(Icons.Outlined.Group, null, tint = IronvellumColors.EmeraldBright)
+            Text(Words.circle.c, Modifier.weight(1f), color = IronvellumColors.Ink)
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = IronvellumColors.InkMuted)
+        }
     }
 }
 
-/** Read-only: changing visibility is an account setting, one gear tap away. */
 @Composable
-private fun VisibilityChip(visibility: String) {
-    val (icon, label) = when (visibility) {
-        "public" -> Icons.Outlined.Public to stringResource(R.string.acct_visibility_public)
-        "friends" -> Icons.Outlined.Group to UiText.themed(R.string.acct_visibility_friends, R.string.acct_visibility_friends__t).asString()
-        else -> Icons.Outlined.Lock to stringResource(R.string.acct_visibility_private)
-    }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Icon(icon, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(14.dp))
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            color = IronvellumColors.InkMuted,
-        )
+private fun OutgoingRequests(friends: List<FriendRow>) {
+    friends.forEach { friend ->
+        if (!friend.incoming && !friend.accepted) {
+            ListRow(
+                label = friend.displayName,
+                subline = stringResource(R.string.lifter_request_pending),
+                icon = Icons.Outlined.PersonAdd,
+            )
+        }
     }
 }
 
@@ -1165,47 +1103,80 @@ private fun ClaimNamePanel(
     }
 }
 
-/**
- * Invite by true name: one field with "Invite" as a link inside it, no card.
- * Invites reach lifters by their exact name.
- */
 @Composable
-private fun AddAllyPanel(loading: Boolean, onRequest: (String) -> Unit) {
-    var friendName by remember { mutableStateOf("") }
-    val canInvite = friendName.trim().length >= 2 && !loading
-    val label = UiText.themed(R.string.acct_invite_label, R.string.acct_invite_label__t).asString()
-    // A caption over a hairline field with "Invite" inside it: no box, like the mockup.
-    Column(Modifier.fillMaxWidth()) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            BasicTextField(
-                value = friendName,
-                onValueChange = { friendName = it.take(24) },
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = IronvellumColors.Ink, fontWeight = FontWeight.Medium),
-                cursorBrush = SolidColor(IronvellumColors.Emerald),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                modifier = Modifier.weight(1f).semantics { contentDescription = label },
-                decorationBox = { inner ->
-                    Box(Modifier.heightIn(min = 44.dp), contentAlignment = Alignment.CenterStart) {
-                        if (friendName.isEmpty()) {
-                            Text(Words.trueName.c, style = MaterialTheme.typography.bodyLarge, color = IronvellumColors.InkMuted)
+private fun AddAllyPanel(userId: String, friends: List<FriendRow>, onSent: () -> Unit) {
+    val app = LocalContext.current.applicationContext as IronvellumApp
+    val cloud = app.cloudSync
+    val accounts = app.accountRepository
+    val backend by Cloud.config.collectAsStateWithLifecycle()
+    val owner = remember(userId, backend) { currentSocialOwner(userId) }
+    val scope = rememberCoroutineScope()
+    val focus = androidx.compose.ui.platform.LocalFocusManager.current
+    var name by remember(owner) { mutableStateOf("") }
+    var result by remember(owner) { mutableStateOf<ProfileNameDto?>(null) }
+    var sent by remember(owner) { mutableStateOf(false) }
+    var busy by remember(owner) { mutableStateOf(false) }
+    var error by remember(owner) { mutableStateOf<UiText?>(null) }
+    fun isCurrent() = currentSocialOwner(accounts.account.value?.userId) == owner
+    Text(UiText.themed(R.string.acct_invite_label, R.string.acct_invite_label__t).asString(), color = IronvellumColors.InkMuted)
+    Spacer(Modifier.height(8.dp))
+    OutlinedTextField(
+        value = name,
+        onValueChange = { name = it.take(24); result = null; sent = false; error = null },
+        label = { Text(Words.trueName.c) },
+        singleLine = true,
+        enabled = !busy,
+        colors = ironvellumFieldColors(),
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(8.dp))
+    IronvellumButton(
+        label = stringResource(R.string.social_search_name),
+        enabled = name.trim().length >= 2 && !busy,
+        onClick = {
+            val query = name.trim()
+            focus.clearFocus()
+            scope.launch {
+                if (!isCurrent() || busy) return@launch
+                busy = true
+                error = null
+                result = null
+                try {
+                    val found = cloud.findFriend(query)
+                    if (isCurrent()) found.onSuccess { result = it }.onFailure { error = it.reasonText(UiText.res(R.string.acct_failure_unknown)) }
+                } finally { busy = false }
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+    )
+    if (busy) InkSpinner()
+    error?.let { SocialErrorBanner(it.asString()) }
+    result?.let { person ->
+        val edge = friends.firstOrNull { it.userId == person.id }
+        Spacer(Modifier.height(12.dp))
+        InkPanel(Modifier.fillMaxWidth()) {
+            ListRow(label = person.displayName, leading = { LifterAvatar(person.displayName, 36.dp) })
+            when {
+                edge?.accepted == true -> Text(Words.ally.c, color = IronvellumColors.InkMuted)
+                edge != null || sent -> Text(stringResource(R.string.lifter_request_pending), color = IronvellumColors.EmeraldBright)
+                else -> IronvellumButton(
+                    label = stringResource(R.string.acct_invite_button),
+                    enabled = !busy,
+                    onClick = {
+                        scope.launch {
+                            if (!isCurrent() || busy) return@launch
+                            busy = true
+                            error = null
+                            try {
+                                val outcome = cloud.requestFriendById(person.id)
+                                if (isCurrent()) outcome.onSuccess { sent = true; onSent() }
+                                    .onFailure { error = it.reasonText(UiText.res(R.string.acct_failure_unknown)) }
+                            } finally { busy = false }
                         }
-                        inner()
-                    }
-                },
-            )
-            InkTextLink(
-                label = stringResource(R.string.acct_invite_button),
-                enabled = canInvite,
-                modifier = Modifier.padding(start = 12.dp, end = 4.dp),
-                onClick = {
-                    onRequest(friendName.trim())
-                    friendName = ""
-                },
-            )
+                    },
+                )
+            }
         }
-        InkDivider()
     }
 }
 
