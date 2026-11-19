@@ -30,12 +30,18 @@ class InboxViewModelTest {
         var readCall: suspend (Boolean) -> Result<Inbox> = { Result.success(inbox("current")) }
         var markResult: Result<Unit> = Result.success(Unit)
         var answerCall: suspend (String) -> Result<Unit> = { Result.success(Unit) }
+        var declineResult = Result.success(true)
+        val dismissedThrough = mutableListOf<Long>()
         val seen = mutableListOf<SocialOwner>()
         val declined = mutableListOf<String>()
         override suspend fun read(force: Boolean) = readCall(force)
         override suspend fun markSeen(owner: SocialOwner): Result<Unit> { seen += owner; return markResult }
         override suspend fun accept(userId: String) = answerCall(userId)
-        override suspend fun decline(userId: String): Result<Unit> { declined += userId; return answerCall(userId) }
+        override suspend fun decline(userId: String, owner: SocialOwner): Result<Boolean> {
+            declined += userId
+            return declineResult
+        }
+        override fun dismissReadNotification(owner: SocialOwner, throughMs: Long) { dismissedThrough += throughMs }
     }
 
     @Before fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -127,6 +133,37 @@ class InboxViewModelTest {
         vm.open()
         assertNull(vm.ui.value.error)
         assertTrue(vm.ui.value.loaded)
+    }
+
+    @Test fun aStaleDeclineReloadsWithoutClaimingItRemovedARequest() {
+        val gateway = Gateway()
+        val vm = model(gateway)
+        vm.open()
+        gateway.declineResult = Result.success(false)
+        gateway.readCall = { force ->
+            assertTrue(force)
+            Result.success(Inbox(emptyList(), 200))
+        }
+        vm.decline("current", "Current")
+        vm.commitDecline()
+        assertTrue(vm.ui.value.items.isEmpty())
+        assertTrue(vm.ui.value.answered.isEmpty())
+        assertEquals(listOf(200L), gateway.dismissedThrough)
+    }
+
+    @Test fun aFailedReadCannotDismissOrReplaceTheLastSuccessfulCutoff() {
+        val gateway = Gateway()
+        val vm = model(gateway)
+        vm.open()
+        gateway.readCall = { Result.failure(IllegalStateException("offline")) }
+        vm.open(force = true)
+        assertEquals(1L, vm.ui.value.successfulReads)
+        assertEquals(listOf(200L), gateway.dismissedThrough)
+        gateway.readCall = { Result.success(Inbox(inbox("current").items, 220)) }
+        vm.open(force = true)
+        assertEquals(2L, vm.ui.value.successfulReads)
+        assertEquals(220L, vm.ui.value.seenAtMs)
+        assertEquals(listOf(200L, 220L), gateway.dismissedThrough)
     }
 
     companion object {

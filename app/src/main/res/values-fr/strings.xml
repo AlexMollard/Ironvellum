@@ -5214,8 +5214,9 @@
     <string name="social_inbox_no_unread">Aucune activité non lue.</string>
     <string name="social_inbox_requests">Demandes</string>
     <string name="own_social_profile">Ton profil</string>
-    <string name="own_social_friend_preview">Voir comme un ami</string>
-    <string name="own_social_friend_preview__t">Voir comme un allié</string>
+    <string name="own_social_friend_preview">Voir les séances comme un ami</string>
+    <string name="own_social_friend_preview__t">Voir les épreuves comme un allié</string>
+    <string name="own_social_preview_visibility_unknown">Aperçu indisponible tant que la visibilité du profil n\'est pas vérifiée.</string>
     <string name="own_social_preview_unavailable">Ce profil n\'est pas visible par les amis</string>
     <string name="own_social_preview_unavailable__t">Ce profil n\'est pas visible par les alliés</string>
     <string name="own_social_account_unavailable">Profil du compte indisponible</string>
@@ -5223,8 +5224,8 @@
     <string name="own_social_visibility">Visibilité du profil</string>
     <string name="own_social_visibility_unknown">Inconnue</string>
     <string name="own_social_edit">Modifier le profil</string>
-    <string name="own_social_preview_explanation">Aperçu basé sur les séances de cet appareil. Les amis ne voient que les séances synchronisées.</string>
-    <string name="own_social_preview_explanation__t">Aperçu basé sur les épreuves de cet appareil. Les alliés ne voient que les épreuves synchronisées.</string>
+    <string name="own_social_preview_explanation">Aperçu des séances basé sur cet appareil. Les amis ne voient que les séances synchronisées et peuvent aussi voir les détails synchronisés du profil.</string>
+    <string name="own_social_preview_explanation__t">Aperçu des épreuves basé sur cet appareil. Les alliés ne voient que les épreuves synchronisées et peuvent aussi voir les détails synchronisés du profil.</string>
     <string name="own_social_recent_workouts">Séances récentes</string>
     <string name="own_social_recent_workouts__t">Épreuves récentes</string>
     <string name="own_social_loading">Chargement des séances…</string>
@@ -5614,6 +5615,12 @@
     <string name="feed_reaction_error">Félicitation non enregistrée : %1$s</string>
     <string name="feed_reaction_error__t">Hommage non enregistré : %1$s</string>
     <string name="feed_reaction_remove">Retirer</string>
+    <string name="feed_reaction_mine_description">Ta félicitation : %1$s</string>
+    <string name="feed_reaction_mine_description__t">Ton hommage : %1$s</string>
+    <string name="feed_reaction_pay_description">Féliciter</string>
+    <string name="feed_reaction_pay_description__t">Rendre hommage</string>
+    <string name="feed_reaction_option_count">%1$s %2$d</string>
+    <string name="feed_reactions_total">Total des réactions : %1$d</string>
     <string name="feed_reaction_honour">Honneur</string>
     <string name="feed_reaction_iron">Fer</string>
     <string name="feed_reaction_flame">Flamme</string>
@@ -5635,6 +5642,7 @@
     <string name="inbox_loading__t">Lecture de tes missives…</string>
     <string name="inbox_try_again">Réessayer</string>
     <string name="inbox_declined_message">Demande de %1$s refusée</string>
+    <string name="inbox_declining_message">Refus de %1$s en cours</string>
     <string name="inbox_empty_title">Pas encore de messages</string>
     <string name="inbox_empty_title__t">Pas encore de missives</string>
     <string name="inbox_empty_body">Les demandes d\'ami, commentaires et félicitations sur tes séances arrivent ici.</string>

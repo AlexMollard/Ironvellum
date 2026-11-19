@@ -28,11 +28,18 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.CloudCircleGateway
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.ui.theme.IronvellumColors
 import androidx.compose.runtime.mutableIntStateOf
 import com.ironvellum.app.data.InboxNotifier
@@ -84,6 +91,11 @@ fun SocialScreen(
     val account by app.accountRepository.account.collectAsStateWithLifecycle()
     val cloudConfigured = Cloud.config.collectAsStateWithLifecycle().value != null
     val signedIn = cloudConfigured && account != null
+    var restoreComplete by remember { mutableStateOf(false) }
+    LaunchedEffect(app) {
+        app.accountRestore.await()
+        restoreComplete = true
+    }
 
     // Saveable: opening a workout's comments from the INBOX pushes a route
     // over this one, and a plain remember came back on FEED after BACK.
@@ -92,9 +104,17 @@ fun SocialScreen(
     val scope = rememberCoroutineScope()
     var page by rememberSaveable { mutableStateOf(SocialPage.HUB) }
     val screens = rememberSaveableStateHolder()
+    var servedInboxRequest by rememberSaveable { mutableIntStateOf(0) }
+    var previousInboxRequest by remember { mutableIntStateOf(servedInboxRequest) }
+    LaunchedEffect(servedInboxRequest) {
+        if (previousInboxRequest != servedInboxRequest) {
+            screens.removeState("INBOX:$previousInboxRequest")
+            previousInboxRequest = servedInboxRequest
+        }
+    }
     var circleFromInbox by rememberSaveable { mutableStateOf(false) }
     fun leavePage() {
-        if (page == SocialPage.INBOX) screens.removeState(SocialPage.INBOX)
+        if (page == SocialPage.INBOX) screens.removeState("INBOX:$servedInboxRequest")
         page = if (page == SocialPage.CIRCLE && circleFromInbox) SocialPage.INBOX else SocialPage.HUB
         circleFromInbox = false
     }
@@ -102,28 +122,38 @@ fun SocialScreen(
         if (page != SocialPage.HUB) leavePage()
         else scope.launch { pager.animateScrollToPage(0) }
     }
-    // Signing in HERE lands on ALLIES, where a fresh Google account's
-    // claim-your-name panel lives; a restored session keeps its tab.
-    var sawSignedOut by remember { mutableStateOf(!signedIn) }
-    LaunchedEffect(signedIn) {
-        if (!signedIn) {
-            screens.removeState(SocialPage.INBOX)
+    // Do not interpret the initial null as a sign-out before restoration finishes.
+    var savedOwner by rememberSaveable { mutableStateOf<String?>(null) }
+    var sawSignedOut by remember { mutableStateOf(false) }
+    LaunchedEffect(restoreComplete, signedIn, account?.userId) {
+        if (!restoreComplete) return@LaunchedEffect
+        val owner = account?.userId.takeIf { signedIn }
+        if (owner == null || (savedOwner != null && savedOwner != owner)) {
+            screens.removeState("INBOX:$servedInboxRequest")
             page = SocialPage.HUB
+            circleFromInbox = false
+        }
+        if (owner == null) {
             sawSignedOut = true
         } else if (sawSignedOut) {
             pager.scrollToPage(GuildTab.ALLIES.ordinal)
             sawSignedOut = false
         }
+        savedOwner = owner
     }
     // A notification tap asks for INBOX. The served count is saveable so BACK
     // from a workout's comments (or a rotation) does not yank the lifter off
     // whichever tab they moved to since.
-    var servedInboxRequest by rememberSaveable { mutableIntStateOf(0) }
-    LaunchedEffect(inboxRequest, signedIn) {
-        if (signedIn && inboxRequest > servedInboxRequest) {
+    LaunchedEffect(inboxRequest, signedIn, restoreComplete) {
+        if (restoreComplete && signedIn && inboxRequest > servedInboxRequest) {
             servedInboxRequest = inboxRequest
             page = SocialPage.INBOX
         }
+    }
+
+    if (!restoreComplete || (signedIn && savedOwner != null && savedOwner != account?.userId)) {
+        Box(Modifier.fillMaxSize())
+        return
     }
 
     if (!signedIn) {
@@ -133,11 +163,7 @@ fun SocialScreen(
 
     val unread by app.cloudSync.inboxUnread.collectAsStateWithLifecycle()
 
-    // Opening the inbox is the moment ally notifications become relevant: clear
-    // the one posted for it, and ask for the permission once, here, rather than
-    // at launch where the lifter has no reason to say yes. Our own dialog comes
-    // first so the system prompt never lands without context; NOT NOW consumes
-    // the once-per-install ask exactly like ALLOW would.
+    // Ask for notification permission once, when opening the inbox.
     val context = LocalContext.current
     var explainNotifications by rememberSaveable { mutableStateOf(false) }
     val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -145,7 +171,6 @@ fun SocialScreen(
     }
     LaunchedEffect(page) {
         if (page != SocialPage.INBOX) return@LaunchedEffect
-        InboxNotifier.cancel(context)
         if (InboxNotifier.takeFirstAsk(context) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             explainNotifications = true
         }
@@ -184,7 +209,7 @@ fun SocialScreen(
         }
         Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
             PushedHeader(title, ::leavePage, Modifier.padding(top = 8.dp))
-            screens.SaveableStateProvider(page) {
+            screens.SaveableStateProvider(if (page == SocialPage.INBOX) "INBOX:$servedInboxRequest" else page) {
                 when (page) {
                     SocialPage.INBOX -> InboxScreen(
                         onOpenLifter = onOpenLifter,
@@ -194,9 +219,36 @@ fun SocialScreen(
                             page = SocialPage.CIRCLE
                         },
                     )
-                    SocialPage.CIRCLE -> Column(Modifier.verticalScroll(rememberScrollState())) {
-                        CircleSection(onOpenLifter)
-                        Spacer(Modifier.height(16.dp))
+                    SocialPage.CIRCLE -> {
+                        val vm: CircleViewModel = viewModel(
+                            factory = viewModelFactory {
+                                initializer {
+                                    CircleViewModel(CloudCircleGateway(app.cloudSync, app.accountRepository, app.circleBonus))
+                                }
+                            },
+                        )
+                        val circle by vm.ui.collectAsStateWithLifecycle()
+                        val pullState = rememberPullToRefreshState()
+                        PullToRefreshBox(
+                            isRefreshing = circle.loading,
+                            onRefresh = { vm.load(force = true) },
+                            state = pullState,
+                            modifier = Modifier.fillMaxSize(),
+                            indicator = {
+                                PullToRefreshDefaults.Indicator(
+                                    state = pullState,
+                                    isRefreshing = circle.loading,
+                                    modifier = Modifier.align(Alignment.TopCenter),
+                                    containerColor = IronvellumColors.Vault,
+                                    color = IronvellumColors.EmeraldBright,
+                                )
+                            },
+                        ) {
+                            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                                CircleSection(onOpenLifter, viewModel = vm)
+                                Spacer(Modifier.height(16.dp))
+                            }
+                        }
                     }
                     SocialPage.FIND -> AccountScreen(onBack = {}, findOnly = true)
                     SocialPage.HUB -> Unit

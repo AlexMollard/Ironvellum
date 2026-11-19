@@ -15,6 +15,7 @@ export function createFixtureSocial() {
     { id: 'c1', sessionId: 's1', userId: 'u-jonah', authorName: 'Jonah Reed', body: 'That squat looked easy. Next week 125?', createdAtMs: hours(2) },
     { id: 'c2', sessionId: 's1', userId: 'fixture', authorName: 'Fictional lifter', body: 'Strong work.', createdAtMs: hours(1) },
   ];
+  let incoming = 'pending';
   return createFakeSocial({
     feed: async ({ beforeMs } = {}) => (beforeMs != null ? [] : [
       feedRow({}),
@@ -31,18 +32,25 @@ export function createFixtureSocial() {
     inbox: async () => ({
       seenAtMs: hours(5),
       items: [
-        { kind: 'request', occurredAtMs: hours(1), actorId: 'u-ines', actorName: 'Ines Vale', sessionId: null, headline: '', commentId: null, body: '', reaction: null },
+        ...(incoming === 'pending' ? [{ kind: 'request', occurredAtMs: hours(1), actorId: 'u-ines', actorName: 'Ines Vale', sessionId: null, headline: '', commentId: null, body: '', reaction: null }] : []),
         { kind: 'comment', occurredAtMs: hours(2), actorId: 'u-jonah', actorName: 'Jonah Reed', sessionId: 's3', headline: 'Upper B', commentId: 'c1', body: 'Great bench numbers', reaction: null },
         { kind: 'reaction', occurredAtMs: hours(3), actorId: 'u-mara', actorName: 'Mara Quill', sessionId: 's3', headline: 'Upper B', commentId: null, body: '', reaction: 'flame' },
         { kind: 'circle_join', occurredAtMs: hours(9), actorId: 'u-ines', actorName: 'Ines Vale', sessionId: null, headline: '', commentId: null, body: 'Iron Tide', reaction: null },
         { kind: 'accepted', occurredAtMs: hours(40), actorId: 'u-mara', actorName: 'Mara Quill', sessionId: null, headline: '', commentId: null, body: '', reaction: null },
       ],
     }),
-    markInboxSeen: async () => {}, acceptFriend: async () => {}, removeFriend: async () => {},
+    markInboxSeen: async () => {},
+    acceptFriend: async id => { if (id === 'u-ines' && incoming === 'pending') incoming = 'accepted'; },
+    declineFriendRequest: async id => {
+      if (id !== 'u-ines' || incoming !== 'pending') return false;
+      incoming = 'declined';
+      return true;
+    },
+    removeFriend: async id => { if (id === 'u-ines') incoming = 'declined'; },
     friends: async () => [
       { userId: 'u-mara', name: 'Mara Quill', level: 31, titleId: null, crestId: 'iron', accepted: true, incoming: false, acceptedAtMs: hours(24 * 90) },
       { userId: 'u-jonah', name: 'Jonah Reed', level: 18, titleId: null, crestId: null, accepted: true, incoming: false, acceptedAtMs: hours(24 * 30) },
-      { userId: 'u-ines', name: 'Ines Vale', level: 22, titleId: null, crestId: null, accepted: false, incoming: true, acceptedAtMs: null },
+      ...(incoming !== 'declined' ? [{ userId: 'u-ines', name: 'Ines Vale', level: 22, titleId: null, crestId: null, accepted: incoming === 'accepted', incoming: true, acceptedAtMs: incoming === 'accepted' ? Date.now() : null }] : []),
       { userId: 'u-odin', name: 'Odin Hart', level: 9, titleId: null, crestId: null, accepted: false, incoming: false, acceptedAtMs: null },
     ],
     blocked: async () => [{ userId: 'u-x', name: 'Rook Danner' }],

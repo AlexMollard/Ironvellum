@@ -46,7 +46,7 @@ export async function renderInbox(root, ctx) {
   };
   const answer = async (item, run, done) => {
     status.textContent = '';
-    try { await run(); answered.add(item.actorId); status.textContent = done; await load(); } catch (error) { status.textContent = error?.name === 'NoPending' ? t('cloud_ally_no_pending') : explain(error); }
+    try { const result = await run(); if (result !== false) answered.add(item.actorId); status.textContent = result === false ? t('cloud_ally_no_pending') : done; await load(); } catch (error) { status.textContent = error?.name === 'NoPending' ? t('cloud_ally_no_pending') : explain(error); }
   };
   const row = (item, seenAtMs) => {
     const el = node('div', null, 'inbox-item'); el.dataset.kind = item.kind;
@@ -64,7 +64,7 @@ export async function renderInbox(root, ctx) {
       const accept = node('button', t('inbox_accept_button'), 'primary-small'), decline = node('button', t('inbox_decline_button'));
       accept.type = decline.type = 'button';
       accept.addEventListener('click', () => answer(item, () => social.acceptFriend(item.actorId), t('inbox_answer_accepted')));
-      decline.addEventListener('click', () => answer(item, () => social.removeFriend(item.actorId), format(t('inbox_declined_message'), hiddenName(item.actorName))));
+      decline.addEventListener('click', () => answer(item, () => social.declineFriendRequest(item.actorId), format(t('inbox_declined_message'), hiddenName(item.actorName))));
       actions.append(accept, decline); el.append(actions);
     }
     return el;

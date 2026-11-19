@@ -59,6 +59,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
@@ -128,6 +129,9 @@ data class AccountUi(
     val lastSync: SyncOutcome? = null,
     val friends: List<FriendRow> = emptyList(),
     val friendsLoading: Boolean = false,
+    val friendsLoaded: Boolean = false,
+    val friendsError: UiText? = null,
+    val friendsRevision: Long = 0,
     /** Inline failure of the last CLAIM attempt — house copy, never a trace. */
     val claimError: UiText? = null,
     val claimBusy: Boolean = false,
@@ -155,7 +159,7 @@ internal interface AccountCloudGateway {
     suspend fun backupArchive(): Result<CloudSync.BackupInfo>
     suspend fun restoreArchive(): Result<Repository.ImportResult>
     suspend fun latestBackup(): Result<CloudSync.BackupInfo?>
-    suspend fun friends(): Result<List<FriendRow>>
+    suspend fun friends(force: Boolean): Result<List<FriendRow>>
     suspend fun blocked(force: Boolean): Result<List<BlockedLifter>>
     suspend fun acceptFriend(userId: String): Result<Unit>
     suspend fun requestFriend(name: String): Result<Unit>
@@ -171,7 +175,7 @@ private class RealAccountCloudGateway(private val cloud: CloudSync, private val 
     override suspend fun backupArchive() = cloud.backupArchive()
     override suspend fun restoreArchive() = cloud.restoreArchive()
     override suspend fun latestBackup() = cloud.latestBackup()
-    override suspend fun friends() = cloud.friends()
+    override suspend fun friends(force: Boolean) = cloud.friends(force)
     override suspend fun blocked(force: Boolean) = cloud.blocked(force)
     override suspend fun acceptFriend(userId: String) = cloud.acceptFriend(userId)
     override suspend fun requestFriend(name: String) = cloud.requestFriend(name)
@@ -190,6 +194,7 @@ class AccountViewModel internal constructor(
     val ui = _ui.asStateFlow()
     private var busyCalls = 0
     private var owner = cloudSync.owner()
+    private var friendsRequest = 0L
     private fun requestScope() = kotlinx.coroutines.CoroutineScope(
         viewModelScope.coroutineContext + kotlinx.coroutines.SupervisorJob(viewModelScope.coroutineContext[kotlinx.coroutines.Job]),
     )
@@ -205,6 +210,7 @@ class AccountViewModel internal constructor(
         requests = requestScope()
         _ui.value = _ui.value.copy(
             friends = emptyList(), blocked = emptyList(), friendsLoading = false,
+            friendsLoaded = false, friendsError = null, friendsRevision = 0,
             lastBackup = null, backupError = null, lastRestore = null, lastSync = null,
             claimError = null, claimBusy = false, claimSkipped = false, error = null,
         )
@@ -446,13 +452,25 @@ class AccountViewModel internal constructor(
 
     fun refreshFriends() {
         socialRequest { expected, scope ->
-            _ui.value = _ui.value.copy(friendsLoading = true)
+            val request = ++friendsRequest
+            _ui.value = _ui.value.copy(friendsLoading = true, friendsError = null)
             try {
-                cloudSync.friends()
-                    .onSuccess { if (current(expected, scope)) _ui.value = _ui.value.copy(friends = it) }
-                    .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(error = it.reason()) }
+                cloudSync.friends(force = true)
+                    .onSuccess {
+                        if (current(expected, scope) && request == friendsRequest) {
+                            _ui.value = _ui.value.copy(
+                                friends = it, friendsLoaded = true, friendsError = null,
+                                friendsRevision = _ui.value.friendsRevision + 1,
+                            )
+                        }
+                    }
+                    .onFailure {
+                        if (current(expected, scope) && request == friendsRequest) {
+                            _ui.value = _ui.value.copy(friendsError = it.reason(), error = it.reason())
+                        }
+                    }
             } finally {
-                if (current(expected, scope)) _ui.value = _ui.value.copy(friendsLoading = false)
+                if (current(expected, scope) && request == friendsRequest) _ui.value = _ui.value.copy(friendsLoading = false)
             }
         }
     }
@@ -561,7 +579,7 @@ fun AccountScreen(
                     .verticalScroll(rememberScrollState()),
             ) {
                 if (findOnly) {
-                    AddAllyPanel(signedInAccount.userId, ui.friends, viewModel::refreshFriends)
+                    AddAllyPanel(signedInAccount.userId, ui, viewModel::refreshFriends)
                 } else {
                     SignedInPanels(
                         ui = ui,
@@ -571,6 +589,7 @@ fun AccountScreen(
                         onFindFriend = onFindFriend,
                         onClaim = viewModel::claimName,
                         onSkipClaim = viewModel::skipClaim,
+                        onRefreshFriends = viewModel::refreshFriends,
                     )
                 }
                 Spacer(Modifier.height(16.dp))
@@ -954,6 +973,7 @@ private fun SignedInPanels(
     onFindFriend: () -> Unit,
     onClaim: (String) -> Unit,
     onSkipClaim: () -> Unit,
+    onRefreshFriends: () -> Unit,
 ) {
     val acct = ui.account ?: return
 
@@ -986,9 +1006,13 @@ private fun SignedInPanels(
     OutgoingRequests(ui.friends)
 
     SectionHeader(if (accepted.isEmpty()) Words.ally.cpl else UiText.themed(R.string.acct_allies_header, R.string.acct_allies_header__t, accepted.size).asString(), topPadding = 18.dp)
+    ui.friendsError?.let {
+        SocialErrorBanner(it.asString())
+        SocialRefreshLink(onClick = onRefreshFriends, label = stringResource(R.string.acct_retry_link))
+    }
     AlliesPanel(
         accepted = accepted,
-        empty = incoming.isEmpty() && accepted.isEmpty() && !ui.friendsLoading,
+        empty = ui.friendsLoaded && incoming.isEmpty() && accepted.isEmpty() && !ui.friendsLoading,
         onOpenLifter = onOpenLifter,
     )
     Spacer(Modifier.height(16.dp))
@@ -1104,7 +1128,8 @@ private fun ClaimNamePanel(
 }
 
 @Composable
-private fun AddAllyPanel(userId: String, friends: List<FriendRow>, onSent: () -> Unit) {
+private fun AddAllyPanel(userId: String, ui: AccountUi, onSent: () -> Unit) {
+    val currentUi by rememberUpdatedState(ui)
     val app = LocalContext.current.applicationContext as IronvellumApp
     val cloud = app.cloudSync
     val accounts = app.accountRepository
@@ -1114,7 +1139,7 @@ private fun AddAllyPanel(userId: String, friends: List<FriendRow>, onSent: () ->
     val focus = androidx.compose.ui.platform.LocalFocusManager.current
     var name by remember(owner) { mutableStateOf("") }
     var result by remember(owner) { mutableStateOf<ProfileNameDto?>(null) }
-    var sent by remember(owner) { mutableStateOf(false) }
+    var sentAtRevision by remember(owner) { mutableStateOf<Long?>(null) }
     var busy by remember(owner) { mutableStateOf(false) }
     var error by remember(owner) { mutableStateOf<UiText?>(null) }
     fun isCurrent() = currentSocialOwner(accounts.account.value?.userId) == owner
@@ -1122,7 +1147,7 @@ private fun AddAllyPanel(userId: String, friends: List<FriendRow>, onSent: () ->
     Spacer(Modifier.height(8.dp))
     OutlinedTextField(
         value = name,
-        onValueChange = { name = it.take(24); result = null; sent = false; error = null },
+        onValueChange = { name = it.take(24); result = null; sentAtRevision = null; error = null },
         label = { Text(Words.trueName.c) },
         singleLine = true,
         enabled = !busy,
@@ -1151,14 +1176,19 @@ private fun AddAllyPanel(userId: String, friends: List<FriendRow>, onSent: () ->
     )
     if (busy) InkSpinner()
     error?.let { SocialErrorBanner(it.asString()) }
+    ui.friendsError?.let {
+        SocialErrorBanner(it.asString())
+        SocialRefreshLink(onClick = onSent, label = stringResource(R.string.acct_retry_link))
+    }
     result?.let { person ->
-        val edge = friends.firstOrNull { it.userId == person.id }
+        val edge = ui.friends.firstOrNull { it.userId == person.id }
         Spacer(Modifier.height(12.dp))
         InkPanel(Modifier.fillMaxWidth()) {
             ListRow(label = person.displayName, leading = { LifterAvatar(person.displayName, 36.dp) })
             when {
                 edge?.accepted == true -> Text(Words.ally.c, color = IronvellumColors.InkMuted)
-                edge != null || sent -> Text(stringResource(R.string.lifter_request_pending), color = IronvellumColors.EmeraldBright)
+                edge != null || sentAtRevision == ui.friendsRevision -> Text(stringResource(R.string.lifter_request_pending), color = IronvellumColors.EmeraldBright)
+                !ui.friendsLoaded -> Unit
                 else -> IronvellumButton(
                     label = stringResource(R.string.acct_invite_button),
                     enabled = !busy,
@@ -1169,7 +1199,7 @@ private fun AddAllyPanel(userId: String, friends: List<FriendRow>, onSent: () ->
                             error = null
                             try {
                                 val outcome = cloud.requestFriendById(person.id)
-                                if (isCurrent()) outcome.onSuccess { sent = true; onSent() }
+                                if (isCurrent()) outcome.onSuccess { sentAtRevision = currentUi.friendsRevision; onSent() }
                                     .onFailure { error = it.reasonText(UiText.res(R.string.acct_failure_unknown)) }
                             } finally { busy = false }
                         }

@@ -33,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -490,7 +491,7 @@ fun BoardScreen(
     val lifts by viewModel.lifts.collectAsStateWithLifecycle()
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
     // The ranking metric is picked from a row above the board, on Training only.
-    var metric by remember { mutableStateOf(BoardMetric.WorkoutXp) }
+    var metric by rememberSaveable { mutableStateOf(BoardMetric.WorkoutXp) }
     var pickingMetric by remember { mutableStateOf(false) }
 
     LaunchedEffect(kind) {
@@ -1127,8 +1128,8 @@ private fun LiftsBoard(
     onRefresh: () -> Unit,
     onOpenFriend: (String, String) -> Unit,
 ) {
-    var lift by remember { mutableStateOf(Lift.entries.first()) }
-    var window by remember { mutableStateOf(LiftWindow.AllTime) }
+    var lift by rememberSaveable { mutableStateOf(Lift.entries.first()) }
+    var window by rememberSaveable { mutableStateOf(LiftWindow.AllTime) }
     val standings = remember(ui.rows, lift, window) { liftStandings(ui.rows, lift, window) }
 
     when {

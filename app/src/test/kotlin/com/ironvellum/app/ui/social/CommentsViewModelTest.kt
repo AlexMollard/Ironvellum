@@ -33,6 +33,7 @@ class CommentsViewModelTest {
         val reads = mutableListOf<CompletableDeferred<Result<List<Comment>>>>()
         var post = CompletableDeferred<Result<Comment>>()
         var removal = CompletableDeferred<Result<Unit>>()
+        var likerResult: Result<List<Liker>> = Result.success(emptyList())
         override suspend fun comments(sessionId: String, force: Boolean): Result<List<Comment>> {
             val response = CompletableDeferred<Result<List<Comment>>>()
             reads += response
@@ -41,7 +42,7 @@ class CommentsViewModelTest {
         override suspend fun addComment(sessionId: String, body: String) = withContext(NonCancellable) { post.await() }
         override suspend fun deleteComment(id: String) = withContext(NonCancellable) { removal.await() }
         override suspend fun workout(sessionId: String, force: Boolean): Result<AllyWorkout> = Result.failure(IllegalStateException("offline"))
-        override suspend fun likers(sessionId: String): Result<List<Liker>> = Result.success(emptyList())
+        override suspend fun likers(sessionId: String): Result<List<Liker>> = likerResult
         override suspend fun friends(): Result<List<FriendRow>> = Result.success(emptyList())
         override suspend fun react(sessionId: String, reaction: Reaction?) = Result.success(Unit)
         override suspend fun report(userId: String, reason: ReportReason, note: String, sessionId: String, commentId: String) = Result.success(Unit)
@@ -177,6 +178,24 @@ class CommentsViewModelTest {
         // The server removed the first post before this fresh read; the second post happened after its snapshot.
         fake.reads[1].complete(Result.success(emptyList()))
         assertEquals(listOf(later), vm.ui.value.comments)
+    }
+
+    @Test fun `reaction counts remain unknown until a successful read and survive failed refresh`() {
+        val fake = gateway()
+        fake.likerResult = Result.failure(IllegalStateException("offline"))
+        val vm = model(fake)
+        assertNull(vm.ui.value.likers)
+
+        vm.react(Reaction.IRON)
+        assertNull(vm.ui.value.likers)
+
+        fake.likerResult = Result.success(emptyList())
+        vm.loadReactions()
+        assertEquals(emptyList<Liker>(), vm.ui.value.likers)
+
+        fake.likerResult = Result.failure(IllegalStateException("offline"))
+        vm.loadReactions()
+        assertEquals(emptyList<Liker>(), vm.ui.value.likers)
     }
 
 

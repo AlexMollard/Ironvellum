@@ -5830,17 +5830,18 @@
     <string name="social_inbox_no_unread">No unread activity.</string>
     <string name="social_inbox_requests">Requests</string>
     <string name="own_social_profile">Your profile</string>
-    <string name="own_social_friend_preview">View as friend</string>
-    <string name="own_social_friend_preview__t">View as ally</string>
+    <string name="own_social_friend_preview">Preview workouts as friend</string>
+    <string name="own_social_friend_preview__t">Preview trials as ally</string>
     <string name="own_social_preview_unavailable">This profile is not visible to friends</string>
     <string name="own_social_preview_unavailable__t">This profile is not visible to allies</string>
+    <string name="own_social_preview_visibility_unknown">Preview unavailable until profile visibility is verified.</string>
     <string name="own_social_account_unavailable">Account profile unavailable</string>
     <string name="own_social_total_xp">Total XP</string>
     <string name="own_social_visibility">Profile visibility</string>
     <string name="own_social_visibility_unknown">Unknown</string>
     <string name="own_social_edit">Edit profile</string>
-    <string name="own_social_preview_explanation">Preview based on workouts on this device. Friends only see workouts that have synced.</string>
-    <string name="own_social_preview_explanation__t">Preview based on trials on this device. Allies only see trials that have synced.</string>
+    <string name="own_social_preview_explanation">Workout preview based on this device. Friends see only synced workouts and may also see synced profile details.</string>
+    <string name="own_social_preview_explanation__t">Trial preview based on this device. Allies see only synced trials and may also see synced profile details.</string>
     <string name="own_social_recent_workouts">Recent workouts</string>
     <string name="own_social_recent_workouts__t">Recent trials</string>
     <string name="own_social_loading">Loading workouts…</string>
@@ -6309,6 +6310,13 @@
     <string name="feed_reaction_error__t">Tribute not saved: %1$s</string>
     <!-- Text link in the reaction picker that removes the lifter's reaction. -->
     <string name="feed_reaction_remove">Remove</string>
+    <!-- Web reaction labels, exported through web/words-keys.txt. -->
+    <string tools:ignore="UnusedResources" name="feed_reaction_mine_description">Your kudos: %1$s</string>
+    <string tools:ignore="UnusedResources" name="feed_reaction_mine_description__t">Your tribute: %1$s</string>
+    <string tools:ignore="UnusedResources" name="feed_reaction_pay_description">Pay kudos</string>
+    <string tools:ignore="UnusedResources" name="feed_reaction_pay_description__t">Pay tribute</string>
+    <string tools:ignore="UnusedResources" name="feed_reaction_option_count">%1$s %2$d</string>
+    <string name="feed_reactions_total">Total reactions: %1$d</string>
     <!-- The three reactions. Names of the wire values; keep short. -->
     <string name="feed_reaction_honour">Honour</string>
     <string name="feed_reaction_iron">Iron</string>
@@ -6339,8 +6347,10 @@
     <string name="inbox_loading">Loading your messages…</string>
     <string name="inbox_loading__t">Reading your missives…</string>
     <string name="inbox_try_again">Try again</string>
-    <!-- Undo bar after declining a friend request. %1$s is the requester's display name. -->
-    <string name="inbox_declined_message">Declined %1$s</string>
+    <!-- Web confirmation after declining. %1$s is the requester's display name. -->
+    <string tools:ignore="UnusedResources" name="inbox_declined_message">Declined %1$s</string>
+    <!-- Android Undo bar before submitting the decline. %1$s is the requester's display name. -->
+    <string name="inbox_declining_message">Declining %1$s</string>
     <string name="inbox_empty_title">No messages yet</string>
     <string name="inbox_empty_title__t">No missives yet</string>
     <string name="inbox_empty_body">Friend requests, comments and kudos on your workouts land here.</string>

@@ -5214,8 +5214,9 @@
     <string name="social_inbox_no_unread">Nenhuma atividade não lida.</string>
     <string name="social_inbox_requests">Solicitações</string>
     <string name="own_social_profile">Seu perfil</string>
-    <string name="own_social_friend_preview">Ver como amigo</string>
-    <string name="own_social_friend_preview__t">Ver como aliado</string>
+    <string name="own_social_friend_preview">Ver treinos como amigo</string>
+    <string name="own_social_friend_preview__t">Ver provas como aliado</string>
+    <string name="own_social_preview_visibility_unknown">Prévia indisponível até que a visibilidade do perfil seja verificada.</string>
     <string name="own_social_preview_unavailable">Este perfil não está visível para amigos</string>
     <string name="own_social_preview_unavailable__t">Este perfil não está visível para aliados</string>
     <string name="own_social_account_unavailable">Perfil da conta indisponível</string>
@@ -5223,8 +5224,8 @@
     <string name="own_social_visibility">Visibilidade do perfil</string>
     <string name="own_social_visibility_unknown">Desconhecida</string>
     <string name="own_social_edit">Editar perfil</string>
-    <string name="own_social_preview_explanation">Prévia baseada nos treinos deste dispositivo. Amigos só veem os treinos sincronizados.</string>
-    <string name="own_social_preview_explanation__t">Prévia baseada nas provas deste dispositivo. Aliados só veem as provas sincronizadas.</string>
+    <string name="own_social_preview_explanation">Prévia dos treinos baseada neste dispositivo. Amigos só veem os treinos sincronizados e também podem ver os detalhes sincronizados do perfil.</string>
+    <string name="own_social_preview_explanation__t">Prévia das provas baseada neste dispositivo. Aliados só veem as provas sincronizadas e também podem ver os detalhes sincronizados do perfil.</string>
     <string name="own_social_recent_workouts">Treinos recentes</string>
     <string name="own_social_recent_workouts__t">Provas recentes</string>
     <string name="own_social_loading">Carregando treinos…</string>
@@ -5614,6 +5615,12 @@
     <string name="feed_reaction_error">Elogio não salvo: %1$s</string>
     <string name="feed_reaction_error__t">O tributo não foi registrado: %1$s</string>
     <string name="feed_reaction_remove">Remover</string>
+    <string name="feed_reaction_mine_description">Seu elogio: %1$s</string>
+    <string name="feed_reaction_mine_description__t">Seu tributo: %1$s</string>
+    <string name="feed_reaction_pay_description">Elogiar</string>
+    <string name="feed_reaction_pay_description__t">Prestar tributo</string>
+    <string name="feed_reaction_option_count">%1$s %2$d</string>
+    <string name="feed_reactions_total">Total de reações: %1$d</string>
     <string name="feed_reaction_honour">Honra</string>
     <string name="feed_reaction_iron">Ferro</string>
     <string name="feed_reaction_flame">Chama</string>
@@ -5635,6 +5642,7 @@
     <string name="inbox_loading__t">Lendo suas missivas…</string>
     <string name="inbox_try_again">Tentar de novo</string>
     <string name="inbox_declined_message">%1$s recusado</string>
+    <string name="inbox_declining_message">Recusando %1$s</string>
     <string name="inbox_empty_title">Ainda não há mensagens</string>
     <string name="inbox_empty_title__t">Nenhuma missiva chegou ainda</string>
     <string name="inbox_empty_body">Pedidos de amizade, comentários e elogios aos seus treinos aparecem aqui.</string>

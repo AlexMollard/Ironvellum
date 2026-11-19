@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -116,11 +117,12 @@ class BoardCardsTest {
         compose.activityRule.scenario.onActivity {
             ShotRecorder.darkWindow(it)
             model = LeaderboardViewModel(gateway, com.ironvellum.app.data.cloud.AccountRepository())
-            it.setContent {
-                IronvellumTheme {
-                    Box(Modifier.fillMaxSize().statusBarsPadding()) {
-                        BoardScreen(BoardKind.Training, onBack = {}, onOpenFriend = { _, _ -> }, viewModel = model)
-                    }
+        }
+        val restoration = StateRestorationTester(compose)
+        restoration.setContent {
+            IronvellumTheme {
+                Box(Modifier.fillMaxSize().statusBarsPadding()) {
+                    BoardScreen(BoardKind.Training, onBack = {}, onOpenFriend = { _, _ -> }, viewModel = model)
                 }
             }
         }
@@ -135,6 +137,9 @@ class BoardCardsTest {
         ShotRecorder.take(compose, "rolling-workout-xp-metric-picker")
         compose.mainClock.autoAdvance = true
         compose.onNodeWithText("Lifetime XP").performClick()
+        compose.onNodeWithText("Veteran").assertIsDisplayed()
+        compose.onAllNodesWithText("Newcomer").assertCountEquals(0)
+        restoration.emulateSavedInstanceStateRestore()
         compose.onNodeWithText("Veteran").assertIsDisplayed()
         compose.onAllNodesWithText("Newcomer").assertCountEquals(0)
         ShotRecorder.take(compose, "lifetime-xp-board")

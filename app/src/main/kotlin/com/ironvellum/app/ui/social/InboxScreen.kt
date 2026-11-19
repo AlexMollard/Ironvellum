@@ -50,20 +50,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.InboxNotifier
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.data.reasonText
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
-import com.ironvellum.app.data.cloud.AccountRepository
-import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.data.cloud.Inbox
 import io.github.jan.supabase.SupabaseClient
@@ -76,8 +77,6 @@ import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.selectedUnderline
 import com.ironvellum.app.ui.components.UndoBar
-import com.ironvellum.app.ui.ironvellumAccount
-import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -106,10 +105,13 @@ internal interface InboxGateway {
     suspend fun read(force: Boolean): Result<Inbox>
     suspend fun markSeen(owner: SocialOwner): Result<Unit>
     suspend fun accept(userId: String): Result<Unit>
-    suspend fun decline(userId: String): Result<Unit>
+    suspend fun decline(userId: String, owner: SocialOwner): Result<Boolean>
+    fun dismissReadNotification(owner: SocialOwner, throughMs: Long)
 }
 
-private class CloudInboxGateway(private val cloud: CloudSync, private val accounts: AccountRepository) : InboxGateway {
+private class CloudInboxGateway(private val app: IronvellumApp) : InboxGateway {
+    private val cloud get() = app.cloudSync
+    private val accounts get() = app.accountRepository
     override fun owner() = currentSocialOwner(accounts.account.value?.userId)
     override val owners = combine(accounts.account, Cloud.config) { _, _ -> owner() }.distinctUntilChanged()
     override suspend fun read(force: Boolean) = cloud.inbox(force)
@@ -119,7 +121,17 @@ private class CloudInboxGateway(private val cloud: CloudSync, private val accoun
         return cloud.markInboxSeen(userId, client)
     }
     override suspend fun accept(userId: String) = cloud.acceptFriend(userId)
-    override suspend fun decline(userId: String) = cloud.removeFriend(userId)
+    override suspend fun decline(userId: String, owner: SocialOwner): Result<Boolean> {
+        val me = owner.userId ?: return Result.success(false)
+        val client = owner.backend as? SupabaseClient ?: return Result.success(false)
+        return cloud.declineFriendRequest(userId, me, client)
+    }
+
+    override fun dismissReadNotification(owner: SocialOwner, throughMs: Long) {
+        val backend = Cloud.config.value?.url ?: return
+        val userId = owner.userId ?: return
+        if (owner() == owner) InboxNotifier.cancelThrough(app, userId, backend, throughMs)
+    }
 }
 
 /** How an ally request was answered from the inbox row itself. */
@@ -138,6 +150,7 @@ internal data class InboxUi(
      * could read them.
      */
     val seenAtMs: Long? = null,
+    val successfulReads: Long = 0,
     val error: UiText? = null,
     /** An accept/decline the server refused, verbatim. */
     val actionError: UiText? = null,
@@ -178,7 +191,7 @@ internal class InboxViewModel(private val gateway: InboxGateway) : ViewModel() {
     }
 
     /** Read first, then acknowledge only for the account/backend that opened this visit. */
-    fun open(force: Boolean = false) {
+    fun open(force: Boolean = false, acknowledge: Boolean = true) {
         refreshOwner()
         if (!_ui.value.signedIn || _ui.value.loading) return
         val expected = owner
@@ -188,8 +201,16 @@ internal class InboxViewModel(private val gateway: InboxGateway) : ViewModel() {
             try {
                 val inbox = gateway.read(force).getOrThrow()
                 if (!current(expected, scope)) return@launch
-                _ui.value = _ui.value.copy(items = inbox.items, seenAtMs = inbox.seenAtMs, loaded = true)
-                if (inbox.unread > 0) gateway.markSeen(expected).getOrThrow()
+                _ui.value = _ui.value.copy(
+                    items = inbox.items, seenAtMs = inbox.seenAtMs, loaded = true,
+                    successfulReads = _ui.value.successfulReads + 1,
+                )
+                if (acknowledge) {
+                    if (inbox.unread > 0) gateway.markSeen(expected).getOrThrow()
+                    if (!current(expected, scope)) return@launch
+                    val through = maxOf(inbox.seenAtMs ?: Long.MIN_VALUE, inbox.items.maxOfOrNull { it.occurredAtMs } ?: Long.MIN_VALUE)
+                    gateway.dismissReadNotification(expected, through)
+                }
             } catch (error: CancellationException) {
                 if (current(expected, scope) && scope.isActive) {
                     _ui.value = _ui.value.copy(loaded = true, error = UiText.res(R.string.inbox_unknown_failure))
@@ -236,11 +257,20 @@ internal class InboxViewModel(private val gateway: InboxGateway) : ViewModel() {
         _ui.value = _ui.value.copy(answering = _ui.value.answering + userId, actionError = null)
         scope.launch {
             try {
-                when (answer) {
-                    RequestAnswer.ACCEPTED -> gateway.accept(userId)
-                    RequestAnswer.DECLINED -> gateway.decline(userId)
-                }.getOrThrow()
-                if (current(expected, scope)) _ui.value = _ui.value.copy(answered = _ui.value.answered + (userId to answer))
+                val answered = when (answer) {
+                    RequestAnswer.ACCEPTED -> { gateway.accept(userId).getOrThrow(); true }
+                    RequestAnswer.DECLINED -> gateway.decline(userId, expected).getOrThrow()
+                }
+                if (!current(expected, scope)) return@launch
+                if (answered) {
+                    _ui.value = _ui.value.copy(answered = _ui.value.answered + (userId to answer))
+                } else {
+                    // A read started before the conditional delete can still contain the stale request.
+                    _ui.first { !it.loading }
+                    if (!current(expected, scope)) return@launch
+                    _ui.value = _ui.value.copy(items = _ui.value.items.filterNot { it is InboxItem.FriendRequest && it.actorId == userId })
+                    open(force = true, acknowledge = false)
+                }
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
@@ -266,18 +296,27 @@ internal fun InboxScreen(
     /** False while the page is only peeking in during a swipe: reading the inbox waits for the visit. */
     active: Boolean = true,
     viewModel: InboxViewModel = viewModel(
-        factory = viewModelFactory { initializer { InboxViewModel(CloudInboxGateway(ironvellumCloudSync(), ironvellumAccount())) } },
+        factory = viewModelFactory {
+            initializer {
+                InboxViewModel(CloudInboxGateway(this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as IronvellumApp))
+            }
+        },
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
     var unreadOnly by rememberSaveable(ui.owner, active) { mutableStateOf(false) }
     var visitSeenAt by rememberSaveable(ui.owner, active) { mutableStateOf<Long?>(null) }
-    // Back from a thread restores the visit snapshot instead of marking the same rows again.
+    // Restore the visit cutoff independently of the ViewModel's rows.
     LaunchedEffect(ui.owner, active) {
-        if (ui.signedIn && active && visitSeenAt == null) {
-            viewModel.open()
-            val firstRead = viewModel.ui.first { it.owner == ui.owner && it.loaded && !it.loading && (it.error == null || it.items.isNotEmpty()) }
+        val owner = ui.owner
+        if (owner.userId == null || !active) return@LaunchedEffect
+        if (visitSeenAt != null && viewModel.ui.value.loaded) return@LaunchedEffect
+        val current = viewModel.ui.first { it.owner != owner || !it.loading }
+        if (current.owner != owner) return@LaunchedEffect
+        viewModel.open(force = true)
+        if (visitSeenAt == null) {
+            val firstRead = viewModel.ui.first { it.owner == current.owner && it.successfulReads > current.successfulReads }
             visitSeenAt = firstRead.seenAtMs ?: Long.MIN_VALUE
         }
     }
@@ -332,7 +371,7 @@ internal fun InboxScreen(
                             )
                         },
                     ) {
-                        val seenAt = visitSeenAt ?: ui.seenAtMs ?: Long.MIN_VALUE
+                        val seenAt = visitSeenAt ?: Long.MAX_VALUE
                         val visible = ui.items.filter { !unreadOnly || it.occurredAtMs > seenAt }
                         val requests = visible.filterIsInstance<InboxItem.FriendRequest>()
                         val activity = visible.filterNot { it is InboxItem.FriendRequest }
@@ -373,7 +412,7 @@ internal fun InboxScreen(
         }
         ui.pendingDecline?.let { (_, name) ->
             UndoBar(
-                message = stringResource(R.string.inbox_declined_message, name),
+                message = stringResource(R.string.inbox_declining_message, name),
                 onUndo = viewModel::undoDecline,
                 onExpired = viewModel::commitDecline,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
@@ -398,9 +437,8 @@ private fun InboxRows(
             InboxRow(
                 item = item,
                 unread = item.occurredAtMs > seenAt,
-                answering = item.actorId in ui.answering,
-                answered = ui.answered[item.actorId]
-                    ?: RequestAnswer.DECLINED.takeIf { ui.pendingDecline?.first == item.actorId },
+                answering = item.actorId in ui.answering || ui.pendingDecline?.first == item.actorId,
+                answered = ui.answered[item.actorId],
                 onOpenLifter = { onOpenLifter(item.actorId, item.actorName) },
                 onOpenCircle = onOpenCircle,
                 onOpenComments = { sessionId, headline, mine ->
@@ -562,10 +600,10 @@ private fun InboxRow(
                 when (answered) {
                     RequestAnswer.ACCEPTED -> AnswerLabel(UiText.themed(R.string.inbox_answer_accepted, R.string.inbox_answer_accepted__t).asString())
                     RequestAnswer.DECLINED -> AnswerLabel(stringResource(R.string.inbox_answer_declined))
-                    null -> Row(verticalAlignment = Alignment.CenterVertically) {
+                    null -> if (!answering) Row(verticalAlignment = Alignment.CenterVertically) {
                         InkChip(
                             label = stringResource(R.string.inbox_accept_button),
-                            onClick = { if (!answering) onAccept() },
+                            onClick = onAccept,
                         )
                         Text(
                             stringResource(R.string.inbox_decline_button),
@@ -574,7 +612,7 @@ private fun InboxRow(
                             color = IronvellumColors.InkMuted,
                             modifier = Modifier
                                 .heightIn(min = 48.dp)
-                                .clickable(enabled = !answering, role = Role.Button, onClick = onDecline)
+                                .clickable(role = Role.Button, onClick = onDecline)
                                 .padding(horizontal = 12.dp)
                                 .wrapContentHeight(),
                         )

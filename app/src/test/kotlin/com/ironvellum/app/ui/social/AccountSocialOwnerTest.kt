@@ -30,7 +30,12 @@ class AccountSocialOwnerTest {
         val friends = CompletableDeferred<Result<List<FriendRow>>>()
         val blocked = CompletableDeferred<Result<List<BlockedLifter>>>()
         var delayReads = false
-        override suspend fun friends(): Result<List<FriendRow>> = if (owner().userId != "a") Result.failure(IllegalStateException("new")) else if (delayReads) withContext(NonCancellable) { friends.await() } else Result.success(listOf(FriendRow("a", "old", true, false)))
+        var friendResult: Result<List<FriendRow>> = Result.success(listOf(FriendRow("a", "old", true, false)))
+        val friendForces = mutableListOf<Boolean>()
+        override suspend fun friends(force: Boolean): Result<List<FriendRow>> {
+            friendForces += force
+            return if (owner().userId != "a") Result.failure(IllegalStateException("new")) else if (delayReads) withContext(NonCancellable) { friends.await() } else friendResult
+        }
         override suspend fun blocked(force: Boolean): Result<List<BlockedLifter>> = if (owner().userId != "a") Result.failure(IllegalStateException("new")) else if (delayReads) withContext(NonCancellable) { blocked.await() } else Result.success(listOf(BlockedLifter("a", "old")))
         override suspend fun latestBackup(): Result<CloudSync.BackupInfo?> = Result.success(null)
         override suspend fun forgetPushedState() = error("unexpected")
@@ -79,5 +84,47 @@ class AccountSocialOwnerTest {
         assertTrue(gateway.removedAs.isEmpty())
         assertTrue(vm.ui.value.friends.isEmpty())
         assertNotNull(vm.ui.value.error)
+    }
+    @Test fun failedFirstRosterStaysUnknownUntilSuccessfulRetry() {
+        val gateway = Gateway().apply { friendResult = Result.failure(IllegalStateException("offline")) }
+        val vm = AccountViewModel(AccountRepository(), gateway)
+        assertFalse(vm.ui.value.friendsLoaded)
+        assertNotNull(vm.ui.value.friendsError)
+        assertEquals(0L, vm.ui.value.friendsRevision)
+        gateway.friendResult = Result.success(emptyList())
+        vm.refreshFriends()
+        assertTrue(vm.ui.value.friendsLoaded)
+        assertNull(vm.ui.value.friendsError)
+        assertTrue(vm.ui.value.friends.isEmpty())
+        assertEquals(1L, vm.ui.value.friendsRevision)
+        assertTrue(gateway.friendForces.all { it })
+    }
+
+    @Test fun failedRefreshPreservesRosterRevisionAndSuccessfulRefreshReplacesIt() {
+        val gateway = Gateway()
+        val vm = AccountViewModel(AccountRepository(), gateway)
+        val revision = vm.ui.value.friendsRevision
+        gateway.friendResult = Result.failure(IllegalStateException("offline"))
+        vm.refreshFriends()
+        assertEquals(revision, vm.ui.value.friendsRevision)
+        assertEquals("old", vm.ui.value.friends.single().displayName)
+        gateway.friendResult = Result.success(emptyList())
+        vm.refreshFriends()
+        assertEquals(revision + 1, vm.ui.value.friendsRevision)
+        assertTrue(vm.ui.value.friends.isEmpty())
+    }
+
+    @Test fun olderRosterCannotOverwriteNewerRefresh() {
+        val gateway = Gateway()
+        val vm = AccountViewModel(AccountRepository(), gateway)
+        gateway.delayReads = true
+        vm.refreshFriends()
+        gateway.delayReads = false
+        gateway.friendResult = Result.success(emptyList())
+        vm.refreshFriends()
+        val revision = vm.ui.value.friendsRevision
+        gateway.friends.complete(Result.success(listOf(FriendRow("a", "stale", false, false))))
+        assertTrue(vm.ui.value.friends.isEmpty())
+        assertEquals(revision, vm.ui.value.friendsRevision)
     }
 }

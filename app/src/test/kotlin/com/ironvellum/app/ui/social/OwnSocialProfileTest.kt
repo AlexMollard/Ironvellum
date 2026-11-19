@@ -22,4 +22,12 @@ class OwnSocialProfileTest {
             assertEquals(emptyList<WorkoutSession>(), ownProfileSessions(unavailable, true, listOf(workout)))
         }
     }
+
+    @Test fun `private message requires verified private visibility`() {
+        assertEquals(FriendPreviewVisibility.PRIVATE, friendPreviewVisibility(account.copy(visibility = "private")))
+        assertEquals(FriendPreviewVisibility.UNKNOWN, friendPreviewVisibility(account.copy(visibility = "private", profileLoaded = false)))
+        assertEquals(FriendPreviewVisibility.UNKNOWN, friendPreviewVisibility(account.copy(visibility = "invalid")))
+        assertEquals(FriendPreviewVisibility.UNKNOWN, friendPreviewVisibility(null))
+        assertEquals(FriendPreviewVisibility.VISIBLE, friendPreviewVisibility(account))
+    }
 }

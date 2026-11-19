@@ -93,6 +93,15 @@ object InboxNotifier {
         NotificationManagerCompat.from(context).cancel(Notifications.ID_ALLIES)
     }
 
+    @Synchronized
+    internal fun cancelThrough(context: Context, userId: String, backend: String, throughMs: Long) {
+        val p = prefs(context)
+        if (p.getString(KEY_MARK_USER, null) == userId &&
+            p.getString(KEY_MARK_BACKEND, null) == backend &&
+            p.getLong(KEY_MARK, Long.MAX_VALUE) <= throughMs
+        ) cancel(context)
+    }
+
     /**
      * Sign-out or account switch: the next lifter must start from a clean
      * baseline, not inherit this one's mark, and a signed-out phone has

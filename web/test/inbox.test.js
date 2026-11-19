@@ -80,11 +80,36 @@ describe('inbox screen', () => {
     click(root.querySelector('.inbox-item .primary-small')); await wait(); await wait();
     expect(root.querySelector('.friends-notice').textContent).toBe(t('cloud_ally_no_pending'));
   });
-  it('declineDeletesTheRow', async () => {
-    const { root, client } = await open(script([row('request')]));
+  it('declinesOnlyAnIncomingPendingRequest', async () => {
+    let friendship = { requester_id: 'u1', addressee_id: 'me', accepted: false };
+    const { root, client } = await open(script([row('request')], null, { friendships: call => {
+      const matches = call.filters.every(([op, key, value]) => op === 'eq' && friendship?.[key] === value);
+      if (call.op === 'delete' && matches) { const deleted = friendship; friendship = null; return [deleted]; }
+      return [];
+    } }));
     click(root.querySelector('.inbox-item .panel-actions button:last-child')); await wait(); await wait();
-    const call = client.callsTo('friendships')[0]; expect(call.op).toBe('delete'); expect(call.filters[0][0]).toBe('or');
-    expect(call.filters[0][1]).toContain('requester_id.eq.me,addressee_id.eq.u1'); expect(root.querySelector('.friends-notice').textContent).toBe('Declined Mara');
+    const call = client.callsTo('friendships')[0];
+    expect(call.op).toBe('delete');
+    expect(call.filters).toEqual([['eq', 'requester_id', 'u1'], ['eq', 'addressee_id', 'me'], ['eq', 'accepted', false]]);
+    expect(call.returning).toBe('requester_id'); expect(friendship).toBeNull();
+    expect(root.querySelector('.friends-notice').textContent).toBe('Declined Mara');
+  });
+  it('staleDeclineKeepsAnAcceptedFriendshipAndReloads', async () => {
+    let friendship = { requester_id: 'u1', addressee_id: 'me', accepted: true };
+    let reads = 0;
+    const { root, client } = await open(script([], null, {
+      'rpc:my_inbox': () => ++reads === 1 ? [row('request')] : [],
+      friendships: call => {
+        const matches = call.filters.every(([op, key, value]) => op === 'eq' && friendship?.[key] === value);
+        if (call.op === 'delete' && matches) { const deleted = friendship; friendship = null; return [deleted]; }
+        return [];
+      },
+    }));
+    click(root.querySelector('.inbox-item .panel-actions button:last-child')); await wait(); await wait();
+    expect(friendship?.accepted).toBe(true);
+    expect(client.callsTo('friendships')[0].filters).toContainEqual(['eq', 'accepted', false]);
+    expect(reads).toBe(2); expect(root.querySelector('.friends-notice').textContent).toBe(t('cloud_ally_no_pending'));
+    expect(root.textContent).toContain(t('inbox_empty_title'));
   });
   it('serverMessageSurfacesPlain', async () => {
     const { root } = await open(script([row('request')], null, { friendships: { code: 'P0001', message: 'Too many ally requests today — try again tomorrow.' } }));

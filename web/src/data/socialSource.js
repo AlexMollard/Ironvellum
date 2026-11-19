@@ -13,7 +13,7 @@
  *  addComment(sessionId:string, body:string): Promise<any>, deleteComment(id:string): Promise<void>,
  *  inbox(): Promise<{items:any[], seenAtMs:number|null}>, markInboxSeen(): Promise<void>,   // my_inbox, mark_inbox_seen, inbox_seen
  *  friends(): Promise<any[]>, findHunter(name:string): Promise<{id:string,displayName:string}|null>,
- *  requestFriend(userId:string): Promise<void>, acceptFriend(userId:string): Promise<void>, removeFriend(userId:string): Promise<void>,
+ *  requestFriend(userId:string): Promise<void>, acceptFriend(userId:string): Promise<void>, declineFriendRequest(userId:string): Promise<boolean>, removeFriend(userId:string): Promise<void>,
  *  lifter(userId:string): Promise<any>, lifterWorkout(sessionId:string): Promise<any>,
  *  leaderboard(): Promise<any[]>, workoutXpLeaderboard(): Promise<any[]>, liftBoard(): Promise<any[]>, shadowBoard(): Promise<any[]>,
  *  blocked(): Promise<{userId:string,name:string|null}[]>,                            // blocks (blocked_name is filled by the server)
@@ -24,7 +24,7 @@
  *  rotateCircleCode(): Promise<void>, kickCircleMember(userId:string): Promise<void>, circleBonuses(): Promise<any[]> }} SocialSource */
 
 export const METHODS = ['feed', 'workoutFeedRow', 'react', 'reactors', 'comments', 'addComment', 'deleteComment', 'inbox', 'markInboxSeen', 'friends', 'findHunter',
-  'requestFriend', 'acceptFriend', 'removeFriend', 'lifter', 'lifterWorkout', 'leaderboard', 'workoutXpLeaderboard', 'liftBoard', 'shadowBoard', 'mute', 'unmute', 'block',
+  'requestFriend', 'acceptFriend', 'declineFriendRequest', 'removeFriend', 'lifter', 'lifterWorkout', 'leaderboard', 'workoutXpLeaderboard', 'liftBoard', 'shadowBoard', 'mute', 'unmute', 'block',
   'unblock', 'blocked', 'report', 'circle', 'createCircle', 'joinCircle', 'leaveCircle', 'setCircleGoal', 'setCircleName', 'rotateCircleCode',
   'kickCircleMember', 'circleBonuses'];
 
@@ -145,6 +145,11 @@ function inboxApi(client, userId) {
     async acceptFriend(otherId) {
       const { data } = await checked(client.from('friendships').update({ accepted: true }).eq('requester_id', otherId).eq('addressee_id', userId).select('requester_id'));
       if (!data?.length) { const none = new Error('no pending request'); none.name = 'NoPending'; throw none; }
+    },
+    // Only an incoming request that is still pending can be declined.
+    async declineFriendRequest(otherId) {
+      const { data } = await checked(client.from('friendships').delete().eq('requester_id', otherId).eq('addressee_id', userId).eq('accepted', false).select('requester_id'));
+      return !!data?.length;
     },
     // friendships: ends an alliance or withdraws or declines a pending request, whichever side made the row
     async removeFriend(otherId) {

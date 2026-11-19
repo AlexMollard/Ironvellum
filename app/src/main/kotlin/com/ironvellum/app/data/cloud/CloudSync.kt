@@ -1774,6 +1774,29 @@ class CloudSync private constructor(
         }
     }
 
+    internal suspend fun declineFriendRequest(
+        userId: String,
+        expectedUserId: String,
+        expectedClient: io.github.jan.supabase.SupabaseClient,
+    ): Result<Boolean> = attempt {
+        account.withAccount(expectedUserId) {
+            if (!currentInboxScope(expectedUserId, expectedClient)) throw CancellationException("Inbox scope changed")
+            val deleted = expectedClient.postgrest.from("friendships").delete {
+                filter {
+                    eq("requester_id", userId)
+                    eq("addressee_id", expectedUserId)
+                    eq("accepted", false)
+                }
+                select(Columns.raw("requester_id"))
+            }.decodeList<JsonObject>().isNotEmpty()
+            if (!currentInboxScope(expectedUserId, expectedClient)) throw CancellationException("Inbox scope changed")
+            invalidateSocialReads()
+            deleted
+        }
+    }.recoverCatching { error ->
+        throw MessageException(Cloud.explain(error), error)
+    }
+
     /**
      * Ends an alliance, or withdraws/declines a pending request: the
      * friendships row is deleted whichever side created it. Nothing to

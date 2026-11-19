@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -410,7 +411,9 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
             NavHost(
                 navController = navController,
                 startDestination = Routes.DASHBOARD,
-                modifier = Modifier.padding(padding),
+                modifier = Modifier.padding(padding).then(
+                    if (currentRoute == Routes.COMMENTS) Modifier.consumeWindowInsets(padding) else Modifier,
+                ),
                 enterTransition = {
                     androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(220)) +
                         androidx.compose.animation.slideInHorizontally(androidx.compose.animation.core.tween(220)) { it / 8 }

@@ -33,6 +33,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Send
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.Icon
@@ -303,8 +304,10 @@ internal class CommentsViewModel(
         if (before?.firstOrNull { it.userId == me }?.reaction == reaction) return
         val name = gateway.account()?.displayName ?: Words.text(UiText.res(R.string.comments_you))
         reacting = true
-        val others = before.orEmpty().filter { it.userId != me }
-        _ui.value = state.copy(reactionError = null, likers = if (reaction == null) others else listOf(Liker(me, name, System.currentTimeMillis(), reaction)) + others)
+        val optimistic = before?.filter { it.userId != me }?.let { others ->
+            if (reaction == null) others else listOf(Liker(me, name, System.currentTimeMillis(), reaction)) + others
+        }
+        _ui.value = state.copy(reactionError = null, likers = optimistic)
         val expected = owner
         val scope = requests
         scope.launch {
@@ -544,11 +547,20 @@ internal fun CommentsScreen(
                 onClick = viewModel::send,
                 enabled = canSend,
             ) {
-                Icon(
-                    Icons.AutoMirrored.Outlined.Send,
-                    contentDescription = stringResource(if (ui.sending) R.string.comments_sending_button else R.string.comments_send_button),
-                    tint = if (canSend) IronvellumColors.EmeraldText else IronvellumColors.InkMuted,
-                )
+                if (ui.sending) {
+                    val sendingDescription = stringResource(R.string.comments_sending_button)
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp).semantics { contentDescription = sendingDescription },
+                        color = IronvellumColors.EmeraldText,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(
+                        Icons.AutoMirrored.Outlined.Send,
+                        contentDescription = stringResource(R.string.comments_send_button),
+                        tint = if (canSend) IronvellumColors.EmeraldText else IronvellumColors.InkMuted,
+                    )
+                }
             }
         }
         Text(
@@ -801,7 +813,7 @@ private fun SetChip(set: AllySet) {
 private fun ReactionsPanel(ui: CommentsUi, onPick: (Reaction?) -> Unit, onRetry: () -> Unit) {
     val likers = ui.likers
     val mine = likers?.firstOrNull { it.userId == ui.myUserId }?.reaction
-    val counts = likers.orEmpty().mapNotNull { it.reaction }.groupingBy { it }.eachCount()
+    val counts = likers?.mapNotNull { it.reaction }?.groupingBy { it }?.eachCount()
     InkPanel(Modifier.fillMaxWidth()) {
         if (ui.myUserId != null) {
             ReactionPicker(current = mine, counts = counts, onPick = onPick)

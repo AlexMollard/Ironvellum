@@ -2,6 +2,7 @@ package com.ironvellum.app.data
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.ironvellum.app.data.db.SessionEntity
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.Supersets
@@ -183,6 +184,27 @@ class LiveWarmupTest {
         val workingOnly = db.sessionDao().setsFor(sessionId).filter { it.id == sets[1] }
         val expected = SessionScoring(db.exerciseDao().observeAll().first()).xp(workingOnly, 80.0)
         assertEquals(expected - Xp.COMPLETION_BONUS, setsPay(repo.completeSession(sessionId)))
+    }
+
+    @Test
+    fun socialProfileQueriesFilterBeforeLimitAndOrderByCompletion() = runBlocking {
+        val dao = db.sessionDao()
+        val base = SessionEntity(presetId = null, label = "Preview", startedAtMs = 1, completedAtMs = 100, xpAwarded = 0)
+        val earlierStart = dao.insertSession(base)
+        val laterStart = dao.insertSession(base.copy(startedAtMs = 90, completedAtMs = 90))
+        val tiedCompletion = dao.insertSession(base.copy(startedAtMs = 2, audience = "friends"))
+        val hidden = (0 until 120).map { index ->
+            dao.insertSession(base.copy(
+                startedAtMs = 1000L + index,
+                completedAtMs = 1000L + index,
+                imported = index % 3 == 0,
+                audience = when (index % 3) { 1 -> "private"; 2 -> "invalid"; else -> "profile" },
+            ))
+        }
+        dao.insertSession(base.copy(startedAtMs = 5000, completedAtMs = null))
+
+        assertEquals(listOf(tiedCompletion, earlierStart, laterStart), dao.observeSocialProfileSessions(true).first().map { it.id })
+        assertEquals(hidden.takeLast(5).reversed(), dao.observeSocialProfileSessions(false).first().map { it.id })
     }
 
     private fun setsPay(result: Repository.CompletionResult) = result.breakdown.of(Xp.Kind.EXERCISE).sumOf { it.xp }

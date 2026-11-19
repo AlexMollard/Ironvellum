@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
@@ -49,7 +51,8 @@ class InboxRecoveryScreenTest {
             }
             override suspend fun markSeen(owner: SocialOwner) = Result.success(Unit)
             override suspend fun accept(userId: String) = Result.success(Unit)
-            override suspend fun decline(userId: String) = Result.success(Unit)
+            override suspend fun decline(userId: String, owner: SocialOwner) = Result.success(true)
+            override fun dismissReadNotification(owner: SocialOwner, throughMs: Long) = Unit
         }
         compose.activityRule.scenario.onActivity { activity ->
             val vm = InboxViewModel(gateway)
@@ -70,5 +73,39 @@ class InboxRecoveryScreenTest {
         compose.onNodeWithText(retry).performClick()
         compose.onNodeWithText("Ready Ally", substring = true).assertIsDisplayed()
         ShotRecorder.take(compose, "inbox-recovered-request")
+    }
+
+    @Test fun aRestoredVisitLoadsFreshRowsWithoutResettingTheUnreadFilter() {
+        val gateway = object : InboxGateway {
+            override val owners = MutableStateFlow(SocialOwner("me", "isolated"))
+            override fun owner() = owners.value
+            var inbox = Inbox(listOf(InboxItem.FriendRequest(200, "ally", "Original Ally")), null)
+            override suspend fun read(force: Boolean) = Result.success(inbox)
+            override suspend fun markSeen(owner: SocialOwner) = Result.success(Unit)
+            override suspend fun accept(userId: String) = Result.success(Unit)
+            override suspend fun decline(userId: String, owner: SocialOwner) = Result.success(true)
+            override fun dismissReadNotification(owner: SocialOwner, throughMs: Long) = Unit
+        }
+        var vm = InboxViewModel(gateway)
+        val restoration = StateRestorationTester(compose)
+        restoration.setContent {
+            IronvellumTheme(light = false) {
+                InboxScreen(onOpenLifter = { _, _ -> }, onOpenComments = { _, _, _ -> }, onOpenCircle = {}, viewModel = vm)
+            }
+        }
+        compose.onNodeWithText("Original Ally", substring = true).assertIsDisplayed()
+        val unread = compose.onNodeWithText(context.getString(R.string.social_inbox_filter_unread))
+        unread.performClick()
+        compose.runOnIdle {
+            gateway.inbox = Inbox(
+                listOf(InboxItem.FriendRequest(250, "new", "New Ally"), InboxItem.FriendRequest(200, "ally", "Original Ally")),
+                seenAtMs = 250,
+            )
+            vm = InboxViewModel(gateway)
+        }
+        restoration.emulateSavedInstanceStateRestore()
+        unread.assertIsSelected()
+        compose.onNodeWithText("New Ally", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Original Ally", substring = true).assertIsDisplayed()
     }
 }

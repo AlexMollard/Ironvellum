@@ -2431,8 +2431,8 @@ class Repository(
         sessionDao.observeLiveSession().map { it?.toDomain() }
 
     /** Bounded session metadata for the social profile; never loads set history. */
-    fun observeSocialProfileSessions(): Flow<List<WorkoutSession>> =
-        sessionDao.observeRecent(100).map { rows -> rows.map { it.toDomain() } }.distinctUntilChanged()
+    fun observeSocialProfileSessions(friendView: Boolean): Flow<List<WorkoutSession>> =
+        sessionDao.observeSocialProfileSessions(friendView).map { rows -> rows.map { it.toDomain() } }.distinctUntilChanged()
 
     /**
      * The unfinished session to reopen on launch, or null. Only one started

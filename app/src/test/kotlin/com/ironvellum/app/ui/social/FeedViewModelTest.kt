@@ -208,6 +208,23 @@ class FeedViewModelTest {
         assertNull(vm.ui.value.pagingError)
     }
 
+    @Test fun unknownOwnReactionKeepsTotalOnSwitchAndFailureRestoresIt() {
+        val original = entry(1).copy(likeCount = 3, likedByMe = true, reactions = mapOf(Reaction.FLAME to 1))
+        val gateway = Gateway().apply {
+            read = { _, _, _ -> Result.success(listOf(original)) }
+            reaction = { _, _ -> Result.failure(IllegalStateException("offline")) }
+        }
+        val vm = model(gateway)
+        vm.react(original, Reaction.IRON)
+        assertEquals(original, vm.ui.value.entries.single())
+
+        gateway.reaction = { _, _ -> Result.success(Unit) }
+        vm.react(original, Reaction.IRON)
+        val updated = vm.ui.value.entries.single()
+        assertEquals(3, updated.likeCount)
+        assertEquals(mapOf(Reaction.FLAME to 1, Reaction.IRON to 1), updated.reactions)
+    }
+
     companion object {
         private fun entry(id: Int) = FeedEntry(
             sessionId = id.toString(), userId = "lifter", displayName = "Lifter", level = 1,

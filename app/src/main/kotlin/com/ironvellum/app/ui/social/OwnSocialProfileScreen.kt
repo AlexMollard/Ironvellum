@@ -57,6 +57,15 @@ internal fun ownProfileSessions(account: Account?, friendView: Boolean, sessions
         .toList()
 }
 
+internal enum class FriendPreviewVisibility { VISIBLE, PRIVATE, UNKNOWN }
+
+internal fun friendPreviewVisibility(account: Account?): FriendPreviewVisibility = when {
+    account == null || !account.profileLoaded -> FriendPreviewVisibility.UNKNOWN
+    account.visibility == "private" -> FriendPreviewVisibility.PRIVATE
+    account.visibility == "public" || account.visibility == "friends" -> FriendPreviewVisibility.VISIBLE
+    else -> FriendPreviewVisibility.UNKNOWN
+}
+
 @Composable
 internal fun OwnSocialProfileScreen(
     friendView: Boolean,
@@ -70,7 +79,7 @@ internal fun OwnSocialProfileScreen(
     val account by app.accountRepository.account.collectAsStateWithLifecycle()
     val profile by remember(app) { app.repository.observeProfile() }.collectAsStateWithLifecycle(initialValue = null)
     val crest by remember(app) { app.repository.observeEquippedFrame() }.collectAsStateWithLifecycle(initialValue = null)
-    val sessions by remember(app) { app.repository.observeSocialProfileSessions() }.collectAsStateWithLifecycle(initialValue = null)
+    val sessions by remember(app, friendView) { app.repository.observeSocialProfileSessions(friendView) }.collectAsStateWithLifecycle(initialValue = null)
     OwnSocialProfileContent(account, profile, crest, sessions, friendView, onBack, onEdit, onSettings, onViewAsFriend, onWorkout)
 }
 
@@ -106,8 +115,9 @@ internal fun OwnSocialProfileContent(
         }
         if (!visible) {
             ListRow(
-                label = if (friendView) UiText.themed(R.string.own_social_preview_unavailable, R.string.own_social_preview_unavailable__t).asString()
-                else stringResource(R.string.own_social_account_unavailable),
+                label = if (!friendView) stringResource(R.string.own_social_account_unavailable)
+                else if (friendPreviewVisibility(current) == FriendPreviewVisibility.PRIVATE) UiText.themed(R.string.own_social_preview_unavailable, R.string.own_social_preview_unavailable__t).asString()
+                else stringResource(R.string.own_social_preview_visibility_unknown),
                 icon = Icons.Outlined.Lock,
             )
         } else {

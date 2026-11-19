@@ -273,6 +273,13 @@ interface SessionDao {
     @Query("SELECT * FROM sessions ORDER BY startedAtMs DESC LIMIT :limit")
     fun observeRecent(limit: Int): Flow<List<SessionEntity>>
 
+    @Query(
+        "SELECT * FROM sessions WHERE completedAtMs IS NOT NULL " +
+            "AND (:friendView = 0 OR (imported = 0 AND audience IN ('profile', 'friends'))) " +
+            "ORDER BY completedAtMs DESC, id DESC LIMIT 5",
+    )
+    fun observeSocialProfileSessions(friendView: Boolean): Flow<List<SessionEntity>>
+
     @Transaction
     @Query("SELECT * FROM sessions WHERE completedAtMs IS NOT NULL ORDER BY startedAtMs DESC")
     fun observeCompletedWithSets(): Flow<List<SessionWithSets>>

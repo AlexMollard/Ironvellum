@@ -6,7 +6,9 @@ store listing; this is the whole list.
 ## Unreleased
 
 - Put Inbox and your training profile in the Social header, keep the bottom navigation in comment threads, and use icons for reactions and sending comments.
-- Give Circle its own screen and let you preview your profile without private workouts.
+- Give Circle its own refreshable screen and preview which workouts friends can see, without implying other profile details are private.
+- Keep Inbox and ranking selections when returning to Social. Declining an old request no longer removes an accepted friend on Android or web.
+- Show friend-list errors and pending comment sends, and leave reaction counts blank until they load.
 
 ## 1.12
 

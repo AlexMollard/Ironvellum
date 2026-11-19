@@ -255,6 +255,8 @@ class FeedViewModel internal constructor(
         if (before.myReaction == reaction) return
         val expected = owner
         val scope = requests
+        val hadOverride = reactionOverrides.containsKey(entry.sessionId)
+        val previousOverride = reactionOverrides[entry.sessionId]
         reactionCallsInFlight += entry.sessionId
         reactionOverrides[entry.sessionId] = reaction
         _ui.value = _ui.value.copy(reactionErrors = _ui.value.reactionErrors - entry.sessionId)
@@ -264,15 +266,15 @@ class FeedViewModel internal constructor(
                 gateway.react(entry.sessionId, reaction).getOrThrow()
             } catch (error: CancellationException) {
                 if (current(expected, scope) && scope.isActive) {
-                    reactionOverrides[entry.sessionId] = before.myReaction
-                    replaceEntry(entry.sessionId) { it.withReaction(before.myReaction) }
+                    if (hadOverride) reactionOverrides[entry.sessionId] = previousOverride else reactionOverrides.remove(entry.sessionId)
+                    replaceEntry(entry.sessionId) { it.copy(myReaction = before.myReaction, likedByMe = before.likedByMe, reactions = before.reactions, likeCount = before.likeCount) }
                     _ui.value = _ui.value.copy(reactionErrors = _ui.value.reactionErrors + (entry.sessionId to UiText.res(R.string.feed_unknown_failure)))
                 }
                 throw error
             } catch (error: Exception) {
                 if (current(expected, scope)) {
-                    reactionOverrides[entry.sessionId] = before.myReaction
-                    replaceEntry(entry.sessionId) { it.withReaction(before.myReaction) }
+                    if (hadOverride) reactionOverrides[entry.sessionId] = previousOverride else reactionOverrides.remove(entry.sessionId)
+                    replaceEntry(entry.sessionId) { it.copy(myReaction = before.myReaction, likedByMe = before.likedByMe, reactions = before.reactions, likeCount = before.likeCount) }
                     _ui.value = _ui.value.copy(reactionErrors = _ui.value.reactionErrors + (entry.sessionId to error.reason()))
                 }
             } finally {
@@ -686,6 +688,14 @@ private fun FeedCard(
                     onClick = { onOpenComments(entry) },
                 )
             }
+            if (entry.likeCount > entry.reactions.values.sum()) {
+                Text(
+                    stringResource(R.string.feed_reactions_total, entry.likeCount),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -726,7 +736,7 @@ private fun FeedCard(
 private fun CountButton(
     icon: ImageVector,
     iconDescription: String,
-    count: Int,
+    count: Int?,
     lit: Boolean,
     onClick: () -> Unit,
     selected: Boolean? = null,
@@ -744,15 +754,17 @@ private fun CountButton(
             .padding(horizontal = 8.dp),
     ) {
         Icon(icon, contentDescription = iconDescription, tint = tint, modifier = Modifier.size(18.dp))
-        Text(
-            "$count",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.SemiBold,
-            color = tint,
-            maxLines = 1,
-            softWrap = false,
-        )
+        if (count != null) {
+            Text(
+                "$count",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.SemiBold,
+                color = tint,
+                maxLines = 1,
+                softWrap = false,
+            )
+        }
     }
 }
 
@@ -769,14 +781,14 @@ private fun AllyNote(label: String) {
 }
 
 @Composable
-private fun ReactionChoices(current: Reaction?, counts: Map<Reaction, Int>, onPick: (Reaction) -> Unit) {
+private fun ReactionChoices(current: Reaction?, counts: Map<Reaction, Int>?, onPick: (Reaction) -> Unit) {
     Row(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         Reaction.entries.forEach { reaction ->
             val selected = current == reaction
             CountButton(
                 icon = reaction.glyph(),
                 iconDescription = reaction.displayName(),
-                count = counts[reaction] ?: 0,
+                count = counts?.let { it[reaction] ?: 0 },
                 lit = selected,
                 selected = selected,
                 onClick = { if (!selected) onPick(reaction) },
@@ -786,7 +798,7 @@ private fun ReactionChoices(current: Reaction?, counts: Map<Reaction, Int>, onPi
 }
 
 @Composable
-internal fun ReactionPicker(current: Reaction?, counts: Map<Reaction, Int>, onPick: (Reaction?) -> Unit) {
+internal fun ReactionPicker(current: Reaction?, counts: Map<Reaction, Int>?, onPick: (Reaction?) -> Unit) {
     InkDivider(Modifier.padding(top = 4.dp))
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         ReactionChoices(current, counts, onPick)
@@ -830,7 +842,7 @@ private fun FeedEntry.withReaction(next: Reaction?): FeedEntry {
         if (left > 0) counts[previous] = left else counts.remove(previous)
     }
     if (next != null) counts[next] = (counts[next] ?: 0) + 1
-    val delta = (if (next != null) 1 else 0) - (if (previous != null) 1 else 0)
+    val delta = (if (next != null) 1 else 0) - (if (likedByMe) 1 else 0)
     return copy(
         myReaction = next,
         likedByMe = next != null,
