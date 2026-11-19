@@ -3,7 +3,7 @@
 What changed in each release, grouped by what you will notice. The short version ships with the app
 store listing; this is the whole list.
 
-## Unreleased
+## 1.12
 
 ### Backups and sync
 - Keep each workout's identity through a restore, so a restored history updates its cloud copy instead of uploading a second one; workouts the restore removes leave the cloud too.

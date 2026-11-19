@@ -1,0 +1,6 @@
+• Check off warm-up sets as you go, with one shared checklist for supersets.
+• Give the rest timer its own two-note chime, or choose a different sound in Android settings.
+• Keep workout IDs and favourite exercises through backup and restore, and improve background sync.
+• Fix editing zero-assistance sets and catch truncated CSV imports.
+
+Everything: github.com/AlexMollard/Ironvellum/blob/main/CHANGELOG.md

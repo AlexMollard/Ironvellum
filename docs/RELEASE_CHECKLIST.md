@@ -38,8 +38,8 @@ Commands run from the repo root on Windows with `.\gradlew.bat <task>`.
 
 - In `app/build.gradle.kts` → `defaultConfig`: increment `versionCode` and set
   `versionName` to match the tag. Play rejects a `versionCode` already uploaded.
-- Prepared for this release: `versionName = "1.11"`, `versionCode = 12`, and
-  `fastlane/metadata/android/en-US/changelogs/12.txt` (372 characters).
+- Prepared for this release: `versionName = "1.12"`, `versionCode = 13`, and
+  `fastlane/metadata/android/en-US/changelogs/13.txt`.
 
 ## 3. Local validation
 
@@ -196,15 +196,19 @@ cut from the baseline. Raise `NEEDED_SCHEMA_VERSION` only when the whole app
 requires it. `python3 tools/gate.py --backend` exercises the baseline, hosted
 patch replay and reset round trip against real Postgres.
 
-The current baseline returns **33**; the app minimum is **31**. Schema 32
-adds feed cards; 33 adds rolling workout-XP rankings. See
-[self-hosting](../supabase/SELF_HOSTING.md) for fresh setup and upgrade paths.
+The current baseline returns **34**; the app minimum is **31**. Schema 32
+adds feed cards, 33 adds rolling workout-XP rankings, and 34 hardens sync and
+social writes. See [self-hosting](../supabase/SELF_HOSTING.md) for upgrade paths.
 
 Recorded hosted evidence: the owner applied the schema-32 feed-card patch on
 2026-10-30 and the schema-33 workout-XP patch for 1.11. The minified app's probe
 returned 33 on 2026-11-12; authenticated sync and recent/lifetime standings were
 separately exercised on 2026-11-13 as recorded above. None of this proves every
 future authenticated path from a version beacon alone.
+
+For 1.12, the hosted RPC returned schema 34. A disposable-account smoke check
+verified password sign-in, repeat workout uploads without duplicates, and
+friend-request acceptance. Both test accounts were removed after the check.
 
 **Never paste `supabase/reset.sql` into the hosted project.** It deletes every
 account. It exists for a throwaway project and for the gate's round trip.

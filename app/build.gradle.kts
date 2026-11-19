@@ -54,13 +54,13 @@ android {
     defaultConfig {
         applicationId = "com.ironvellum.app"
         minSdk = 29
-        // Keep API 36 for 1.11; API 37 needs a separate LAN-permission/auth migration.
+        // Keep API 36; API 37 needs a separate LAN-permission/auth migration.
         targetSdk = 36
         // versionCode MUST be incremented for every Play Store upload; a reused
         // versionCode is rejected by the store. Keep versionName in sync with
         // the release tag. No git-derived scheme — bump it by hand.
-        versionCode = 12
-        versionName = "1.11"
+        versionCode = 13
+        versionName = "1.12"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments["listener"] = "com.ironvellum.app.NoLiveSessionListener"
