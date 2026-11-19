@@ -98,7 +98,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import com.ironvellum.app.data.cloud.Account
-import com.ironvellum.app.data.cloud.FriendRow
+import com.ironvellum.app.data.cloud.ProfileNameDto
 
 /** The workout's lifter as this screen draws them; the workout row itself carries only an id. */
 internal data class OwnerIdentity(
@@ -143,7 +143,7 @@ internal interface CommentsGateway {
     suspend fun deleteComment(id: String): Result<Unit>
     suspend fun workout(sessionId: String, force: Boolean): Result<AllyWorkout>
     suspend fun likers(sessionId: String): Result<List<Liker>>
-    suspend fun friends(): Result<List<FriendRow>>
+    suspend fun visibleProfile(userId: String): Result<ProfileNameDto?>
     suspend fun react(sessionId: String, reaction: Reaction?): Result<Unit>
     suspend fun report(userId: String, reason: ReportReason, note: String, sessionId: String, commentId: String): Result<Unit>
 }
@@ -157,7 +157,7 @@ private class CloudCommentsGateway(private val cloud: CloudSync, private val acc
     override suspend fun deleteComment(id: String) = cloud.deleteComment(id)
     override suspend fun workout(sessionId: String, force: Boolean) = cloud.workout(sessionId, force)
     override suspend fun likers(sessionId: String) = cloud.likers(sessionId)
-    override suspend fun friends() = cloud.friends()
+    override suspend fun visibleProfile(userId: String) = cloud.visibleProfile(userId)
     override suspend fun react(sessionId: String, reaction: Reaction?) = cloud.react(sessionId, reaction)
     override suspend fun report(userId: String, reason: ReportReason, note: String, sessionId: String, commentId: String) =
         cloud.report(userId, reason, note, sessionId, commentId)
@@ -289,9 +289,9 @@ internal class CommentsViewModel(
         val expected = owner
         val scope = requests
         scope.launch {
-            val row = gateway.friends().getOrNull()?.firstOrNull { it.userId == userId }
+            val profile = gateway.visibleProfile(userId).getOrNull()
             if (!current(expected, scope) || resolvedOwner != userId) return@launch
-            _ui.value = _ui.value.copy(owner = OwnerIdentity(userId, row?.displayName ?: Words.lifter.c, row?.level, row?.currentTitleId, row?.crestId))
+            _ui.value = _ui.value.copy(owner = OwnerIdentity(userId, profile?.displayName ?: Words.lifter.c, profile?.level, profile?.currentTitleId, profile?.currentCrestId))
         }
     }
 

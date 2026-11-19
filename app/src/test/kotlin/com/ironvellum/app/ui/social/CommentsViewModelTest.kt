@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModelStore
 import com.ironvellum.app.data.cloud.Account
 import com.ironvellum.app.data.cloud.AllyWorkout
 import com.ironvellum.app.data.cloud.Comment
-import com.ironvellum.app.data.cloud.FriendRow
+import com.ironvellum.app.data.cloud.ProfileNameDto
 import com.ironvellum.app.data.cloud.Liker
 import com.ironvellum.app.data.cloud.Reaction
 import com.ironvellum.app.data.cloud.ReportReason
@@ -43,7 +43,7 @@ class CommentsViewModelTest {
         override suspend fun deleteComment(id: String) = withContext(NonCancellable) { removal.await() }
         override suspend fun workout(sessionId: String, force: Boolean): Result<AllyWorkout> = Result.failure(IllegalStateException("offline"))
         override suspend fun likers(sessionId: String): Result<List<Liker>> = likerResult
-        override suspend fun friends(): Result<List<FriendRow>> = Result.success(emptyList())
+        override suspend fun visibleProfile(userId: String): Result<ProfileNameDto?> = Result.success(null)
         override suspend fun react(sessionId: String, reaction: Reaction?) = Result.success(Unit)
         override suspend fun report(userId: String, reason: ReportReason, note: String, sessionId: String, commentId: String) = Result.success(Unit)
         fun finish() {

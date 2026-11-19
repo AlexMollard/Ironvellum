@@ -1130,6 +1130,22 @@ class CloudSync private constructor(
         }
     }
 
+    /** Unlike the roster, this also finds public lifters who are not friends. */
+    internal suspend fun visibleProfile(userId: String): Result<ProfileNameDto?> {
+        val viewer = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return attempt {
+            account.withAccount(viewer.userId) {
+                if (Cloud.requireConfigured.getOrNull() !== client) throw CancellationException("Profile backend changed")
+                client.postgrest.from("profiles").select(
+                    Columns.list("id", "display_name", "level", "current_title_id", "current_crest_id"),
+                ) {
+                    filter { eq("id", userId) }
+                }.decodeList<ProfileNameDto>().firstOrNull()
+            }
+        }
+    }
+
     /**
      * TTL 30s: the friends list changes when someone requests/accepts —
      * events that invalidate it locally anyway — so within the TTL it can

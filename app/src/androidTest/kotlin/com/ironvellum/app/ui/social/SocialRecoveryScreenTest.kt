@@ -31,6 +31,7 @@ import com.ironvellum.app.data.cloud.Comment
 import com.ironvellum.app.data.cloud.FeedEntry
 import com.ironvellum.app.data.cloud.FriendRow
 import com.ironvellum.app.data.cloud.Liker
+import com.ironvellum.app.data.cloud.ProfileNameDto
 import com.ironvellum.app.data.cloud.Reaction
 import com.ironvellum.app.domain.SessionAudience
 import com.ironvellum.app.domain.WorkoutSession
@@ -181,12 +182,14 @@ class SocialRecoveryScreenTest {
         override fun account() = Account("me", "qa@example.invalid", "Current Lifter", "private")
         val read = CompletableDeferred<Result<List<Comment>>>()
         val post = CompletableDeferred<Result<Comment>>()
+        var workoutResult: Result<AllyWorkout> = Result.failure(IllegalStateException("Workout unavailable"))
         override suspend fun comments(sessionId: String, force: Boolean) = withContext(NonCancellable) { read.await() }
         override suspend fun addComment(sessionId: String, body: String) = post.await()
         override suspend fun deleteComment(id: String) = Result.success(Unit)
-        override suspend fun workout(sessionId: String, force: Boolean): Result<AllyWorkout> = Result.failure(IllegalStateException("Workout unavailable"))
+        override suspend fun workout(sessionId: String, force: Boolean) = workoutResult
         override suspend fun likers(sessionId: String): Result<List<Liker>> = Result.success(emptyList())
-        override suspend fun friends(): Result<List<FriendRow>> = Result.success(emptyList())
+        override suspend fun visibleProfile(userId: String): Result<ProfileNameDto?> =
+            Result.success(if (userId == "public-author") ProfileNameDto(userId, "Public Author", level = 3) else null)
         override suspend fun react(sessionId: String, reaction: Reaction?) = Result.success(Unit)
         override suspend fun report(userId: String, reason: ReportReason, note: String, sessionId: String, commentId: String) = Result.success(Unit)
     }
@@ -216,6 +219,27 @@ class SocialRecoveryScreenTest {
         compose.onNodeWithText("Earlier thread comment").assertIsDisplayed()
         compose.onNodeWithText("Posted while loading").assertIsDisplayed()
         shot("social-comments-after-late-read")
+    }
+
+    @Test fun publicWorkoutThreadShowsTheAuthorEvenWhenTheyAreNotAFriend() {
+        val backend = ThreadBackend()
+        backend.read.complete(Result.success(emptyList()))
+        backend.workoutResult = Result.success(AllyWorkout("session", "public-author", "Public workout", "", null, null, 0, 0, emptyList()))
+        compose.activityRule.scenario.onActivity { activity ->
+            val vm = CommentsViewModel(backend, "session", "public-author")
+            activity.viewModelStore.put("social-thread-author", vm)
+            ShotRecorder.darkWindow(activity)
+            activity.setContent {
+                IronvellumTheme(light = false) {
+                    Box(Modifier.fillMaxSize().statusBarsPadding().padding(16.dp)) {
+                        CommentsScreen(sessionId = "session", ownerId = "public-author", headline = "Public workout",
+                            onBack = {}, onOpenLifter = { _, _ -> }, viewModel = vm)
+                    }
+                }
+            }
+        }
+        compose.onNodeWithText("Public Author").assertIsDisplayed()
+        shot("social-public-workout-author")
     }
 
     companion object {

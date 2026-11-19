@@ -9,6 +9,7 @@ store listing; this is the whole list.
 - Give Circle its own refreshable screen and preview which workouts friends can see, without implying other profile details are private.
 - Keep Inbox and ranking selections when returning to Social. Declining an old request no longer removes an accepted friend on Android or web.
 - Show friend-list errors and pending comment sends, and leave reaction counts blank until they load.
+- Keep the author's name when opening a public workout from the feed.
 
 ## 1.12
 
