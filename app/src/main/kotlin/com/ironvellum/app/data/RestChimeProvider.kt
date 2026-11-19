@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.res.AssetFileDescriptor
 import android.database.Cursor
 import android.net.Uri
+import androidx.core.net.toUri
 import com.ironvellum.app.R
 import java.io.FileNotFoundException
 
@@ -31,6 +32,6 @@ class RestChimeProvider : ContentProvider() {
     private fun isChime(uri: Uri): Boolean = uri == soundUri(requireNotNull(context))
 
     companion object {
-        internal fun soundUri(context: Context): Uri = Uri.parse("content://${context.packageName}.sounds/rest-chime.wav")
+        internal fun soundUri(context: Context): Uri = "content://${context.packageName}.sounds/rest-chime.wav".toUri()
     }
 }

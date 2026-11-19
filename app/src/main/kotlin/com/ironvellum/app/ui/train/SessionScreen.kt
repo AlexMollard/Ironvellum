@@ -2844,9 +2844,9 @@ internal fun OpenExerciseCard(
     onToggleEdit: (SessionSet) -> Unit,
     onSetKind: (SessionSet, SetKind) -> Unit,
     onUnlog: (SessionSet) -> Unit,
+    modifier: Modifier = Modifier,
     onWarmupDone: (SessionSet, Boolean) -> Unit = { _, _ -> },
     sharedWarmups: Boolean = false,
-    modifier: Modifier = Modifier,
     onRestChanged: () -> Unit = {},
     /** The sealed trial's amend mode: any set can open for editing, and there is no live-only chrome. */
     amend: Boolean = false,
