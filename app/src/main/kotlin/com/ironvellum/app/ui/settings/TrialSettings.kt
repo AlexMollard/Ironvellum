@@ -1,7 +1,9 @@
 package com.ironvellum.app.ui.settings
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -12,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
+import com.ironvellum.app.data.Notifications
 import com.ironvellum.app.data.TrialPrefs
 import com.ironvellum.app.domain.RestAlert
 import com.ironvellum.app.domain.UiText
@@ -35,6 +38,8 @@ internal fun TrialSettings(onBack: () -> Unit, onOpenLockScreen: () -> Unit) {
     val prefs = remember { TrialPrefs(context) }
     var restOn by remember { mutableStateOf(!prefs.restOff) }
     var alert by remember { mutableStateOf(prefs.restAlert) }
+    val hasLegacySound = remember { Notifications.hasLegacyRestSound(context) }
+    var useChime by remember { mutableStateOf(!hasLegacySound || prefs.useRestChime) }
     var awake by remember { mutableStateOf(prefs.keepScreenOn) }
     var compoundRest by remember { mutableStateOf(prefs.compoundRest) }
     var isolationRest by remember { mutableStateOf(prefs.isolationRest) }
@@ -71,6 +76,26 @@ internal fun TrialSettings(onBack: () -> Unit, onOpenLockScreen: () -> Unit) {
             )
             Spacer(Modifier.height(8.dp))
             SettingsCaption(stringResource(R.string.settings_trial_alert_caption, alert.caption))
+        }
+        if (alert == RestAlert.SOUND_VIBRATE) {
+            SettingsGroup(null, topSpace = 10.dp, rows = true) {
+                if (hasLegacySound) {
+                    Box(Modifier.padding(horizontal = 16.dp)) {
+                        SettingsSwitchRow(
+                            label = stringResource(R.string.settings_trial_rest_chime_label),
+                            caption = stringResource(R.string.settings_trial_rest_chime_caption),
+                            checked = useChime,
+                            onCheckedChange = {
+                                useChime = it
+                                prefs.useRestChime = it
+                            },
+                        )
+                    }
+                }
+                SettingsValueRow(stringResource(R.string.settings_trial_rest_sound_label), null) {
+                    context.startActivity(Notifications.channelSettingsIntent(context, Notifications.restChannel(context, alert)))
+                }
+            }
         }
         SettingsGroup(null, topSpace = 10.dp) {
             SettingsSwitchRow(

@@ -988,7 +988,11 @@ fun SessionScreen(
     if (keepAwake) Box(Modifier.keepScreenOn())
     var restOffMovements by remember { mutableStateOf(trialPrefs.restOffNames()) }
     var restSettingsRevision by remember { mutableIntStateOf(0) }
-    val restAccess = rememberNotificationAccess(Notifications.restChannel(trialPrefs.restAlert))
+    val restAlert = trialPrefs.restAlert
+    val restChannel = remember(restAlert, trialPrefs.useRestChime) {
+        Notifications.restChannel(screenContext, restAlert)
+    }
+    val restAccess = rememberNotificationAccess(restChannel)
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         // Re-announce so the service posts now, not at the next ticked set.
         if (granted && ui.session?.let { it.completedAtMs == null } == true) WorkoutSessionService.start(screenContext, sessionId)
@@ -1367,7 +1371,7 @@ fun SessionScreen(
             // slide away under the header with the first exercise.
             Box(Modifier.padding(horizontal = 16.dp)) {
                 NotificationBlockedNotice(
-                    channelId = Notifications.restChannel(trialPrefs.restAlert),
+                    channelId = restChannel,
                     access = restAccess,
                     blockedText = stringResource(R.string.session_notifications_off_caption),
                     modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),

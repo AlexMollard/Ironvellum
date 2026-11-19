@@ -4,9 +4,9 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.media.AudioAttributes
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioAttributes
 import android.os.Build
 import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
@@ -37,6 +37,7 @@ object Notifications {
     // of announcing a rest's end ([RestAlert]) is a channel of its own, and
     // "rest" stays the vibrate-only one it always was.
     const val CHANNEL_REST_SOUND = "rest_sound"
+    private const val CHANNEL_REST_CHIME = "rest_chime"
     const val CHANNEL_REST_SILENT = "rest_silent"
 
     /** The Sunday weekly recap: a channel of its own, so it can be turned off in the phone's settings without touching the rest. */
@@ -91,11 +92,15 @@ object Notifications {
     const val TAB_FORGE = "forge"
 
     /** The channel a rest's end is announced on under [alert]. */
-    fun restChannel(alert: RestAlert): String = when (alert) {
+    fun restChannel(context: Context, alert: RestAlert): String = when (alert) {
         RestAlert.VIBRATE -> CHANNEL_REST
-        RestAlert.SOUND_VIBRATE -> CHANNEL_REST_SOUND
+        RestAlert.SOUND_VIBRATE ->
+            if (!hasLegacyRestSound(context) || TrialPrefs(context).useRestChime) CHANNEL_REST_CHIME else CHANNEL_REST_SOUND
         RestAlert.SILENT -> CHANNEL_REST_SILENT
     }
+
+    internal fun hasLegacyRestSound(context: Context): Boolean =
+        context.getSystemService(NotificationManager::class.java)?.getNotificationChannel(CHANNEL_REST_SOUND) != null
 
     /** The accent the shade tints the small icon and actions with: the theme's own emerald, as the phone's mode is now. */
     fun accent(context: Context): Int = (context.applicationContext as com.ironvellum.app.IronvellumApp).appearanceStore.accent()
@@ -135,15 +140,15 @@ object Notifications {
                     setSound(null, null)
                 },
                 NotificationChannel(
-                    CHANNEL_REST_SOUND,
-                    context.getString(R.string.notification_channel_rest_sound_label),
+                    CHANNEL_REST_CHIME,
+                    context.getString(R.string.notification_channel_rest_chime_label),
                     NotificationManager.IMPORTANCE_HIGH,
                 ).apply {
                     description = context.getString(R.string.notification_channel_rest_sound_description)
                     enableVibration(true)
                     vibrationPattern = longArrayOf(0, 350)
                     setSound(
-                        Settings.System.DEFAULT_NOTIFICATION_URI,
+                        RestChimeProvider.soundUri(context),
                         AudioAttributes.Builder()
                             .setUsage(AudioAttributes.USAGE_NOTIFICATION)
                             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
@@ -202,15 +207,18 @@ object Notifications {
      * page when only that channel was switched off. After a second denial the
      * permission dialog no longer appears at all, so this is the only way back.
      */
-    fun settingsIntent(context: Context, channelId: String, access: Access): Intent {
-        val intent = if (access.permissionGranted && access.appEnabled && access.channelBlocked) {
-            Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
-                .putExtra(Settings.EXTRA_CHANNEL_ID, channelId)
+    fun settingsIntent(context: Context, channelId: String, access: Access): Intent =
+        if (access.permissionGranted && access.appEnabled && access.channelBlocked) {
+            channelSettingsIntent(context, channelId)
         } else {
             Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        return intent
+
+    internal fun channelSettingsIntent(context: Context, channelId: String): Intent =
+        Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+            .putExtra(Settings.EXTRA_CHANNEL_ID, channelId)
             .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
 }

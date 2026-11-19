@@ -488,8 +488,8 @@
     <string name="notification_channel_trial_description__t">進行中の試練の歩みをリアルタイムで記します。</string>
     <string name="notification_channel_rest_label">セット間の休息</string>
     <string name="notification_channel_rest_description">セット間の休息が終わると一度振動します。</string>
-    <string name="notification_channel_rest_sound_label">セット間の休息、音あり</string>
-    <string name="notification_channel_rest_sound_description">セット間の休息が終わると端末の標準通知音と振動で知らせます。</string>
+    <string name="notification_channel_rest_chime_label">セット間の休息（チャイム）</string>
+    <string name="notification_channel_rest_sound_description">セット間の休息が終わると通知音と振動で知らせます。</string>
     <string name="notification_channel_rest_silent_label">セット間の休息、無音</string>
     <string name="notification_channel_rest_silent_description">セット間の休息が終わると音や振動なしで通知します。</string>
     <string name="notification_inbox_title_one">メッセージ</string>
@@ -771,6 +771,9 @@
     <string name="settings_trial_rest_caption__t">各セット後の休息を数えます。オフなら記録しても始まりません。種目ごとに儀礼や試練中のメニューから除外できます。</string>
     <string name="settings_trial_alert_title">休息終了時</string>
     <string name="settings_trial_alert_caption">%1$s 時間を計るセットの最後の3秒も知らせます。</string>
+    <string name="settings_trial_rest_chime_label">Ironvellum のチャイムを使う</string>
+    <string name="settings_trial_rest_chime_caption">以前の通知設定を変更せずに、内蔵のチャイムに切り替えます。</string>
+    <string name="settings_trial_rest_sound_label">休息タイマーの通知音を変更</string>
     <string name="settings_trial_awake_label">画面を点灯したままにする</string>
     <string name="settings_trial_awake_caption">ワークアウト中は画面がスリープしません。ポケットロック中は画面が暗くなります。</string>
     <string name="settings_trial_awake_caption__t">試練の間、画面は眠りません。ポケットロックをかけると暗くなります。</string>
@@ -4219,7 +4222,7 @@
     <string name="rest_alert_vibrate">バイブ</string>
     <string name="rest_alert_vibrate_caption">短く一度振動します。音は鳴りません。</string>
     <string name="rest_alert_sound_vibrate">音とバイブ</string>
-    <string name="rest_alert_sound_vibrate_caption">端末の標準通知音と振動で知らせます。</string>
+    <string name="rest_alert_sound_vibrate_caption">通知音と振動で知らせます。</string>
     <string name="rest_alert_silent">サイレント</string>
     <string name="rest_alert_silent_caption">音も振動もない静かな通知です。</string>
     <string name="today_meta_todays">今日のワークアウト</string>

@@ -224,7 +224,7 @@ class WorkoutSessionService : Service() {
     private fun restOverNotification(sessionId: Long, sets: List<SessionSet>): Notification {
         val next = Supersets.nextSet(sets)
         // The alert mode picks the channel: vibrate, sound and vibrate, or a silent notice.
-        return NotificationCompat.Builder(this, Notifications.restChannel(TrialPrefs(this).restAlert))
+        return NotificationCompat.Builder(this, Notifications.restChannel(this, TrialPrefs(this).restAlert))
             .setSmallIcon(R.drawable.ic_reminder)
             .setColor(Notifications.accent(this))
             .setContentTitle(getString(R.string.notification_rest_over_title))

@@ -19,6 +19,7 @@ store listing; this is the whole list.
 - Never change a finished workout's modifiers from a save that raced the finish.
 - Refuse a CSV import that ends inside a quoted note instead of silently dropping the rows after it.
 - Give fatigue-panel muscle rows 24dp touch targets without making the normal-size sheet scroll.
+- Give audible rest alerts a two-note chime and a shortcut to Android’s sound settings. Existing installs can opt in without losing their previous alert settings.
 
 ### Backend (schema 34)
 - Reject workout dates before 2000, which could break other lifters' feeds, and bound per-workout XP and the weekly XP board.

@@ -488,8 +488,8 @@
     <string name="notification_channel_trial_description__t">진행 중인 시련의 실시간 현황이에요.</string>
     <string name="notification_channel_rest_label">세트 간 휴식</string>
     <string name="notification_channel_rest_description">세트 간 휴식이 끝나면 진동으로 한 번 알려 드려요.</string>
-    <string name="notification_channel_rest_sound_label">세트 간 휴식 (소리)</string>
-    <string name="notification_channel_rest_sound_description">세트 간 휴식이 끝나면 휴대전화 기본 알림음과 진동으로 알려 드려요.</string>
+    <string name="notification_channel_rest_chime_label">세트 간 휴식 (차임)</string>
+    <string name="notification_channel_rest_sound_description">세트 간 휴식이 끝나면 소리와 진동으로 알려 드려요.</string>
     <string name="notification_channel_rest_silent_label">세트 간 휴식 (무음)</string>
     <string name="notification_channel_rest_silent_description">세트 간 휴식이 끝나면 소리나 진동 없이 조용히 알려 드려요.</string>
     <string name="notification_inbox_title_one">쪽지</string>
@@ -771,6 +771,9 @@
     <string name="settings_trial_rest_caption__t">세트가 끝날 때마다 휴식 시간을 카운트다운해요. 끄면 세트를 체크해도 휴식이 시작되지 않아요. 동작별로 의식이나 시련 중 메뉴에서 따로 끌 수 있어요.</string>
     <string name="settings_trial_alert_title">휴식 종료 시</string>
     <string name="settings_trial_alert_caption">%1$s 시간제 세트의 마지막 3초도 알려 줘요.</string>
+    <string name="settings_trial_rest_chime_label">Ironvellum 차임 사용</string>
+    <string name="settings_trial_rest_chime_caption">기존 알림 설정을 바꾸지 않고 내장 차임으로 전환해요.</string>
+    <string name="settings_trial_rest_sound_label">휴식 타이머 소리 변경</string>
     <string name="settings_trial_awake_label">화면 켜짐 유지</string>
     <string name="settings_trial_awake_caption">운동 화면이 열려 있는 동안 화면이 꺼지지 않아요. 운동 화면의 주머니 잠금을 켜면 화면이 어두워져요.</string>
     <string name="settings_trial_awake_caption__t">시련 화면이 열려 있는 동안 화면이 꺼지지 않아요. 시련 화면의 주머니 잠금을 켜면 화면이 어두워져요.</string>
@@ -4219,7 +4222,7 @@
     <string name="rest_alert_vibrate">진동</string>
     <string name="rest_alert_vibrate_caption">짧게 한 번 진동해요. 소리는 없어요.</string>
     <string name="rest_alert_sound_vibrate">소리 + 진동</string>
-    <string name="rest_alert_sound_vibrate_caption">휴대전화의 기본 알림음과 함께 진동해요.</string>
+    <string name="rest_alert_sound_vibrate_caption">소리와 진동으로 알려 줘요.</string>
     <string name="rest_alert_silent">무음</string>
     <string name="rest_alert_silent_caption">조용히 알림만 표시해요. 소리와 진동은 없어요.</string>
     <string name="today_meta_todays">오늘의 운동</string>

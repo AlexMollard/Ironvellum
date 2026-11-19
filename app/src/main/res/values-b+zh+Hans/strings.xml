@@ -488,8 +488,8 @@
     <string name="notification_channel_trial_description__t">当前试炼的实时进度。</string>
     <string name="notification_channel_rest_label">组间休息</string>
     <string name="notification_channel_rest_description">组间休息结束时振动一次。</string>
-    <string name="notification_channel_rest_sound_label">组间休息，有声音</string>
-    <string name="notification_channel_rest_sound_description">组间休息结束时播放手机默认通知声音并振动。</string>
+    <string name="notification_channel_rest_chime_label">组间休息提示音</string>
+    <string name="notification_channel_rest_sound_description">组间休息结束时播放提示音并振动。</string>
     <string name="notification_channel_rest_silent_label">组间休息，静音</string>
     <string name="notification_channel_rest_silent_description">组间休息结束时静默通知：无声音、无振动。</string>
     <string name="notification_inbox_title_one">一条消息</string>
@@ -771,6 +771,9 @@
     <string name="settings_trial_rest_caption__t">每组之后倒数休息时间。关闭后，勾选一组不会开始休息。可在仪轨或试炼菜单中为单个动作关闭。</string>
     <string name="settings_trial_alert_title">休息结束时</string>
     <string name="settings_trial_alert_caption">%1$s 也会提示计时组的最后 3 秒。</string>
+    <string name="settings_trial_rest_chime_label">使用 Ironvellum 提示音</string>
+    <string name="settings_trial_rest_chime_caption">切换到内置提示音，不更改之前的提醒设置。</string>
+    <string name="settings_trial_rest_sound_label">更改休息计时器铃声</string>
     <string name="settings_trial_awake_label">保持屏幕常亮</string>
     <string name="settings_trial_awake_caption">训练开启时防止屏幕休眠。训练中的口袋锁会调暗屏幕。</string>
     <string name="settings_trial_awake_caption__t">试炼开启时屏幕不会休眠。试炼中的口袋锁会调暗屏幕。</string>
@@ -4219,7 +4222,7 @@
     <string name="rest_alert_vibrate">振动</string>
     <string name="rest_alert_vibrate_caption">短振动一次，不播放声音。</string>
     <string name="rest_alert_sound_vibrate">声音和振动</string>
-    <string name="rest_alert_sound_vibrate_caption">播放手机默认通知音并振动。</string>
+    <string name="rest_alert_sound_vibrate_caption">播放提示音并振动。</string>
     <string name="rest_alert_silent">静音</string>
     <string name="rest_alert_silent_caption">静默通知，无声音或振动。</string>
     <string name="today_meta_todays">今日训练</string>

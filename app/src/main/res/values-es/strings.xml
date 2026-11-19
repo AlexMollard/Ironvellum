@@ -508,8 +508,8 @@
     <string name="notification_channel_trial_description__t">Progreso en directo de la prueba que tienes abierta.</string>
     <string name="notification_channel_rest_label">Descanso entre series</string>
     <string name="notification_channel_rest_description">Una vibración al terminar el descanso entre series.</string>
-    <string name="notification_channel_rest_sound_label">Descanso entre series, con sonido</string>
-    <string name="notification_channel_rest_sound_description">El sonido de notificación predeterminado y una vibración al terminar el descanso entre series.</string>
+    <string name="notification_channel_rest_chime_label">Descanso entre series, con tono</string>
+    <string name="notification_channel_rest_sound_description">Un sonido y una vibración al terminar el descanso entre series.</string>
     <string name="notification_channel_rest_silent_label">Descanso entre series, silencioso</string>
     <string name="notification_channel_rest_silent_description">Un aviso discreto al terminar el descanso entre series: sin sonido ni vibración.</string>
     <string name="notification_inbox_title_one">Un mensaje</string>
@@ -855,6 +855,9 @@
     <string name="settings_trial_rest_caption__t">Cuenta el descanso tras cada serie. Si está desactivado, marcar una serie no inicia el descanso. Puedes excluir un movimiento desde su rito o su menú en la prueba.</string>
     <string name="settings_trial_alert_title">AL TERMINAR UN DESCANSO</string>
     <string name="settings_trial_alert_caption">%1$s También avisa durante los últimos 3 segundos de una serie cronometrada.</string>
+    <string name="settings_trial_rest_chime_label">Usar el tono de Ironvellum</string>
+    <string name="settings_trial_rest_chime_caption">Cambia al tono de la app sin modificar los ajustes anteriores.</string>
+    <string name="settings_trial_rest_sound_label">Cambiar el sonido del temporizador de descanso</string>
     <string name="settings_trial_awake_label">Mantener pantalla encendida</string>
     <string name="settings_trial_awake_caption">Evita que la pantalla se apague durante un entreno. El bloqueo de bolsillo la atenúa.</string>
     <string name="settings_trial_awake_caption__t">Evita que la pantalla se apague durante una prueba. El bloqueo de bolsillo la atenúa.</string>
@@ -4761,7 +4764,7 @@
     <string name="rest_alert_vibrate">Vibrar</string>
     <string name="rest_alert_vibrate_caption">Una vibración breve. Sin sonido.</string>
     <string name="rest_alert_sound_vibrate">Sonido + vibración</string>
-    <string name="rest_alert_sound_vibrate_caption">El sonido de notificación del móvil, con vibración.</string>
+    <string name="rest_alert_sound_vibrate_caption">Un sonido y una vibración.</string>
     <string name="rest_alert_silent">Silencio</string>
     <string name="rest_alert_silent_caption">Un aviso discreto. Sin sonido ni vibración.</string>
     <string name="today_meta_todays">Entreno de hoy</string>

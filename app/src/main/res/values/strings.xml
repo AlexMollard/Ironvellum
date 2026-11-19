@@ -559,8 +559,8 @@
     <string name="notification_channel_trial_description__t">Live progress of the trial you have open.</string>
     <string name="notification_channel_rest_label">Rest between sets</string>
     <string name="notification_channel_rest_description">One buzz when the rest between sets is over.</string>
-    <string name="notification_channel_rest_sound_label">Rest between sets, with sound</string>
-    <string name="notification_channel_rest_sound_description">The phone\'s default notification sound and a buzz when the rest between sets is over.</string>
+    <string name="notification_channel_rest_chime_label">Rest between sets, chime</string>
+    <string name="notification_channel_rest_sound_description">A sound and a buzz when the rest between sets is over.</string>
     <string name="notification_channel_rest_silent_label">Rest between sets, silent</string>
     <string name="notification_channel_rest_silent_description">A quiet notice when the rest between sets is over: no sound, no buzz.</string>
 
@@ -859,6 +859,9 @@
     <string name="settings_trial_alert_title">WHEN A REST ENDS</string>
     <!-- Settings > During a workout: %1$s is the chosen alert's description, a sentence ending in a full stop. -->
     <string name="settings_trial_alert_caption">%1$s It also cues the last 3 seconds of a timed set.</string>
+    <string name="settings_trial_rest_chime_label">Use Ironvellum chime</string>
+    <string name="settings_trial_rest_chime_caption">Switch to the bundled chime without changing your previous alert settings.</string>
+    <string name="settings_trial_rest_sound_label">Change rest timer sound</string>
     <string name="settings_trial_awake_label">Keep the screen on</string>
     <string name="settings_trial_awake_caption">Stops the screen sleeping while a workout is open. The pocket lock on the workout dims it.</string>
     <string name="settings_trial_awake_caption__t">Stops the screen sleeping while a trial is open. The pocket lock on the trial dims it.</string>
@@ -5288,7 +5291,7 @@
     <string name="rest_alert_vibrate">Vibrate</string>
     <string name="rest_alert_vibrate_caption">One short buzz. No sound.</string>
     <string name="rest_alert_sound_vibrate">Sound + vibrate</string>
-    <string name="rest_alert_sound_vibrate_caption">The phone\'s default notification sound, with a buzz.</string>
+    <string name="rest_alert_sound_vibrate_caption">A sound and a buzz.</string>
     <string name="rest_alert_silent">Silent</string>
     <string name="rest_alert_silent_caption">A quiet notice. No sound and no buzz.</string>
     <!-- Today: first part of the day card meta line, before the plan summary. -->

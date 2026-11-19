@@ -1,6 +1,8 @@
 package com.ironvellum.app.ui
 
+import android.app.NotificationManager
 import android.content.Context
+import android.media.MediaPlayer
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
@@ -13,9 +15,13 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.MainActivity
+import com.ironvellum.app.data.Notifications
 import com.ironvellum.app.data.TrialPrefs
+import com.ironvellum.app.domain.RestAlert
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -79,6 +85,48 @@ class LockScreenSettingsTest {
         compose.onNode(hasText("Rest alert") and hasClickAction()).performClick()
         advance()
         compose.onNodeWithText("WHEN A REST ENDS").assertIsDisplayed()
+    }
+
+    @Test fun soundModeOpensItsAndroidCategory() {
+        openPage()
+        compose.onNode(hasText("Rest alert") and hasClickAction()).performClick()
+        advance()
+        compose.onNodeWithText("Change rest timer sound").assertDoesNotExist()
+        compose.onNode(hasText("Sound + vibrate") and hasClickAction()).performScrollTo().performClick()
+        advance()
+        if (Notifications.hasLegacyRestSound(context)) {
+            assertTrue(Notifications.restChannel(context, RestAlert.SOUND_VIBRATE) == Notifications.CHANNEL_REST_SOUND)
+            compose.onNodeWithText("Use Ironvellum chime").performScrollTo().performClick()
+            advance()
+        }
+        val manager = context.getSystemService(NotificationManager::class.java)
+        val chime = manager.getNotificationChannel(Notifications.restChannel(context, RestAlert.SOUND_VIBRATE))
+        val player = requireNotNull(MediaPlayer.create(context, requireNotNull(chime.sound)))
+        try {
+            assertTrue("Rest chime should be brief: ${player.duration} ms", player.duration in 250..500)
+        } finally {
+            player.release()
+        }
+        for (quiet in listOf(RestAlert.VIBRATE, RestAlert.SILENT)) {
+            val channel = manager.getNotificationChannel(Notifications.restChannel(context, quiet))
+            assertNull(channel.sound)
+            assertEquals(quiet == RestAlert.VIBRATE, channel.shouldVibrate())
+        }
+        val soundRow = compose.onNode(hasText("Change rest timer sound") and hasClickAction())
+        soundRow.performScrollTo().assertIsDisplayed()
+        ShotRecorder.take(compose, "rest-chime-settings")
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val automation = instrumentation.uiAutomation
+        try {
+            soundRow.performClick()
+            compose.waitUntil(timeoutMillis = 5_000) {
+                automation.rootInActiveWindow
+                    ?.findAccessibilityNodeInfosByText("Rest between sets, chime")
+                    ?.any { it.packageName == "com.android.settings" } == true
+            }
+        } finally {
+            automation.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK)
+        }
     }
 
     @Test fun restDefaultsCanBeSetAndReset() {

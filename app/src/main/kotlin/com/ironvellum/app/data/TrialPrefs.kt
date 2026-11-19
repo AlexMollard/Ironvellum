@@ -24,6 +24,11 @@ class TrialPrefs(private val prefs: SharedPreferences) {
         get() = RestAlert.fromWire(prefs.getString(KEY_ALERT, null))
         set(value) = prefs.edit { putString(KEY_ALERT, value.wire) }
 
+    /** Device-local opt-in: an existing Android rest channel is not replaced on upgrade. */
+    internal var useRestChime: Boolean
+        get() = prefs.getBoolean(KEY_REST_CHIME, false)
+        set(value) = prefs.edit { putBoolean(KEY_REST_CHIME, value) }
+
     /** On by default: a phone that sleeps between sets hides the rest timer. */
     var keepScreenOn: Boolean
         get() = prefs.getBoolean(KEY_KEEP_AWAKE, true)
@@ -117,6 +122,7 @@ class TrialPrefs(private val prefs: SharedPreferences) {
         const val KEY_ISOLATION = "rest_seconds.isolation"
         const val KEY_REST_OFF = "rest_off"
         const val KEY_ALERT = "rest_alert"
+        private const val KEY_REST_CHIME = "use_rest_chime"
         const val KEY_KEEP_AWAKE = "keep_screen_on"
         const val KEY_LIVE_UPDATE = "live_update"
         const val KEY_LIFTS_ON_LOCK = "lifts_on_lock"

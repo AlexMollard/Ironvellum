@@ -508,8 +508,8 @@
     <string name="notification_channel_trial_description__t">Le déroulement de ton épreuve en cours, en direct.</string>
     <string name="notification_channel_rest_label">Repos entre les séries</string>
     <string name="notification_channel_rest_description">Une vibration à la fin du repos entre les séries.</string>
-    <string name="notification_channel_rest_sound_label">Repos entre les séries, avec son</string>
-    <string name="notification_channel_rest_sound_description">Le son de notification par défaut du téléphone et une vibration à la fin du repos entre les séries.</string>
+    <string name="notification_channel_rest_chime_label">Repos entre les séries, avec carillon</string>
+    <string name="notification_channel_rest_sound_description">Un son et une vibration à la fin du repos entre les séries.</string>
     <string name="notification_channel_rest_silent_label">Repos entre les séries, silencieux</string>
     <string name="notification_channel_rest_silent_description">Une notification discrète à la fin du repos entre les séries : sans son ni vibration.</string>
     <string name="notification_inbox_title_one">Un message</string>
@@ -855,6 +855,9 @@
     <string name="settings_trial_rest_caption__t">Décompte le repos après chaque série. Désactivé, cocher une série ne lance aucun repos. Pour exclure un mouvement, utilise son rite ou son menu dans l’épreuve.</string>
     <string name="settings_trial_alert_title">À LA FIN DU REPOS</string>
     <string name="settings_trial_alert_caption">%1$s Signale aussi les 3 dernières secondes d’une série chronométrée.</string>
+    <string name="settings_trial_rest_chime_label">Utiliser le carillon d’Ironvellum</string>
+    <string name="settings_trial_rest_chime_caption">Passez au son intégré sans modifier vos anciens réglages d’alerte.</string>
+    <string name="settings_trial_rest_sound_label">Changer le son du minuteur de repos</string>
     <string name="settings_trial_awake_label">Garder l’écran allumé</string>
     <string name="settings_trial_awake_caption">Empêche la mise en veille pendant une séance. Le verrouillage de poche réduit la luminosité.</string>
     <string name="settings_trial_awake_caption__t">Empêche la mise en veille pendant une épreuve. Le verrouillage de poche réduit la luminosité.</string>
@@ -4761,7 +4764,7 @@
     <string name="rest_alert_vibrate">Vibration</string>
     <string name="rest_alert_vibrate_caption">Une courte vibration. Aucun son.</string>
     <string name="rest_alert_sound_vibrate">Son + vibration</string>
-    <string name="rest_alert_sound_vibrate_caption">Le son de notification par défaut du téléphone, accompagné d\'une vibration.</string>
+    <string name="rest_alert_sound_vibrate_caption">Un son et une vibration.</string>
     <string name="rest_alert_silent">Silencieux</string>
     <string name="rest_alert_silent_caption">Une notification discrète. Aucun son ni vibration.</string>
     <string name="today_meta_todays">Séance du jour</string>

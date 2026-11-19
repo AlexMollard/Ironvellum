@@ -498,8 +498,8 @@
     <string name="notification_channel_trial_description__t">Live-Fortschritt deiner laufenden Prüfung.</string>
     <string name="notification_channel_rest_label">Pause zwischen Sätzen</string>
     <string name="notification_channel_rest_description">Einmal vibrieren, wenn die Satzpause vorbei ist.</string>
-    <string name="notification_channel_rest_sound_label">Satzpause mit Ton</string>
-    <string name="notification_channel_rest_sound_description">Standard-Benachrichtigungston und Vibration, wenn die Satzpause vorbei ist.</string>
+    <string name="notification_channel_rest_chime_label">Satzpause mit Signalton</string>
+    <string name="notification_channel_rest_sound_description">Ein Ton und eine Vibration am Ende der Satzpause.</string>
     <string name="notification_channel_rest_silent_label">Satzpause ohne Ton</string>
     <string name="notification_channel_rest_silent_description">Eine stille Meldung am Ende der Satzpause: ohne Ton und Vibration.</string>
     <string name="notification_inbox_title_one">Eine Nachricht</string>
@@ -813,6 +813,9 @@
     <string name="settings_trial_rest_caption__t">Zählt nach jedem Satz die Pause herunter. Ist er aus, beginnt nach dem Abhaken keine Pause. Einzelne Übungen kannst du im Ritus oder Prüfungsmenü ausnehmen.</string>
     <string name="settings_trial_alert_title">WENN EINE PAUSE ENDET</string>
     <string name="settings_trial_alert_caption">%1$s Gibt auch die letzten 3 Sekunden eines Zeitsatzes an.</string>
+    <string name="settings_trial_rest_chime_label">Ironvellum-Signalton verwenden</string>
+    <string name="settings_trial_rest_chime_caption">Zum integrierten Ton wechseln, ohne bisherige Einstellungen zu ändern.</string>
+    <string name="settings_trial_rest_sound_label">Ton für Satzpausen ändern</string>
     <string name="settings_trial_awake_label">Bildschirm anlassen</string>
     <string name="settings_trial_awake_caption">Verhindert den Ruhezustand bei offenem Training. Die Taschensperre im Training dimmt den Bildschirm.</string>
     <string name="settings_trial_awake_caption__t">Hält den Bildschirm während einer Prüfung wach. Die Taschensperre der Prüfung dimmt ihn.</string>
@@ -4490,7 +4493,7 @@
     <string name="rest_alert_vibrate">Vibrieren</string>
     <string name="rest_alert_vibrate_caption">Ein kurzes Vibrieren. Kein Ton.</string>
     <string name="rest_alert_sound_vibrate">Ton + Vibration</string>
-    <string name="rest_alert_sound_vibrate_caption">Der Standard-Benachrichtigungston mit Vibration.</string>
+    <string name="rest_alert_sound_vibrate_caption">Ein Ton und eine Vibration.</string>
     <string name="rest_alert_silent">Lautlos</string>
     <string name="rest_alert_silent_caption">Eine stille Benachrichtigung. Kein Ton und keine Vibration.</string>
     <string name="today_meta_todays">Heutiges Training</string>
