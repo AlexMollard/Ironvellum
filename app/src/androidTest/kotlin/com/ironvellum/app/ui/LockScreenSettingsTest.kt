@@ -103,7 +103,7 @@ class LockScreenSettingsTest {
         val chime = manager.getNotificationChannel(Notifications.restChannel(context, RestAlert.SOUND_VIBRATE))
         val player = requireNotNull(MediaPlayer.create(context, requireNotNull(chime.sound)))
         try {
-            assertTrue("Rest chime should be brief: ${player.duration} ms", player.duration in 250..500)
+            assertTrue("Rest chime should have its full tail: ${player.duration} ms", player.duration in 750..1_000)
         } finally {
             player.release()
         }
