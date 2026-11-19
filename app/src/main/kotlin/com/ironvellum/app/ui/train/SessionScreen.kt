@@ -3077,6 +3077,10 @@ internal fun OpenExerciseCard(
                 WarmupChecklist(warmups, editingSetId) {
                     warmups.forEachIndexed { index, set -> SetRow(set, index + 1) }
                 }
+                HorizontalDivider(
+                    Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    color = IronvellumColors.Rune,
+                )
             }
             block.sets.forEach { if (!it.warmup) SetRow(it) }
         }
@@ -3132,7 +3136,6 @@ private fun WarmupChecklist(warmups: List<SessionSet>, editingSetId: Long?, rows
         }
     }
     if (!collapsed) rows()
-    HorizontalDivider(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), color = IronvellumColors.Rune)
 }
 
 /** What the engine suggests for an exercise, and what accepting or dismissing it does. */
