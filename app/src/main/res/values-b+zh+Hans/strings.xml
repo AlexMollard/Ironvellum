@@ -1206,10 +1206,8 @@
     <string name="session_plates_description">打开杠铃片计算器</string>
     <string name="session_plate_set_label">第 %1$d 组</string>
     <string name="session_warmup_letter">W</string>
-    <plurals name="session_warmup_fold">
-        <item quantity="other">热身 · %1$d 组</item>
-    </plurals>
-    <string name="session_warmup_fold_description">%1$s，已完成</string>
+    <string name="session_warmup_checklist_title">热身组</string>
+    <string name="session_warmup_checklist_progress">已完成 %1$d / %2$d</string>
     <string name="session_warmup_completion_description">%1$s 热身第 %2$d 组</string>
     <string name="session_warmup_completed">已完成</string>
     <string name="session_warmup_planned">计划中</string>

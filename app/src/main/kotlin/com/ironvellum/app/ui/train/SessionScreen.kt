@@ -60,6 +60,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.key
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -1133,6 +1134,10 @@ fun SessionScreen(
     val activeSet = openBlock?.sets?.firstOrNull { it.isPending } ?: nextSet
     val groups = remember(blocks) { blocks.map { b -> b.sets.firstNotNullOfOrNull { it.supersetGroup } } }
     val supersetRuns = remember(groups) { Supersets.runs(groups) }
+    val openRun = supersetRuns.firstOrNull { run -> run.any { blocks[it].key == openBlock?.key } }
+    val warmupAnchor = openRun?.takeIf { run ->
+        run.any { index -> blocks[index].sets.any { it.warmup && !it.warmupDone } }
+    }?.let { blocks[it.first].key }
     // A modifier or load just made a block a dedicated exercise ([ExerciseTwins]): Switch or Keep as is waits here.
     val twinPrompt = viewModel.twinPrompt
     val seenModifiers = viewModel.seenTwinModifiers
@@ -1228,7 +1233,7 @@ fun SessionScreen(
     LaunchedEffect(openBlock?.key) { editingSetId = null }
 
     val seekOpen = remember { BringIntoViewRequester() }
-    LaunchedEffect(openBlock?.key) {
+    LaunchedEffect(warmupAnchor ?: openBlock?.key, warmupAnchor != null) {
         withFrameNanos { }
         seekOpen.bringIntoView()
     }
@@ -1321,7 +1326,7 @@ fun SessionScreen(
             nextLine = activeSet?.let { set ->
                 val figure = setFigureText(set, metricOf(set.exerciseId), exercises.firstOrNull { it.id == set.exerciseId }?.isWeighted ?: false)
                 val number = set.workingNumber(ui.sets)
-                if (set.blockKey != openBlock?.key) {
+                if (openRun != null || set.blockKey != openBlock?.key) {
                     stringResource(R.string.session_next_line_named, number, set.exerciseName, figure)
                 } else {
                     stringResource(R.string.session_next_line, number, figure)
@@ -1406,9 +1411,70 @@ fun SessionScreen(
                 }
                 var previousFolded = false
 
+                fun removeSetFrom(block: TrialBlock, set: SessionSet) {
+                    if (block.sets.size > 1) {
+                        viewModel.removeSet(set.id) { offerRemovedUndo(UiText.res(R.string.session_undo_set_removed), it) }
+                    } else {
+                        viewModel.removeExercise(block.key) { offerRemovedUndo(UiText.res(R.string.session_undo_exercise_removed, block.first.exerciseName), it) }
+                    }
+                }
+
                 @Composable
                 fun BlockItem(blockIdx: Int, block: TrialBlock) {
                     val run = supersetRuns.firstOrNull { blockIdx in it }
+                    if (run != null && blockIdx == run.first) {
+                        val members = blocks.subList(run.first, run.last + 1)
+                        key(block.key) {
+                            val warmups = remember(members) { members.flatMap { member -> member.sets.filter { it.warmup } } }
+                            if (warmups.isNotEmpty()) {
+                                Spacer(Modifier.height(12.dp))
+                                val shape = MaterialTheme.shapes.medium
+                                Column(
+                                    (if (block.key == warmupAnchor) Modifier.bringIntoViewRequester(seekOpen) else Modifier)
+                                        .fillMaxWidth().clip(shape).background(IronvellumColors.Vault)
+                                        .inkBorder(IronvellumColors.Rune, shape, 1.dp).padding(vertical = 8.dp),
+                                ) {
+                                    WarmupChecklist(warmups, editingSetId) {
+                                        for (member in members) {
+                                            val memberWarmups = warmups.filter { it.blockKey == member.key }
+                                            if (memberWarmups.isEmpty()) continue
+                                            val lift = member.first
+                                            Text(
+                                                Variation.label(lift.exerciseName, lift.modifiers),
+                                                Modifier.padding(start = 20.dp, end = 16.dp, top = 8.dp),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = IronvellumColors.Ink,
+                                            )
+                                            val weighted = exercises.firstOrNull { it.id == member.exerciseId }?.isWeighted == true
+                                            memberWarmups.forEachIndexed { index, set ->
+                                                key(set.id) {
+                                                    TrialSetRow(
+                                                        set = set,
+                                                        metric = metricOf(member.exerciseId),
+                                                        weighted = weighted,
+                                                        state = if (editingSetId == set.id) RowState.EDITING else RowState.WARMUP,
+                                                        label = stringResource(R.string.session_warmup_letter) + (index + 1),
+                                                        newPeak = false,
+                                                        onEdit = ::commit,
+                                                        onTypeLoad = { editLoadFor = set },
+                                                        onTypeFigure = { kind -> typing = set to kind },
+                                                        onToggleEdit = { editingSetId = if (editingSetId == set.id) null else set.id },
+                                                        onSetKind = { kind -> viewModel.setKind(set.id, kind) },
+                                                        onWarmupDone = { done -> viewModel.setWarmupDone(set.id, done) },
+                                                        warmupNumber = index + 1,
+                                                        onUnlog = {},
+                                                        onRemove = { removeSetFrom(member, set) },
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                previousFolded = false
+                            }
+                        }
+                    }
                     val rail = run?.let { RailPosition.of(blockIdx, it) }
                     // A superset's members share a thin rail in the left gutter, one segment per member.
                     Column(if (rail != null) Modifier.supersetRail(rail, if (block.key == openBlock?.key) OPEN_TITLE_CENTER else FOLDED_TITLE_CENTER) else Modifier) {
@@ -1497,15 +1563,7 @@ fun SessionScreen(
                                     }
                                     viewModel.addSet(block.key, base.reps, base.weightKg, base.modifiers, copySeconds)
                                 },
-                                // Removing a block's only set removes the exercise, so a
-                                // one-off added by mistake can be taken back out.
-                                onRemoveSet = { set ->
-                                    if (block.sets.size > 1) {
-                                        viewModel.removeSet(set.id) { offerRemovedUndo(UiText.res(R.string.session_undo_set_removed), it) }
-                                    } else {
-                                        viewModel.removeExercise(block.key) { offerRemovedUndo(UiText.res(R.string.session_undo_exercise_removed, first.exerciseName), it) }
-                                    }
-                                },
+                                onRemoveSet = { set -> removeSetFrom(block, set) },
                                 onRemoveExercise = {
                                     if (block.sets.any { it.done && !it.warmup }) {
                                         confirmRemoveExercise = block.position
@@ -1565,11 +1623,12 @@ fun SessionScreen(
                                 onToggleEdit = { set -> editingSetId = if (editingSetId == set.id) null else set.id },
                                 onSetKind = { set, kind -> viewModel.setKind(set.id, kind) },
                                 onWarmupDone = { set, done -> viewModel.setWarmupDone(set.id, done) },
+                                sharedWarmups = run != null,
                                 onUnlog = { set ->
                                     commit(set.copy(done = false))
                                     editingSetId = null
                                 },
-                                modifier = Modifier.bringIntoViewRequester(seekOpen),
+                                modifier = if (warmupAnchor == null) Modifier.bringIntoViewRequester(seekOpen) else Modifier,
                             )
                             Spacer(Modifier.height(12.dp))
                             previousFolded = false
@@ -2786,6 +2845,7 @@ internal fun OpenExerciseCard(
     onSetKind: (SessionSet, SetKind) -> Unit,
     onUnlog: (SessionSet) -> Unit,
     onWarmupDone: (SessionSet, Boolean) -> Unit = { _, _ -> },
+    sharedWarmups: Boolean = false,
     modifier: Modifier = Modifier,
     onRestChanged: () -> Unit = {},
     /** The sealed trial's amend mode: any set can open for editing, and there is no live-only chrome. */
@@ -2826,11 +2886,6 @@ internal fun OpenExerciseCard(
     val shape = MaterialTheme.shapes.medium
     var choosingUnit by remember(block.key) { mutableStateOf(false) }
     if (choosingUnit) ExerciseUnitPicker(first.exerciseName) { choosingUnit = false }
-    // Completed warm-ups can fold without hiding any still to do.
-    var warmupsOpen by remember(block.key) { mutableStateOf(false) }
-    val warmups = block.sets.filter { it.warmup }
-    val foldWarmups = !amend && !warmupsOpen && warmups.isNotEmpty() && warmups.all { it.warmupDone } &&
-        warmups.none { it.id == editingSetId }
     Column(
         modifier
             .fillMaxWidth()
@@ -2959,15 +3014,8 @@ internal fun OpenExerciseCard(
         }
         // The superset strip's own height already sits above the first row.
         Spacer(Modifier.height(if (superset != null) 0.dp else 8.dp))
-        var warmupNumber = 0
-        block.sets.forEach { set ->
-            if (set.warmup) warmupNumber++
-            if (set.warmup && foldWarmups) {
-                if (warmupNumber == 1) {
-                    WarmupFoldRow(warmups.size) { warmupsOpen = true }
-                }
-                return@forEach
-            }
+        @Composable
+        fun SetRow(set: SessionSet, warmupNumber: Int = 0) {
             key(set.id) {
                 val state = when {
                     (set.done || set.warmup || amend) && set.id == editingSetId -> RowState.EDITING
@@ -2982,7 +3030,7 @@ internal fun OpenExerciseCard(
                     weighted = weighted,
                     state = state,
                     // Warm-ups read W and the working sets count from 1 after them, as in the amend editor.
-                    label = if (set.warmup) stringResource(R.string.session_warmup_letter) else "${set.workingNumber(block.sets)}",
+                    label = if (set.warmup) stringResource(R.string.session_warmup_letter) + warmupNumber else "${set.workingNumber(block.sets)}",
                     newPeak = set.id in newPeaks,
                     onEdit = onEdit,
                     onTypeLoad = { onTypeLoad(set) },
@@ -3020,6 +3068,18 @@ internal fun OpenExerciseCard(
                 }
             }
         }
+        val warmups = remember(block.sets) { block.sets.filter { it.warmup } }
+        if (amend) {
+            var number = 0
+            block.sets.forEach { SetRow(it, if (it.warmup) ++number else 0) }
+        } else {
+            if (!sharedWarmups && warmups.isNotEmpty()) {
+                WarmupChecklist(warmups, editingSetId) {
+                    warmups.forEachIndexed { index, set -> SetRow(set, index + 1) }
+                }
+            }
+            block.sets.forEach { if (!it.warmup) SetRow(it) }
+        }
         // A drop chain in hand: the drops follow straight on, and a tap ends them.
         val nextPending = block.sets.firstOrNull { it.isPending }
         if (onEndDrops != null && nextPending?.kind == SetKind.DROP) {
@@ -3032,26 +3092,47 @@ internal fun OpenExerciseCard(
     }
 }
 
-/** Completed warm-ups fold into one line, opening the sets on a tap. */
 @Composable
-private fun WarmupFoldRow(count: Int, onOpen: () -> Unit) {
-    val text = UiText.plural(R.plurals.session_warmup_fold, count).asString()
+private fun WarmupChecklist(warmups: List<SessionSet>, editingSetId: Long?, rows: @Composable () -> Unit) {
+    val done = warmups.count { it.warmupDone }
+    val allDone = done == warmups.size
+    var reopened by rememberSaveable(allDone) { mutableStateOf(false) }
+    val toggle = allDone && warmups.none { it.id == editingSetId }
+    val collapsed = toggle && !reopened
     val showLabel = stringResource(R.string.session_warmup_show_label)
-    val doneDescription = stringResource(R.string.session_warmup_fold_description, text)
     Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clickable(onClickLabel = showLabel, role = Role.Button, onClick = onOpen)
-            .semantics { contentDescription = doneDescription }
-            .padding(start = 12.dp, end = 16.dp),
+        Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            .then(if (toggle) Modifier.clickable(
+                onClickLabel = if (collapsed) showLabel else null,
+                role = Role.Button,
+            ) { reopened = collapsed } else Modifier)
+            .padding(start = 20.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(stringResource(R.string.session_warmup_letter), style = MaterialTheme.typography.bodySmall, fontFamily = ChakraPetch, color = IronvellumColors.InkMuted, textAlign = TextAlign.Center, modifier = Modifier.width(24.dp))
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f).padding(start = 8.dp))
-        Icon(Icons.Filled.Check, contentDescription = null, tint = IronvellumColors.Emerald, modifier = Modifier.padding(end = 10.dp).size(16.dp))
-        Text("▾", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+        Text(
+            stringResource(R.string.session_warmup_checklist_title),
+            Modifier.weight(1f),
+            style = MaterialTheme.typography.titleSmall,
+            color = IronvellumColors.Ink,
+        )
+        Text(
+            stringResource(R.string.session_warmup_checklist_progress, done, warmups.size),
+            Modifier.weight(1f),
+            style = MaterialTheme.typography.bodySmall,
+            color = if (allDone) IronvellumColors.Emerald else IronvellumColors.InkMuted,
+            textAlign = TextAlign.End,
+        )
+        if (toggle) {
+            Icon(
+                Icons.Filled.KeyboardArrowDown, contentDescription = null,
+                tint = IronvellumColors.InkMuted,
+                modifier = Modifier.size(20.dp).rotate(if (collapsed) 0f else 180f),
+            )
+        }
     }
+    if (!collapsed) rows()
+    HorizontalDivider(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), color = IronvellumColors.Rune)
 }
 
 /** What the engine suggests for an exercise, and what accepting or dismissing it does. */

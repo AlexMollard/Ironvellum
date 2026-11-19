@@ -66,7 +66,8 @@ internal fun SetNumberCell(
     var open by remember { mutableStateOf(false) }
     var explain by remember { mutableStateOf(false) }
     // The top set says its word, gold: it is the one set of the lift the rest are planned around.
-    val tag = (if (kind == SetKind.TOP) stringResource(R.string.setkind_top_tag) else kind.tag).takeIf { it.isNotEmpty() && it != label }
+    val tag = (if (kind == SetKind.TOP) stringResource(R.string.setkind_top_tag) else kind.tag)
+        .takeIf { kind != SetKind.WARMUP && it.isNotEmpty() && it != label }
     val changeLabel = stringResource(R.string.setkind_change_label)
     val cellDescription = stringResource(R.string.setkind_cell_description, label, kind.label)
     Box(

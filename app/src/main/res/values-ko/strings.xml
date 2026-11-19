@@ -1206,10 +1206,8 @@
     <string name="session_plates_description">원판 계산기 열기</string>
     <string name="session_plate_set_label">세트 %1$d</string>
     <string name="session_warmup_letter">W</string>
-    <plurals name="session_warmup_fold">
-        <item quantity="other">워밍업 · %1$d세트</item>
-    </plurals>
-    <string name="session_warmup_fold_description">%1$s, 완료</string>
+    <string name="session_warmup_checklist_title">워밍업 세트</string>
+    <string name="session_warmup_checklist_progress">%2$d세트 중 %1$d세트 완료</string>
     <string name="session_warmup_completion_description">%1$s 워밍업 %2$d세트</string>
     <string name="session_warmup_completed">완료</string>
     <string name="session_warmup_planned">예정</string>

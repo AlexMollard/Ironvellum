@@ -1322,12 +1322,8 @@
     <string name="session_plates_description">Abrir calculadora de discos</string>
     <string name="session_plate_set_label">serie %1$d</string>
     <string name="session_warmup_letter">C</string>
-    <plurals name="session_warmup_fold">
-        <item quantity="one">Calentamiento · %1$d serie</item>
-        <item quantity="many">Calentamiento · %1$d series</item>
-        <item quantity="other">Calentamiento · %1$d series</item>
-    </plurals>
-    <string name="session_warmup_fold_description">%1$s, completado</string>
+    <string name="session_warmup_checklist_title">Series de calentamiento</string>
+    <string name="session_warmup_checklist_progress">%1$d de %2$d completadas</string>
     <string name="session_warmup_completion_description">%1$s serie de calentamiento %2$d</string>
     <string name="session_warmup_completed">Completada</string>
     <string name="session_warmup_planned">Planificada</string>

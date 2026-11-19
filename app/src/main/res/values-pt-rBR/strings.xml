@@ -1322,12 +1322,8 @@
     <string name="session_plates_description">Abrir calculadora de anilhas</string>
     <string name="session_plate_set_label">série %1$d</string>
     <string name="session_warmup_letter">A</string>
-    <plurals name="session_warmup_fold">
-        <item quantity="one">Aquecimento · %1$d série</item>
-        <item quantity="many">Aquecimento · %1$d séries</item>
-        <item quantity="other">Aquecimento · %1$d séries</item>
-    </plurals>
-    <string name="session_warmup_fold_description">%1$s, concluído</string>
+    <string name="session_warmup_checklist_title">Séries de aquecimento</string>
+    <string name="session_warmup_checklist_progress">%1$d de %2$d concluídas</string>
     <string name="session_warmup_completion_description">%1$s série de aquecimento %2$d</string>
     <string name="session_warmup_completed">Concluída</string>
     <string name="session_warmup_planned">Planejada</string>

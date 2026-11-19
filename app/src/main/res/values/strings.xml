@@ -1351,9 +1351,9 @@
     <string name="session_plate_set_label">set %1$d</string>
     <!-- Single letter that marks a warm-up set in the set number column. -->
     <string name="session_warmup_letter">W</string>
-    <!-- Folded warm-ups line. %1$d is the number of warm-up sets. -->
-    <plurals name="session_warmup_fold"><item quantity="one">Warm-up · %1$d set</item><item quantity="other">Warm-up · %1$d sets</item></plurals>
-    <string name="session_warmup_fold_description">%1$s, done</string>
+    <string name="session_warmup_checklist_title">Warm-up sets</string>
+    <!-- Checked warm-up sets out of the total in this checklist. -->
+    <string tools:ignore="PluralsCandidate" name="session_warmup_checklist_progress">%1$d of %2$d done</string>
     <string name="session_warmup_completion_description">%1$s warm-up set %2$d</string>
     <string name="session_warmup_completed">Completed</string>
     <string name="session_warmup_planned">Planned</string>

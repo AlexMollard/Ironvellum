@@ -1322,12 +1322,8 @@
     <string name="session_plates_description">Ouvrir le calculateur de disques</string>
     <string name="session_plate_set_label">série %1$d</string>
     <string name="session_warmup_letter">É</string>
-    <plurals name="session_warmup_fold">
-        <item quantity="one">Échauffement · %1$d série</item>
-        <item quantity="many">Échauffement · %1$d séries</item>
-        <item quantity="other">Échauffement · %1$d séries</item>
-    </plurals>
-    <string name="session_warmup_fold_description">%1$s, terminé</string>
+    <string name="session_warmup_checklist_title">Séries d’échauffement</string>
+    <string name="session_warmup_checklist_progress">%1$d sur %2$d</string>
     <string name="session_warmup_completion_description">%1$s série d’échauffement %2$d</string>
     <string name="session_warmup_completed">Terminée</string>
     <string name="session_warmup_planned">Prévue</string>

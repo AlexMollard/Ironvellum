@@ -1264,11 +1264,8 @@
     <string name="session_plates_description">Scheibenrechner öffnen</string>
     <string name="session_plate_set_label">Satz %1$d</string>
     <string name="session_warmup_letter">A</string>
-    <plurals name="session_warmup_fold">
-        <item quantity="one">Aufwärmen · %1$d Satz</item>
-        <item quantity="other">Aufwärmen · %1$d Sätze</item>
-    </plurals>
-    <string name="session_warmup_fold_description">%1$s, erledigt</string>
+    <string name="session_warmup_checklist_title">Aufwärmsätze</string>
+    <string name="session_warmup_checklist_progress">%1$d von %2$d erledigt</string>
     <string name="session_warmup_completion_description">%1$s Aufwärmsatz %2$d</string>
     <string name="session_warmup_completed">Abgeschlossen</string>
     <string name="session_warmup_planned">Geplant</string>

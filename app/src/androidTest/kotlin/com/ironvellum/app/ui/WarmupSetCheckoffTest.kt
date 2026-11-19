@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
@@ -17,6 +18,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.blockOf
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTheme
@@ -63,7 +65,7 @@ class WarmupSetCheckoffTest {
         driver.takeTheClock()
         compose.setContent {
             IronvellumTheme {
-                Box(Modifier.fillMaxSize().background(IronvellumColors.Abyss)) {
+                Box(Modifier.fillMaxSize().background(IronvellumColors.Abyss).statusBarsPadding()) {
                     if (history.value) WorkoutDetailScreen(sessionId = sessionId, onBack = {})
                     else SessionScreen(sessionId, onExit = {}, onSealed = {})
                 }
@@ -86,7 +88,7 @@ class WarmupSetCheckoffTest {
 
         second.performSemanticsAction(SemanticsActions.OnClick)
         awaitRows { it.filter { set -> set.warmup }.all { set -> set.warmupDone } }
-        val folded = app.resources.getQuantityString(R.plurals.session_warmup_fold, 2, 2)
+        val folded = app.getString(R.string.session_warmup_checklist_progress, 2, 2)
         driver.awaitText(folded)
         first.assertDoesNotExist()
         driver.click(folded)
@@ -114,9 +116,77 @@ class WarmupSetCheckoffTest {
         ShotRecorder.take(compose, "warmup-checkoff-history$shotSuffix")
     }
 
-    private fun warmupLabel(number: Int) = app.getString(R.string.session_warmup_completion_description, "Bench Press", number)
+    @Test fun supersetPartnersShareOneChecklistAndKeepWorkingTurnIndependent() {
+        TestProfile.ensureSetUp()
+        compose.activityRule.scenario.onActivity(ShotRecorder::darkWindow)
+        val workingIds = runBlocking {
+            repo.ensureSeeded()
+            sessionId = repo.startFreeformSession("Upper body · Superset")
+            val exercises = repo.observeExercises().first()
+            val bench = exercises.first { it.name == "Bench Press" }.id
+            val row = exercises.first { it.name == "Barbell Row" }.id
+            val work = listOf(bench, row).map { lift ->
+                for ((reps, weight) in listOf(10 to 20.0, 5 to 40.0)) {
+                    val id = repo.addExtraSet(sessionId, lift, reps, weight, "")
+                    repo.setKind(id, SetKind.WARMUP)
+                }
+                repo.addExtraSet(sessionId, lift, 8, 60.0, "")
+            }
+            assertTrue(repo.linkSupersetWithNext(sessionId, repo.blockOf(sessionId, bench)))
+            work
+        }
+        val driver = FlowDriver(compose)
+        driver.takeTheClock()
+        compose.setContent {
+            IronvellumTheme {
+                Box(Modifier.fillMaxSize().background(IronvellumColors.Abyss).statusBarsPadding()) {
+                    SessionScreen(sessionId, onExit = {}, onSealed = {})
+                }
+            }
+        }
+        fun progress(checked: Int) = app.getString(R.string.session_warmup_checklist_progress, checked, 4)
+        val bench1 = warmup(1)
+        val bench2 = warmup(2)
+        val row1 = warmup(1, "Barbell Row")
+        val row2 = warmup(2, "Barbell Row")
+        driver.awaitText(progress(0))
+        compose.onAllNodesWithText(app.getString(R.string.session_warmup_checklist_title)).assertCountEquals(1)
+        row1.assertIsDisplayed().assertHeightIsAtLeast(48.dp).performClick()
+        driver.awaitText(progress(1))
+        bench1.assertIsOff().assertIsDisplayed()
+        row1.assertIsOn()
+        ShotRecorder.take(compose, "warmup-checklist-superset")
 
-    private fun warmup(number: Int) = compose.onNodeWithContentDescription(warmupLabel(number))
+        compose.onNode(hasText("20 kg × 10") and hasClickAction() and hasAnyDescendant(hasContentDescription(warmupLabel(1, "Barbell Row"))))
+            .performSemanticsAction(SemanticsActions.OnClick)
+        driver.awaitText(app.getString(R.string.session_close_button))
+        driver.click(app.getString(R.string.session_close_button))
+        row1.assertIsOn()
+
+        val working = compose.onNodeWithContentDescription("Log set 1")
+        working.performSemanticsAction(SemanticsActions.OnClick)
+        awaitRows { it.single { set -> set.id == workingIds[0] }.done }
+        driver.awaitText("Set 1 · Barbell Row")
+        bench1.assertIsOff()
+        row2.assertIsOff()
+        for ((index, node) in listOf(bench1, row2, bench2).withIndex()) {
+            node.performSemanticsAction(SemanticsActions.OnClick)
+            driver.awaitText(progress(index + 2))
+        }
+        bench1.assertDoesNotExist()
+        row1.assertDoesNotExist()
+        driver.click(progress(4))
+        row2.assertIsOn().performSemanticsAction(SemanticsActions.OnClick)
+        driver.awaitText(progress(3))
+        row2.assertIsOff()
+        assertEquals(listOf(workingIds[0]), rows().filter { it.done }.map { it.id })
+    }
+
+    private fun warmupLabel(number: Int, exercise: String = "Bench Press") =
+        app.getString(R.string.session_warmup_completion_description, exercise, number)
+
+    private fun warmup(number: Int, exercise: String = "Bench Press") =
+        compose.onNodeWithContentDescription(warmupLabel(number, exercise))
 
     private fun awaitCheckmark(number: Int, state: ToggleableState) {
         val matcher = hasContentDescription(warmupLabel(number)) and SemanticsMatcher.expectValue(SemanticsProperties.ToggleableState, state)
