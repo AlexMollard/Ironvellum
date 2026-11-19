@@ -223,6 +223,8 @@ object ExportReader {
             // v6 warmup and v9 kind, each written only when set: an older archive
             // reads as plain sets, and an unknown kind word reads as a working set.
             kind = if (set.bool("warmup") == true) SetKind.WARMUP else SetKind.fromWire(set.str("kind")),
+            warmupDone = set.bool("warmupDone") == true &&
+                (set.bool("warmup") == true || SetKind.fromWire(set.str("kind")) == SetKind.WARMUP),
             supersetGroup = set.int("supersetGroup"),
             // v11, only for a rated set: an older archive has none.
             rpe = set.int("rpe"),

@@ -818,7 +818,10 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
                         set.rpe?.takeIf { set.done }?.let { " · ${Effort.value(it, EffortSetting.scale)}" }.orEmpty() +
                         set.modifiers.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
                     when {
-                        set.warmup -> SetLine("", UiText.res(R.string.workoutdetail_set_warmup, figure).asString(), muted = true)
+                        set.warmup -> {
+                            val state = stringResource(if (set.warmupDone) R.string.session_warmup_completed else R.string.session_warmup_planned)
+                            SetLine("", "${UiText.res(R.string.workoutdetail_set_warmup, figure).asString()} · $state", muted = !set.warmupDone)
+                        }
                         else -> {
                             // Drop, Failure and Rest-pause count as working sets and say how they were done.
                             val shown = if (set.kind == SetKind.WORKING) figure else "${set.kind.label} · $figure"

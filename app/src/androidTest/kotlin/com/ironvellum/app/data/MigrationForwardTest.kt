@@ -60,6 +60,44 @@ class MigrationForwardTest {
         ).close()
     }
 
+    @Test
+    fun upgradeFrom48PreservesWorkingSetsWithoutInventingWarmupCompletion() = runTest {
+        helper.createDatabase(dbName, 48).use { old ->
+            old.execSQL(
+                "INSERT INTO sessions (id, label, startedAtMs, completedAtMs, xpAwarded, strengthScore, " +
+                    "title, note, privateNote, imported, audience) " +
+                    "VALUES (1, 'Upper', 1000, 2000, 120, 80, '', '', 'keep this', 0, 'private')",
+            )
+            old.execSQL(
+                "INSERT INTO set_logs (sessionId, exerciseId, exercisePosition, setIndex, reps, weightKg, modifiers, done, kind) " +
+                    "VALUES (1, 7, 0, 0, 5, 20.0, '', 0, 'WARMUP'), (1, 7, 0, 1, 8, 60.0, '', 1, 'WORKING')",
+            )
+        }
+        helper.runMigrationsAndValidate(dbName, IronvellumDatabase.VERSION, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT xpAwarded, strengthScore, privateNote FROM sessions WHERE id = 1").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(120, c.getInt(0))
+                assertEquals(80, c.getInt(1))
+                assertEquals("keep this", c.getString(2))
+            }
+            db.query("SELECT kind, reps, weightKg, done, warmupDone FROM set_logs ORDER BY setIndex").use { c ->
+                assertEquals(2, c.count)
+                assertTrue(c.moveToFirst())
+                assertEquals("WARMUP", c.getString(0))
+                assertEquals(5, c.getInt(1))
+                assertEquals(20.0, c.getDouble(2), 0.0)
+                assertEquals(0, c.getInt(3))
+                assertEquals(0, c.getInt(4))
+                assertTrue(c.moveToNext())
+                assertEquals("WORKING", c.getString(0))
+                assertEquals(8, c.getInt(1))
+                assertEquals(60.0, c.getDouble(2), 0.0)
+                assertEquals(1, c.getInt(3))
+                assertEquals(0, c.getInt(4))
+            }
+        }
+    }
+
     /**
      * A REAL upgrade walk, not a no-op one.
      *

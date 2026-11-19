@@ -14,6 +14,7 @@ import com.ironvellum.app.data.db.FavouriteExerciseEntity
 import com.ironvellum.app.data.db.SyncStateEntity
 import com.ironvellum.app.domain.Crests
 import com.ironvellum.app.domain.ExportWriter
+import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TrialDraft
 import kotlinx.coroutines.flow.first
@@ -75,6 +76,9 @@ class ExportRoundTripTest {
         val sets = db.sessionDao().setsFor(sessionId)
         assertTrue("the preset must auto-fill sets to log", sets.isNotEmpty())
         repo.updateSet(sets.first().id, reps = 8, weightKg = 20.0, done = true)
+        val warmup = repo.addExtraSet(sessionId, sets.first().exerciseId, reps = 5, weightKg = 10.0, modifiers = "")
+        repo.setKind(warmup, SetKind.WARMUP)
+        repo.setWarmupDone(sessionId, warmup, true)
         repo.completeSession(sessionId)
         repo.addStat(weightKg = 82.5, bodyFatPct = 14.0)
 
@@ -110,6 +114,10 @@ class ExportRoundTripTest {
         val logged = loggedSets.single()
         assertEquals(8, logged.reps)
         assertEquals(20.0, logged.weightKg!!, 0.001)
+        val checkedWarmup = restored.single { it.warmupDone }
+        assertEquals(SetKind.WARMUP.name, checkedWarmup.kind)
+        assertEquals(5, checkedWarmup.reps)
+        assertEquals(10.0, checkedWarmup.weightKg!!, 0.001)
     }
 
     @Test

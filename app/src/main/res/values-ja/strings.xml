@@ -1210,6 +1210,9 @@
         <item quantity="other">ウォームアップ · %1$dセット</item>
     </plurals>
     <string name="session_warmup_fold_description">%1$s、完了</string>
+    <string name="session_warmup_completion_description">%1$s ウォームアップ %2$dセット目</string>
+    <string name="session_warmup_completed">完了</string>
+    <string name="session_warmup_planned">予定</string>
     <string name="session_warmup_show_label">ウォームアップセットを表示</string>
     <string name="session_drops_note">ドロップは休息なしで続けます</string>
     <string name="session_drops_end_label">%1$sのドロップを終了</string>

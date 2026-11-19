@@ -421,6 +421,7 @@ object ExportWriter {
                 // v5 archive. A warm-up keeps its v6 key, which older readers know.
                 if (set.warmup) append(",\"warmup\":true")
                 else if (set.kind != SetKind.WORKING) append(",\"kind\":\"").append(set.kind.wire).append("\"")
+                if (set.warmup && set.warmupDone) append(",\"warmupDone\":true")
                 set.supersetGroup?.let { append(",\"supersetGroup\":").append(it) }
                 // v11, only for a rated set: an unrated set stays byte-identical to v9.
                 set.rpe?.let { append(",\"rpe\":").append(it) }

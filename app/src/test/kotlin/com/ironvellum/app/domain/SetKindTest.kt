@@ -2,6 +2,7 @@ package com.ironvellum.app.domain
 
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -54,6 +55,19 @@ class SetKindTest {
             listOf(SetKind.WORKING, SetKind.WARMUP, SetKind.TOP, SetKind.BACKOFF, SetKind.WORKING, SetKind.FAILURE, SetKind.REST_PAUSE),
             ExportReader.read(unknown).getOrThrow().sessions.single().second.map { it.kind },
         )
+    }
+
+    @Test
+    fun `archive preserves explicit warmup completion without converting it into work`() {
+        val session = WorkoutSession(id = 1, label = "Upper", startedAtMs = 1_000, completedAtMs = 2_000)
+        val warmup = SessionSet(exerciseId = 1, exerciseName = "Bench Press", setIndex = 0, reps = 5, kind = SetKind.WARMUP)
+        val work = warmup.copy(setIndex = 2, kind = SetKind.WORKING, done = true)
+        val json = write(listOf(session to listOf(warmup.copy(warmupDone = true), warmup.copy(setIndex = 1), work)))
+        val restored = ExportReader.read(json).getOrThrow().sessions.single().second
+        assertEquals(listOf(true, false, false), restored.map { it.warmupDone })
+        assertEquals(listOf(false, false, true), restored.map { it.done })
+        assertFalse("an older archive cannot assign completion", ExportReader.read(write(listOf(session to listOf(warmup))))
+            .getOrThrow().sessions.single().second.single().warmupDone)
     }
 
     @Test

@@ -677,6 +677,10 @@ class SessionViewModel(
         viewModelScope.launch { actions.commit(set, metric) }
     }
 
+    fun setWarmupDone(setId: Long, done: Boolean) {
+        viewModelScope.launchGuarded("change warm-up completion") { repo.setWarmupDone(sessionId, setId, done) }
+    }
+
     /** "Warm up" on an exercise's menu; [onAdded] gets the new sets' ids for the Undo bar, and is not called when none were added. */
     fun addWarmupRamp(block: BlockKey, onAdded: (List<Long>) -> Unit) {
         viewModelScope.launchGuarded("add warm-up ramp") { repo.addWarmupRamp(sessionId, block).takeIf { it.isNotEmpty() }?.let(onAdded) }
@@ -1560,6 +1564,7 @@ fun SessionScreen(
                                 onTypeFigure = { set, kind -> typing = set to kind },
                                 onToggleEdit = { set -> editingSetId = if (editingSetId == set.id) null else set.id },
                                 onSetKind = { set, kind -> viewModel.setKind(set.id, kind) },
+                                onWarmupDone = { set, done -> viewModel.setWarmupDone(set.id, done) },
                                 onUnlog = { set ->
                                     commit(set.copy(done = false))
                                     editingSetId = null
@@ -2780,6 +2785,7 @@ internal fun OpenExerciseCard(
     onToggleEdit: (SessionSet) -> Unit,
     onSetKind: (SessionSet, SetKind) -> Unit,
     onUnlog: (SessionSet) -> Unit,
+    onWarmupDone: (SessionSet, Boolean) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     onRestChanged: () -> Unit = {},
     /** The sealed trial's amend mode: any set can open for editing, and there is no live-only chrome. */
@@ -2820,10 +2826,11 @@ internal fun OpenExerciseCard(
     val shape = MaterialTheme.shapes.medium
     var choosingUnit by remember(block.key) { mutableStateOf(false) }
     if (choosingUnit) ExerciseUnitPicker(first.exerciseName) { choosingUnit = false }
-    // Once working sets are being logged the warm-ups fold into one ticked row, which opens on a tap.
+    // Completed warm-ups can fold without hiding any still to do.
     var warmupsOpen by remember(block.key) { mutableStateOf(false) }
-    val foldWarmups = !amend && !warmupsOpen && block.sets.any { it.done && !it.warmup } &&
-        block.sets.none { it.warmup && it.id == editingSetId }
+    val warmups = block.sets.filter { it.warmup }
+    val foldWarmups = !amend && !warmupsOpen && warmups.isNotEmpty() && warmups.all { it.warmupDone } &&
+        warmups.none { it.id == editingSetId }
     Column(
         modifier
             .fillMaxWidth()
@@ -2952,10 +2959,12 @@ internal fun OpenExerciseCard(
         }
         // The superset strip's own height already sits above the first row.
         Spacer(Modifier.height(if (superset != null) 0.dp else 8.dp))
+        var warmupNumber = 0
         block.sets.forEach { set ->
+            if (set.warmup) warmupNumber++
             if (set.warmup && foldWarmups) {
-                if (set.id == block.sets.first { it.warmup }.id) {
-                    WarmupFoldRow(block.sets.count { it.warmup }) { warmupsOpen = true }
+                if (warmupNumber == 1) {
+                    WarmupFoldRow(warmups.size) { warmupsOpen = true }
                 }
                 return@forEach
             }
@@ -2980,6 +2989,8 @@ internal fun OpenExerciseCard(
                     onTypeFigure = { kind -> onTypeFigure(set, kind) },
                     onToggleEdit = { onToggleEdit(set) },
                     onSetKind = { kind -> onSetKind(set, kind) },
+                    onWarmupDone = { done -> onWarmupDone(set, done) },
+                    warmupNumber = warmupNumber,
                     onUnlog = { onUnlog(set) },
                     onRemove = { onRemoveSet(set) },
                     amend = amend,
@@ -3021,7 +3032,7 @@ internal fun OpenExerciseCard(
     }
 }
 
-/** The folded warm-ups of a lift whose working sets are under way: one ticked line, opening the sets on a tap. */
+/** Completed warm-ups fold into one line, opening the sets on a tap. */
 @Composable
 private fun WarmupFoldRow(count: Int, onOpen: () -> Unit) {
     val text = UiText.plural(R.plurals.session_warmup_fold, count).asString()
@@ -3380,6 +3391,8 @@ private fun TrialSetRow(
     onTypeFigure: (FigureKind) -> Unit,
     onToggleEdit: () -> Unit,
     onSetKind: (SetKind) -> Unit,
+    onWarmupDone: (Boolean) -> Unit,
+    warmupNumber: Int,
     onUnlog: () -> Unit,
     onRemove: () -> Unit,
     amend: Boolean = false,
@@ -3435,6 +3448,7 @@ private fun TrialSetRow(
                         modifier = Modifier.weight(1f),
                     )
                 }
+                if (set.warmup) WarmupCompletion(set, warmupNumber, amend, onWarmupDone)
             }
             // A hold or duration counts down to its figure and a distance run has a stopwatch;
             // only on the set in hand, and only in the live trial.
@@ -3452,8 +3466,7 @@ private fun TrialSetRow(
             }
             if (state == RowState.EDITING) {
                 Row(Modifier.fillMaxWidth().padding(start = 22.dp), verticalAlignment = Alignment.CenterVertically) {
-                    // A warm-up was never logged, so there is nothing to un-log.
-                    // An amendment can also open a set that was never logged.
+                    // Warm-up completion is separate from working-set logging.
                     if (!set.warmup) {
                         if (set.done) {
                             RowAction(stringResource(R.string.session_set_unlog_button), IronvellumColors.Ink, onUnlog)
@@ -3572,6 +3585,7 @@ private fun TrialSetRow(
             if (stackTags) Row(verticalAlignment = Alignment.CenterVertically) { tags() }
         }
         if (!stackTags) tags()
+        if (set.warmup) WarmupCompletion(set, warmupNumber, amend, onWarmupDone)
         if (done) {
             // The tick closes the row, as it does a folded exercise's.
             Icon(
@@ -3581,6 +3595,24 @@ private fun TrialSetRow(
                 modifier = Modifier.padding(start = 10.dp).size(16.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun WarmupCompletion(set: SessionSet, number: Int, amend: Boolean, onDone: (Boolean) -> Unit) {
+    if (amend) {
+        Text(
+            stringResource(if (set.warmupDone) R.string.session_warmup_completed else R.string.session_warmup_planned),
+            style = MaterialTheme.typography.labelSmall,
+            color = IronvellumColors.InkMuted,
+        )
+    } else {
+        val label = stringResource(R.string.session_warmup_completion_description, set.exerciseName, number)
+        Checkbox(
+            checked = set.warmupDone,
+            onCheckedChange = onDone,
+            modifier = Modifier.size(48.dp).semantics { contentDescription = label },
+        )
     }
 }
 

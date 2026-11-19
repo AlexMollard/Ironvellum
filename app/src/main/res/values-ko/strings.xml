@@ -1210,6 +1210,9 @@
         <item quantity="other">워밍업 · %1$d세트</item>
     </plurals>
     <string name="session_warmup_fold_description">%1$s, 완료</string>
+    <string name="session_warmup_completion_description">%1$s 워밍업 %2$d세트</string>
+    <string name="session_warmup_completed">완료</string>
+    <string name="session_warmup_planned">예정</string>
     <string name="session_warmup_show_label">워밍업 세트 보기</string>
     <string name="session_drops_note">드롭 세트는 휴식 없이 바로 이어져요</string>
     <string name="session_drops_end_label">%1$s의 드롭 세트 종료</string>

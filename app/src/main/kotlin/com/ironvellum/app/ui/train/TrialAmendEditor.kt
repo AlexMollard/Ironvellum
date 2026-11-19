@@ -151,8 +151,17 @@ internal fun TrialAmendEditor(
                 onTypeLoad = { set -> loadFor = blockIdx to set.id.toInt() },
                 onTypeFigure = { set, kind -> typing = Triple(blockIdx, set.id.toInt(), kind) },
                 onToggleEdit = { set -> editingSetId = if (editingSetId == set.id) null else set.id },
-                // A warm-up never counts, so marking one takes the tick off; the other kinds keep it.
-                onSetKind = { set, kind -> update(set.id.toInt()) { it.copy(kind = kind, done = it.done && kind != SetKind.WARMUP, rpe = it.rpe.takeIf { _ -> kind != SetKind.WARMUP }) } },
+                onSetKind = { set, kind ->
+                    update(set.id.toInt()) {
+                        val completed = if (it.warmup) it.warmupDone else it.done
+                        it.copy(
+                            kind = kind,
+                            done = completed && kind != SetKind.WARMUP,
+                            warmupDone = completed && kind == SetKind.WARMUP,
+                            rpe = it.rpe.takeIf { _ -> kind != SetKind.WARMUP },
+                        )
+                    }
+                },
                 onUnlog = { set ->
                     update(set.id.toInt()) { it.copy(done = false, rpe = null) }
                     editingSetId = null
@@ -282,6 +291,7 @@ private fun TrialDraft.DraftSet.asSessionSet(block: TrialDraft.Block, blockIdx: 
     weightKg = weightKg,
     modifiers = block.modifiers,
     done = done,
+    warmupDone = warmupDone,
     durationSec = durationSec,
     distanceM = distanceM,
     grade = grade,
@@ -290,7 +300,6 @@ private fun TrialDraft.DraftSet.asSessionSet(block: TrialDraft.Block, blockIdx: 
     rpe = rpe,
 )
 
-/** A warm-up never counts, so its tick does not stick. */
 private fun SessionSet.asDraftSet() = TrialDraft.DraftSet(
     reps = reps,
     weightKg = weightKg,
@@ -298,6 +307,7 @@ private fun SessionSet.asDraftSet() = TrialDraft.DraftSet(
     distanceM = distanceM,
     grade = grade,
     done = done && !warmup,
+    warmupDone = warmupDone && warmup,
     kind = kind,
     rpe = rpe.takeIf { done && !warmup },
 )

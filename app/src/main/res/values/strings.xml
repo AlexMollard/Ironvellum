@@ -1354,6 +1354,9 @@
     <!-- Folded warm-ups line. %1$d is the number of warm-up sets. -->
     <plurals name="session_warmup_fold"><item quantity="one">Warm-up · %1$d set</item><item quantity="other">Warm-up · %1$d sets</item></plurals>
     <string name="session_warmup_fold_description">%1$s, done</string>
+    <string name="session_warmup_completion_description">%1$s warm-up set %2$d</string>
+    <string name="session_warmup_completed">Completed</string>
+    <string name="session_warmup_planned">Planned</string>
     <string name="session_warmup_show_label">Show the warm-up sets</string>
     <string name="session_drops_note">Drops follow straight on, no rest</string>
     <string name="session_drops_end_label">End the drops for %1$s</string>

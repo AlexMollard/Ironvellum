@@ -1197,7 +1197,7 @@ class Repository(
         val rows = sessionDao.setsFor(sessionId).filter { it.blockKey == block }
         val targets = rows.filter { suggestion.touches(it.asSet()) }
         if (targets.isEmpty()) return@withTransaction null
-        val before = rows.filter { !it.done }.map { SetFigures(it.id, it.reps, it.weightKg, it.durationSec) }
+        val before = rows.filter { !it.done && !it.warmupDone }.map { SetFigures(it.id, it.reps, it.weightKg, it.durationSec) }
         targets.forEach { row ->
             sessionDao.updateSet(
                 row.copy(
@@ -1221,16 +1221,16 @@ class Repository(
     suspend fun undoSuggestion(sessionId: Long, before: List<SetFigures>) = db.withTransaction {
         if (isSealed(sessionId)) return@withTransaction
         before.forEach { figures ->
-            val row = sessionDao.setById(figures.id)?.takeIf { it.sessionId == sessionId && !it.done } ?: return@forEach
+            val row = sessionDao.setById(figures.id)?.takeIf { it.sessionId == sessionId && !it.done && !it.warmupDone } ?: return@forEach
             sessionDao.updateSet(row.copy(reps = figures.reps, weightKg = figures.weightKg, durationSec = figures.durationSec))
         }
     }
 
-    /** The unlogged warm-ups of [block], when nothing is logged yet and the ramp keeps its shape, re-planned from the first working load. */
+    /** Re-plan unfinished warm-ups in their original ramp positions before working sets begin. */
     private suspend fun replanWarmups(sessionId: Long, block: BlockKey, exercise: ExerciseEntity) {
         val rows = sessionDao.setsFor(sessionId).filter { it.blockKey == block }
         if (rows.any { it.done && !it.isWarmup }) return
-        val warmups = rows.filter { it.isWarmup && !it.done }.sortedBy { it.setIndex }
+        val warmups = rows.filter { it.isWarmup }.sortedBy { it.setIndex }
         if (warmups.isEmpty()) return
         val first = rows.filter { !it.isWarmup }.minByOrNull { it.setIndex }?.weightKg
         val ramp = WarmupRamp.planFor(
@@ -1238,12 +1238,14 @@ class Repository(
             kit = loadKit(), weighted = exercise.isWeighted, unit = Units.forExercise(exercise.name),
         )
         if (ramp.size != warmups.size) return
-        warmups.zip(ramp).forEach { (row, step) -> sessionDao.updateSet(row.copy(weightKg = step.weightKg, reps = step.reps)) }
+        warmups.zip(ramp).forEach { (row, step) ->
+            if (!row.warmupDone) sessionDao.updateSet(row.copy(weightKg = step.weightKg, reps = step.reps))
+        }
     }
 
     private fun SetLogEntity.asSet() = SessionSet(
         id = id, exerciseId = exerciseId, exercisePosition = exercisePosition, setIndex = setIndex, reps = reps,
-        weightKg = weightKg, done = done, durationSec = durationSec, kind = setKind(),
+        weightKg = weightKg, done = done, durationSec = durationSec, kind = setKind(), warmupDone = warmupDone,
     )
 
     /** For each id, how many of the same id came before it in [ids]: 0 for a movement's first entry, 1 for its second. */
@@ -1690,24 +1692,26 @@ class Repository(
         }
     }
 
-    /**
-     * Changes a live-trial set's kind. A warm-up is stored unticked, so it drops
-     * out of everything that counts ticked sets (XP, strength, records); the
-     * writers above keep it unticked whatever a stale screen sends. Making a set
-     * a warm-up unticks it; counting it again ticks it, since a set called a
-     * warm-up was one the lifter had done. Moving between the counting kinds
-     * (Working, Drop, Failure, Rest-pause) leaves the tick as it is.
-     */
+    /** Changes a live set's kind, carrying only explicitly recorded completion across kinds. */
     suspend fun setKind(setId: Long, kind: SetKind) = db.withTransaction {
         val current = sessionDao.setById(setId) ?: return@withTransaction
         if (isSealed(current.sessionId)) return@withTransaction
         val wasWarmup = current.isWarmup
         val done = when {
             kind == SetKind.WARMUP -> false
-            wasWarmup -> true
+            wasWarmup -> current.warmupDone
             else -> current.done
         }
-        sessionDao.updateSet(current.copy(kind = kind.name, done = done).ratedOnlyIfDone())
+        val warmupDone = kind == SetKind.WARMUP && if (wasWarmup) current.warmupDone else current.done
+        sessionDao.updateSet(current.copy(kind = kind.name, done = done, warmupDone = warmupDone).ratedOnlyIfDone())
+    }
+
+    internal suspend fun setWarmupDone(sessionId: Long, setId: Long, done: Boolean) = db.withTransaction {
+        val session = sessionDao.byId(sessionId) ?: return@withTransaction
+        if (session.completedAtMs != null) return@withTransaction
+        val current = sessionDao.setById(setId) ?: return@withTransaction
+        if (current.sessionId != sessionId || !current.isWarmup || current.warmupDone == done) return@withTransaction
+        sessionDao.updateSet(current.copy(warmupDone = done))
     }
 
     /** A rating belongs to a logged working set: taking the tick off, or making it a warm-up, takes the rating off too. */
@@ -2588,6 +2592,7 @@ class Repository(
             kind = setKind(),
             supersetGroup = supersetGroup,
             rpe = rpe,
+            warmupDone = isWarmup && warmupDone,
         )
 
     private fun SessionWithSets.toHistoryRow(names: Map<Long, String>): Pair<WorkoutSession, List<SessionSet>> =
@@ -3588,6 +3593,7 @@ class Repository(
                     supersetGroup = block.supersetGroup,
                     // Only a logged working set carries a rating.
                     rpe = Effort.clamp(s.rpe).takeIf { s.done && !s.warmup },
+                    warmupDone = s.warmup && s.warmupDone,
                 )
             }
         }
@@ -4094,13 +4100,14 @@ class Repository(
                                 reps = s.reps,
                                 weightKg = s.weightKg,
                                 modifiers = s.modifiers,
-                                done = s.done,
+                                done = s.done && !s.warmup,
                                 durationSec = s.durationSec,
                                 distanceM = s.distanceM,
                                 grade = s.grade,
                                 kind = s.kind.name,
                                 supersetGroup = s.supersetGroup,
                                 rpe = Effort.clamp(s.rpe),
+                                warmupDone = s.warmup && s.warmupDone,
                             )
                         },
                     ).size

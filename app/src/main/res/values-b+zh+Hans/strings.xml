@@ -1210,6 +1210,9 @@
         <item quantity="other">热身 · %1$d 组</item>
     </plurals>
     <string name="session_warmup_fold_description">%1$s，已完成</string>
+    <string name="session_warmup_completion_description">%1$s 热身第 %2$d 组</string>
+    <string name="session_warmup_completed">已完成</string>
+    <string name="session_warmup_planned">计划中</string>
     <string name="session_warmup_show_label">显示热身组</string>
     <string name="session_drops_note">递减组连续进行，不休息</string>
     <string name="session_drops_end_label">结束 %1$s 的递减组</string>

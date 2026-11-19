@@ -1269,6 +1269,9 @@
         <item quantity="other">Aufwärmen · %1$d Sätze</item>
     </plurals>
     <string name="session_warmup_fold_description">%1$s, erledigt</string>
+    <string name="session_warmup_completion_description">%1$s Aufwärmsatz %2$d</string>
+    <string name="session_warmup_completed">Abgeschlossen</string>
+    <string name="session_warmup_planned">Geplant</string>
     <string name="session_warmup_show_label">Aufwärmsätze anzeigen</string>
     <string name="session_drops_note">Reduktionssätze folgen direkt, ohne Pause</string>
     <string name="session_drops_end_label">Reduktionssätze für %1$s beenden</string>

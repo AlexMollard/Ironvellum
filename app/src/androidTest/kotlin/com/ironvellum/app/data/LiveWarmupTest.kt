@@ -4,6 +4,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.SetKind
+import com.ironvellum.app.domain.Supersets
+import com.ironvellum.app.domain.TrialDraft
 import com.ironvellum.app.domain.Xp
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -16,8 +18,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * A set marked as a warm-up on the live screen is stored unticked, stays
- * unticked whatever a stale screen writes, and pays nothing when sealed.
+ * Warm-up completion survives independently of working-set scoring and order.
  */
 @RunWith(AndroidJUnit4::class)
 class LiveWarmupTest {
@@ -55,10 +56,12 @@ class LiveWarmupTest {
         repo.setKind(sets[0], SetKind.WARMUP)
         assertEquals("WARMUP", row(sets[0]).kind)
         assertFalse("a warm-up is stored unticked", row(sets[0]).done)
+        assertTrue("doing the set was not lost", row(sets[0]).warmupDone)
 
         repo.setKind(sets[0], SetKind.WORKING)
         assertEquals("WORKING", row(sets[0]).kind)
         assertTrue("counted as a working set, it is logged", row(sets[0]).done)
+        assertFalse(row(sets[0]).warmupDone)
     }
 
     @Test
@@ -106,6 +109,62 @@ class LiveWarmupTest {
         val expected = SessionScoring(db.exerciseDao().observeAll().first()).xp(workingOnly, 80.0)
         // The sets' own pay: the trial-level bonuses (the first trial of the week) are not what a ramp could change.
         assertEquals(expected - Xp.COMPLETION_BONUS, setsPay(repo.completeSession(sessionId)))
+    }
+
+    @Test
+    fun warmupCheckoffSurvivesReopenAndAmendWithoutChangingWork() = runBlocking {
+        val lift = row(sets[0]).exerciseId
+        val partner = db.exerciseDao().observeAll().first().first { it.id != lift && it.metric == ExerciseMetric.REPS.name }.id
+        val partnerWarmup = repo.addExtraSet(sessionId, partner, 5, 20.0, "")
+        repo.addExtraSet(sessionId, partner, 8, 40.0, "")
+        repo.setKind(partnerWarmup, SetKind.WARMUP)
+        assertTrue(repo.linkSupersetWithNext(sessionId, repo.blockOf(sessionId, lift)))
+        val ramp = repo.addWarmupRamp(sessionId, repo.blockOf(sessionId, lift))
+        val first = ramp.first()
+        val second = ramp[1]
+        val next = Supersets.nextSet(repo.observeSessionSets(sessionId).first())
+        val runningRest = RestClock.start(sessionId, 120).let { RestClock.timer.value }
+        try {
+            repo.setWarmupDone(sessionId, partnerWarmup, true)
+            repo.setWarmupDone(sessionId, first, true)
+            repo.setWarmupDone(sessionId, first, true)
+            repo.setWarmupDone(sessionId, second, true)
+            repo.setWarmupDone(sessionId, second, false)
+            repo.setWarmupDone(sessionId, sets[0], true)
+            repo.setWarmupDone(sessionId + 1, second, true)
+            assertEquals(runningRest, RestClock.timer.value)
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            db.close()
+            db = IronvellumDatabase.create(context, TEST_DB)
+            repo = Repository(db)
+            val reopened = repo.observeSessionSets(sessionId).first()
+            assertEquals(listOf(first, partnerWarmup), reopened.filter { it.warmupDone }.map { it.id })
+            assertTrue(reopened.none { it.done })
+            assertEquals(next?.id, Supersets.nextSet(reopened)?.id)
+        } finally {
+            RestClock.cancel(sessionId)
+        }
+
+        repo.updateSet(sets[0], reps = 8, weightKg = 60.0, done = true)
+        val workingOnly = db.sessionDao().setsFor(sessionId).filter { it.id == sets[0] }
+        val expected = SessionScoring(db.exerciseDao().observeAll().first()).xp(workingOnly, 80.0)
+        assertEquals(expected - Xp.COMPLETION_BONUS, setsPay(repo.completeSession(sessionId)))
+        repo.setWarmupDone(sessionId, first, false)
+        val sealed = repo.observeSessionSets(sessionId).first()
+        assertEquals(listOf(first, partnerWarmup), sealed.filter { it.warmupDone }.map { it.id })
+        val draft = TrialDraft.of(sealed).updateSet(0, ramp.size) { it.copy(reps = 7) }
+        repo.editSealedTrial(sessionId, draft)
+        val amended = repo.observeSessionSets(sessionId).first()
+        assertEquals(listOf(true) + List(ramp.size - 1) { false }, amended.filter { it.exerciseId == lift && it.warmup }.map { it.warmupDone })
+        assertTrue(amended.single { it.exerciseId == partner && it.warmup }.warmupDone)
+        assertTrue(amended.filter { it.warmup }.none { it.done })
+    }
+
+    @Test
+    fun plannedWarmupDoesNotBecomeLoggedWorkWhenReclassified() = runBlocking {
+        repo.setKind(sets[0], SetKind.WARMUP)
+        repo.setKind(sets[0], SetKind.WORKING)
+        assertFalse(row(sets[0]).done)
     }
 
     @Test

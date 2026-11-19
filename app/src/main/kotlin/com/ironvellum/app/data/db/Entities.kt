@@ -1,5 +1,6 @@
 package com.ironvellum.app.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -149,6 +150,7 @@ data class SetLogEntity(
     val supersetGroup: Int? = null,
     /** How hard the set was, RPE 5 to 10 ([com.ironvellum.app.domain.Effort]); null when never rated. RIR is 10 minus this. */
     val rpe: Int? = null,
+    @ColumnInfo(defaultValue = "0") val warmupDone: Boolean = false,
 )
 
 @Entity(tableName = "stats")

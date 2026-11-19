@@ -1328,6 +1328,9 @@
         <item quantity="other">Calentamiento · %1$d series</item>
     </plurals>
     <string name="session_warmup_fold_description">%1$s, completado</string>
+    <string name="session_warmup_completion_description">%1$s serie de calentamiento %2$d</string>
+    <string name="session_warmup_completed">Completada</string>
+    <string name="session_warmup_planned">Planificada</string>
     <string name="session_warmup_show_label">Mostrar series de calentamiento</string>
     <string name="session_drops_note">Las series descendentes siguen sin descanso</string>
     <string name="session_drops_end_label">Terminar las series descendentes de %1$s</string>

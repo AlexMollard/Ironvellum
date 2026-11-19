@@ -1328,6 +1328,9 @@
         <item quantity="other">Échauffement · %1$d séries</item>
     </plurals>
     <string name="session_warmup_fold_description">%1$s, terminé</string>
+    <string name="session_warmup_completion_description">%1$s série d’échauffement %2$d</string>
+    <string name="session_warmup_completed">Terminée</string>
+    <string name="session_warmup_planned">Prévue</string>
     <string name="session_warmup_show_label">Afficher les séries d’échauffement</string>
     <string name="session_drops_note">Les séries dropées s’enchaînent sans repos</string>
     <string name="session_drops_end_label">Terminer les séries dropées de %1$s</string>
