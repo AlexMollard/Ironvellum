@@ -557,22 +557,31 @@ drop trigger if exists clear_rolling_lift_marks on lift_marks;
 create trigger clear_rolling_lift_marks before update of step, recent_step, recent_at on lift_marks
 for each row execute function public.clear_rolling_lift_marks();
 
+-- Resolve the caller without requiring access to the auth schema; writes still run under RLS.
+create or replace function public.lift_mark_caller() returns uuid
+language sql stable security definer set search_path = pg_catalog
+as $$ select auth.uid() $$;
+revoke execute on function public.lift_mark_caller() from public, anon;
+grant execute on function public.lift_mark_caller() to authenticated;
+
 drop function if exists public.push_lift_marks(jsonb);
 create or replace function public.push_lift_marks(expected_user_id uuid, marks jsonb) returns void
 language plpgsql security invoker set search_path = public as $$
-declare m record;
+declare
+    caller uuid := public.lift_mark_caller();
+    m record;
 begin
-    if auth.uid() is distinct from expected_user_id or expected_user_id is null then
+    if caller is null or caller is distinct from expected_user_id then
         raise exception 'Lift mark account changed' using errcode = '42501';
     end if;
     for m in select * from jsonb_to_recordset(marks) as x(
         lift text, step int, recent_step int, recent_at timestamptz, recent_steps bigint[]
     ) loop
         insert into lift_marks (user_id, lift, step, recent_step, recent_at)
-        values (auth.uid(), m.lift, m.step, m.recent_step, m.recent_at)
+        values (caller, m.lift, m.step, m.recent_step, m.recent_at)
         on conflict (user_id, lift) do update set
             step = excluded.step, recent_step = excluded.recent_step, recent_at = excluded.recent_at;
-        update lift_marks set recent_steps = m.recent_steps where user_id = auth.uid() and lift = m.lift;
+        update lift_marks set recent_steps = m.recent_steps where user_id = caller and lift = m.lift;
     end loop;
 end $$;
 revoke execute on function public.push_lift_marks(uuid, jsonb) from public, anon;

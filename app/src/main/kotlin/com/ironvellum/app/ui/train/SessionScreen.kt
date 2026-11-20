@@ -23,6 +23,7 @@ import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.LoadUnit
 import com.ironvellum.app.data.Units
 import android.Manifest
+import android.text.format.DateFormat
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -1318,10 +1319,9 @@ fun SessionScreen(
 
     val signedIn = (LocalContext.current.applicationContext as com.ironvellum.app.IronvellumApp)
         .accountRepository.account.collectAsStateWithLifecycle().value != null
-    val minutesLeft = remember(ui.sets, exercises, focus, pace, restSettingsRevision, schemes) {
+    val secondsLeft = remember(ui.sets, exercises, focus, pace, restSettingsRevision, schemes) {
         val metrics = exercises.associate { it.id to it.metric }
         SessionClock.remainingSeconds(ui.sets, { metrics[it] }, focus, pace, trialPrefs::restPreferences) { block -> SchemePlan.restAfterTop(schemes[block]) }
-            .takeIf { it > 0 }?.let { SessionClock.minutes(it) }
     }
     val scroll = rememberScrollState()
     val expanded = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() >= 840.dp }
@@ -1378,7 +1378,7 @@ fun SessionScreen(
                 scrolled = scroll.canScrollBackward,
                 done = doneCount,
                 total = workCount,
-                minutesLeft = minutesLeft,
+                secondsLeft = secondsLeft,
                 startedAtMs = session.startedAtMs,
                 xp = tally.total,
                 onBack = onExit,
@@ -2700,7 +2700,7 @@ private fun TrialHeader(
     scrolled: Boolean,
     done: Int,
     total: Int,
-    minutesLeft: Int?,
+    secondsLeft: Int,
     startedAtMs: Long,
     /** XP the ticked sets have earned so far; the chip shows once there is some. */
     xp: Int,
@@ -2803,12 +2803,8 @@ private fun TrialHeader(
             Box(Modifier.weight(1f).padding(end = 8.dp)) {
                 if (gain != null) {
                     LiveGainTag(gain, motion, onGainGone)
-                } else if (minutesLeft != null) {
-                    Text(
-                        " · " + stringResource(R.string.session_minutes_left, minutesLeft),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = IronvellumColors.InkMuted,
-                    )
+                } else if (secondsLeft > 0) {
+                    SessionFinishEstimate(secondsLeft)
                 }
             }
             SessionElapsed(startedAtMs)
@@ -4729,6 +4725,30 @@ private fun SessionElapsed(startedAtMs: Long) {
         fontWeight = FontWeight.Bold,
         color = IronvellumColors.Ink,
         maxLines = 1,
+    )
+}
+
+@Composable
+private fun SessionFinishEstimate(secondsLeft: Int) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val remainingMs = secondsLeft * 1_000L
+    val finishMinute by produceState((System.currentTimeMillis() + remainingMs) / 60_000L, remainingMs, lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                val finishMs = System.currentTimeMillis() + remainingMs
+                value = finishMs / 60_000L
+                delay(60_000L - finishMs.mod(60_000L))
+            }
+        }
+    }
+    val finishTime = remember(context, finishMinute) {
+        DateFormat.getTimeFormat(context).format(java.util.Date(finishMinute * 60_000L))
+    }
+    Text(
+        " · " + stringResource(R.string.session_minutes_left, SessionClock.minutes(secondsLeft), finishTime),
+        style = MaterialTheme.typography.labelMedium,
+        color = IronvellumColors.InkMuted,
     )
 }
 

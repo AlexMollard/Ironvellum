@@ -1248,7 +1248,7 @@
         <item quantity="one">%1$d / %2$d Satz</item>
         <item quantity="other">%1$d / %2$d Sätze</item>
     </plurals>
-    <string name="session_minutes_left">Noch ~%1$d min</string>
+    <string name="session_minutes_left">Noch ~%1$d min · Ende ca. %2$s</string>
     <string name="session_xp_gain">+%1$d XP</string>
     <string name="session_xp_description">%1$d XP</string>
     <string name="session_xp_earned_description">Bisher %1$d XP verdient</string>

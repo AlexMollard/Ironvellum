@@ -186,6 +186,16 @@ The test assertions, emulator viewport, and strict ten-minute ceiling are
 unchanged. Cold-boot timing was not verified with the final changes.
 Local evidence: `.tmp/gate-readiness.txt` and `.tmp/gate-readiness-confirmed.txt`.
 
+### Whole-app audit verification (2026-11-20)
+
+`python tools/gate.py --serial emulator-5554 --backend` returned **GATE GREEN**
+in **8m35s** after fixing caller resolution for rolling lift uploads. The JVM
+gate reported 2,907 tests with zero failures; all 869 emulator and 380 web tests
+passed, as did release lint, the web production build and disposable Postgres
+assertions (including schema 35 patch replay and reset). The emulator run
+included a local coverage-map test fixture edit; that edit was not committed
+with the audit fixes. Local evidence: `.tmp/gate-rolling-final.log`.
+
 ## 4. Supabase schema
 
 The whole schema is ONE file, `supabase/migrations/0001_baseline.sql`, the
@@ -196,9 +206,10 @@ cut from the baseline. Raise `NEEDED_SCHEMA_VERSION` only when the whole app
 requires it. `python3 tools/gate.py --backend` exercises the baseline, hosted
 patch replay and reset round trip against real Postgres.
 
-The current baseline returns **34**; the app minimum is **31**. Schema 32
-adds feed cards, 33 adds rolling workout-XP rankings, and 34 hardens sync and
-social writes. See [self-hosting](../supabase/SELF_HOSTING.md) for upgrade paths.
+The current baseline returns **35**; the app minimum is **31**. Schema 32
+adds feed cards, 33 adds rolling workout-XP rankings, 34 hardens sync and
+social writes, and 35 lets each lift tier expire independently in the rolling
+standings. See [self-hosting](../supabase/SELF_HOSTING.md) for upgrade paths.
 
 Recorded hosted evidence: the owner applied the schema-32 feed-card patch on
 2026-10-30 and the schema-33 workout-XP patch for 1.11. The minified app's probe
@@ -209,6 +220,13 @@ future authenticated path from a version beacon alone.
 For 1.12, the hosted RPC returned schema 34. A disposable-account smoke check
 verified password sign-in, repeat workout uploads without duplicates, and
 friend-request acceptance. Both test accounts were removed after the check.
+
+To upgrade a schema-34 project, apply
+[`2026-11-20-rolling-lift-marks.sql`](../supabase/hosted/2026-11-20-rolling-lift-marks.sql).
+The schema beacon confirms the upgrade, not that clients have published the
+new marks. Verify that a current client syncs its marks and that recent and
+lifetime standings remain distinct. Older clients still publish a single
+weekly mark.
 
 **Never paste `supabase/reset.sql` into the hosted project.** It deletes every
 account. It exists for a throwaway project and for the gate's round trip.

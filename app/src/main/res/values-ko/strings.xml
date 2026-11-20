@@ -1190,7 +1190,7 @@
     <plurals name="session_progress">
         <item quantity="other">%1$d / %2$d세트</item>
     </plurals>
-    <string name="session_minutes_left">약 %1$d분 남음</string>
+    <string name="session_minutes_left">약 %1$d분 남음 · %2$s경 종료</string>
     <string name="session_xp_gain">+%1$d XP</string>
     <string name="session_xp_description">%1$d XP</string>
     <string name="session_xp_earned_description">지금까지 %1$d XP 획득</string>

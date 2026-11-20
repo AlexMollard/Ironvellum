@@ -1327,7 +1327,8 @@
     <!-- Sets logged so far: %1$d of %2$d (the plural follows the total). -->
     <plurals name="session_progress"><item quantity="one">%1$d / %2$d set</item><item quantity="other">%1$d / %2$d sets</item></plurals>
     <!-- Stats line, after a separator: minutes left. -->
-    <string name="session_minutes_left">~%1$d min left</string>
+    <!-- Live workout ETA: %1$d remaining minutes, %2$s estimated local finish time. -->
+    <string name="session_minutes_left">~%1$d min left · finish ~%2$s</string>
     <!-- XP just earned by a set or the workout. %1$d is the amount. -->
     <string name="session_xp_gain">+%1$d XP</string>
     <string name="session_xp_description">%1$d XP</string>

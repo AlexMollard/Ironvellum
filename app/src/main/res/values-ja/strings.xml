@@ -1190,7 +1190,7 @@
     <plurals name="session_progress">
         <item quantity="other">%1$d / %2$dセット</item>
     </plurals>
-    <string name="session_minutes_left">残り約%1$d分</string>
+    <string name="session_minutes_left">残り約%1$d分 · %2$sごろ終了</string>
     <string name="session_xp_gain">+%1$d XP</string>
     <string name="session_xp_description">%1$d XP</string>
     <string name="session_xp_earned_description">これまでに%1$d XPを獲得</string>
