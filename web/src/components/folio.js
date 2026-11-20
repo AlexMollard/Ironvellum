@@ -16,12 +16,12 @@ const dayOf = ms => formatDay(new Date(ms).toISOString().slice(0, 10));
 /** The "N workouts shared" / "last workout" figures of the summary line, through the phone's own strings. */
 export function summaryLine(figures) {
   const trial = n => word(n === 1 ? 'workout' : 'workouts', n === 1 ? 'concept_trial_s' : 'concept_trial_pl');
-  const parts = [`${figures.count} ${trial(figures.count)} shared`, format(t('lifter_xp_gain'), grouped(figures.xp)), format(t('lifter_summary_per_week'), figures.perWeek)];
+  const parts = [`Latest ${figures.count} ${trial(figures.count)}: ${format(t('lifter_xp_gain'), grouped(figures.xp))}`, `${format(t('lifter_summary_per_week'), figures.perWeek)} over the last 28 days (among those shown)`];
   if (figures.daysSince != null) parts.push(figures.daysSince === 0 ? t('lifter_summary_last_today') : figures.daysSince === 1 ? t('lifter_summary_last_yesterday') : `last ${trial(1)} ${plural(figures.daysSince, 'day')} ago`);
   return parts.join(' · ');
 }
 
-function workoutSets(body, workout, snapshot) {
+export function workoutSets(body, workout, snapshot) {
   body.replaceChildren();
   if (workout.note) body.append(node('p', workout.note, 'muted'));
   for (const exercise of workout.exercises) {
@@ -50,10 +50,12 @@ export function renderFolio(root, { social, snapshot, me, nowMs = Date.now(), on
 
   if (data.profile?.totalXp != null) root.append(node('div', [`${grouped(data.profile.totalXp)} XP`, data.profile.streakDays != null ? `${data.profile.streakDays} day streak` : ''].filter(Boolean).join(' · '), 'muted folio-total'));
   const sessions = data.sessions;
+  const trial = word(data.workoutsShared === 1 ? 'workout' : 'workouts', data.workoutsShared === 1 ? 'concept_trial_s' : 'concept_trial_pl');
+  root.append(node('p', `${data.workoutsShared} ${trial} shared`, 'muted folio-shared'));
   if (!sessions.length) root.append(node('p', t('lifter_nothing_shared'), 'muted folio-empty'));
   else {
     const figures = lifterSummary(sessions, nowMs);
-    root.append(node('p', summaryLine({ ...figures, count: data.workoutsShared }), 'muted folio-summary'));
+    root.append(node('p', summaryLine(figures), 'muted folio-summary'));
     const strength = node('section', null, 'folio-strength'), title = node('div', null, 'folio-strength-head'); title.append(node('h3', t('lifter_strength_title')));
     const chrono = [...sessions].sort((a, b) => (a.completedAtMs ?? Infinity) - (b.completedAtMs ?? Infinity));
     if (figures.series.length >= 2) {

@@ -99,7 +99,7 @@ describe('the folio figures', () => {
     }
   });
   it('summaryLineUsesThePhonesWording', () => {
-    expect(summaryLine({ count: 1, xp: 12400, perWeek: '0.3', daysSince: 0 })).toBe(`1 workout shared · ${format(t('lifter_xp_gain'), '12,400')} · ${format(t('lifter_summary_per_week'), '0.3')} · ${t('lifter_summary_last_today')}`);
+    expect(summaryLine({ count: 1, xp: 12400, perWeek: '0.3', daysSince: 0 })).toBe(`Latest 1 workout: ${format(t('lifter_xp_gain'), '12,400')} · ${format(t('lifter_summary_per_week'), '0.3')} over the last 28 days (among those shown) · ${t('lifter_summary_last_today')}`);
     expect(summaryLine({ count: 3, xp: 5, perWeek: '1.0', daysSince: 1 })).toContain(t('lifter_summary_last_yesterday'));
     expect(summaryLine({ count: 3, xp: 5, perWeek: '1.0', daysSince: 9 })).toContain('last workout 9 days ago');
     setWordsMode(true); expect(summaryLine({ count: 3, xp: 5, perWeek: '1.0', daysSince: 9 })).toContain('last trial 9 days ago');
@@ -108,7 +108,9 @@ describe('the folio figures', () => {
     sessions: { data: Array.from({ length: 20 }, (_, i) => sessionRow(i + 1)), count: 214 }, lift_board: [{ user_id: 'u1', lift: 'squat', step: 7, recent_step: 6 }, { user_id: 'u1', lift: 'muscle_up', step: 2, recent_step: null }, { user_id: 'u1', lift: 'mystery', step: 4 }], mutes: [], ...extra });
   it('workoutsSharedUsesTheServerCount', async () => {
     const { root, client } = await mount(folio(), 'u1');
-    expect(root.querySelector('.folio-summary').textContent).toContain('214 workouts shared');
+    expect(root.querySelector('.folio-shared').textContent).toContain('214 workouts shared');
+    expect(root.querySelector('.folio-summary').textContent).toContain('Latest 20 workouts');
+    expect(root.querySelector('.folio-summary').textContent).toContain('last 28 days');
     const count = client.callsTo('sessions').find(c => c.options?.count === 'exact'); expect(count.options.head).toBe(true); expect(count.filters).toContainEqual(['eq', 'user_id', 'u1']);
   });
   it('allySinceReadsAcceptedAt', async () => {

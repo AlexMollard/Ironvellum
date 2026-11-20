@@ -161,6 +161,12 @@ fun SocialScreen(
         return
     }
 
+    val accountViewModel: AccountViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { AccountViewModel(app.accountRepository, app.cloudSync) }
+        },
+    )
+
     val unread by app.cloudSync.inboxUnread.collectAsStateWithLifecycle()
 
     // Ask for notification permission once, when opening the inbox.
@@ -214,6 +220,7 @@ fun SocialScreen(
                     SocialPage.INBOX -> InboxScreen(
                         onOpenLifter = onOpenLifter,
                         onOpenComments = onOpenComments,
+                        onAnswered = accountViewModel::refreshFriendsFor,
                         onOpenCircle = {
                             circleFromInbox = true
                             page = SocialPage.CIRCLE
@@ -250,7 +257,7 @@ fun SocialScreen(
                             }
                         }
                     }
-                    SocialPage.FIND -> AccountScreen(onBack = {}, findOnly = true)
+                    SocialPage.FIND -> AccountScreen(onBack = {}, findOnly = true, viewModel = accountViewModel)
                     SocialPage.HUB -> Unit
                 }
             }
@@ -305,6 +312,7 @@ fun SocialScreen(
                         GuildTab.BOARD -> LeaderboardScreen(onOpenBoard = onOpenBoard)
                         GuildTab.ALLIES -> AccountScreen(
                             onBack = {},
+                            viewModel = accountViewModel,
                             onOpenLifter = onOpenLifter,
                             onOpenMissives = { page = SocialPage.INBOX },
                             onOpenCircle = { page = SocialPage.CIRCLE },

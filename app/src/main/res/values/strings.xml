@@ -6442,6 +6442,8 @@
     <string name="lifter_xp_gain">+%1$s XP</string>
     <!-- Average workouts per week. %1$s is a number with one decimal, such as "2.5". -->
     <string name="lifter_summary_per_week">%1$s a week</string>
+    <string name="lifter_summary_recent">From up to 20 recent shared workouts. Weekly rate covers the last 28 days.</string>
+    <string name="lifter_summary_recent__t">From up to 20 recent shared trials. Weekly rate covers the last 28 days.</string>
     <string name="lifter_summary_last_today">last workout today</string>
     <string name="lifter_summary_last_today__t">last trial today</string>
     <string name="lifter_summary_last_yesterday">last workout yesterday</string>

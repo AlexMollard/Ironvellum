@@ -3,13 +3,16 @@ import { hiddenName } from '../../components/hiddenName.js';
 import { explain } from '../../explain.js';
 import { t, format, word } from '../../i18n.js';
 import { timeAgo } from '../../components/feedCard.js';
+import { commentThread } from '../../components/commentThread.js';
+import { workoutSets } from '../../components/folio.js';
 
 /** The phone's `Inbox.unread` rule, pinned by parity cases it generated: unread when never seen, or newer than the last visit. */
 export const unreadCount = (items, seenAtMs) => items.filter(i => seenAtMs == null || i.occurredAtMs > seenAtMs).length;
 
 const REACTION_WORD = { salute: 'feed_reaction_honour', iron: 'feed_reaction_iron', flame: 'feed_reaction_flame' };
 const SECTIONS = [['requests', item => item.kind === 'request', () => `${word('Friend', 'concept_ally_c')} requests`],
-  ['yours', item => ['comment', 'reply', 'reaction'].includes(item.kind), () => 'On your workouts'],
+  ['yours', item => ['comment', 'reaction'].includes(item.kind), () => 'On your workouts'],
+  ['replies', item => item.kind === 'reply', () => 'Replies to your comments'],
   ['circle', item => item.kind.startsWith('circle_'), () => word('Group', 'concept_circle_c')],
   ['friends', item => item.kind === 'accepted', () => word('Friends', 'concept_ally_cpl')]];
 
@@ -35,8 +38,20 @@ export function itemLine(item) {
  * The inbox: the same one the phone shows, derived on the server (`my_inbox`), so opening it here clears the phone's badge too (the
  * page says so). Opening calls `mark_inbox_seen` once, after the unread markers are drawn; a background refresh never does.
  */
-export async function renderInbox(root, ctx) {
-  const { social, router, nowMs = Date.now(), setInboxUnread } = ctx;
+export async function renderInbox(root, ctx, sessionId) {
+  const { social, router, nowMs = Date.now(), setInboxUnread, source, snapshot } = ctx;
+  if (sessionId) {
+    root.append(link('‹ Inbox', '/friends/inbox', router));
+    try {
+      const workout = await social.lifterWorkout(sessionId);
+      root.append(node('h2', workout.headline || word('workout', 'concept_trial_s')));
+      const details = node('div', null, 'folio-sets'); root.append(details);
+      workoutSets(details, workout, snapshot);
+      const thread = node('div'); root.append(thread);
+      await commentThread(thread, { social, sessionId, me: source.userId, ownWorkout: workout.userId === source.userId, explain });
+    } catch (error) { root.append(node('p', error?.name === 'WorkoutHidden' ? t('cloud_sync_trial_hidden') : explain(error), 'notice')); }
+    return;
+  }
   const body = node('div', null, 'inbox'), status = friendsNotice('status');
   root.append(body, status, node('p', 'One inbox, two windows: reading it here clears it in the app too. There are no push messages or emails.', 'muted inbox-note'));
   let answered = new Set();
@@ -52,8 +67,7 @@ export async function renderInbox(root, ctx) {
     const el = node('div', null, 'inbox-item'); el.dataset.kind = item.kind;
     const unread = seenAtMs == null || item.occurredAtMs > seenAtMs;
     if (unread) { const dot = node('span', null, 'inbox-dot'); dot.setAttribute('role', 'img'); dot.setAttribute('aria-label', t('inbox_unread_description')); el.append(dot); }
-    // Where the item points: your workout for a comment or kudos on it, the folio of someone who accepted, the Group page for its own news.
-    const path = item.sessionId && ['comment', 'reply', 'reaction'].includes(item.kind) ? `/workouts/synced/${encodeURIComponent(item.sessionId)}` : item.kind === 'accepted' ? `/friends/allies/${encodeURIComponent(item.actorId)}` : item.kind.startsWith('circle_') ? '/friends/circle' : null;
+    const path = item.kind === 'reply' && item.sessionId ? `/friends/inbox/${encodeURIComponent(item.sessionId)}` : item.sessionId && ['comment', 'reaction'].includes(item.kind) ? `/workouts/synced/${encodeURIComponent(item.sessionId)}` : item.kind === 'accepted' ? `/friends/allies/${encodeURIComponent(item.actorId)}` : item.kind.startsWith('circle_') && item.kind !== 'circle_removed' ? '/friends/circle' : null;
     if (path && router) el.classList.add('is-link');
     const text = node('div', null, 'inbox-text'); const line = path && router ? link('', path, router, 'inbox-link stretch') : node('div'); line.append(node('strong', hiddenName(item.actorName)), ` ${itemLine(item)}`);
     text.append(line);

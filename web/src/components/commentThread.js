@@ -30,12 +30,13 @@ export function commentThread(root, { social, sessionId, me, ownWorkout, explain
   const post = node('button', t('comments_send_button'), 'primary-small'); post.type = 'submit';
   form.append(input, node('div', null, 'comment-form-row')); form.lastChild.append(counter, post);
   root.append(list, status, form);
-  let comments = [];
+  let comments = [], loaded = false, reading = false;
+  const added = new Map(), deleted = new Set();
 
   const say = text => { status.textContent = text; };
   const draw = () => {
     list.replaceChildren();
-    if (!comments.length) list.append(node('p', t('comments_empty'), 'muted'));
+    if (loaded && !comments.length) list.append(node('p', t('comments_empty'), 'muted'));
     for (const c of comments) {
       const item = node('div', null, 'comment'); item.dataset.id = c.id;
       const head = node('div', null, 'comment-head'); head.append(node('strong', c.userId === me ? t('comments_you') : hiddenName(c.authorName)), node('span', ago(c.createdAtMs), 'muted'));
@@ -44,13 +45,13 @@ export function commentThread(root, { social, sessionId, me, ownWorkout, explain
       if (c.userId !== me) actions.append(button(t('comments_report_button'), () => askReport(c, item), 'comment-report'));
       head.append(actions); item.append(head, node('p', c.body, 'comment-body')); list.append(item);
     }
-    onCount?.(comments.length);
+    if (loaded) onCount?.(comments.length);
   };
   const button = (text, run, cls) => { const b = node('button', text, `link-button ${cls}`); b.type = 'button'; b.addEventListener('click', run); return b; };
   const askDelete = (c, item) => {
     item.querySelector('.panel')?.remove();
     item.append(confirmPanel({ title: t('comments_delete_title'), body: t('comments_delete_body'), confirmLabel: t('comments_delete_button'), cancelLabel: t('comments_keep_button'), explain: error => (error?.name === 'CommentGone' ? t('cloud_remark_gone') : explain(error)),
-      onConfirm: async () => { await social.deleteComment(c.id); comments = comments.filter(x => x.id !== c.id); draw(); }, onCancel: () => item.querySelector('.panel')?.remove() }));
+      onConfirm: async () => { await social.deleteComment(c.id); deleted.add(c.id); added.delete(c.id); comments = comments.filter(x => x.id !== c.id); draw(); }, onCancel: () => item.querySelector('.panel')?.remove() }));
   };
   const askReport = (c, item) => {
     item.querySelector('.panel')?.remove();
@@ -62,9 +63,21 @@ export function commentThread(root, { social, sessionId, me, ownWorkout, explain
     event.preventDefault(); say('');
     const problem = commentProblem(input.value); if (problem) { say(problem); return; }
     post.disabled = true;
-    try { const added = await social.addComment(sessionId, input.value.trim()); comments = [...comments, added]; input.value = ''; counter.textContent = `0 / ${COMMENT_MAX}`; draw(); }
+    try { const item = await social.addComment(sessionId, input.value.trim()); added.set(item.id, item); comments = [...comments, item]; input.value = ''; counter.textContent = `0 / ${COMMENT_MAX}`; draw(); }
     catch (error) { say(explain(error)); }
     finally { post.disabled = false; }
   });
-  return social.comments(sessionId).then(rows => { comments = rows.slice(0, COMMENT_LIMIT); draw(); }, error => { say(explain(error)); draw(); });
+  const load = async () => {
+    if (reading) return;
+    reading = true; retry.hidden = true; say('');
+    try {
+      const rows = await social.comments(sessionId);
+      const merged = new Map(rows.slice(0, COMMENT_LIMIT).filter(c => !deleted.has(c.id)).map(c => [c.id, c]));
+      for (const [id, item] of added) merged.set(id, item);
+      comments = [...merged.values()]; loaded = true; draw();
+    } catch (error) { say(explain(error)); retry.hidden = false; }
+    finally { reading = false; }
+  };
+  const retry = button('Retry', load, 'comment-retry'); retry.hidden = true; status.after(retry);
+  return load();
 }

@@ -176,6 +176,7 @@ class FeedViewModel internal constructor(
     private var pageJob: Job? = null
     private val reactionCallsInFlight = mutableSetOf<String>()
     private val reactionOverrides = mutableMapOf<String, Reaction?>()
+    private val reactionBaselines = mutableMapOf<String, FeedEntry>()
 
     private fun initialUi(owner: SocialOwner) = FeedUi(
         configured = owner.backend != null, signedIn = owner.userId != null, myUserId = owner.userId,
@@ -198,6 +199,7 @@ class FeedViewModel internal constructor(
         oldestMs = null
         reactionCallsInFlight.clear()
         reactionOverrides.clear()
+        reactionBaselines.clear()
         _ui.value = initialUi(next)
         return true
     }
@@ -226,6 +228,9 @@ class FeedViewModel internal constructor(
                 val page = gateway.feed(limit = pageSize, force = force).getOrThrow()
                 if (!current(expected, scope) || generation != readGeneration) return@launch
                 oldestMs = page.mapNotNull { it.completedAtMs }.minOrNull()
+                page.forEach { entry ->
+                    if (entry.sessionId in reactionCallsInFlight) reactionBaselines[entry.sessionId] = entry
+                }
                 val entries = if (reactionOverrides.isEmpty()) page else page.map { entry ->
                     if (reactionOverrides.containsKey(entry.sessionId)) entry.withReaction(reactionOverrides[entry.sessionId]) else entry
                 }
@@ -257,6 +262,7 @@ class FeedViewModel internal constructor(
         val scope = requests
         val hadOverride = reactionOverrides.containsKey(entry.sessionId)
         val previousOverride = reactionOverrides[entry.sessionId]
+        reactionBaselines[entry.sessionId] = before
         reactionCallsInFlight += entry.sessionId
         reactionOverrides[entry.sessionId] = reaction
         _ui.value = _ui.value.copy(reactionErrors = _ui.value.reactionErrors - entry.sessionId)
@@ -267,18 +273,27 @@ class FeedViewModel internal constructor(
             } catch (error: CancellationException) {
                 if (current(expected, scope) && scope.isActive) {
                     if (hadOverride) reactionOverrides[entry.sessionId] = previousOverride else reactionOverrides.remove(entry.sessionId)
-                    replaceEntry(entry.sessionId) { it.copy(myReaction = before.myReaction, likedByMe = before.likedByMe, reactions = before.reactions, likeCount = before.likeCount) }
+                    replaceEntry(entry.sessionId) { current ->
+                        val baseline = reactionBaselines[entry.sessionId] ?: before
+                        current.copy(myReaction = baseline.myReaction, likedByMe = baseline.likedByMe, reactions = baseline.reactions, likeCount = baseline.likeCount)
+                    }
                     _ui.value = _ui.value.copy(reactionErrors = _ui.value.reactionErrors + (entry.sessionId to UiText.res(R.string.feed_unknown_failure)))
                 }
                 throw error
             } catch (error: Exception) {
                 if (current(expected, scope)) {
                     if (hadOverride) reactionOverrides[entry.sessionId] = previousOverride else reactionOverrides.remove(entry.sessionId)
-                    replaceEntry(entry.sessionId) { it.copy(myReaction = before.myReaction, likedByMe = before.likedByMe, reactions = before.reactions, likeCount = before.likeCount) }
+                    replaceEntry(entry.sessionId) { current ->
+                        val baseline = reactionBaselines[entry.sessionId] ?: before
+                        current.copy(myReaction = baseline.myReaction, likedByMe = baseline.likedByMe, reactions = baseline.reactions, likeCount = baseline.likeCount)
+                    }
                     _ui.value = _ui.value.copy(reactionErrors = _ui.value.reactionErrors + (entry.sessionId to error.reason()))
                 }
             } finally {
-                if (current(expected, scope)) reactionCallsInFlight -= entry.sessionId
+                if (current(expected, scope)) {
+                    reactionCallsInFlight -= entry.sessionId
+                    reactionBaselines.remove(entry.sessionId)
+                }
             }
         }
     }
@@ -327,6 +342,9 @@ class FeedViewModel internal constructor(
             try {
                 val page = gateway.feed(limit = pageSize, beforeMs = cursor).getOrThrow()
                 if (!current(expected, scope) || generation != readGeneration) return@launch
+                page.forEach { entry ->
+                    if (entry.sessionId in reactionCallsInFlight) reactionBaselines[entry.sessionId] = entry
+                }
                 val known = _ui.value.entries.map { it.sessionId }.toSet()
                 val additions = page.mapNotNull { entry ->
                     when {

@@ -5076,6 +5076,8 @@
     </plurals>
     <string name="lifter_xp_gain">+%1$s XP</string>
     <string name="lifter_summary_per_week">週に%1$s</string>
+    <string name="lifter_summary_recent">最近共有されたワークアウト（最大20件）。週平均は過去28日間が対象です。</string>
+    <string name="lifter_summary_recent__t">最近共有された試練（最大20件）。週平均は過去28日間が対象です。</string>
     <string name="lifter_summary_last_today">前回のワークアウト: 今日</string>
     <string name="lifter_summary_last_today__t">前回の試練: 今日</string>
     <string name="lifter_summary_last_yesterday">前回のワークアウト: 昨日</string>

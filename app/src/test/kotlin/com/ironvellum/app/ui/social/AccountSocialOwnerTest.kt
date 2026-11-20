@@ -127,4 +127,24 @@ class AccountSocialOwnerTest {
         assertTrue(vm.ui.value.friends.isEmpty())
         assertEquals(revision, vm.ui.value.friendsRevision)
     }
+
+    @Test fun inboxAnswerRefreshesOnlyTheMatchingRetainedOwner() {
+        val gateway = Gateway()
+        val vm = AccountViewModel(AccountRepository(), gateway)
+        val owner = gateway.owner()
+        gateway.friendResult = Result.success(listOf(FriendRow("ally", "Ally", true, false)))
+        vm.refreshFriendsFor(owner)
+        assertTrue(vm.ui.value.friends.single().accepted)
+        val calls = gateway.friendForces.size
+        vm.refreshFriendsFor(SocialOwner("other", owner.backend))
+        assertEquals(calls, gateway.friendForces.size)
+    }
+
+    @Test fun invitationRequiresKnownBlockListAndRefusesOwnBlock() {
+        val ui = AccountUi(friendsLoaded = true)
+        assertFalse(canInvite(ui, "ally"))
+        val loaded = ui.copy(blockedLoaded = true, blocked = listOf(BlockedLifter("ally", "Ally")))
+        assertFalse(canInvite(loaded, "ally"))
+        assertTrue(canInvite(loaded, "someone-else"))
+    }
 }

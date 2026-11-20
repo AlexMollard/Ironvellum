@@ -162,7 +162,7 @@ internal data class InboxUi(
     val signedIn: Boolean get() = owner.userId != null
 }
 
-internal class InboxViewModel(private val gateway: InboxGateway) : ViewModel() {
+internal class InboxViewModel(private val gateway: InboxGateway, private val onAnswered: (SocialOwner) -> Unit = {}) : ViewModel() {
     private var owner = gateway.owner()
     private var requests = requestScope()
     private val _ui = MutableStateFlow(InboxUi(owner = owner))
@@ -264,6 +264,7 @@ internal class InboxViewModel(private val gateway: InboxGateway) : ViewModel() {
                 if (!current(expected, scope)) return@launch
                 if (answered) {
                     _ui.value = _ui.value.copy(answered = _ui.value.answered + (userId to answer))
+                    onAnswered(expected)
                 } else {
                     // A read started before the conditional delete can still contain the stale request.
                     _ui.first { !it.loading }
@@ -293,12 +294,13 @@ internal fun InboxScreen(
     onOpenComments: (sessionId: String, ownerId: String, headline: String) -> Unit,
     /** A circle missive opens the circle itself, not the member's profile. */
     onOpenCircle: () -> Unit,
+    onAnswered: (SocialOwner) -> Unit = {},
     /** False while the page is only peeking in during a swipe: reading the inbox waits for the visit. */
     active: Boolean = true,
     viewModel: InboxViewModel = viewModel(
         factory = viewModelFactory {
             initializer {
-                InboxViewModel(CloudInboxGateway(this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as IronvellumApp))
+                InboxViewModel(CloudInboxGateway(this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as IronvellumApp), onAnswered)
             }
         },
     ),
@@ -521,18 +523,19 @@ private fun InboxRow(
             CircleChange.REMOVED -> UiText.res(R.string.inbox_line_circle_removed, item.circleName)
         }
     }
-    val open: () -> Unit = when (item) {
+    val open: (() -> Unit)? = when (item) {
         is InboxItem.NewComment -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout(), true) } }
         is InboxItem.NewReply -> { { onOpenComments(item.sessionId, item.sessionHeadline.ifBlank { Words.trial.a }, false) } }
         is InboxItem.NewReaction -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout(), true) } }
-        is InboxItem.NewCircleMember, is InboxItem.CircleGoalMet, is InboxItem.CircleNotice -> onOpenCircle
+        is InboxItem.NewCircleMember, is InboxItem.CircleGoalMet -> onOpenCircle
+        is InboxItem.CircleNotice -> null
         else -> onOpenLifter
     }
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 52.dp)
-            .clickable(role = Role.Button, onClick = open)
+            .then(if (open != null) Modifier.clickable(role = Role.Button, onClick = open) else Modifier)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),

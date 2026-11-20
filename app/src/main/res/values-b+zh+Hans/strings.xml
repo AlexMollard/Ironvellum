@@ -5076,6 +5076,8 @@
     </plurals>
     <string name="lifter_xp_gain">+%1$s XP</string>
     <string name="lifter_summary_per_week">每周 %1$s</string>
+    <string name="lifter_summary_recent">基于最近分享的最多20次训练。每周频率按过去28天计算。</string>
+    <string name="lifter_summary_recent__t">基于最近分享的最多20次试炼。每周频率按过去28天计算。</string>
     <string name="lifter_summary_last_today">上次训练：今天</string>
     <string name="lifter_summary_last_today__t">上次试炼：今天</string>
     <string name="lifter_summary_last_yesterday">上次训练：昨天</string>

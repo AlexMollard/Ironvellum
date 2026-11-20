@@ -5712,6 +5712,8 @@
     </plurals>
     <string name="lifter_xp_gain">+%1$s XP</string>
     <string name="lifter_summary_per_week">%1$s por semana</string>
+    <string name="lifter_summary_recent">Hasta 20 entrenamientos compartidos recientes. La media semanal abarca los últimos 28 días.</string>
+    <string name="lifter_summary_recent__t">Hasta 20 pruebas compartidas recientes. La media semanal abarca los últimos 28 días.</string>
     <string name="lifter_summary_last_today">último entrenamiento hoy</string>
     <string name="lifter_summary_last_today__t">última prueba hoy</string>
     <string name="lifter_summary_last_yesterday">último entrenamiento ayer</string>

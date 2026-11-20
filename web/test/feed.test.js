@@ -109,6 +109,22 @@ describe('comments', () => {
   };
   const send = async (root, text) => { const box = root.querySelector('textarea'); box.value = text; box.dispatchEvent(new Event('input')); root.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true })); await wait(); await wait(); };
   const comment = (over = {}) => ({ id: 'c1', session_id: 's1', user_id: 'u1', author_name: 'Mara', body: 'Strong', created_at: '2026-10-28T11:30:00Z', ...over });
+  it('keeps a known count on read failure and retries without claiming empty', async () => {
+    const root = document.createElement('div'), onCount = vi.fn(), social = { comments: vi.fn().mockRejectedValueOnce(new Error('Offline')).mockResolvedValueOnce([]) };
+    await commentThread(root, { social, sessionId: 's1', me: 'me', explain: e => e.message, onCount });
+    expect(root.textContent).toContain('Offline'); expect(root.textContent).not.toContain(t('comments_empty'));
+    expect(onCount).not.toHaveBeenCalled();
+    click(root.querySelector('.comment-retry')); await wait();
+    expect(onCount).toHaveBeenLastCalledWith(0); expect(root.textContent).toContain(t('comments_empty'));
+  });
+  it('preserves posts made while the initial read is pending', async () => {
+    let resolve; const pending = new Promise(r => { resolve = r; });
+    const root = document.createElement('div'), onCount = vi.fn();
+    const social = { comments: () => pending, addComment: async () => ({ id: 'new', userId: 'me', body: 'New post', createdAtMs: Date.now() }) };
+    const loading = commentThread(root, { social, sessionId: 's1', me: 'me', explain: e => e.message, onCount });
+    await send(root, 'New post'); resolve([]); await loading;
+    expect(root.textContent).toContain('New post'); expect(onCount).toHaveBeenLastCalledWith(1);
+  });
 
   it('postingACommentSendsOnlyThreeColumns', async () => {
     const { root, client } = await thread({ session_comments: call => (call.op === 'insert' ? comment({ id: 'c9', user_id: 'me', author_name: 'Me', body: 'Nice' }) : []) });

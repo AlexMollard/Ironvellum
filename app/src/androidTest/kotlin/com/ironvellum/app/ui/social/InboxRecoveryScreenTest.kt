@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.onNodeWithText
@@ -19,6 +21,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.cloud.CircleChange
 import com.ironvellum.app.data.cloud.Inbox
 import com.ironvellum.app.data.cloud.InboxItem
 import com.ironvellum.app.ui.ShotRecorder
@@ -27,6 +30,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
 import org.junit.Before
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -107,5 +112,48 @@ class InboxRecoveryScreenTest {
         unread.assertIsSelected()
         compose.onNodeWithText("New Ally", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Original Ally", substring = true).assertIsDisplayed()
+    }
+
+    @Test fun historicalCircleEventsAreInformational() {
+        val gateway = object : InboxGateway {
+            override val owners = MutableStateFlow(SocialOwner("me", "isolated"))
+            override fun owner() = owners.value
+            override suspend fun read(force: Boolean) = Result.success(Inbox(listOf(
+                InboxItem.CircleNotice(200, "one", "Removed Person", "Old Circle", CircleChange.REMOVED),
+                InboxItem.CircleNotice(199, "two", "Left Person", "Old Circle", CircleChange.LEFT),
+                InboxItem.CircleNotice(198, "three", "Keeper Person", "Old Circle", CircleChange.KEEPER),
+                InboxItem.NewCircleMember(197, "four", "Joined Person", "Current Circle"),
+                InboxItem.CircleGoalMet(196, "five", "Goal Person", "Current Circle"),
+            ), 200))
+            override suspend fun markSeen(owner: SocialOwner) = Result.success(Unit)
+            override suspend fun accept(userId: String) = Result.success(Unit)
+            override suspend fun decline(userId: String, owner: SocialOwner) = Result.success(true)
+            override fun dismissReadNotification(owner: SocialOwner, throughMs: Long) = Unit
+        }
+        val vm = InboxViewModel(gateway)
+        compose.setContent {
+            IronvellumTheme(light = false) {
+                InboxScreen(onOpenLifter = { _, _ -> }, onOpenComments = { _, _, _ -> }, onOpenCircle = {}, viewModel = vm)
+            }
+        }
+        listOf("Removed Person", "Left Person", "Keeper Person").forEach {
+            compose.onNodeWithText(it).assertHasNoClickAction()
+        }
+        compose.onNodeWithText("Joined Person").assertHasClickAction()
+        compose.onNodeWithText("Goal Person").assertHasClickAction()
+    }
+
+    @Test fun outgoingNamesAreScopedByBackendOwnerAndRecipient() {
+        val prefs = context.getSharedPreferences("inbox_notifier", android.content.Context.MODE_PRIVATE)
+        val key = outgoingNameKey("test-backend", "test-owner", "test-recipient")
+        try {
+            prefs.edit().putString(key, "Resolved Name").commit()
+            assertEquals("Resolved Name", prefs.getString(key, null))
+            assertNull(prefs.getString(outgoingNameKey("other-backend", "test-owner", "test-recipient"), null))
+            assertNull(prefs.getString(outgoingNameKey("test-backend", "other-owner", "test-recipient"), null))
+            assertNull(prefs.getString(outgoingNameKey("test-backend", "test-owner", "other-recipient"), null))
+        } finally {
+            prefs.edit().remove(key).commit()
+        }
     }
 }

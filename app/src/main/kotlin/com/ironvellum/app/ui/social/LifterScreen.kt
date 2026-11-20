@@ -44,6 +44,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.cloud.AccountRepository
+import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.FriendSession
 import com.ironvellum.app.data.cloud.ReportReason
@@ -83,11 +84,10 @@ internal data class LifterUi(
     val allyBusy: Boolean = false,
     /** The ally-status read itself failed; shown as a banner, button stays hidden. */
     val allyError: UiText? = null,
-    /** Worn title resolved locally from the leaderboard cache; null when bare or unknown. */
+    val displayName: String? = null,
+    val level: Int? = null,
+    val profileResolved: Boolean = false,
     val wornTitle: String? = null,
-    /** The raw title id behind [wornTitle]; feeds the avatar crest's rarity palette. */
-    val wornTitleId: String? = null,
-    /** The crest they wear, from the same leaderboard row; null when bare or unknown. */
     val wornCrestId: String? = null,
     /** Null while unknown: the mute button stays hidden rather than guessing. */
     val muted: Boolean? = null,
@@ -108,40 +108,54 @@ internal class LifterViewModel(
 
     private val _ui = MutableStateFlow(LifterUi())
     val ui: StateFlow<LifterUi> = _ui.asStateFlow()
+    private var loadGeneration = 0L
 
     // Device-local equipped crest frame; only worn when viewing one's own profile.
     val equippedFrame: StateFlow<String?> = repo.observeEquippedFrame()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun load(userId: String) {
+        val generation = ++loadGeneration
         if (userId.isBlank()) {
             _ui.value = LifterUi(loading = false, error = UiText.themed(R.string.lifter_none_selected, R.string.lifter_none_selected__t))
             return
         }
-        _ui.value = LifterUi(myUserId = accountRepo.account.value?.userId)
+        val accountId = accountRepo.account.value?.userId
+        val backend = Cloud.requireConfigured.getOrNull()
+        fun current() = generation == loadGeneration &&
+            accountRepo.account.value?.userId == accountId && Cloud.requireConfigured.getOrNull() === backend
+        _ui.value = LifterUi(myUserId = accountId)
         viewModelScope.launch {
-            _ui.value = _ui.value.copy(loading = true, error = null)
-            cloud.friendSessions(userId)
-                .onSuccess { _ui.value = _ui.value.copy(loading = false, sessions = it) }
+            val profile = cloud.visibleProfile(userId).getOrNull()
+            if (!current()) return@launch
+            if (profile != null) {
+                _ui.value = _ui.value.copy(
+                    displayName = profile.displayName.takeIf { it.isNotBlank() },
+                    profileResolved = true,
+                    level = profile.level,
+                    wornTitle = Titles.displayName(profile.currentTitleId),
+                    wornCrestId = profile.currentCrestId,
+                )
+            }
+        }
+        viewModelScope.launch {
+            val sessions = cloud.friendSessions(userId)
+            if (!current()) return@launch
+            sessions.onSuccess { _ui.value = _ui.value.copy(loading = false, sessions = it) }
                 .onFailure {
                     _ui.value = _ui.value.copy(
                         loading = false,
-                        // The real reason, not "failed" — RLS refusals read very
-                        // differently from being offline.
                         error = it.reasonText(UiText.res(R.string.lifter_unknown_error)),
                     )
                 }
-            refreshSocial(userId)
+            refreshSocial(userId, ::current)
         }
     }
 
-    /**
-     * Ally state and worn title ride on cached reads (friends has a 30s TTL,
-     * and the board tab usually already warmed the leaderboard row), so
-     * visiting a lifter costs no extra server chatter.
-     */
-    private suspend fun refreshSocial(userId: String) {
-        cloud.friends().onSuccess { rows ->
+    private suspend fun refreshSocial(userId: String, current: () -> Boolean) {
+        val friends = cloud.friends()
+        if (!current()) return
+        friends.onSuccess { rows ->
             val row = rows.firstOrNull { it.userId == userId }
             val state = when {
                 row == null -> AllyState.None
@@ -158,20 +172,10 @@ internal class LifterViewModel(
                 allyBusy = false,
             )
         }
-        cloud.leaderboard().onSuccess { rows ->
-            // The lifter's worn title comes from their leaderboard row; the id is
-            // kept too so the crest can show its rarity.
-            val ally = rows.firstOrNull { it.userId == userId }
-            val titleId = ally?.currentTitleId
-            _ui.value = _ui.value.copy(
-                wornTitle = Titles.displayName(titleId),
-                wornTitleId = titleId,
-                wornCrestId = ally?.crestId,
-            )
-        }
         // Unknown on failure: a guessed "not muted" would offer MUTE to someone
         // already muted, and the second insert reads as a broken button.
-        cloud.mutedIds().onSuccess { ids -> _ui.value = _ui.value.copy(muted = userId in ids) }
+        val muted = cloud.mutedIds()
+        if (current()) muted.onSuccess { ids -> _ui.value = _ui.value.copy(muted = userId in ids) }
     }
 
     /** Send the ally request; the button settles from server truth once it lands. */
@@ -259,7 +263,8 @@ internal fun LifterScreen(
     var confirmRemove by remember { mutableStateOf(false) }
     var confirmBlock by remember { mutableStateOf(false) }
     var reporting by remember { mutableStateOf(false) }
-    val named = displayName.isNotBlank()
+    val resolvedName = ui.displayName ?: displayName
+    val named = resolvedName.isNotBlank()
     val canManage = ui.myUserId != null && !isMe
 
     Column(
@@ -275,13 +280,13 @@ internal fun LifterScreen(
         // settled states are InkMuted text so they never read as a button. Unknown until the
         // friends read answers: nothing is shown, never a premature offer.
         IdentityRow(
-            displayName = displayName,
+            displayName = resolvedName,
             userId = userId,
             wornTitle = ui.wornTitle,
-            level = null, // level is not in LifterUi; omitted rather than fetched
+            level = ui.level,
             size = IdentitySize.Hero,
             isMe = isMe,
-            frameId = if (isMe) equippedFrame else ui.wornCrestId,
+            frameId = if (ui.profileResolved || !isMe) ui.wornCrestId else equippedFrame,
             trailing = if (canManage) {
                 {
                     when (ui.allyState) {
@@ -369,6 +374,11 @@ internal fun LifterScreen(
                         )
                     }
                 }.joinToString(" · ")
+                Text(
+                    UiText.themed(R.string.lifter_summary_recent, R.string.lifter_summary_recent__t).asString(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
                 Text(
                     summary,
                     style = MaterialTheme.typography.bodySmall,
@@ -486,7 +496,7 @@ internal fun LifterScreen(
             title = {
                 Text(
                     if (named) {
-                        UiText.themed(R.string.lifter_remove_title, R.string.lifter_remove_title__t, displayName).asString()
+                        UiText.themed(R.string.lifter_remove_title, R.string.lifter_remove_title__t, resolvedName).asString()
                     } else {
                         UiText.themed(R.string.lifter_remove_title_unnamed, R.string.lifter_remove_title_unnamed__t).asString()
                     },
@@ -511,7 +521,7 @@ internal fun LifterScreen(
             title = {
                 Text(
                     if (named) {
-                        stringResource(R.string.lifter_block_title, displayName)
+                        stringResource(R.string.lifter_block_title, resolvedName)
                     } else {
                         UiText.themed(R.string.lifter_block_title_unnamed, R.string.lifter_block_title_unnamed__t).asString()
                     },
@@ -520,7 +530,7 @@ internal fun LifterScreen(
             text = {
                 Text(
                     if (named) {
-                        UiText.themed(R.string.lifter_block_body, R.string.lifter_block_body__t, displayName).asString()
+                        UiText.themed(R.string.lifter_block_body, R.string.lifter_block_body__t, resolvedName).asString()
                     } else {
                         UiText.themed(R.string.lifter_block_body_unnamed, R.string.lifter_block_body_unnamed__t).asString()
                     },
@@ -540,7 +550,7 @@ internal fun LifterScreen(
 
     if (reporting) {
         ReportDialog(
-            lifterName = displayName,
+            lifterName = resolvedName,
             onDismiss = { reporting = false },
             onSend = { reason, note ->
                 reporting = false

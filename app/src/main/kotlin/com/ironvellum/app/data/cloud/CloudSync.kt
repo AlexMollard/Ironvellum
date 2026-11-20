@@ -40,6 +40,7 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.postgrest.query.Count
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -1580,11 +1581,51 @@ class CloudSync private constructor(
             // Optimistic: record the overlay the feed applies at hand-out —
             // this also covers older paged entries, which are never cached.
             cache.recordReaction(sessionId, reaction)
-            // The owner's reactions dialog must show the fresh one, not a
-            // 30s-old cached list.
             cache.invalidate("${CloudReadCache.KEY_LIKERS}:$sessionId")
             Unit
         }.recoverCatching { error ->
+            throw MessageException(Cloud.explain(error), error)
+        }
+    }
+
+    internal suspend fun reactionSummary(sessionId: String): Result<Pair<Map<Reaction, Int>, Reaction?>> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return attempt {
+            account.withAccount(me.userId) {
+                if (Cloud.requireConfigured.getOrNull() !== client) throw CancellationException("Reaction backend changed")
+                val entry = client.postgrest.from("public_feed").select {
+                    filter { eq("session_id", sessionId) }
+                }.decodeList<FeedEntryDto>().firstOrNull()?.toFeedEntry()
+                if (entry != null) return@withAccount entry.reactions to entry.myReaction
+
+                // A muted lifter's workout can still be visible outside Feed.
+                val visible = client.postgrest.from("sessions").select(Columns.list("id")) {
+                    filter { eq("id", sessionId) }
+                }.decodeList<JsonObject>().isNotEmpty()
+                if (!visible) throw MessageException(cloudThemed(R.string.cloud_sync_trial_hidden, R.string.cloud_sync_trial_hidden__t))
+                val counts = Reaction.entries.associateWith { reaction ->
+                    val count = client.postgrest.from("session_likes").select {
+                        head = true
+                        count(Count.EXACT)
+                        filter {
+                            eq("session_id", sessionId)
+                            eq("kind", reaction.wire)
+                        }
+                    }.countOrNull() ?: error("Missing reaction count")
+                    count.toInt()
+                }
+                val mine = client.postgrest.from("session_likes").select {
+                    filter {
+                        eq("session_id", sessionId)
+                        eq("user_id", me.userId)
+                    }
+                    limit(1)
+                }.decodeList<SessionLikeDto>().firstOrNull()
+                counts to Reaction.fromWire(mine?.kind)
+            }
+        }.recoverCatching { error ->
+            if (error is MessageException) throw error
             throw MessageException(Cloud.explain(error), error)
         }
     }
@@ -1593,11 +1634,6 @@ class CloudSync private constructor(
      * Who reacted to a session, newest first. One PostgREST embed
      * (session_likes -> profiles) so the owner sees names without a second
      * round trip. An RLS refusal is a visibility answer, worded as such.
-     *
-     * TTL 30s, same reasoning as [friends]: reactions arrive only when
-     * someone acts, and our own [react] invalidates the key immediately, so a
-     * just-added reaction is visible the moment the owner opens the dialog
-     * while repeated dialog opens inside 30s share one request.
      */
     suspend fun likers(sessionId: String): Result<List<Liker>> {
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }

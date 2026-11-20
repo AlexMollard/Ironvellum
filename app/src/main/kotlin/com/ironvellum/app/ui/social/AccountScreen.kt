@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -149,6 +150,8 @@ data class AccountUi(
     val backupError: UiText? = null,
     /** Lifters this account blocked; blocked_name is kept server-side because their profile turns unreadable. */
     val blocked: List<BlockedLifter> = emptyList(),
+    val blockedLoaded: Boolean = false,
+    val blockedError: UiText? = null,
 )
 
 internal interface AccountCloudGateway {
@@ -209,7 +212,7 @@ class AccountViewModel internal constructor(
         requests.coroutineContext[kotlinx.coroutines.Job]?.cancel()
         requests = requestScope()
         _ui.value = _ui.value.copy(
-            friends = emptyList(), blocked = emptyList(), friendsLoading = false,
+            friends = emptyList(), blocked = emptyList(), blockedLoaded = false, blockedError = null, friendsLoading = false,
             friendsLoaded = false, friendsError = null, friendsRevision = 0,
             lastBackup = null, backupError = null, lastRestore = null, lastSync = null,
             claimError = null, claimBusy = false, claimSkipped = false, error = null,
@@ -475,6 +478,10 @@ class AccountViewModel internal constructor(
         }
     }
 
+    internal fun refreshFriendsFor(expected: SocialOwner) {
+        if (cloudSync.owner() == expected && owner == expected) refreshFriends()
+    }
+
     fun acceptFriend(userId: String) {
         socialRequest(action = true) { expected, scope ->
             _ui.value = _ui.value.copy(error = null)
@@ -504,9 +511,10 @@ class AccountViewModel internal constructor(
 
     fun refreshBlocked(force: Boolean = false) {
         socialRequest { expected, scope ->
+            if (force) _ui.value = _ui.value.copy(blockedLoaded = false, blockedError = null)
             cloudSync.blocked(force = force)
-                .onSuccess { if (current(expected, scope)) _ui.value = _ui.value.copy(blocked = it) }
-                .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(error = it.reason()) }
+                .onSuccess { if (current(expected, scope)) _ui.value = _ui.value.copy(blocked = it, blockedLoaded = true, blockedError = null) }
+                .onFailure { if (current(expected, scope)) _ui.value = _ui.value.copy(blockedError = it.reason(), error = it.reason()) }
         }
     }
 
@@ -550,6 +558,9 @@ fun AccountScreen(
     // own scroll container — a PullToRefreshBox nested inside a verticalScroll
     // Column never sees the drag.
     val signedInAccount = ui.account
+    LaunchedEffect(findOnly, signedInAccount?.userId, cloudConfigured) {
+        if (findOnly && signedInAccount != null && cloudConfigured) viewModel.refreshBlocked(force = true)
+    }
     if (cloudConfigured && signedInAccount != null) {
         val pullState = rememberPullToRefreshState()
         PullToRefreshBox(
@@ -579,7 +590,7 @@ fun AccountScreen(
                     .verticalScroll(rememberScrollState()),
             ) {
                 if (findOnly) {
-                    AddAllyPanel(signedInAccount.userId, ui, viewModel::refreshFriends)
+                    AddAllyPanel(signedInAccount.userId, ui, viewModel::refreshFriends) { viewModel.refreshBlocked(force = true) }
                 } else {
                     SignedInPanels(
                         ui = ui,
@@ -1027,16 +1038,30 @@ private fun SignedInPanels(
 
 @Composable
 private fun OutgoingRequests(friends: List<FriendRow>) {
+    val context = LocalContext.current
+    val account = (context.applicationContext as IronvellumApp).accountRepository.account.collectAsStateWithLifecycle().value
+    val backend = Cloud.config.collectAsStateWithLifecycle().value?.url
+    val prefs = remember(context) { context.getSharedPreferences("inbox_notifier", android.content.Context.MODE_PRIVATE) }
+    val hidden = com.ironvellum.app.data.cloud.hiddenLifterName()
+    val ownerId = account?.userId
     friends.forEach { friend ->
         if (!friend.incoming && !friend.accepted) {
             ListRow(
-                label = friend.displayName,
+                label = if (friend.displayName == hidden && ownerId != null && backend != null) {
+                    prefs.getString(outgoingNameKey(backend, ownerId, friend.userId), null) ?: friend.displayName
+                } else friend.displayName,
                 subline = stringResource(R.string.lifter_request_pending),
                 icon = Icons.Outlined.PersonAdd,
             )
         }
     }
 }
+
+internal fun outgoingNameKey(backend: String, owner: String, recipient: String): String =
+    "outgoing_name:" + org.json.JSONArray(listOf(backend, owner, recipient)).toString()
+
+internal fun canInvite(ui: AccountUi, userId: String): Boolean =
+    ui.friendsLoaded && ui.blockedLoaded && ui.friends.none { it.userId == userId } && ui.blocked.none { it.userId == userId }
 
 
 /**
@@ -1128,7 +1153,7 @@ private fun ClaimNamePanel(
 }
 
 @Composable
-private fun AddAllyPanel(userId: String, ui: AccountUi, onSent: () -> Unit) {
+private fun AddAllyPanel(userId: String, ui: AccountUi, onSent: () -> Unit, onRetryBlocked: () -> Unit) {
     val currentUi by rememberUpdatedState(ui)
     val app = LocalContext.current.applicationContext as IronvellumApp
     val cloud = app.cloudSync
@@ -1180,26 +1205,39 @@ private fun AddAllyPanel(userId: String, ui: AccountUi, onSent: () -> Unit) {
         SocialErrorBanner(it.asString())
         SocialRefreshLink(onClick = onSent, label = stringResource(R.string.acct_retry_link))
     }
+    ui.blockedError?.let {
+        SocialErrorBanner(it.asString())
+        SocialRefreshLink(onClick = onRetryBlocked, label = stringResource(R.string.acct_retry_link))
+    }
     result?.let { person ->
         val edge = ui.friends.firstOrNull { it.userId == person.id }
         Spacer(Modifier.height(12.dp))
         InkPanel(Modifier.fillMaxWidth()) {
             ListRow(label = person.displayName, leading = { LifterAvatar(person.displayName, 36.dp) })
             when {
+                ui.blocked.any { it.userId == person.id } -> Text(UiText.themed(R.string.acct_blocked_label, R.string.acct_blocked_label__t).asString(), color = IronvellumColors.InkMuted)
                 edge?.accepted == true -> Text(Words.ally.c, color = IronvellumColors.InkMuted)
                 edge != null || sentAtRevision == ui.friendsRevision -> Text(stringResource(R.string.lifter_request_pending), color = IronvellumColors.EmeraldBright)
-                !ui.friendsLoaded -> Unit
+                !canInvite(ui, person.id) -> Unit
                 else -> IronvellumButton(
                     label = stringResource(R.string.acct_invite_button),
                     enabled = !busy,
                     onClick = {
                         scope.launch {
-                            if (!isCurrent() || busy) return@launch
+                            if (!isCurrent() || busy || !canInvite(currentUi, person.id)) return@launch
                             busy = true
                             error = null
                             try {
                                 val outcome = cloud.requestFriendById(person.id)
-                                if (isCurrent()) outcome.onSuccess { sentAtRevision = currentUi.friendsRevision; onSent() }
+                                if (isCurrent()) outcome.onSuccess {
+                                    backend?.url?.let { url ->
+                                        app.getSharedPreferences("inbox_notifier", android.content.Context.MODE_PRIVATE).edit {
+                                            putString(outgoingNameKey(url, userId, person.id), person.displayName)
+                                        }
+                                    }
+                                    sentAtRevision = currentUi.friendsRevision
+                                    onSent()
+                                }
                                     .onFailure { error = it.reasonText(UiText.res(R.string.acct_failure_unknown)) }
                             } finally { busy = false }
                         }

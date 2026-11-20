@@ -225,6 +225,59 @@ class FeedViewModelTest {
         assertEquals(mapOf(Reaction.FLAME to 1, Reaction.IRON to 1), updated.reactions)
     }
 
+    @Test fun failedOrCancelledReactionRestoresLatestDelayedRefreshIncludingUnknownKinds() = runTest {
+        for (cancelled in listOf(false, true)) {
+            val original = entry(1).copy(likeCount = 3, likedByMe = true, reactions = mapOf(Reaction.FLAME to 1))
+            val refreshed = original.copy(likeCount = 6, reactions = mapOf(Reaction.FLAME to 2))
+            val pendingRead = CompletableDeferred<Result<List<FeedEntry>>>()
+            val pendingWrite = CompletableDeferred<Result<Unit>>()
+            var first = true
+            val gateway = Gateway().apply {
+                read = { _, _, _ ->
+                    if (first) { first = false; Result.success(listOf(original)) }
+                    else pendingRead.await()
+                }
+                reaction = { _, _ -> pendingWrite.await() }
+            }
+            val vm = model(gateway)
+            vm.react(original, Reaction.IRON)
+            vm.load(force = true)
+            pendingRead.complete(Result.success(listOf(refreshed)))
+            runCurrent()
+            assertEquals(6, vm.ui.value.entries.single().likeCount)
+            assertEquals(mapOf(Reaction.FLAME to 2, Reaction.IRON to 1), vm.ui.value.entries.single().reactions)
+            pendingWrite.complete(Result.failure(if (cancelled) CancellationException("cancelled") else IllegalStateException("offline")))
+            runCurrent()
+            assertEquals(refreshed, vm.ui.value.entries.single())
+            assertTrue(vm.ui.value.reactionErrors.containsKey(original.sessionId))
+        }
+    }
+
+    @Test fun failedReactionRestoresLatestPagedRowAfterRefreshMovesPost() = runTest {
+        val original = entry(51).copy(likeCount = 2, reactions = mapOf(Reaction.FLAME to 1))
+        val refreshed = original.copy(likeCount = 5, reactions = mapOf(Reaction.FLAME to 3))
+        val pendingWrite = CompletableDeferred<Result<Unit>>()
+        var first = true
+        val gateway = Gateway().apply {
+            read = { _, before, _ ->
+                Result.success(when {
+                    before != null -> (60 downTo 11).map { if (it == 51) refreshed else entry(it) }
+                    first -> { first = false; (100 downTo 51).map { if (it == 51) original else entry(it) } }
+                    else -> (110 downTo 61).map(::entry)
+                })
+            }
+            reaction = { _, _ -> pendingWrite.await() }
+        }
+        val vm = model(gateway)
+        vm.react(original, Reaction.IRON)
+        vm.load(force = true)
+        vm.loadMore()
+        assertEquals(6, vm.ui.value.entries.single { it.sessionId == "51" }.likeCount)
+        pendingWrite.complete(Result.failure(IllegalStateException("offline")))
+        runCurrent()
+        assertEquals(refreshed, vm.ui.value.entries.single { it.sessionId == "51" })
+    }
+
     companion object {
         private fun entry(id: Int) = FeedEntry(
             sessionId = id.toString(), userId = "lifter", displayName = "Lifter", level = 1,

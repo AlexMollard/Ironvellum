@@ -166,6 +166,26 @@ class InboxViewModelTest {
         assertEquals(listOf(200L, 220L), gateway.dismissedThrough)
     }
 
+    @Test fun onlyConfirmedAnswersNotifyTheRetainedRoster() {
+        val gateway = Gateway()
+        val refreshed = mutableListOf<SocialOwner>()
+        val vm = InboxViewModel(gateway) { refreshed += it }
+        models.put("inbox", vm)
+        vm.accept("accepted")
+        assertEquals(listOf(gateway.owner()), refreshed)
+        gateway.declineResult = Result.success(false)
+        vm.decline("stale", "Stale")
+        vm.commitDecline()
+        assertEquals(1, refreshed.size)
+        gateway.answerCall = { Result.failure(IllegalStateException("offline")) }
+        vm.accept("failed")
+        assertEquals(1, refreshed.size)
+        gateway.declineResult = Result.success(true)
+        vm.decline("declined", "Declined")
+        vm.commitDecline()
+        assertEquals(listOf(gateway.owner(), gateway.owner()), refreshed)
+    }
+
     companion object {
         private fun inbox(name: String) = Inbox(listOf(InboxItem.FriendRequest(200, name, name)), null)
     }

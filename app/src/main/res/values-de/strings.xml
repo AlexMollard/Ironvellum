@@ -5394,6 +5394,8 @@
     </plurals>
     <string name="lifter_xp_gain">+%1$s XP</string>
     <string name="lifter_summary_per_week">%1$s pro Woche</string>
+    <string name="lifter_summary_recent">Aus bis zu 20 zuletzt geteilten Trainings. Die Wochenrate deckt die letzten 28 Tage ab.</string>
+    <string name="lifter_summary_recent__t">Aus bis zu 20 zuletzt geteilten Prüfungen. Die Wochenrate deckt die letzten 28 Tage ab.</string>
     <string name="lifter_summary_last_today">letztes Training heute</string>
     <string name="lifter_summary_last_today__t">letzte Prüfung heute</string>
     <string name="lifter_summary_last_yesterday">letztes Training gestern</string>

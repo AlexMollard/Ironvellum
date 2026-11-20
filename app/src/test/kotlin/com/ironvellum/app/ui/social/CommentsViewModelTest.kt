@@ -34,6 +34,8 @@ class CommentsViewModelTest {
         var post = CompletableDeferred<Result<Comment>>()
         var removal = CompletableDeferred<Result<Unit>>()
         var likerResult: Result<List<Liker>> = Result.success(emptyList())
+        var summary: Result<Pair<Map<Reaction, Int>, Reaction?>> = Result.success(emptyMap<Reaction, Int>() to null)
+        var reactionWrite: CompletableDeferred<Result<Unit>>? = null
         override suspend fun comments(sessionId: String, force: Boolean): Result<List<Comment>> {
             val response = CompletableDeferred<Result<List<Comment>>>()
             reads += response
@@ -43,8 +45,9 @@ class CommentsViewModelTest {
         override suspend fun deleteComment(id: String) = withContext(NonCancellable) { removal.await() }
         override suspend fun workout(sessionId: String, force: Boolean): Result<AllyWorkout> = Result.failure(IllegalStateException("offline"))
         override suspend fun likers(sessionId: String): Result<List<Liker>> = likerResult
+        override suspend fun reactionSummary(sessionId: String) = summary
         override suspend fun visibleProfile(userId: String): Result<ProfileNameDto?> = Result.success(null)
-        override suspend fun react(sessionId: String, reaction: Reaction?) = Result.success(Unit)
+        override suspend fun react(sessionId: String, reaction: Reaction?) = reactionWrite?.await() ?: Result.success(Unit)
         override suspend fun report(userId: String, reason: ReportReason, note: String, sessionId: String, commentId: String) = Result.success(Unit)
         fun finish() {
             reads.forEach { it.complete(Result.success(emptyList())) }
@@ -180,22 +183,52 @@ class CommentsViewModelTest {
         assertEquals(listOf(later), vm.ui.value.comments)
     }
 
-    @Test fun `reaction counts remain unknown until a successful read and survive failed refresh`() {
+    @Test fun `reaction counts remain unknown on failed first summary and survive failed refresh`() {
         val fake = gateway()
-        fake.likerResult = Result.failure(IllegalStateException("offline"))
+        fake.summary = Result.failure(IllegalStateException("offline"))
         val vm = model(fake)
         assertNull(vm.ui.value.likers)
 
         vm.react(Reaction.IRON)
         assertNull(vm.ui.value.likers)
 
-        fake.likerResult = Result.success(emptyList())
+        fake.summary = Result.success(mapOf(Reaction.IRON to 1) to null)
         vm.loadReactions()
         assertEquals(emptyList<Liker>(), vm.ui.value.likers)
 
-        fake.likerResult = Result.failure(IllegalStateException("offline"))
+        fake.summary = Result.failure(IllegalStateException("offline"))
         vm.loadReactions()
         assertEquals(emptyList<Liker>(), vm.ui.value.likers)
+        assertEquals(mapOf(Reaction.IRON to 1), vm.ui.value.reactionCounts)
+    }
+
+    @Test fun `authoritative counts and older own reaction survive name cap and optimistic failure`() {
+        val fake = gateway()
+        fake.likerResult = Result.success((1..50).map { Liker("other$it", "Other", it.toLong(), Reaction.IRON) })
+        fake.summary = Result.success(mapOf(Reaction.IRON to 50, Reaction.FLAME to 1) to Reaction.FLAME)
+        fake.reactionWrite = CompletableDeferred()
+        val vm = model(fake)
+        assertEquals(51, vm.ui.value.reactionCounts!!.values.sum())
+        assertEquals(Reaction.FLAME, vm.ui.value.myReaction)
+        vm.react(Reaction.IRON)
+        assertEquals(51, vm.ui.value.reactionCounts!![Reaction.IRON])
+        assertEquals(0, vm.ui.value.reactionCounts!![Reaction.FLAME])
+        assertEquals(Reaction.IRON, vm.ui.value.myReaction)
+        fake.reactionWrite!!.complete(Result.failure(IllegalStateException("offline")))
+        assertEquals(Reaction.FLAME, vm.ui.value.myReaction)
+        assertEquals(50, vm.ui.value.reactionCounts!![Reaction.IRON])
+        assertEquals(1, vm.ui.value.reactionCounts!![Reaction.FLAME])
+    }
+
+    @Test fun `switching owner clears previous reaction selection when new read fails`() {
+        val fake = gateway()
+        fake.summary = Result.success(mapOf(Reaction.FLAME to 51) to Reaction.FLAME)
+        val vm = model(fake)
+        fake.summary = Result.failure(IllegalStateException("denied"))
+        fake.owners.value = SocialOwner("b", fake.owner().backend)
+        assertNull(vm.ui.value.reactionCounts)
+        assertNull(vm.ui.value.myReaction)
+        assertNull(vm.ui.value.likers)
     }
 
 

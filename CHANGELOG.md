@@ -10,6 +10,9 @@ store listing; this is the whole list.
 - Keep Inbox and ranking selections when returning to Social. Declining an old request no longer removes an accepted friend on Android or web.
 - Show friend-list errors and pending comment sends, and leave reaction counts blank until they load.
 - Keep the author's name when opening a public workout from the feed.
+- Open replies on shared workouts from the web Inbox, and stop old removal notices from opening your current Circle.
+- Keep reaction and comment counts accurate through refreshes, failures, and the handoff from Feed to a workout.
+- Keep friend names and status consistent after sending or answering a request, and distinguish recent profile stats from totals.
 
 ## 1.12
 

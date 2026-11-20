@@ -5712,6 +5712,8 @@
     </plurals>
     <string name="lifter_xp_gain">+%1$s XP</string>
     <string name="lifter_summary_per_week">%1$s par semaine</string>
+    <string name="lifter_summary_recent">Jusqu’aux 20 dernières séances partagées. La moyenne hebdomadaire couvre les 28 derniers jours.</string>
+    <string name="lifter_summary_recent__t">Jusqu’aux 20 dernières épreuves partagées. La moyenne hebdomadaire couvre les 28 derniers jours.</string>
     <string name="lifter_summary_last_today">dernière séance aujourd\'hui</string>
     <string name="lifter_summary_last_today__t">dernière épreuve aujourd\'hui</string>
     <string name="lifter_summary_last_yesterday">dernière séance hier</string>

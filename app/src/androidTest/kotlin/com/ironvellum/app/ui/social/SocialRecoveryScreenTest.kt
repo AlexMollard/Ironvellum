@@ -15,6 +15,8 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
@@ -183,11 +185,13 @@ class SocialRecoveryScreenTest {
         val read = CompletableDeferred<Result<List<Comment>>>()
         val post = CompletableDeferred<Result<Comment>>()
         var workoutResult: Result<AllyWorkout> = Result.failure(IllegalStateException("Workout unavailable"))
+        var reactions: Pair<Map<Reaction, Int>, Reaction?> = emptyMap<Reaction, Int>() to null
         override suspend fun comments(sessionId: String, force: Boolean) = withContext(NonCancellable) { read.await() }
         override suspend fun addComment(sessionId: String, body: String) = post.await()
         override suspend fun deleteComment(id: String) = Result.success(Unit)
         override suspend fun workout(sessionId: String, force: Boolean) = workoutResult
         override suspend fun likers(sessionId: String): Result<List<Liker>> = Result.success(emptyList())
+        override suspend fun reactionSummary(sessionId: String) = Result.success(reactions)
         override suspend fun visibleProfile(userId: String): Result<ProfileNameDto?> =
             Result.success(if (userId == "public-author") ProfileNameDto(userId, "Public Author", level = 3) else null)
         override suspend fun react(sessionId: String, reaction: Reaction?) = Result.success(Unit)
@@ -219,6 +223,26 @@ class SocialRecoveryScreenTest {
         compose.onNodeWithText("Earlier thread comment").assertIsDisplayed()
         compose.onNodeWithText("Posted while loading").assertIsDisplayed()
         shot("social-comments-after-late-read")
+    }
+
+    @Test fun olderViewerReactionShowsAuthoritativeCountAndRemove() {
+        val backend = ThreadBackend()
+        backend.reactions = mapOf(Reaction.FLAME to 51) to Reaction.FLAME
+        backend.read.complete(Result.success(emptyList()))
+        compose.activityRule.scenario.onActivity { activity ->
+            val vm = CommentsViewModel(backend, "session")
+            activity.viewModelStore.put("social-thread-reactions", vm)
+            activity.setContent {
+                IronvellumTheme(light = false) {
+                    CommentsScreen(sessionId = "session", ownerId = "", headline = "Training session",
+                        onBack = {}, onOpenLifter = { _, _ -> }, viewModel = vm)
+                }
+            }
+        }
+        val remove = context.getString(R.string.feed_reaction_remove)
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText(remove))
+        compose.onNodeWithText(remove).assertIsDisplayed()
+        compose.onNodeWithText("51").assertIsDisplayed()
     }
 
     @Test fun publicWorkoutThreadShowsTheAuthorEvenWhenTheyAreNotAFriend() {

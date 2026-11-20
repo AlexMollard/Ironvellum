@@ -19,6 +19,15 @@ class LifterSummaryTest {
         assertEquals(600L, LifterSummary.of(listOf(at(1.0, xp = 100), at(2.0, xp = 200), at(40.0, xp = 300)), now).xp)
     }
 
+    @Test fun figuresDescribeOnlyTheLoadedRecentWorkouts() {
+        val history = (0 until 31).map { at(it.toDouble(), xp = 10) }
+        val loaded = history.take(20)
+        val figures = LifterSummary.of(loaded, now)
+        assertEquals(20, figures.count)
+        assertEquals(200L, figures.xp)
+        assertEquals(5.0, figures.perWeek, 0.0)
+    }
+
     @Test fun perWeekCountsTheLastFourWeeksOverFour() {
         val f = LifterSummary.of(listOf(at(1.0), at(7.0), at(27.9), at(28.0), at(29.0), at(60.0)), now)
         assertEquals(1.0, f.perWeek, 0.0)

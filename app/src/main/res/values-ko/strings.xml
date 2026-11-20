@@ -5076,6 +5076,8 @@
     </plurals>
     <string name="lifter_xp_gain">+%1$s XP</string>
     <string name="lifter_summary_per_week">주당 %1$s</string>
+    <string name="lifter_summary_recent">최근 공유한 운동 최대 20개 기준. 주간 평균은 최근 28일을 기준으로 계산합니다.</string>
+    <string name="lifter_summary_recent__t">최근 공유한 시련 최대 20개 기준. 주간 평균은 최근 28일을 기준으로 계산합니다.</string>
     <string name="lifter_summary_last_today">마지막 운동: 오늘</string>
     <string name="lifter_summary_last_today__t">마지막 시련: 오늘</string>
     <string name="lifter_summary_last_yesterday">마지막 운동: 어제</string>

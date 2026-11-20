@@ -126,8 +126,10 @@ internal data class CommentsUi(
     val workoutLoading: Boolean = true,
     val workoutError: UiText? = null,
     val owner: OwnerIdentity? = null,
-    /** Every reaction on the workout, newest first; the lifter's own is the row with [myUserId]. */
+    /** Recent visible names; counts and selection are read independently. */
     val likers: List<Liker>? = null,
+    val reactionCounts: Map<Reaction, Int>? = null,
+    val myReaction: Reaction? = null,
     val likersError: UiText? = null,
     val reactionError: UiText? = null,
     /** Bumped on each comment the lifter sends, so the list scrolls to it and never on first load. */
@@ -143,6 +145,7 @@ internal interface CommentsGateway {
     suspend fun deleteComment(id: String): Result<Unit>
     suspend fun workout(sessionId: String, force: Boolean): Result<AllyWorkout>
     suspend fun likers(sessionId: String): Result<List<Liker>>
+    suspend fun reactionSummary(sessionId: String): Result<Pair<Map<Reaction, Int>, Reaction?>>
     suspend fun visibleProfile(userId: String): Result<ProfileNameDto?>
     suspend fun react(sessionId: String, reaction: Reaction?): Result<Unit>
     suspend fun report(userId: String, reason: ReportReason, note: String, sessionId: String, commentId: String): Result<Unit>
@@ -157,6 +160,7 @@ private class CloudCommentsGateway(private val cloud: CloudSync, private val acc
     override suspend fun deleteComment(id: String) = cloud.deleteComment(id)
     override suspend fun workout(sessionId: String, force: Boolean) = cloud.workout(sessionId, force)
     override suspend fun likers(sessionId: String) = cloud.likers(sessionId)
+    override suspend fun reactionSummary(sessionId: String) = cloud.reactionSummary(sessionId)
     override suspend fun visibleProfile(userId: String) = cloud.visibleProfile(userId)
     override suspend fun react(sessionId: String, reaction: Reaction?) = cloud.react(sessionId, reaction)
     override suspend fun report(userId: String, reason: ReportReason, note: String, sessionId: String, commentId: String) =
@@ -177,6 +181,7 @@ internal class CommentsViewModel(
     val ui: StateFlow<CommentsUi> = _ui.asStateFlow()
     private val deleting = mutableSetOf<String>()
     private var reacting = false
+    private var reactionVersion = 0L
     private var resolvedOwner: String? = null
     private var readVersion = 0L
     private var mutationVersion = 0L
@@ -207,6 +212,7 @@ internal class CommentsViewModel(
         resolvedOwner = null
         readVersion++
         mutationVersion++
+        reactionVersion++
         commentChanges.clear()
         _ui.value = CommentsUi(myUserId = next.userId)
         return true
@@ -270,10 +276,20 @@ internal class CommentsViewModel(
         if (refreshOwner()) { startReads(); return }
         val expected = owner
         val scope = requests
+        val version = ++reactionVersion
         scope.launch {
-            val result = gateway.likers(sessionId)
-            if (!current(expected, scope)) return@launch
-            result.onSuccess { if (!reacting) _ui.value = _ui.value.copy(likers = it, likersError = null) }
+            val summary = gateway.reactionSummary(sessionId)
+            if (!current(expected, scope) || version != reactionVersion || reacting) return@launch
+            val failure = summary.exceptionOrNull()
+            if (failure != null) {
+                if (failure !is CancellationException) _ui.value = _ui.value.copy(likersError = failure.reason())
+                return@launch
+            }
+            val (counts, mine) = summary.getOrThrow()
+            _ui.value = _ui.value.copy(reactionCounts = counts, myReaction = mine, likersError = null)
+            val names = gateway.likers(sessionId)
+            if (!current(expected, scope) || version != reactionVersion || reacting) return@launch
+            names.onSuccess { _ui.value = _ui.value.copy(likers = it, likersError = null) }
                 .onFailure { if (it !is CancellationException) _ui.value = _ui.value.copy(likersError = it.reason()) }
         }
     }
@@ -300,14 +316,20 @@ internal class CommentsViewModel(
         val state = _ui.value
         val me = state.myUserId ?: return
         if (reacting) return
+        val counts = state.reactionCounts ?: return
         val before = state.likers
-        if (before?.firstOrNull { it.userId == me }?.reaction == reaction) return
+        val previous = state.myReaction
+        if (previous == reaction) return
         val name = gateway.account()?.displayName ?: Words.text(UiText.res(R.string.comments_you))
         reacting = true
+        reactionVersion++
+        val optimisticCounts = counts.toMutableMap()
+        if (previous != null) optimisticCounts[previous] = ((optimisticCounts[previous] ?: 0) - 1).coerceAtLeast(0)
+        if (reaction != null) optimisticCounts[reaction] = (optimisticCounts[reaction] ?: 0) + 1
         val optimistic = before?.filter { it.userId != me }?.let { others ->
             if (reaction == null) others else listOf(Liker(me, name, System.currentTimeMillis(), reaction)) + others
         }
-        _ui.value = state.copy(reactionError = null, likers = optimistic)
+        _ui.value = state.copy(reactionError = null, likers = optimistic, reactionCounts = optimisticCounts, myReaction = reaction)
         val expected = owner
         val scope = requests
         scope.launch {
@@ -315,7 +337,15 @@ internal class CommentsViewModel(
                 val result = gateway.react(sessionId, reaction)
                 if (!current(expected, scope)) return@launch
                 result.onSuccess { reacting = false; loadReactions() }
-                    .onFailure { if (it !is CancellationException) _ui.value = _ui.value.copy(likers = before, reactionError = it.reason()) }
+                    .onFailure {
+                        _ui.value = _ui.value.copy(likers = before, reactionCounts = counts, myReaction = previous,
+                            reactionError = if (it is CancellationException) null else it.reason())
+                    }
+            } catch (cancelled: CancellationException) {
+                if (current(expected, scope)) {
+                    _ui.value = _ui.value.copy(likers = before, reactionCounts = counts, myReaction = previous)
+                }
+                throw cancelled
             } finally {
                 if (current(expected, scope)) reacting = false
             }
@@ -812,11 +842,9 @@ private fun SetChip(set: AllySet) {
 @Composable
 private fun ReactionsPanel(ui: CommentsUi, onPick: (Reaction?) -> Unit, onRetry: () -> Unit) {
     val likers = ui.likers
-    val mine = likers?.firstOrNull { it.userId == ui.myUserId }?.reaction
-    val counts = likers?.mapNotNull { it.reaction }?.groupingBy { it }?.eachCount()
     InkPanel(Modifier.fillMaxWidth()) {
-        if (ui.myUserId != null) {
-            ReactionPicker(current = mine, counts = counts, onPick = onPick)
+        if (ui.myUserId != null && ui.reactionCounts != null) {
+            ReactionPicker(current = ui.myReaction, counts = ui.reactionCounts, onPick = onPick)
         }
         ui.reactionError?.let {
             Spacer(Modifier.height(6.dp))

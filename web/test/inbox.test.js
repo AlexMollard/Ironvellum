@@ -161,6 +161,30 @@ describe('inbox items are targets', () => {
     expect(stretch('accepted').getAttribute('href')).toBe('#/friends/allies/u1'); expect(stretch('circle_join').getAttribute('href')).toBe('#/friends/circle');
     expect(by('comment').classList.contains('is-link')).toBe(true);
   });
+  it('routes replies to their shared thread and leaves old removals informational', async () => {
+    const { root } = await open(script([row('reply'), row('circle_removed', { body: 'Old group' })]), { router: { go: vi.fn() } });
+    expect(root.querySelector('.inbox-replies .inbox-link').getAttribute('href')).toBe('#/friends/inbox/s1');
+    expect(root.querySelector('.inbox-yours')).toBeNull();
+    expect(root.querySelector('[data-kind="circle_removed"] a')).toBeNull();
+  });
+  it('opens shared workout comments using the actual owner', async () => {
+    const root = document.createElement('main');
+    const lifterWorkout = vi.fn(async () => ({ userId: 'owner', headline: 'Shared', note: '', exercises: [] }));
+    const comments = vi.fn(async () => [{ id: 'c1', userId: 'other', authorName: 'Other', body: 'Hello', createdAtMs: NOW }]);
+    const social = createFakeSocial({ lifterWorkout, comments });
+    await renderInbox(root, { social, source: { userId: 'me' }, router: { go: vi.fn() } }, 's1');
+    expect(lifterWorkout).toHaveBeenCalledWith('s1');
+    expect(comments).toHaveBeenCalledWith('s1');
+    expect(root.textContent).toContain('Hello');
+    expect(root.querySelector('.comment-delete')).toBeNull();
+  });
+  it('keeps fixture friendship state and profile identity aligned after acceptance', async () => {
+    const { createFixtureSocial } = await import('../dev/socialFixture.js');
+    const social = createFixtureSocial();
+    await social.acceptFriend('u-ines');
+    expect((await social.friends()).find(f => f.userId === 'u-ines')).toMatchObject({ accepted: true, incoming: false });
+    expect((await social.lifter('u-ines')).profile.name).toBe('Ines Vale');
+  });
   it('theFeedAndBoardsTabsTakeTheThemedNames', async () => {
     const { TABS } = await import('../src/screens/friends/index.js');
     expect(TABS.map(([, label]) => label())).toEqual(['Feed', 'Inbox', 'Friends', 'Boards', 'Group']);
