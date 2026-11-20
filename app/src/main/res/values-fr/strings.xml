@@ -1306,7 +1306,7 @@
         <item quantity="many">%1$d / %2$d séries</item>
         <item quantity="other">%1$d / %2$d séries</item>
     </plurals>
-    <string name="session_minutes_left">~%1$d min restantes</string>
+    <string name="session_minutes_left">~%1$d min restantes · fin vers %2$s</string>
     <string name="session_xp_gain">+%1$d XP</string>
     <string name="session_xp_description">%1$d XP</string>
     <string name="session_xp_earned_description">%1$d XP gagnés jusqu’ici</string>

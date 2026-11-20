@@ -1190,7 +1190,7 @@
     <plurals name="session_progress">
         <item quantity="other">%1$d / %2$d 组</item>
     </plurals>
-    <string name="session_minutes_left">剩余约 %1$d 分钟</string>
+    <string name="session_minutes_left">剩余约 %1$d 分钟 · 预计 %2$s 结束</string>
     <string name="session_xp_gain">+%1$d XP</string>
     <string name="session_xp_description">%1$d XP</string>
     <string name="session_xp_earned_description">目前获得 %1$d XP</string>
