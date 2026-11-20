@@ -115,6 +115,7 @@ import com.ironvellum.app.domain.CarrySet
 import com.ironvellum.app.domain.carriesFrom
 import com.ironvellum.app.domain.carryFiguresFor
 import com.ironvellum.app.domain.restoredIndexes
+import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SessionXp
 import com.ironvellum.app.domain.SetKind
@@ -255,7 +256,7 @@ internal fun skillTrainingEvidence(
                 val name = Titles.normaliseName(set.exerciseName)
                 if (twinsOnly && name == Titles.normaliseName(history[sessionIndex].second[setIndex].exerciseName)) return@setLoop
                 val metric = metricByName[name]
-                if (name !in skillByName || !set.done || set.warmup ||
+                if (name !in skillByName || skillByName[name]?.metric == Skills.Metric.METRES || !set.done || set.warmup ||
                     metric?.isStrength == false || Variation.eases(Variation.key(set.modifiers))
                 ) return@setLoop
                 val hold = MovementDifficulty.isHoldSet(metric, set.exerciseName, set.modifiers)
@@ -273,7 +274,7 @@ internal fun skillTrainingEvidence(
     addAttempts(history)
     addAttempts(twinned, twinsOnly = true)
     return (recordsOf(history) + recordsOf(twinned))
-        .filter { !Variation.eases(it.variation) }
+        .filter { !Variation.eases(it.variation) && skillByName[Titles.normaliseName(it.exerciseName)]?.metric != Skills.Metric.METRES }
         .groupBy { Titles.normaliseName(it.exerciseName) }
         .mapValues { (name, records) ->
             val top = techniqueEvidence(records, skillByName[name])
@@ -402,26 +403,56 @@ class Repository(
         if (!health.available()) return HealthSync.HistoryRead(
             problems = listOf(UiText.res(R.string.health_unavailable)),
         )
-        val read = runCatching { health.readDailyHistory(days) }
-            .getOrElse { HealthSync.HistoryRead(problems = listOf(UiText.res(R.string.health_read_failed, it.javaClass.simpleName))) }
-        healthDayDao.purgeEmpty()
-        if (read.days.isNotEmpty()) {
-            healthDayDao.upsertAll(
-                read.days.map {
-                    HealthDayEntity(
-                        epochDay = it.date.toEpochDay(),
-                        steps = it.steps,
-                        distanceKm = it.distanceKm,
-                        activeKcal = it.activeKcal,
-                        sleepMinutes = it.sleepMinutes,
-                        restingHr = it.restingHr,
-                    )
-                },
-            )
+        val read = try {
+            health.readDailyHistory(days)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return HealthSync.HistoryRead(problems = listOf(UiText.res(R.string.health_read_failed, e.javaClass.simpleName)))
         }
-        importBodyReadings(read.bodyReadings)
+        val validBody = read.bodyReadings.filter { BodyLimits.validWeight(it.weightKg) && BodyLimits.validBodyFat(it.bodyFatPct) }
+        db.withTransaction {
+            val start = read.startDate
+            val end = read.endDate
+            if (start != null && end != null && (read.authoritativeMetrics.isNotEmpty() || read.days.isNotEmpty())) {
+                val cached = healthDayDao.between(start.toEpochDay(), end.toEpochDay()).associateBy { it.epochDay }
+                val fetched = read.days.associateBy { it.date.toEpochDay() }
+                val changed = (cached.keys + fetched.keys).mapNotNull { day ->
+                    val previous = cached[day]
+                    val incoming = fetched[day]
+                    val merged = mergeHealthDay(day, previous, incoming, read)
+                    merged.takeUnless {
+                        it == previous || previous == null && it.steps == 0 && it.distanceKm == 0.0 &&
+                            it.activeKcal == 0 && it.sleepMinutes == 0 && it.restingHr == null
+                    }
+                }
+                if (changed.isNotEmpty()) healthDayDao.upsertAll(changed)
+                healthDayDao.purgeEmpty()
+            }
+            importBodyReadings(validBody)
+        }
         if (read.days.isNotEmpty()) _healthSyncedAtMs.value = System.currentTimeMillis()
+        if (validBody.size != read.bodyReadings.size) return read.copy(
+            bodyReadings = validBody,
+            problems = read.problems + (read.bodyReadings - validBody.toSet()).map {
+                UiText.res(R.string.data_import_stat_dropped, it.date.toString(), it.weightKg.toString(), it.bodyFatPct?.toString() ?: "—")
+            },
+        )
         return read
+    }
+
+    private fun mergeHealthDay(day: Long, previous: HealthDayEntity?, incoming: HealthDay?, read: HealthSync.HistoryRead): HealthDayEntity {
+        val authoritative = read.authoritativeMetrics
+        return HealthDayEntity(
+            epochDay = day,
+            steps = if (HealthMetric.STEPS in authoritative) incoming?.steps ?: 0 else previous?.steps ?: 0,
+            distanceKm = if (HealthMetric.DISTANCE in authoritative) incoming?.distanceKm ?: 0.0 else previous?.distanceKm ?: 0.0,
+            activeKcal = if (HealthMetric.ACTIVE_CALORIES in authoritative) incoming?.activeKcal ?: 0 else previous?.activeKcal ?: 0,
+            sleepMinutes = if (HealthMetric.SLEEP in authoritative) incoming?.sleepMinutes ?: 0 else previous?.sleepMinutes ?: 0,
+            restingHr = if (HealthMetric.RESTING_HR in authoritative || incoming?.date in read.restingHrDates) {
+                incoming?.restingHr
+            } else previous?.restingHr ?: incoming?.restingHr,
+        )
     }
 
     /**
@@ -783,21 +814,18 @@ class Repository(
      * never half-save a day - and the planned entry's modifiers travel through,
      * because improve promises to keep a CSV import's "sissy squat" tags.
      */
-    suspend fun savePlannedPreset(presetId: Long?, preset: PlannedPreset): Long {
+    suspend fun savePlannedPreset(presetId: Long?, preset: PlannedPreset): Long =
+        savePlannedPreset(presetId, preset, exactSources = false)
+
+    private suspend fun savePlannedPreset(presetId: Long?, preset: PlannedPreset, exactSources: Boolean): Long {
         val idByName = exerciseDao.observeAll().first().associate { it.name to it.id }
         val unknown = preset.entries.map { it.exerciseName }.filterNot { it in idByName }
         require(unknown.isEmpty()) { "Unknown exercises in ${Words.rite.s} \"${preset.name}\": $unknown" }
-        // The Forge never makes a superset, but it must not undo the lifter's own: a movement keeps its group
-        // from the rite being tempered, and savePreset drops it where the pair is no longer neighbours.
         val kept = presetId?.let { presetDao.presetWithEntries(it) }
-        // Keyed by (movement, Nth entry of it): a rite may name a movement twice, and each entry keeps its own.
-        val keptEntries = kept?.working?.sortedBy { it.position }?.let { rows -> rows.zip(nthOfMovement(rows.map { it.exerciseId })) }.orEmpty()
-        val keptGroups = keptEntries
-            .filter { (e, _) -> e.supersetGroup != null }.associate { (e, nth) -> (e.exerciseId to nth) to e.supersetGroup }
-        // Likewise a lift's set scheme: the Forge tempers loads and counts, it never undoes how a lift is run. The
-        // scheme follows the lift and is fitted to the set count the Forge chose.
-        val keptSchemes = keptEntries
-            .filter { (e, _) -> e.setScheme != null }.associate { (e, nth) -> (e.exerciseId to nth) to SetScheme.decode(e.setScheme) }
+        val working = kept?.working.orEmpty().sortedBy { it.position }
+        val byEntryId = working.associateBy { it.id }
+        val byExercise = if (!exactSources) working.groupBy { it.exerciseId } else emptyMap()
+        val seen = mutableMapOf<Long, Int>()
         // The Forge plans the worked exercises only (it never sees a warm-up, [toPlanned] leaves them out), so the
         // rite's warm-ups are carried over as they are, whatever it did to the rest.
         val keptWarmups = kept?.entries?.filter { it.warmup }?.sortedBy { it.position }?.map {
@@ -816,31 +844,50 @@ class Repository(
             name = preset.name,
             note = Evidence.split(preset.note).first,
             scheduledDay = preset.scheduledDay,
-            entries = keptWarmups + preset.entries.let { planned ->
-                val ids = planned.map { idByName.getValue(it.exerciseName) }
-                val nth = nthOfMovement(ids)
-                planned.mapIndexed { i, entry ->
-                    val key = ids[i] to nth[i]
-                    PresetDraftEntry(
-                        exerciseId = ids[i],
-                        targetSets = entry.sets,
-                        targetReps = entry.reps,
-                        targetWeightKg = entry.targetWeightKg,
-                        modifiers = entry.modifiers,
-                        supersetGroup = keptGroups[key],
-                        scheme = keptSchemes[key]?.fitTo(entry.sets) ?: SetScheme(),
-                    )
-                }
+            entries = keptWarmups + preset.entries.map { entry ->
+                val exerciseId = idByName.getValue(entry.exerciseName)
+                val occurrence = seen.getOrDefault(exerciseId, 0)
+                seen[exerciseId] = occurrence + 1
+                val retained = entry.sourceEntryId?.let { id -> byEntryId[id]?.takeIf { it.exerciseId == exerciseId } }
+                    ?: byExercise[exerciseId]?.getOrNull(occurrence)
+                PresetDraftEntry(
+                    exerciseId = exerciseId,
+                    targetSets = entry.sets,
+                    targetReps = entry.reps,
+                    targetWeightKg = entry.targetWeightKg,
+                    modifiers = entry.modifiers,
+                    supersetGroup = retained?.supersetGroup,
+                    scheme = retained?.setScheme?.let { SetScheme.decode(it).fitTo(entry.sets) } ?: SetScheme(),
+                )
             },
         )
     }
 
     /**
-     * Several rites rewritten as one all-or-nothing write, so a change that spans rites (a movement moved
-     * between two of them, a swap of days) cannot land half, and Undo puts every one of them back together.
+     * Several rites rewritten as one all-or-nothing edit, using original entry IDs so a removed repeat
+     * cannot shift another repeat onto the wrong scheme or superset.
      */
     suspend fun savePlannedPresets(updates: List<Pair<Long, PlannedPreset>>) = db.withTransaction {
-        updates.forEach { (id, preset) -> savePlannedPreset(id, preset) }
+        updates.forEach { (id, preset) -> savePlannedPreset(id, preset, exactSources = true) }
+    }
+
+    /** Undo restores the saved rows, not a planned projection of the already modified routines. */
+    suspend fun restoreWorkoutPresets(before: List<WorkoutPreset>) = db.withTransaction {
+        val live = sessionDao.liveSession()
+        if (before.any { it.id == live?.presetId }) preparations.ensureSession(checkNotNull(live).id)
+        before.forEach { snapshot ->
+            val current = checkNotNull(presetDao.presetWithEntries(snapshot.id)?.preset)
+            presetDao.updatePreset(current.copy(name = snapshot.name, note = snapshot.note, scheduledDay = snapshot.scheduledDay, importKey = snapshot.importKey))
+            presetDao.clearEntries(snapshot.id)
+            presetDao.insertEntries(snapshot.entries.map { entry ->
+                PresetEntryEntity(
+                    id = entry.id, presetId = snapshot.id, exerciseId = entry.exerciseId,
+                    targetSets = entry.targetSets, targetReps = entry.targetReps, targetWeightKg = entry.targetWeightKg,
+                    modifiers = entry.modifiers, position = entry.position, supersetGroup = entry.supersetGroup,
+                    setScheme = entry.scheme.encode(), warmup = entry.warmup,
+                )
+            })
+        }
     }
 
     /** What an import did: workouts written and exercise names the catalogue lacks. */
@@ -1038,8 +1085,8 @@ class Repository(
         val live = sessionDao.liveSession() ?: return null
         // Upgraded sessions may have only device warmup answers until their first preparation row is written.
         preparations.ensureSession(live.id)
-        val hasLoggedWork = sessionDao.setsFor(live.id).any { it.done }
-        if (hasLoggedWork || preparations.hasProgress(live.id)) return live.id
+        val hasProgress = sessionDao.setsFor(live.id).any { it.done || it.warmupDone }
+        if (hasProgress || preparations.hasProgress(live.id)) return live.id
         sessionDao.deleteAbandoned(live.id)
         return null
     }
@@ -1248,12 +1295,6 @@ class Repository(
         weightKg = weightKg, done = done, durationSec = durationSec, kind = setKind(), warmupDone = warmupDone,
     )
 
-    /** For each id, how many of the same id came before it in [ids]: 0 for a movement's first entry, 1 for its second. */
-    private fun nthOfMovement(ids: List<Long>): List<Int> {
-        val seen = mutableMapOf<Long, Int>()
-        return ids.map { id -> seen.getOrDefault(id, 0).also { seen[id] = it + 1 } }
-    }
-
     /**
      * The rite entry behind each block of a trial, [entries] being the rite's worked ones: a movement's Nth block (in
      * trial order) is its Nth entry (in rite order), the rule [RoutineUpdate.propose] reads a finished trial by. Blocks
@@ -1359,22 +1400,18 @@ class Repository(
             if (exercise != null && (!scheme.isStraight || scheme.warmupRamp)) {
                 return@flatMapIndexed schemeSets(sessionId, entryPos, entry, exercise, scheme, groups[entryPos])
             }
-            // Seconds-in-durationSec stays HOLD-only: only a hold's preset
-            // target is a duration. An activity entry keeps its own target
-            // reps as the logged figure — the honest passthrough, since its
-            // preset has no duration field to carry instead.
-            val isHold = metric == ExerciseMetric.HOLD
+            val target = SessionClock.prescription(metric, entry.targetReps, entry.targetWeightKg, weighted = exercise?.isWeighted == true)
             (0 until entry.targetSets).map { index ->
                 SetLogEntity(
                     sessionId = sessionId,
                     exerciseId = entry.exerciseId,
                     exercisePosition = entryPos,
                     setIndex = index,
-                    // A hold's prescription is seconds; its reps stay 0.
-                    reps = if (isHold) 0 else entry.targetReps,
-                    durationSec = if (isHold) entry.targetReps else null,
+                    reps = target.reps,
+                    durationSec = target.durationSec,
+                    distanceM = target.distanceM,
                     modifiers = entry.modifiers,
-                    weightKg = entry.targetWeightKg,
+                    weightKg = target.weightKg,
                     done = false,
                     supersetGroup = groups[entryPos],
                 )
@@ -2301,6 +2338,8 @@ class Repository(
                 modifiers = e.modifiers,
                 position = e.position,
                 scheme = SetScheme.decode(e.setScheme),
+                supersetGroup = e.supersetGroup,
+                warmup = e.warmup,
             )
         }
         val sets = sessionDao.setsFor(sessionId).map { s ->
@@ -3903,7 +3942,20 @@ class Repository(
                 // An archive with no photos section (older, or the cloud copy) keeps this device's photos: their rows are
                 // read now, before the workouts go, and put back against the workouts that come back.
                 val keptPhotos = if (archive.photos == null) photoLibrary.snapshot { sessionDao.byId(it)?.startedAtMs } else null
-                val previousCompletedIds = sessionDao.completedSessions().map { it.id }.toSet()
+                val previousCompleted = sessionDao.completedSessions()
+                val previousCompletedIds = previousCompleted.mapTo(mutableSetOf()) { it.id }
+                // Imported workouts dedupe by start time and normalized label, not by phone-local IDs.
+                fun noteKey(id: Long, start: Long, label: String, imported: Boolean) =
+                    Triple(if (imported) 0L else id, start, if (imported) label.trim().lowercase() else null)
+                val localWorkouts = if (archive.deviceDataOmitted) {
+                    previousCompleted.groupBy { noteKey(it.id, it.startedAtMs, it.label, it.imported) }
+                } else emptyMap()
+                val restoredKeyCounts = if (archive.deviceDataOmitted) {
+                    archive.sessions.groupingBy { (s, _) -> noteKey(s.id, s.startedAtMs, s.label, s.imported) }.eachCount()
+                } else emptyMap()
+                val localExerciseNotes = if (archive.deviceDataOmitted) {
+                    sessionDao.allExerciseNotes().groupBy { it.sessionId }
+                } else emptyMap()
                 val sessionIdByStart = mutableMapOf<Long, Long>()
                 // User data goes; the seeded exercise catalogue stays.
                 presetDao.clearAll()
@@ -3940,6 +3992,7 @@ class Repository(
                 // defaults and every guess is reported, never silent.
                 val exerciseIdByName = mutableMapOf<String, Long>()
                 val metaByName = archive.exercises.associateBy { it.name.lowercase() }
+                val catalogueNames = Seed.exercises.mapTo(mutableSetOf()) { it.name.lowercase() }
                 val problems = mutableListOf<UiText>()
                 fun preparationProblem(message: String) {
                     problems.add(UiText.themed(R.string.preparation_import_dropped, R.string.preparation_import_dropped__t, message))
@@ -3948,33 +4001,36 @@ class Repository(
                 suspend fun resolveExercise(rawName: String): Long? {
                     val name = rawName.trim()
                     if (name.isEmpty()) return null
-                    exerciseIdByName[name.lowercase()]?.let { return it }
+                    val key = name.lowercase()
+                    exerciseIdByName[key]?.let { return it }
                     val existing = exerciseDao.byName(name)
-                    if (existing != null) {
-                        exerciseIdByName[name.lowercase()] = existing.id
+                    val meta = metaByName[key]
+                    if (existing != null && meta?.custom != true) {
+                        exerciseIdByName[key] = existing.id
                         return existing.id
                     }
-                    val meta = metaByName[name.lowercase()]
+                    if (meta?.custom == true && key in catalogueNames) {
+                        throw MessageException(UiText.res(R.string.data_import_custom_conflict, name))
+                    }
                     val guessedMuscleGroup = MuscleGroup.PULL.name
                     val muscleGroup = meta?.muscleGroup ?: guessedMuscleGroup
                     val metric = meta?.metric ?: ExerciseMetric.REPS.name
-                    val newId = exerciseDao.insertAll(
-                        listOf(
-                            ExerciseEntity(
-                                name = name,
-                                muscleGroup = runCatching { MuscleGroup.valueOf(muscleGroup) }
-                                    .getOrDefault(MuscleGroup.PULL).name,
-                                isWeighted = meta?.isWeighted ?: true,
-                                metric = runCatching { ExerciseMetric.valueOf(metric) }
-                                    .getOrDefault(ExerciseMetric.REPS).name,
-                                category = meta?.category ?: "",
-                                custom = meta?.custom ?: false,
-                                gear = meta?.gear ?: "",
-                                muscles = meta?.muscles ?: "",
-                            ),
-                        ),
-                    ).first()
-                    exerciseIdByName[name.lowercase()] = newId
+                    val exercise = ExerciseEntity(
+                        id = existing?.id ?: 0L,
+                        name = name,
+                        muscleGroup = runCatching { MuscleGroup.valueOf(muscleGroup) }.getOrDefault(MuscleGroup.PULL).name,
+                        isWeighted = meta?.isWeighted ?: true,
+                        metric = runCatching { ExerciseMetric.valueOf(metric) }.getOrDefault(ExerciseMetric.REPS).name,
+                        category = meta?.category ?: "",
+                        custom = meta?.custom ?: false,
+                        gear = meta?.gear ?: "",
+                        muscles = meta?.muscles ?: "",
+                    )
+                    val newId = if (existing == null) exerciseDao.insertAll(listOf(exercise)).single() else {
+                        exerciseDao.update(exercise)
+                        existing.id
+                    }
+                    exerciseIdByName[key] = newId
                     if (meta == null) {
                         problems.add(UiText.res(R.string.data_import_exercise_guessed, name, guessedMuscleGroup))
                     }
@@ -4058,6 +4114,8 @@ class Repository(
                 var nextSessionId = maxOf(archive.sessions.maxOfOrNull { it.first.id } ?: 0L, previousCompletedIds.maxOrNull() ?: 0L, 0L)
                 val usedSessionIds = mutableSetOf<Long>()
                 archive.sessions.forEach { (session, sets) ->
+                    val key = noteKey(session.id, session.startedAtMs, session.label, session.imported)
+                    val sameWorkout = localWorkouts[key]?.singleOrNull()?.takeIf { restoredKeyCounts[key] == 1 }
                     val newSessionId = sessionDao.insertSession(
                         SessionEntity(
                             id = session.id.takeIf { it > 0 && usedSessionIds.add(it) } ?: (++nextSessionId),
@@ -4069,7 +4127,8 @@ class Repository(
                             strengthScore = session.strengthScore,
                             title = session.title,
                             note = session.note,
-                            privateNote = session.privateNote.take(WireLimits.PRIVATE_NOTE_MAX),
+                            privateNote = (if (archive.deviceDataOmitted) sameWorkout?.privateNote.orEmpty() else session.privateNote)
+                                .take(WireLimits.PRIVATE_NOTE_MAX),
                             imported = session.imported,
                             audience = session.audience.wire,
                             editedAtMs = session.editedAtMs,
@@ -4079,7 +4138,13 @@ class Repository(
                     usedSessionIds.add(newSessionId)
                     sessionIdByStart[session.startedAtMs] = newSessionId
                     sessionIdByOldId[session.id] = newSessionId
-                    session.exerciseNotes.forEach { n ->
+                    if (archive.deviceDataOmitted) {
+                        sameWorkout?.let { workout ->
+                            localExerciseNotes[workout.id].orEmpty().forEach { note ->
+                                sessionDao.putExerciseNote(note.copy(sessionId = newSessionId))
+                            }
+                        }
+                    } else session.exerciseNotes.forEach { n ->
                         val exerciseId = resolveExercise(n.exerciseName) ?: return@forEach
                         sessionDao.putExerciseNote(SessionExerciseNoteEntity(newSessionId, exerciseId, n.note.take(EXERCISE_NOTE_MAX)))
                     }

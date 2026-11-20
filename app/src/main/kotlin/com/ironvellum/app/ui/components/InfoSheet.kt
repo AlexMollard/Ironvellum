@@ -598,8 +598,15 @@ private class InfoSheetBuilder : InfoSheetScope {
 
     override fun rows(label: String?, items: List<Pair<String, String>>, collapseAfter: Int) {
         listSection(label, items.map { it.first }, collapseAfter) { i, item ->
-            Text(item, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink, modifier = Modifier.weight(1f))
-            Text(items[i].second, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.InkMuted)
+            if (LocalDensity.current.fontScale > 1.3f) {
+                Column(Modifier.fillMaxWidth()) {
+                    Text(item, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+                    Text(items[i].second, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.InkMuted)
+                }
+            } else {
+                Text(item, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink, modifier = Modifier.weight(1f))
+                Text(items[i].second, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.InkMuted, modifier = Modifier.weight(2f, fill = false))
+            }
         }
     }
 

@@ -40,16 +40,30 @@ import kotlinx.coroutines.withContext
 internal class PhotoSource(val canTake: Boolean, val take: () -> Unit, val pick: () -> Unit)
 
 @Composable
-internal fun rememberPhotoSource(onPicked: (Uri) -> Unit): PhotoSource {
+internal fun rememberPhotoSource(onPicked: (Uri, () -> Unit) -> Unit): PhotoSource {
     val context = LocalContext.current
     val picked by rememberUpdatedState(onPicked)
     // The camera app can take the process with it while it is in front: the file it was handed outlives that.
     var capturePath by rememberSaveable { mutableStateOf<String?>(null) }
-    val pickLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) picked(uri) }
+    capturePath?.let { PhotoCapture.retain(File(it)) }
+    val pickLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) picked(uri) {}
+    }
     val takeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { taken ->
-        val path = capturePath
+        val file = capturePath?.let(::File)
         capturePath = null
-        if (taken && path != null) picked(PhotoCapture.uriFor(context, File(path)))
+        if (file != null) {
+            if (taken) {
+                try {
+                    picked(PhotoCapture.uriFor(context, file)) { PhotoCapture.release(file) }
+                } catch (error: Throwable) {
+                    PhotoCapture.release(file)
+                    throw error
+                }
+            } else {
+                PhotoCapture.release(file)
+            }
+        }
     }
     val canTake = remember { PhotoCapture.cameraAvailable(context) }
     return remember(canTake, pickLauncher, takeLauncher) {
@@ -57,11 +71,13 @@ internal fun rememberPhotoSource(onPicked: (Uri) -> Unit): PhotoSource {
             canTake = canTake,
             take = {
                 // A camera app that is gone between the check and the tap must not crash the finish page.
-                runCatching {
-                    val target = PhotoCapture.newTarget(context)
-                    capturePath = target.path
-                    takeLauncher.launch(PhotoCapture.uriFor(context, target))
-                }.onFailure { capturePath = null }
+                if (capturePath == null) {
+                    runCatching {
+                        val target = PhotoCapture.newTarget(context)
+                        capturePath = target.path
+                        takeLauncher.launch(PhotoCapture.uriFor(context, target))
+                    }.onFailure { capturePath?.let { PhotoCapture.release(File(it)) }; capturePath = null }
+                }
             },
             pick = { runCatching { pickLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) } },
         )
@@ -70,16 +86,35 @@ internal fun rememberPhotoSource(onPicked: (Uri) -> Unit): PhotoSource {
 
 internal object PhotoCapture {
     private const val DIR = "photo-capture"
+    private const val STALE_AFTER_MS = 7L * 24 * 60 * 60 * 1000
+    private val active = mutableSetOf<String>()
+
+    @Synchronized
+    fun retain(file: File) {
+        active.add(file.absolutePath)
+    }
+
+    @Synchronized
+    fun release(file: File) {
+        file.delete()
+        active.remove(file.absolutePath)
+    }
 
     fun cameraAvailable(context: Context): Boolean =
         Intent(MediaStore.ACTION_IMAGE_CAPTURE).resolveActivity(context.packageManager) != null
 
-    /** A fresh, empty file in the shared capture folder; anything an earlier capture left there is cleared first. */
+    /** Each outstanding camera result owns its own temporary until its reader completes. */
+    @Synchronized
     fun newTarget(context: Context): File {
         val dir = File(context.cacheDir, DIR)
-        dir.deleteRecursively()
         dir.mkdirs()
-        return File(dir, "capture.jpg").also { it.createNewFile() }
+        val cutoff = System.currentTimeMillis() - STALE_AFTER_MS
+        dir.listFiles()?.forEach { file ->
+            if ((file.name == "capture.jpg" || (file.name.startsWith("capture-") && file.name.endsWith(".jpg"))) &&
+                file.absolutePath !in active && file.lastModified() < cutoff
+            ) file.delete()
+        }
+        return File.createTempFile("capture-", ".jpg", dir).also { active.add(it.absolutePath) }
     }
 
     fun uriFor(context: Context, file: File): Uri = FileProvider.getUriForFile(context, "${context.packageName}.exports", file)

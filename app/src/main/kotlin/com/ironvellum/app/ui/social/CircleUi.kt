@@ -656,7 +656,7 @@ private fun CircleRoster(
         InkDivider()
         ListRow(
             label = UiText.themed(R.string.circle_manage_label, R.string.circle_manage_label__t).asString(),
-            value = stringResource(if (isOwner) R.string.circle_manage_value_owner else R.string.circle_manage_value_member),
+            subline = stringResource(if (isOwner) R.string.circle_manage_value_owner else R.string.circle_manage_value_member),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             onClick = onManage,
         )

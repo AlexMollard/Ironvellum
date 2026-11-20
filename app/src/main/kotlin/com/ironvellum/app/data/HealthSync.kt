@@ -16,6 +16,7 @@ import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
@@ -29,6 +30,27 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.Period
 import java.time.ZoneId
+import kotlinx.coroutines.CancellationException
+import kotlin.reflect.KClass
+
+internal inline fun <T> healthRead(block: () -> T): Result<T> =
+    runCatching(block).onFailure { if (it is CancellationException) throw it }
+
+enum class HealthMetric { STEPS, DISTANCE, ACTIVE_CALORIES, SLEEP, RESTING_HR }
+
+internal fun restingHrAuthoritative(recordedSucceeded: Boolean, derivedSucceeded: Boolean): Boolean =
+    recordedSucceeded && derivedSucceeded
+
+internal suspend fun <T> collectHealthPages(readPage: suspend (String?) -> Pair<List<T>, String?>): List<T> {
+    val records = mutableListOf<T>()
+    var token: String? = null
+    do {
+        val (page, next) = readPage(token)
+        records.addAll(page)
+        token = next
+    } while (token != null)
+    return records
+}
 
 data class HealthSnapshot(
     val weightKg: Double?,
@@ -67,7 +89,7 @@ class HealthSync(private val context: Context) {
      * reported as "Health Connect unavailable".
      */
     suspend fun grantedPermissions(): Set<String> =
-        runCatching {
+        healthRead {
             HealthConnectClient.getOrCreate(context).permissionController.getGrantedPermissions()
         }.getOrDefault(emptySet())
 
@@ -105,9 +127,8 @@ class HealthSync(private val context: Context) {
         if (!available()) return null
         val client = HealthConnectClient.getOrCreate(context)
         val now = Instant.now()
-        // Body readings are sparse — people weigh in weekly at best, so a
-        // 30-day window silently found nothing. Look back a year.
-        val start = now.minus(Duration.ofDays(365))
+        val lookback = if (HealthPermission.PERMISSION_READ_HEALTH_DATA_HISTORY in grantedPermissions()) 365L else 30L
+        val start = now.minus(Duration.ofDays(lookback))
 
         val weight = client.readRecords(
             ReadRecordsRequest(
@@ -135,7 +156,7 @@ class HealthSync(private val context: Context) {
             ),
         )[StepsRecord.COUNT_TOTAL] ?: 0L
 
-        val stepsAsOf = runCatching {
+        val stepsAsOf = healthRead {
             client.readRecords(
                 ReadRecordsRequest(
                     recordType = StepsRecord::class,
@@ -171,6 +192,10 @@ class HealthSync(private val context: Context) {
         /** Apps that wrote the step records, and when the newest one ends. */
         val stepSources: List<String> = emptyList(),
         val newestStepAtMs: Long? = null,
+        val startDate: LocalDate? = null,
+        val endDate: LocalDate? = null,
+        val authoritativeMetrics: Set<HealthMetric> = emptySet(),
+        val restingHrDates: Set<LocalDate> = emptySet(),
     )
 
     private fun metricName(@StringRes id: Int): String = Words.text(UiText.res(id))
@@ -188,8 +213,11 @@ class HealthSync(private val context: Context) {
         val client = HealthConnectClient.getOrCreate(context)
         val zone = ZoneId.systemDefault()
         val end = LocalDate.now(zone)
-        val start = end.minusDays((days - 1).coerceAtLeast(0).toLong())
+        val bodyLookback = if (HealthPermission.PERMISSION_READ_HEALTH_DATA_HISTORY in granted) days else days.coerceAtMost(30)
+        val lookback = bodyLookback.coerceAtMost(90)
+        val start = end.minusDays((lookback - 1).coerceAtLeast(0).toLong())
         val from = start.atStartOfDay(zone).toInstant()
+        val bodyFrom = end.minusDays((bodyLookback - 1).coerceAtLeast(0).toLong()).atStartOfDay(zone).toInstant()
         val to = end.plusDays(1).atStartOfDay(zone).toInstant()
         // Period-grouped aggregation rejects Instant ranges outright:
         // "Either use TimeRangeFilter with LocalDateTime or
@@ -197,9 +225,14 @@ class HealthSync(private val context: Context) {
         val fromLocal = start.atStartOfDay()
         val toLocal = end.plusDays(1).atStartOfDay()
         val problems = mutableListOf<UiText>()
+        val authoritative = mutableSetOf<HealthMetric>()
 
         fun note(metric: String, error: Throwable) {
             problems += UiText.Raw("$metric: ${error.javaClass.simpleName}${error.message?.let { " $it" } ?: ""}")
+        }
+
+        fun missing(label: String) {
+            problems += UiText.Raw("$label: ${Words.text(UiText.res(R.string.health_permissions_missing))}")
         }
 
         // One request per metric: a single denied permission (calories was the
@@ -207,7 +240,12 @@ class HealthSync(private val context: Context) {
         suspend fun <T : Any> daily(
             label: String,
             metric: androidx.health.connect.client.aggregate.AggregateMetric<T>,
-        ): Map<LocalDate, T> = runCatching {
+            permission: String,
+            field: HealthMetric,
+        ): Map<LocalDate, T> = if (permission !in granted) {
+            missing(label)
+            emptyMap()
+        } else healthRead {
             client.aggregateGroupByPeriod(
                 AggregateGroupByPeriodRequest(
                     metrics = setOf(metric),
@@ -217,19 +255,17 @@ class HealthSync(private val context: Context) {
             ).mapNotNull { bucket ->
                 bucket.result[metric]?.let { bucket.startTime.toLocalDate() to it }
             }.toMap()
-        }.onFailure { note(label, it) }.getOrDefault(emptyMap())
+        }.onSuccess { authoritative += field }.onFailure { note(label, it) }.getOrDefault(emptyMap())
 
-        val stepsByDate = daily(metricName(R.string.health_metric_steps), StepsRecord.COUNT_TOTAL)
-        val distanceByDate = daily(metricName(R.string.health_metric_distance), DistanceRecord.DISTANCE_TOTAL)
-        val kcalByDate = daily(metricName(R.string.health_metric_active_calories), ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL)
+        val stepsByDate = daily(metricName(R.string.health_metric_steps), StepsRecord.COUNT_TOTAL, HealthPermission.getReadPermission(StepsRecord::class), HealthMetric.STEPS)
+        val distanceByDate = daily(metricName(R.string.health_metric_distance), DistanceRecord.DISTANCE_TOTAL, HealthPermission.getReadPermission(DistanceRecord::class), HealthMetric.DISTANCE)
+        val kcalByDate = daily(metricName(R.string.health_metric_active_calories), ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL, HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class), HealthMetric.ACTIVE_CALORIES)
 
-        val sleepByDate: Map<LocalDate, Long> = runCatching {
-            client.readRecords(
-                ReadRecordsRequest(
-                    recordType = SleepSessionRecord::class,
-                    timeRangeFilter = TimeRangeFilter.between(from, to),
-                ),
-            ).records.map { record ->
+        val sleepByDate: Map<LocalDate, Long> = if (HealthPermission.getReadPermission(SleepSessionRecord::class) !in granted) {
+            missing(metricName(R.string.health_metric_sleep))
+            emptyMap()
+        } else healthRead {
+            readAllRecords(client, SleepSessionRecord::class, from, to).map { record ->
                 SleepSpan(
                     start = record.startTime,
                     end = record.endTime,
@@ -239,35 +275,37 @@ class HealthSync(private val context: Context) {
                 )
             }.let { SleepMath.nightMinutesByWakeDay(it, zone) }
                 .mapValues { it.value.toLong() }
-        }.onFailure { note(metricName(R.string.health_metric_sleep), it) }.getOrDefault(emptyMap())
+        }.onSuccess { authoritative += HealthMetric.SLEEP }.onFailure { note(metricName(R.string.health_metric_sleep), it) }.getOrDefault(emptyMap())
 
-        val recordedRestingHr: Map<LocalDate, Int> = runCatching {
-            client.readRecords(
-                ReadRecordsRequest(
-                    recordType = RestingHeartRateRecord::class,
-                    timeRangeFilter = TimeRangeFilter.between(from, to),
-                ),
-            ).records
+        var recordedSucceeded = false
+        val recordedRestingHr: Map<LocalDate, Int> = if (HealthPermission.getReadPermission(RestingHeartRateRecord::class) !in granted) {
+            missing(metricName(R.string.health_metric_resting_hr))
+            emptyMap()
+        } else healthRead {
+            readAllRecords(client, RestingHeartRateRecord::class, from, to)
                 .groupBy { it.time.atZone(zone).toLocalDate() }
                 .mapValues { (_, samples) -> samples.map { it.beatsPerMinute }.average().toInt() }
-        }.onFailure { note(metricName(R.string.health_metric_resting_hr), it) }.getOrDefault(emptyMap())
+        }.onSuccess { recordedSucceeded = true }.onFailure { note(metricName(R.string.health_metric_resting_hr), it) }.getOrDefault(emptyMap())
 
         // Samsung Health writes heart-rate samples, not a resting figure: derive one for the days that have no
         // record of their own. Skipped without the grant so a missing permission is not reported as a failure
         // on every sync (Settings shows it instead).
+        var derivedSucceeded = false
         val derivedRestingHr: Map<LocalDate, Int> =
             if (HealthPermission.getReadPermission(HeartRateRecord::class) !in granted) {
                 emptyMap()
             } else {
-                runCatching { RestingHr.derive(heartRateWindows(client, from, to), zone) }
+                healthRead { RestingHr.derive(heartRateWindows(client, from, to), zone) }
+                    .onSuccess { derivedSucceeded = true }
                     .onFailure { note(metricName(R.string.health_metric_heart_rate), it) }
                     .getOrDefault(emptyMap())
             }
         val restingHrByDate = RestingHr.merge(recordedRestingHr, derivedRestingHr)
+        if (restingHrAuthoritative(recordedSucceeded, derivedSucceeded)) authoritative += HealthMetric.RESTING_HR
 
         // Only days with real signal: fabricating empty rows made the sync
         // report "90 days" while every screen showed nothing.
-        val result = (0 until days).mapNotNull { offset ->
+        val result = (0 until lookback).mapNotNull { offset ->
             val date = start.plusDays(offset.toLong())
             val day = HealthDay(
                 date = date,
@@ -285,22 +323,13 @@ class HealthSync(private val context: Context) {
 
         // Body composition lives in its own records, not the daily aggregates:
         // importing them here is what fills the stat history from Samsung Health.
-        val weights = runCatching {
-            client.readRecords(
-                ReadRecordsRequest(
-                    recordType = WeightRecord::class,
-                    timeRangeFilter = TimeRangeFilter.between(from, to),
-                ),
-            ).records
-        }.onFailure { note(metricName(R.string.health_metric_weight), it) }.getOrDefault(emptyList())
+        var weightSucceeded = false
+        val weights = healthRead {
+            readAllRecords(client, WeightRecord::class, bodyFrom, to)
+        }.onSuccess { weightSucceeded = true }.onFailure { note(metricName(R.string.health_metric_weight), it) }.getOrDefault(emptyList())
 
-        val bodyFatByDate = runCatching {
-            client.readRecords(
-                ReadRecordsRequest(
-                    recordType = BodyFatRecord::class,
-                    timeRangeFilter = TimeRangeFilter.between(from, to),
-                ),
-            ).records
+        val bodyFatByDate = healthRead {
+            readAllRecords(client, BodyFatRecord::class, bodyFrom, to)
                 .groupBy { it.time.atZone(zone).toLocalDate() }
                 .mapValues { (_, samples) -> toInstrumentPrecision(samples.last().percentage.value) }
         }.onFailure { note(metricName(R.string.health_metric_body_fat), it) }.getOrDefault(emptyMap())
@@ -320,19 +349,19 @@ class HealthSync(private val context: Context) {
             }
             .sortedBy { it.date }
 
-        val coverage = mapOf(
-            metricName(R.string.health_metric_steps) to stepsByDate.count { it.value > 0L },
-            metricName(R.string.health_metric_distance) to distanceByDate.size,
-            metricName(R.string.health_metric_calories) to kcalByDate.size,
-            metricName(R.string.health_metric_sleep) to sleepByDate.size,
-            metricName(R.string.health_metric_heart_rate) to restingHrByDate.size,
-            metricName(R.string.health_metric_weight) to bodyReadings.size,
-        )
+        val coverage = buildMap {
+            if (HealthMetric.STEPS in authoritative) put(metricName(R.string.health_metric_steps), stepsByDate.count { it.value > 0L })
+            if (HealthMetric.DISTANCE in authoritative) put(metricName(R.string.health_metric_distance), distanceByDate.size)
+            if (HealthMetric.ACTIVE_CALORIES in authoritative) put(metricName(R.string.health_metric_calories), kcalByDate.size)
+            if (HealthMetric.SLEEP in authoritative) put(metricName(R.string.health_metric_sleep), sleepByDate.size)
+            if (recordedSucceeded || derivedSucceeded) put(metricName(R.string.health_metric_heart_rate), restingHrByDate.size)
+            if (weightSucceeded) put(metricName(R.string.health_metric_weight), bodyReadings.size)
+        }
 
         // Provenance: a step count that trails the watch/phone tally means
         // Samsung Health has not pushed its latest batch yet, which is invisible
         // from the total alone.
-        val rawSteps = runCatching {
+        val rawSteps = healthRead {
             client.readRecords(
                 ReadRecordsRequest(
                     recordType = StepsRecord::class,
@@ -347,9 +376,23 @@ class HealthSync(private val context: Context) {
         val newestStepAtMs = rawSteps.maxOfOrNull { it.endTime }?.toEpochMilli()
 
         if (result.isEmpty() && bodyReadings.isEmpty() && problems.isEmpty()) {
-            problems += UiText.plural(R.plurals.health_no_activity, days)
+            problems += UiText.plural(R.plurals.health_no_activity, lookback)
         }
-        return HistoryRead(result, bodyReadings, coverage, problems, stepSources, newestStepAtMs)
+        return HistoryRead(result, bodyReadings, coverage, problems, stepSources, newestStepAtMs,
+            start, end, authoritative, recordedRestingHr.keys)
+    }
+
+    private suspend fun <T : Record> readAllRecords(
+        client: HealthConnectClient, type: KClass<T>, from: Instant, to: Instant,
+    ): List<T> = collectHealthPages { token ->
+        val page = client.readRecords(
+            ReadRecordsRequest(
+                recordType = type,
+                timeRangeFilter = TimeRangeFilter.between(from, to),
+                pageToken = token,
+            ),
+        )
+        page.records to page.pageToken
     }
 
     /**

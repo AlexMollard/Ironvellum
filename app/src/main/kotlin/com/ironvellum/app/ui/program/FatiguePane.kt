@@ -28,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -174,6 +175,7 @@ private fun MostWorkedRow(reading: FatigueReading, nowMs: Long, zone: ZoneId, on
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        val largeText = LocalDensity.current.fontScale > 1.3f
         Column(Modifier.weight(1f)) {
             Text(reading.muscle.label, style = MaterialTheme.typography.bodyLarge, color = IronvellumColors.Ink)
             reading.causes.firstOrNull()?.let { cause ->
@@ -185,14 +187,21 @@ private fun MostWorkedRow(reading: FatigueReading, nowMs: Long, zone: ZoneId, on
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                FatigueSwatch(reading.level)
-                Text(level, style = MaterialTheme.typography.labelLarge, color = IronvellumColors.Ink)
+            if (largeText) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FatigueSwatch(reading.level)
+                    Text(level, style = MaterialTheme.typography.labelLarge, color = IronvellumColors.Ink)
+                }
+                if (fresh != null) Text(fresh, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
-            if (fresh != null) {
-                Text(fresh, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+        }
+        if (!largeText) {
+            Column(horizontalAlignment = Alignment.End) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FatigueSwatch(reading.level)
+                    Text(level, style = MaterialTheme.typography.labelLarge, color = IronvellumColors.Ink)
+                }
+                if (fresh != null) Text(fresh, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
         }
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted)

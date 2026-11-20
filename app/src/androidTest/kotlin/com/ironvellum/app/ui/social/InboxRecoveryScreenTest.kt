@@ -55,8 +55,8 @@ class InboxRecoveryScreenTest {
                 return Result.success(Inbox(listOf(InboxItem.FriendRequest(200, "ally", "Ready Ally")), null))
             }
             override suspend fun markSeen(owner: SocialOwner) = Result.success(Unit)
-            override suspend fun accept(userId: String) = Result.success(Unit)
-            override suspend fun decline(userId: String, owner: SocialOwner) = Result.success(true)
+            override suspend fun accept(request: RequestIdentity, owner: SocialOwner) = Result.success(true)
+            override suspend fun decline(request: RequestIdentity, owner: SocialOwner) = Result.success(true)
             override fun dismissReadNotification(owner: SocialOwner, throughMs: Long) = Unit
         }
         compose.activityRule.scenario.onActivity { activity ->
@@ -87,8 +87,8 @@ class InboxRecoveryScreenTest {
             var inbox = Inbox(listOf(InboxItem.FriendRequest(200, "ally", "Original Ally")), null)
             override suspend fun read(force: Boolean) = Result.success(inbox)
             override suspend fun markSeen(owner: SocialOwner) = Result.success(Unit)
-            override suspend fun accept(userId: String) = Result.success(Unit)
-            override suspend fun decline(userId: String, owner: SocialOwner) = Result.success(true)
+            override suspend fun accept(request: RequestIdentity, owner: SocialOwner) = Result.success(true)
+            override suspend fun decline(request: RequestIdentity, owner: SocialOwner) = Result.success(true)
             override fun dismissReadNotification(owner: SocialOwner, throughMs: Long) = Unit
         }
         var vm = InboxViewModel(gateway)
@@ -126,8 +126,8 @@ class InboxRecoveryScreenTest {
                 InboxItem.CircleGoalMet(196, "five", "Goal Person", "Current Circle"),
             ), 200))
             override suspend fun markSeen(owner: SocialOwner) = Result.success(Unit)
-            override suspend fun accept(userId: String) = Result.success(Unit)
-            override suspend fun decline(userId: String, owner: SocialOwner) = Result.success(true)
+            override suspend fun accept(request: RequestIdentity, owner: SocialOwner) = Result.success(true)
+            override suspend fun decline(request: RequestIdentity, owner: SocialOwner) = Result.success(true)
             override fun dismissReadNotification(owner: SocialOwner, throughMs: Long) = Unit
         }
         val vm = InboxViewModel(gateway)

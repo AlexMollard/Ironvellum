@@ -647,6 +647,7 @@ internal fun WorkoutPreset.toPlanned(): PlannedPreset = PlannedPreset(
             reps = it.targetReps,
             targetWeightKg = it.targetWeightKg,
             modifiers = it.modifiers,
+            sourceEntryId = it.id.takeIf { id -> id != 0L },
         )
     },
 )

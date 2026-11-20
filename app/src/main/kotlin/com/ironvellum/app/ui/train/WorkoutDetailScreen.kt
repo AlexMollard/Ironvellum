@@ -322,9 +322,9 @@ class WorkoutDetailViewModel(
     fun photoFile(photo: ProgressPhoto?): java.io.File? = photo?.let { repo.photoLibrary.store?.file(it.fileName)?.takeIf { f -> f.isFile } }
 
     /** Keeps [uri] as the day's photo, replacing the one there; it moves to this workout. */
-    fun savePhoto(uri: Uri) {
-        val session = ui.value.session?.takeIf { it.completedAtMs != null } ?: return
-        if (photoSaving) return
+    fun savePhoto(uri: Uri, cleanup: () -> Unit) {
+        val session = ui.value.session?.takeIf { it.completedAtMs != null }
+        if (session == null || photoSaving) { cleanup(); return }
         photoSaving = true
         photoFailed = false
         viewModelScope.launch {
@@ -332,7 +332,7 @@ class WorkoutDetailViewModel(
                 repo.photoLibrary.saveWorkout(appContext, uri, sessionId, trialDay(session, java.time.ZoneId.systemDefault()).toEpochDay())
             }.onFailure { photoFailed = true }
             photoSaving = false
-        }
+        }.invokeOnCompletion { cleanup() }
     }
 
     fun removePhoto() {

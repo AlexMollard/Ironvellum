@@ -37,7 +37,7 @@ internal fun WorkoutPhotoCard(
     dateText: String,
     saving: Boolean,
     failed: Boolean,
-    onPicked: (Uri) -> Unit,
+    onPicked: (Uri, () -> Unit) -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {

@@ -523,16 +523,26 @@ class SessionViewModel(
         private set
 
     /** Keeps [uri] as the day's photo and moves on; a failure says so and leaves Skip as the way forward. */
-    fun savePhoto(uri: Uri) {
-        if (photoSaving) return
+    fun savePhoto(uri: Uri, cleanup: () -> Unit) {
+        if (photoSaving) {
+            cleanup()
+            return
+        }
         photoSaving = true
         photoFailed = false
-        viewModelScope.launch {
-            runCatching { repo.photoLibrary.saveWorkout(appContext, uri, sessionId, photoDay) }
-                .onSuccess { advanceFinish(Finish.ROUTINE) }
-                .onFailure { photoFailed = true }
-            photoSaving = false
+        val job = viewModelScope.launch {
+            try {
+                repo.photoLibrary.saveWorkout(appContext, uri, sessionId, photoDay)
+                advanceFinish(Finish.ROUTINE)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                photoFailed = true
+            } finally {
+                photoSaving = false
+            }
         }
+        job.invokeOnCompletion { cleanup() }
     }
 
     /** What the sealed trial set, frozen at the seal so a rotation keeps it. */
@@ -2646,7 +2656,8 @@ internal fun foldedSubline(block: TrialBlock, metric: ExerciseMetric, weighted: 
     val total = block.sets.count { !it.warmup }
     val first = block.sets.firstOrNull { !it.warmup } ?: block.first
     return when {
-        done.size == total -> {
+        total == 0 -> Words.text(UiText.plural(R.plurals.common_sets_count, 0))
+        done.isNotEmpty() && done.size == total -> {
             // Machine support runs opposite to added load; a missing assistance value is not zero support.
             val assisted = BodyShare.isAssisted(first.exerciseName)
             val best = if (metric.isStrength) {

@@ -104,8 +104,8 @@ internal interface InboxGateway {
     fun owner(): SocialOwner
     suspend fun read(force: Boolean): Result<Inbox>
     suspend fun markSeen(owner: SocialOwner): Result<Unit>
-    suspend fun accept(userId: String): Result<Unit>
-    suspend fun decline(userId: String, owner: SocialOwner): Result<Boolean>
+    suspend fun accept(request: RequestIdentity, owner: SocialOwner): Result<Boolean>
+    suspend fun decline(request: RequestIdentity, owner: SocialOwner): Result<Boolean>
     fun dismissReadNotification(owner: SocialOwner, throughMs: Long)
 }
 
@@ -120,11 +120,15 @@ private class CloudInboxGateway(private val app: IronvellumApp) : InboxGateway {
         val client = owner.backend as? SupabaseClient ?: return Result.success(Unit)
         return cloud.markInboxSeen(userId, client)
     }
-    override suspend fun accept(userId: String) = cloud.acceptFriend(userId)
-    override suspend fun decline(userId: String, owner: SocialOwner): Result<Boolean> {
+    override suspend fun accept(request: RequestIdentity, owner: SocialOwner): Result<Boolean> {
         val me = owner.userId ?: return Result.success(false)
         val client = owner.backend as? SupabaseClient ?: return Result.success(false)
-        return cloud.declineFriendRequest(userId, me, client)
+        return cloud.acceptInboxFriendRequest(request.userId, request.createdAt, me, client)
+    }
+    override suspend fun decline(request: RequestIdentity, owner: SocialOwner): Result<Boolean> {
+        val me = owner.userId ?: return Result.success(false)
+        val client = owner.backend as? SupabaseClient ?: return Result.success(false)
+        return cloud.declineFriendRequest(request.userId, request.createdAt, me, client)
     }
 
     override fun dismissReadNotification(owner: SocialOwner, throughMs: Long) {
@@ -136,6 +140,7 @@ private class CloudInboxGateway(private val app: IronvellumApp) : InboxGateway {
 
 /** How an ally request was answered from the inbox row itself. */
 internal enum class RequestAnswer { ACCEPTED, DECLINED }
+internal data class RequestIdentity(val userId: String, val createdAtMs: Long, val createdAt: String = Instant.ofEpochMilli(createdAtMs).toString())
 
 internal data class InboxUi(
     val owner: SocialOwner = SocialOwner(null, null),
@@ -154,10 +159,10 @@ internal data class InboxUi(
     val error: UiText? = null,
     /** An accept/decline the server refused, verbatim. */
     val actionError: UiText? = null,
-    val answering: Set<String> = emptySet(),
-    val answered: Map<String, RequestAnswer> = emptyMap(),
-    /** A decline waiting out its Undo window: (actor id, name). The server call fires when it closes. */
-    val pendingDecline: Pair<String, String>? = null,
+    val answering: Set<RequestIdentity> = emptySet(),
+    val answered: Map<RequestIdentity, RequestAnswer> = emptyMap(),
+    /** A decline waiting out its Undo window. */
+    val pendingDecline: Pair<RequestIdentity, String>? = null,
 ) {
     val signedIn: Boolean get() = owner.userId != null
 }
@@ -224,17 +229,17 @@ internal class InboxViewModel(private val gateway: InboxGateway, private val onA
         }
     }
 
-    fun accept(userId: String) = answer(userId, RequestAnswer.ACCEPTED)
+    fun accept(request: RequestIdentity) = answer(request, RequestAnswer.ACCEPTED)
 
     /**
      * Decline reads as done at once but the server call waits for the Undo window to close,
      * since a declined request cannot be put back from here. A second decline commits the first.
      */
-    fun decline(userId: String, name: String) {
+    fun decline(request: RequestIdentity, name: String) {
         refreshOwner()
-        if (userId in _ui.value.answering || userId in _ui.value.answered) return
+        if (request in _ui.value.answering || request in _ui.value.answered) return
         commitDecline()
-        _ui.value = _ui.value.copy(pendingDecline = userId to name)
+        _ui.value = _ui.value.copy(pendingDecline = request to name)
     }
 
     fun undoDecline() {
@@ -244,32 +249,34 @@ internal class InboxViewModel(private val gateway: InboxGateway, private val onA
     /** Send the waiting decline now: its window closed, another decline began, or the tab was left. */
     fun commitDecline() {
         refreshOwner()
-        val (userId, _) = _ui.value.pendingDecline ?: return
+        val (request, _) = _ui.value.pendingDecline ?: return
         _ui.value = _ui.value.copy(pendingDecline = null)
-        answer(userId, RequestAnswer.DECLINED)
+        answer(request, RequestAnswer.DECLINED)
     }
 
-    private fun answer(userId: String, answer: RequestAnswer) {
+    private fun answer(request: RequestIdentity, answer: RequestAnswer) {
         refreshOwner()
-        if (!_ui.value.signedIn || userId in _ui.value.answering || userId in _ui.value.answered) return
+        if (!_ui.value.signedIn || request in _ui.value.answering || request in _ui.value.answered) return
         val expected = owner
         val scope = requests
-        _ui.value = _ui.value.copy(answering = _ui.value.answering + userId, actionError = null)
+        _ui.value = _ui.value.copy(answering = _ui.value.answering + request, actionError = null)
         scope.launch {
             try {
                 val answered = when (answer) {
-                    RequestAnswer.ACCEPTED -> { gateway.accept(userId).getOrThrow(); true }
-                    RequestAnswer.DECLINED -> gateway.decline(userId, expected).getOrThrow()
+                    RequestAnswer.ACCEPTED -> gateway.accept(request, expected).getOrThrow()
+                    RequestAnswer.DECLINED -> gateway.decline(request, expected).getOrThrow()
                 }
                 if (!current(expected, scope)) return@launch
                 if (answered) {
-                    _ui.value = _ui.value.copy(answered = _ui.value.answered + (userId to answer))
+                    _ui.value = _ui.value.copy(answered = _ui.value.answered + (request to answer))
                     onAnswered(expected)
                 } else {
                     // A read started before the conditional delete can still contain the stale request.
                     _ui.first { !it.loading }
                     if (!current(expected, scope)) return@launch
-                    _ui.value = _ui.value.copy(items = _ui.value.items.filterNot { it is InboxItem.FriendRequest && it.actorId == userId })
+                    _ui.value = _ui.value.copy(items = _ui.value.items.filterNot {
+                        it is InboxItem.FriendRequest && it.actorId == request.userId && it.createdAt == request.createdAt
+                    })
                     open(force = true, acknowledge = false)
                 }
             } catch (error: CancellationException) {
@@ -277,7 +284,7 @@ internal class InboxViewModel(private val gateway: InboxGateway, private val onA
             } catch (error: Exception) {
                 if (current(expected, scope)) _ui.value = _ui.value.copy(actionError = error.reason())
             } finally {
-                if (current(expected, scope)) _ui.value = _ui.value.copy(answering = _ui.value.answering - userId)
+                if (current(expected, scope)) _ui.value = _ui.value.copy(answering = _ui.value.answering - request)
             }
         }
     }
@@ -436,18 +443,19 @@ private fun InboxRows(
     InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
         items.forEachIndexed { index, item ->
             if (index > 0) InkDivider()
+            val request = RequestIdentity(item.actorId, item.occurredAtMs, (item as? InboxItem.FriendRequest)?.createdAt ?: Instant.ofEpochMilli(item.occurredAtMs).toString())
             InboxRow(
                 item = item,
                 unread = item.occurredAtMs > seenAt,
-                answering = item.actorId in ui.answering || ui.pendingDecline?.first == item.actorId,
-                answered = ui.answered[item.actorId],
+                answering = request in ui.answering || ui.pendingDecline?.first == request,
+                answered = ui.answered[request],
                 onOpenLifter = { onOpenLifter(item.actorId, item.actorName) },
                 onOpenCircle = onOpenCircle,
                 onOpenComments = { sessionId, headline, mine ->
                     ui.owner.userId?.let { me -> onOpenComments(sessionId, if (mine) me else "", headline) }
                 },
-                onAccept = { viewModel.accept(item.actorId) },
-                onDecline = { viewModel.decline(item.actorId, item.actorName.ifBlank { "${Words.lifter.cat}" }) },
+                onAccept = { viewModel.accept(request) },
+                onDecline = { viewModel.decline(request, item.actorName.ifBlank { "${Words.lifter.cat}" }) },
             )
         }
     }

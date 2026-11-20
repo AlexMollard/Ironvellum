@@ -11,6 +11,7 @@
       to protect. The crash journal carries stack traces from this device.
     -->
     <exclude domain="file" path="db-snapshots" />
+    <exclude domain="file" path="backups" />
     <exclude domain="file" path="crash" />
     <!-- Progress photos stay on this phone and in the lifter's own backup folder; Google's backup and device transfer never carry them. -->
     <exclude domain="file" path="photos" />
@@ -51,6 +52,7 @@
       to protect. The crash journal carries stack traces from this device.
     -->
     <exclude domain="file" path="db-snapshots" />
+    <exclude domain="file" path="backups" />
     <exclude domain="file" path="crash" />
     <!-- Progress photos stay on this phone and in the lifter's own backup folder; Google's backup and device transfer never carry them. -->
     <exclude domain="file" path="photos" />

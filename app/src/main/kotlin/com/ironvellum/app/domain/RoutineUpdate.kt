@@ -227,7 +227,7 @@ object RoutineUpdate {
     }
 
     /** A superset made in the trial between movements the rite holds apart, offered unticked. */
-    data class Link(val exerciseIds: List<Long>, val names: List<String>) {
+    data class Link(val exerciseIds: List<Long>, val names: List<String>, val entryIds: List<Long?> = List(exerciseIds.size) { null }) {
         val line: String get() = names.joinToString(" + ")
     }
 
@@ -272,17 +272,23 @@ object RoutineUpdate {
         val blocks = Supersets.blocks(sets.filter { !it.warmup })
         val worked = entries.filter { !it.warmup }.sortedBy { it.position }
         val riteGroups = Supersets.effective(worked.map { it.supersetGroup })
-        val riteIds = worked.map { it.exerciseId }
+        val seen = mutableMapOf<Long, Int>()
+        val blockEntries = blocks.map { block ->
+            val nth = seen.getOrDefault(block.exerciseId, 0)
+            seen[block.exerciseId] = nth + 1
+            worked.filter { it.exerciseId == block.exerciseId }.getOrNull(nth)
+        }
         return Supersets.runs(blocks.map { it.group }).mapNotNull { run ->
             val members = run.map { blocks[it] }
+            val matched = run.map { blockEntries[it] }
             val ids = members.map { it.exerciseId }
-            if (ids.any { it !in riteIds && it !in additionIds }) return@mapNotNull null
-            val together = ids.all { it in riteIds } && ids.map { id -> riteIds.indexOf(id) }.let { at ->
+            if (matched.indices.any { matched[it] == null && ids[it] !in additionIds }) return@mapNotNull null
+            val together = matched.all { it != null } && matched.map { worked.indexOf(it) }.let { at ->
                 val g = riteGroups[at.first()]
                 g != null && at.all { riteGroups[it] == g }
             }
             if (together) return@mapNotNull null
-            Link(ids, members.map { it.sets.first().exerciseName })
+            Link(ids, members.map { it.sets.first().exerciseName }, matched.map { it?.id })
         }
     }
 
@@ -304,9 +310,16 @@ object RoutineUpdate {
             list = list.take(at) + add.entry.copy(id = 0, position = at, supersetGroup = null) + list.drop(at)
         }
         for (link in links) {
-            for ((a, b) in link.exerciseIds.zipWithNext()) {
-                val ia = list.indexOfFirst { it.exerciseId == a && !it.warmup }
-                val ib = list.indexOfFirst { it.exerciseId == b && !it.warmup }
+            fun indexOfMember(index: Int): Int {
+                val entryId = link.entryIds.getOrNull(index)
+                return list.indexOfFirst {
+                    !it.warmup && if (entryId != null) it.id == entryId
+                    else it.id == 0L && it.exerciseId == link.exerciseIds[index]
+                }
+            }
+            for (index in 0 until link.exerciseIds.lastIndex) {
+                val ia = indexOfMember(index)
+                val ib = indexOfMember(index + 1)
                 if (ia < 0 || ib < 0) break
                 val layout = Supersets.link(list.map { it.supersetGroup }, ia, ib) ?: continue
                 list = layout.order.mapIndexed { slot, old ->

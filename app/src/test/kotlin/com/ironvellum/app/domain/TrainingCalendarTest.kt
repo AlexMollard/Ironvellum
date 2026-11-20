@@ -128,6 +128,12 @@ class TrainingCalendarTest {
     }
 
     @Test
+    fun `best week retains repeated dates and excludes the eighth day`() {
+        val first = LocalDate.parse("2026-03-01")
+        assertEquals(3, Titles.bestWeekWorkouts(listOf(first, first, first.plusDays(6), first.plusDays(7))))
+    }
+
+    @Test
     fun `best week of no training is zero`() {
         assertEquals(0, Titles.bestWeekWorkouts(emptySet()))
     }

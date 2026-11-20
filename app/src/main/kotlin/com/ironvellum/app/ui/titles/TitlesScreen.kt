@@ -196,10 +196,10 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
     /**
      * Adds [skillName] to rite [presetId], or to a new rite named after it
      * when null: three sets at the standard's own figure (seconds for a
-     * hold, as the seeded rites store them).
+     * hold, as the seeded rites store them). Distance standards have no matching set prescription.
      */
     fun addToRite(skillName: String, presetId: Long?) {
-        val def = Skills.forName(skillName) ?: return
+        val def = Skills.forName(skillName)?.takeUnless { it.metric == Skills.Metric.METRES } ?: return
         viewModelScope.launchGuarded("add to ${Words.rite.s}") {
             val rite = repo.addExerciseToRite(skillName, presetId, targetSets = 3, targetReps = def.target.coerceAtLeast(1))
             _trainResult.value = UiText.res(R.string.titles_train_added, skillName, rite)

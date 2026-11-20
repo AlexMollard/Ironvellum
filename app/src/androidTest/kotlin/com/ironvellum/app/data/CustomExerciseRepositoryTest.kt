@@ -188,6 +188,25 @@ class CustomExerciseRepositoryTest {
     }
 
     @Test
+    fun archiveRestoresItsDistanceMetricOverASameNamedCustomExercise() = runTest {
+        val movement = create(spec(logged = CustomLogged.DISTANCE))
+        val session = db.sessionDao().insertSession(
+            SessionEntity(presetId = null, label = "Distance", startedAtMs = 1, completedAtMs = 2, xpAwarded = 0),
+        )
+        val set = SetLogEntity(sessionId = session, exerciseId = movement.id, setIndex = 0, reps = 0,
+            weightKg = null, modifiers = "", done = true, distanceM = 5000.0)
+        db.sessionDao().insertSets(listOf(set))
+        val archive = repo.exportJson()
+        val original = db.exerciseDao().byId(movement.id)!!
+        db.exerciseDao().update(original.copy(metric = "REPS", isWeighted = true))
+
+        repo.importArchive(archive).getOrThrow()
+
+        assertEquals(original, db.exerciseDao().byId(movement.id))
+        assertEquals(5000.0, db.sessionDao().setsFor(session).single().distanceM!!, 0.0)
+    }
+
+    @Test
     fun keepAsNewMovementFromACsvImportMakesTheSameKindOfRow() = runTest {
         val id = repo.ensureImportMovement("Imported Thing", com.ironvellum.app.domain.ExerciseMetric.DURATION)
         val row = db.exerciseDao().byId(id)!!

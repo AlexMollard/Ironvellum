@@ -327,6 +327,7 @@ class ExportRoundTripTest {
         repo.setHeight(181.5)
         repo.setSex(Sex.FEMALE)
         repo.grantRoll(3)
+        val savedRolls = checkNotNull(db.gachaDao().get()).rolls
         db.gachaDao().insertFrame(OwnedCrestFrameEntity(frameId = "ember", ownedAtMs = 10))
         db.gachaDao().insertFrame(OwnedCrestFrameEntity(frameId = "verdant", ownedAtMs = 20))
         assertEquals(Crests.Equip.Worn, repo.equipFrame("ember"))
@@ -370,7 +371,7 @@ class ExportRoundTripTest {
             assertEquals(4, idle.shadows)
             assertEquals(1.31, idle.relicMultiplier, 0.0001)
             assertEquals(123L, idle.lastCollectedAtMs)
-            assertEquals(3, freshDb.gachaDao().get()!!.rolls)
+            assertEquals(savedRolls, freshDb.gachaDao().get()!!.rolls)
             assertEquals("ember", freshDb.gachaDao().get()!!.equippedFrame)
             assertEquals(setOf("ember", "verdant"), freshDb.gachaDao().ownedFrameIds().toSet())
             val relic = freshDb.gachaDao().observeRelics().first().single()
@@ -482,6 +483,7 @@ class ExportRoundTripTest {
         repo.updateHoldSet(sets[1].id, seconds = 45, weightKg = null, done = true)
         repo.setSessionNote(sessionId, "public: felt strong")
         repo.setSessionPrivateNote(sessionId, "SECRET-SORE-ELBOW")
+        repo.setExerciseNote(sessionId, sets.first().exerciseId, "LOCAL-FORM-CUE")
         repo.completeSession(sessionId)
         repo.addStat(weightKg = 79.1, bodyFatPct = 13.5)
         db.measurementDao().insert(MeasurementEntity(site = "WAIST", valueCm = 81.7, takenAtMs = 11))
@@ -499,7 +501,21 @@ class ExportRoundTripTest {
         ).forEach { trace ->
             assertFalse("the uploaded archive must carry no trace of $trace", cloud.json.contains(trace))
         }
+        assertFalse(cloud.json.contains("LOCAL-FORM-CUE"))
         assertTrue("the public note is not private and must travel", cloud.json.contains("public: felt strong"))
+
+        // Restore on the same phone first: the private note is never in the archive.
+        repo.importArchive(cloud.json).getOrThrow()
+        assertEquals("SECRET-SORE-ELBOW", db.sessionDao().byId(sessionId)?.privateNote)
+        assertEquals("LOCAL-FORM-CUE", db.sessionDao().allExerciseNotes().single().note)
+
+        // An archive from a different workout can reuse the same local numeric ID.
+        val differentWorkout = JSONObject(cloud.json)
+        val other = differentWorkout.getJSONArray("sessions").getJSONObject(0)
+        other.put("startedAtMs", other.getLong("startedAtMs") - 86_400_000)
+        repo.importArchive(differentWorkout.toString()).getOrThrow()
+        assertEquals("", db.sessionDao().byId(sessionId)?.privateNote)
+        assertTrue(db.sessionDao().allExerciseNotes().isEmpty())
 
         // Training is lost (a new phone); the body history stays on this one.
         db.presetDao().clearAll()

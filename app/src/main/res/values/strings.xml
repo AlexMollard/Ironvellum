@@ -994,8 +994,11 @@
     <string name="settings_import_review_unit_choose">Strong exports carry no unit column, so choose.</string>
     <string name="settings_import_review_unmatched_title">Exercises we could not match</string>
     <string name="settings_import_review_all_matched">Every exercise matched the catalogue.</string>
-    <string name="settings_import_review_note">Nothing here replaces your history. Workouts already in the app are skipped; imported workouts stay on this device and out of the feed.</string>
-    <string name="settings_import_review_note__t">Nothing here replaces your Chronicle. Trials already in the app are skipped; imported trials stay on this device and out of the Tidings.</string>
+    <string name="settings_import_review_note">This adds to your history without replacing it. Existing workouts are skipped. If you sign in, imported workouts can sync to your private cloud history. They never appear in the feed.</string>
+    <string name="settings_import_review_note__t">This adds to your Chronicle without replacing it. Existing trials are skipped. If you sign in, imported trials can sync to your private cloud history. They never appear in the Tidings.</string>
+    <string name="new_group_week">Build a week</string>
+    <string name="new_group_workout">Make a workout</string>
+    <string name="new_group_existing">Import or improve</string>
     <string name="settings_import_review_importing">Importing</string>
     <!-- Import review button. %1$d is the number of workouts that will be imported. -->
     <plurals name="settings_import_review_button"><item quantity="one">Import %1$d workout</item><item quantity="other">Import %1$d workouts</item></plurals>
@@ -1103,18 +1106,6 @@
     <string name="settings_health_read_failed_with">Health Connect read failed: %1$s</string>
     <string name="settings_health_read_failed">Health Connect read failed</string>
     <string name="settings_health_no_data">Health Connect returned no data.</string>
-    <!-- %1$s is the weight in kg that Health Connect returned. -->
-    <string name="settings_health_implausible_weight">Health Connect returned an implausible weight (%1$s kg); not imported.</string>
-    <!-- %1$s is the reason the imported measurement could not be stored. -->
-    <string name="settings_health_store_failed">Could not store the imported measurement: %1$s</string>
-    <!-- Themed wording of settings_health_store_failed. %1$s is the reason the imported measurement could not be stored. -->
-    <string name="settings_health_store_failed__t">Could not store the imported reading: %1$s</string>
-    <string name="settings_health_unknown_reason">unknown reason</string>
-    <string name="settings_health_imported_no_height">Imported into your stats. Set your height in Profile to unlock BMI.</string>
-    <string name="settings_health_imported_no_height__t">Imported into your Ledger. Set your height in Profile to unlock BMI.</string>
-    <string name="settings_health_imported">Imported into your stats.</string>
-    <string name="settings_health_imported__t">Imported into your Ledger.</string>
-    <string name="settings_health_no_weight">No weight found in Health Connect yet.</string>
     <!-- Settings > Advanced > coverage. %1$s is a time like "Tue 14:05", %2$s the app that wrote the step record. -->
     <string name="settings_health_newest_step">newest step record %1$s from %2$s</string>
     <string name="settings_health_unknown_app">unknown app</string>
@@ -5613,6 +5604,8 @@
     <string name="data_export_unknown_site__t">reading with unknown site \"%1$s\" (%2$s cm) left out of the archive</string>
     <!-- Import warning. %1$s is the exercise name, %2$s the muscle group it was given (an internal key, shown as is). -->
     <string name="data_import_exercise_guessed">exercise \"%1$s\" not in catalogue — created with guessed muscleGroup=%2$s and isWeighted=true</string>
+    <!-- %1$s is an archived custom exercise name that conflicts with a built-in exercise. -->
+    <string name="data_import_custom_conflict">Restore stopped: the custom exercise \"%1$s\" has the same name as a built-in exercise. No training was replaced.</string>
     <!-- Import warning. %1$s is the name of the saved routine. -->
     <string name="data_import_routine_entry_dropped">routine \"%1$s\" entry dropped: no exercise name</string>
     <string name="data_import_routine_entry_dropped__t">rite \"%1$s\" entry dropped: no exercise name</string>

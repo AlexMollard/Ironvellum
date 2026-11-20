@@ -71,6 +71,22 @@ class TitleEngineTest {
     }
 
     @Test
+    fun `weekly deeds count separate workouts on the same day without changing streak`() {
+        val zone = java.time.ZoneId.systemDefault()
+        val today = LocalDate.now()
+        val dates = listOf(today.minusDays(1), today.minusDays(1), today)
+        val history = dates.mapIndexed { index, date ->
+            val at = date.atStartOfDay(zone).toInstant().toEpochMilli()
+            WorkoutSession(id = index.toLong() + 1, label = "Pull", startedAtMs = at, completedAtMs = at) to
+                emptyList<SessionSet>()
+        }
+        val built = Titles.ledgerOf(0, history, emptyList(), emptyList(), emptyMap())
+        assertEquals(3, built.bestWeekWorkouts)
+        assertTrue(Titles.satisfied(TitleRule.WorkoutsInWeek(3), built))
+        assertEquals(Titles.trainingStreakDays(dates.toSet(), today), built.trainingStreakDays)
+    }
+
+    @Test
     fun `first workout rule needs one workout`() {
         assertFalse(Titles.satisfied(TitleRule.FirstWorkout, ledger))
         assertTrue(Titles.satisfied(TitleRule.FirstWorkout, ledger.copy(workouts = 1)))

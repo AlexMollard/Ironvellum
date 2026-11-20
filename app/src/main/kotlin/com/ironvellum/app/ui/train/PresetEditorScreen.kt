@@ -276,7 +276,27 @@ class PresetEditorViewModel(
     }
 
     fun addEntry(exercise: Exercise) {
-        draft = _ui.value.copy(entries = _ui.value.entries + newEntry(exercise))
+        draft = _ui.value.copy(
+            entries = _ui.value.entries + newEntry(exercise),
+            exercises = catalogueWith(exercise),
+        )
+    }
+
+    fun swapEntry(index: Int, exercise: Exercise) {
+        val entry = _ui.value.entries.getOrNull(index) ?: return
+        val kept = if (exercise.metric == ExerciseMetric.REPS) entry else entry.copy(reps = "", weight = "")
+        draft = _ui.value.copy(exercises = catalogueWith(exercise))
+        updateEntry(index, kept.copy(exerciseId = exercise.id, exerciseName = exercise.name))
+    }
+
+    private fun catalogueWith(exercise: Exercise): List<Exercise> {
+        val catalogue = _ui.value.exercises
+        val index = catalogue.indexOfFirst { it.id == exercise.id }
+        return when {
+            index < 0 -> catalogue + exercise
+            catalogue[index] == exercise -> catalogue
+            else -> catalogue.toMutableList().apply { set(index, exercise) }
+        }
     }
 
     fun removeEntry(index: Int) {
@@ -853,9 +873,7 @@ fun PresetEditorScreen(
             ExercisePickerSheet(
                 exercises = ui.exercises,
                 onPick = { exercise ->
-                    // A metric switch invalidates the old targets (10 reps ≠ 40 min).
-                    val kept = if (exercise.metric == ExerciseMetric.REPS) entry else entry.copy(reps = "", weight = "")
-                    viewModel.updateEntry(index, kept.copy(exerciseId = exercise.id, exerciseName = exercise.name))
+                    viewModel.swapEntry(index, exercise)
                     swapping = null
                 },
                 onDismiss = { swapping = null },

@@ -83,8 +83,8 @@ class ProgressionSuggestionTrialTest {
         val chosen = Progression.Lever.entries.mapNotNull { lever -> byLever[lever]?.firstOrNull { it.id != pullUp && it.id != row } }
         assertTrue("the catalogue has the main levers", chosen.size >= 3)
         val straight = chosen.map { e ->
-            val hold = e.metric == "HOLD"
-            entry(e.id, sets = 3, reps = if (hold) 30 else 8, kg = if (hold) null else 20.0)
+            val target = if (e.metric == "HOLD") 30 else 8
+            entry(e.id, sets = 3, reps = target, kg = if (e.isWeighted && e.metric != "HOLD") 20.0 else null)
         }
         val owners = SetScheme(type = SchemeType.TOP_BACKOFF, topReps = 2..4, backoffSets = 2, backoffFixedKg = 15.0, backoffReps = 4..5)
         val drops = SetScheme(type = SchemeType.DROPS, dropSets = 1, dropCount = 1)
@@ -94,12 +94,13 @@ class ProgressionSuggestionTrialTest {
 
         val session = repo.startSessionFromPreset(rite)
         straight.forEachIndexed { position, written ->
-            val hold = db.exerciseDao().byId(written.exerciseId)!!.metric == "HOLD"
+            val metric = ExerciseMetric.valueOf(chosen[position].metric)
             block(session, position, written.exerciseId).forEach { set ->
                 assertEquals("lever ${chosen[position].name}", written.targetWeightKg, set.weightKg)
-                if (hold) {
+                if (metric == ExerciseMetric.HOLD || metric == ExerciseMetric.DURATION) {
                     assertEquals(0, set.reps)
-                    assertEquals(written.targetReps, set.durationSec)
+                    val seconds = if (metric == ExerciseMetric.DURATION) written.targetReps * 60 else written.targetReps
+                    assertEquals(seconds, set.durationSec)
                 } else {
                     assertEquals(written.targetReps, set.reps)
                 }

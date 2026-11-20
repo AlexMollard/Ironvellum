@@ -50,6 +50,7 @@ import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.PhotoKind
 import com.ironvellum.app.domain.PhotoRules
 import com.ironvellum.app.domain.Pose
+import com.ironvellum.app.ui.components.PhotoCapture
 import com.ironvellum.app.ui.components.PhotoSource
 import com.ironvellum.app.ui.components.PhotoSourceTiles
 import com.ironvellum.app.ui.dashboard.PoseTodayCard
@@ -180,10 +181,52 @@ class ProgressPhotosScreensTest {
     // ---- checks (run in the gate) ----
 
     @Test
+    fun cameraTargetsAreUniqueAndDoNotRemoveAnOutstandingCapture() {
+        val first = PhotoCapture.newTarget(app)
+        val second = PhotoCapture.newTarget(app)
+        try {
+            assertTrue(first != second)
+            assertTrue(first.isFile)
+            assertTrue(second.isFile)
+        } finally {
+            PhotoCapture.release(first)
+            PhotoCapture.release(second)
+        }
+    }
+
+    @Test
+    fun laterCaptureReclaimsOldAbandonedFilesButKeepsActiveAndRecentFiles() {
+        val root = File(app.cacheDir, "capture-cleanup-test-${java.util.UUID.randomUUID()}").apply { mkdirs() }
+        val context = object : android.content.ContextWrapper(app) {
+            override fun getCacheDir(): File = root
+        }
+        val active = PhotoCapture.newTarget(context)
+        val dir = active.parentFile!!
+        val old = File(dir, "capture-abandoned.jpg").apply { writeText("old") }
+        val legacy = File(dir, "capture.jpg").apply { writeText("old") }
+        val recent = File(dir, "capture-recent.jpg").apply { writeText("recent") }
+        val unrelated = File(dir, "other.jpg").apply { writeText("keep") }
+        val oldTime = System.currentTimeMillis() - 8L * 24 * 60 * 60 * 1000
+        listOf(active, old, legacy, unrelated).forEach { assertTrue(it.setLastModified(oldTime)) }
+        val next = PhotoCapture.newTarget(context)
+        try {
+            assertTrue(active.isFile)
+            assertTrue(recent.isFile)
+            assertTrue(unrelated.isFile)
+            assertTrue(!old.exists())
+            assertTrue(!legacy.exists())
+        } finally {
+            PhotoCapture.release(active)
+            PhotoCapture.release(next)
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun skippingTheOfferIsOneTapAndItNeverAsksAgainByItself() {
         var skipped = 0
         var picked = 0
-        show(light = false) { PhotoOfferPage(saving = false, failed = false, onPicked = { picked++ }, onSkip = { skipped++ }) }
+        show(light = false) { PhotoOfferPage(saving = false, failed = false, onPicked = { _, cleanup -> picked++; cleanup() }, onSkip = { skipped++ }) }
         compose.onNodeWithText("Add a photo?").assertIsDisplayed()
         compose.onNodeWithText("Skip").assertHeightIsAtLeast(48.dp).performClick()
         compose.runOnIdle {
@@ -195,7 +238,7 @@ class ProgressPhotosScreensTest {
     @Test
     fun theOfferHoldsItsButtonsWhileASaveIsRunning() {
         var skipped = 0
-        show(light = false) { PhotoOfferPage(saving = true, failed = true, onPicked = {}, onSkip = { skipped++ }) }
+        show(light = false) { PhotoOfferPage(saving = true, failed = true, onPicked = { _, cleanup -> cleanup() }, onSkip = { skipped++ }) }
         compose.onNodeWithText("That photo could not be saved.").assertIsDisplayed()
         compose.onNodeWithText("Saving").assertIsDisplayed()
         compose.onNodeWithText("Skip").performClick()
@@ -361,7 +404,7 @@ class ProgressPhotosScreensTest {
         if (!shots) return
         for (light in listOf(false, true)) {
             val tag = if (light) "light" else "dark"
-            show(light = light) { PhotoOfferPage(saving = false, failed = false, onPicked = {}, onSkip = {}) }
+            show(light = light) { PhotoOfferPage(saving = false, failed = false, onPicked = { _, cleanup -> cleanup() }, onSkip = {}) }
             shoot("offer-$tag")
         }
     }

@@ -285,7 +285,6 @@ fun PresetsScreen(
                 onForge = { showNewChooser = true },
             )
         }
-        if (!expanded) musclesCard()
         if (ui.presets.isNotEmpty()) {
         Spacer(Modifier.height(SECTION_GAP))
         val sealedThisWeek = { preset: WorkoutPreset -> sessions.any { it.presetId == preset.id && (it.completedAtMs ?: 0L) >= weekStart } }
@@ -352,6 +351,7 @@ fun PresetsScreen(
                 }
             }
         }
+        if (!expanded) musclesCard()
         Spacer(Modifier.height(END_GAP))
     }
         if (expanded) {
@@ -370,24 +370,40 @@ fun PresetsScreen(
             title = { Text(stringResource(R.string.presets_new_button)) },
             text = {
                 Column {
-                    // Easiest first, each with one plain line, so someone new
-                    // can tell the Forge from a blank page without trying both.
-                    val options = buildList {
-                        add(Triple(UiText.themed(R.string.presets_new_week_title, R.string.presets_new_week_title__t).asString(), stringResource(R.string.presets_new_week_subtitle)) { showNewChooser = false; onGenerate("week", null) })
-                        add(Triple(UiText.themed(R.string.presets_new_session_title, R.string.presets_new_session_title__t).asString(), UiText.themed(R.string.presets_new_session_subtitle, R.string.presets_new_session_subtitle__t).asString()) { showNewChooser = false; onGenerate("session", null) })
-                        add(Triple(UiText.themed(R.string.presets_new_template_title, R.string.presets_new_template_title__t).asString(), UiText.themed(R.string.presets_new_template_subtitle, R.string.presets_new_template_subtitle__t).asString()) { showNewChooser = false; onGenerate("template", null) })
-                        // Improving needs a target: nothing to improve on an
-                        // empty board.
-                        if (ui.presets.isNotEmpty()) {
-                            add(Triple(UiText.themed(R.string.presets_new_improve_title, R.string.presets_new_improve_title__t).asString(), stringResource(R.string.presets_new_improve_subtitle)) { showNewChooser = false; onGenerate("improve", null) })
-                        }
-                        add(Triple(UiText.themed(R.string.presets_new_blank_title, R.string.presets_new_blank_title__t).asString(), stringResource(R.string.presets_new_blank_subtitle)) { showNewChooser = false; onNew() })
-                        add(Triple(stringResource(R.string.routineshare_import_title), UiText.themed(R.string.presets_new_import_subtitle, R.string.presets_new_import_subtitle__t).asString()) { showNewChooser = false; showImport = true })
-                    }
-                    options.forEachIndexed { index, (label, detail, action) ->
+                    SectionHeader(stringResource(R.string.new_group_week))
+                    ListRow(
+                        UiText.themed(R.string.presets_new_week_title, R.string.presets_new_week_title__t).asString(),
+                        subline = stringResource(R.string.presets_new_week_subtitle),
+                        contentPadding = PaddingValues(vertical = 8.dp),
+                    ) { showNewChooser = false; onGenerate("week", null) }
+                    InkDivider()
+                    ListRow(
+                        UiText.themed(R.string.presets_new_template_title, R.string.presets_new_template_title__t).asString(),
+                        subline = UiText.themed(R.string.presets_new_template_subtitle, R.string.presets_new_template_subtitle__t).asString(),
+                        contentPadding = PaddingValues(vertical = 8.dp),
+                    ) { showNewChooser = false; onGenerate("template", null) }
+                    SectionHeader(stringResource(R.string.new_group_workout))
+                    listOf(
+                        Triple(UiText.themed(R.string.presets_new_session_title, R.string.presets_new_session_title__t).asString(), UiText.themed(R.string.presets_new_session_subtitle, R.string.presets_new_session_subtitle__t).asString()) { showNewChooser = false; onGenerate("session", null) },
+                        Triple(UiText.themed(R.string.presets_new_blank_title, R.string.presets_new_blank_title__t).asString(), stringResource(R.string.presets_new_blank_subtitle)) { showNewChooser = false; onNew() },
+                    ).forEachIndexed { index, (label, detail, action) ->
                         if (index > 0) InkDivider()
                         ListRow(label, subline = detail, contentPadding = PaddingValues(vertical = 8.dp), onClick = action)
                     }
+                    SectionHeader(stringResource(R.string.new_group_existing))
+                    if (ui.presets.isNotEmpty()) {
+                        ListRow(
+                            UiText.themed(R.string.presets_new_improve_title, R.string.presets_new_improve_title__t).asString(),
+                            subline = stringResource(R.string.presets_new_improve_subtitle),
+                            contentPadding = PaddingValues(vertical = 8.dp),
+                        ) { showNewChooser = false; onGenerate("improve", null) }
+                        InkDivider()
+                    }
+                    ListRow(
+                        stringResource(R.string.routineshare_import_title),
+                        subline = UiText.themed(R.string.presets_new_import_subtitle, R.string.presets_new_import_subtitle__t).asString(),
+                        contentPadding = PaddingValues(vertical = 8.dp),
+                    ) { showNewChooser = false; showImport = true }
                 }
             },
             confirmButton = {},

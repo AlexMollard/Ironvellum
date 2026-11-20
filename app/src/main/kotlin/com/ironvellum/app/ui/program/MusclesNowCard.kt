@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -70,18 +71,32 @@ internal fun MusclesNowCard(
                     SectionHeader(stringResource(R.string.muscles_now_title), Modifier.weight(1f), topPadding = 14.dp)
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted)
                 }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                val largeText = LocalDensity.current.fontScale > 1.3f
+                val figure: @Composable () -> Unit = {
                     Box(Modifier.width(FIGURE_WIDTH).clearAndSetSemantics {}) {
-                        val figure = BodyFigures.of(LocalBodySex.current)
+                        val body = BodyFigures.of(LocalBodySex.current)
                         val look = { muscle: com.ironvellum.app.domain.Muscle -> fatigueLook(levels[muscle] ?: FatigueLevel.FRESH) }
-                        TappableFigure(figure, FIGURE_HEIGHT, { look(it).fill }, null, {}, { "" }, interactive = false, decor = look)
+                        TappableFigure(body, FIGURE_HEIGHT, { look(it).fill }, null, {}, { "" }, interactive = false, decor = look)
                     }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                }
+                val details: @Composable () -> Unit = {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         when {
                             !ui.hasHistory -> CardLine(UiText.themed(R.string.fatigue_empty_new, R.string.fatigue_empty_new__t).asString())
                             worked.isEmpty() -> CardLine(stringResource(R.string.muscles_now_rested))
                             else -> worked.forEach { CardMuscleRow(it) }
                         }
+                    }
+                }
+                if (largeText) {
+                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        figure()
+                        details()
+                    }
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        figure()
+                        Box(Modifier.weight(1f)) { details() }
                     }
                 }
             }
@@ -117,19 +132,23 @@ private fun CardLine(text: String) {
 @Composable
 private fun CardMuscleRow(reading: FatigueReading) {
     val fresh = freshByLine(reading.freshBy)
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FatigueSwatch(reading.level)
-        Text(
-            reading.muscle.label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = IronvellumColors.Ink,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        Column(horizontalAlignment = Alignment.End) {
-            Text(levelWord(reading.level), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.Ink, maxLines = 1)
-            if (fresh != null) Text(fresh, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, maxLines = 1)
+    if (LocalDensity.current.fontScale > 1.3f) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FatigueSwatch(reading.level)
+            Column(Modifier.weight(1f)) {
+                Text(reading.muscle.label, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+                Text(levelWord(reading.level), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.Ink)
+                if (fresh != null) Text(fresh, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+            }
+        }
+    } else {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FatigueSwatch(reading.level)
+            Text(reading.muscle.label, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            Column(horizontalAlignment = Alignment.End) {
+                Text(levelWord(reading.level), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.Ink, maxLines = 1)
+                if (fresh != null) Text(fresh, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, maxLines = 1)
+            }
         }
     }
 }

@@ -13,6 +13,16 @@ import com.ironvellum.app.data.Words
  */
 object SessionClock {
 
+    data class Prescription(val reps: Int, val durationSec: Int?, val distanceM: Double?, val weightKg: Double?)
+
+    /** Convert the editor's minutes and kilometres to the units stored on a live set. */
+    fun prescription(metric: ExerciseMetric?, target: Int, weightKg: Double?, weighted: Boolean = false): Prescription = when (metric) {
+        ExerciseMetric.HOLD -> Prescription(0, target, null, weightKg)
+        ExerciseMetric.DURATION -> Prescription(0, target * 60, null, weightKg.takeIf { weighted })
+        ExerciseMetric.DISTANCE_TIME -> Prescription(0, null, weightKg?.times(1000.0), null)
+        else -> Prescription(target, null, null, weightKg)
+    }
+
     /**
      * The focus rest and timing are judged at. The lifter's own training mode
      * decides when there is one: STRENGTH rests on the strength column,
@@ -182,14 +192,19 @@ object SessionClock {
         restPreferences: (String) -> RestRules.Preferences = { RestRules.EMPTY_PREFERENCES },
         metricOf: (PlannedEntry) -> ExerciseMetric? = { null },
     ): Int = entries.sumOf { entry ->
+        val metric = metricOf(entry)
+        val figures = prescription(metric, entry.reps, entry.targetWeightKg)
         val set = SessionSet(
             exerciseId = 0,
             exerciseName = entry.exerciseName,
             setIndex = 0,
-            reps = entry.reps,
+            reps = figures.reps,
+            durationSec = figures.durationSec,
+            distanceM = figures.distanceM,
+            weightKg = figures.weightKg,
             modifiers = entry.modifiers,
         )
-        entry.sets * setSeconds(set, metricOf(entry), focus, paceSeconds, restPreferences(entry.exerciseName))
+        entry.sets * setSeconds(set, metric, focus, paceSeconds, restPreferences(entry.exerciseName))
     }
 
     /**

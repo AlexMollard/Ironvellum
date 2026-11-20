@@ -3,6 +3,9 @@ package com.ironvellum.app.data
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import kotlinx.coroutines.CancellationException
 import org.junit.Before
 import org.junit.Test
 import java.time.LocalDate
@@ -173,5 +176,42 @@ class HealthResumeSyncTest {
         sync.startup(90)
         assertEquals(listOf(90), reads)
         assertNull(store.value)
+    }
+    @Test
+    fun `partial resting heart rate reads are not authoritative`() {
+        assertFalse(restingHrAuthoritative(false, false))
+        assertFalse(restingHrAuthoritative(true, false))
+        assertFalse(restingHrAuthoritative(false, true))
+        assertTrue(restingHrAuthoritative(true, true))
+    }
+
+    @Test
+    fun `health read preserves coroutine cancellation`() {
+        val cancelled = CancellationException("cancelled")
+        try {
+            healthRead<Unit> { throw cancelled }
+            throw AssertionError("Cancellation was swallowed")
+        } catch (actual: CancellationException) {
+            assertTrue(actual === cancelled)
+        }
+        assertTrue(healthRead<Unit> { throw IllegalStateException() }.isFailure)
+    }
+
+    @Test
+    fun `health pages are complete or fail without returning partial records`() = runBlocking {
+        val tokens = mutableListOf<String?>()
+        val all = collectHealthPages { token ->
+            tokens += token
+            if (token == null) listOf(1) to "next" else listOf(2) to null
+        }
+        assertEquals(listOf(null, "next"), tokens)
+        assertEquals(listOf(1, 2), all)
+
+        val failed = healthRead {
+            collectHealthPages<Int> { token ->
+                if (token == null) listOf(1) to "next" else throw IllegalStateException("page failed")
+            }
+        }
+        assertTrue(failed.isFailure)
     }
 }

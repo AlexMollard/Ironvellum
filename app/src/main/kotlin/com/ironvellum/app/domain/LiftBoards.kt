@@ -50,7 +50,7 @@ enum class Lift(val wire: String, val label: String, val group: LiftGroup, val k
 }
 
 /** step 0..[LiftBoards.MAX_STEP] (a LADDER step is the 1-based rung); recentStep/recentAtMs = best qualifying set in the 7 days before nowMs, null when none. */
-data class LiftMark(val lift: Lift, val step: Int, val recentStep: Int?, val recentAtMs: Long?)
+data class LiftMark(val lift: Lift, val step: Int, val recentStep: Int?, val recentAtMs: Long?, val recentSteps: List<Long>)
 
 /**
  * Bodyweight-relative strength tiers per lift, computed on device.
@@ -327,9 +327,14 @@ object LiftBoards {
         val best = HashMap<Lift, Int>()
         val recentBest = HashMap<Lift, Int>()
         val recentAt = HashMap<Lift, Long>()
+        val recentSteps = HashMap<Lift, LongArray>()
 
         fun record(lift: Lift, step: Int, at: Long, isRecent: Boolean) {
             if (step > (best[lift] ?: -1)) best[lift] = step
+            if (isRecent) {
+                val times = recentSteps.getOrPut(lift) { LongArray(MAX_STEP + 1) }
+                times[step] = maxOf(times[step], at)
+            }
             if (isRecent && step > (recentBest[lift] ?: -1)) {
                 recentBest[lift] = step
                 recentAt[lift] = at
@@ -374,7 +379,7 @@ object LiftBoards {
 
         return Lift.entries.mapNotNull { lift ->
             val step = best[lift] ?: return@mapNotNull null
-            LiftMark(lift, step, recentBest[lift], recentAt[lift])
+            LiftMark(lift, step, recentBest[lift], recentAt[lift], recentSteps[lift]?.toList() ?: List(MAX_STEP + 1) { 0L })
         }
     }
 }

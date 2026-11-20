@@ -40,6 +40,15 @@ class CloudWireDtosTest {
 
     private val json = Json
 
+    @Test
+    fun `rolling lift rpc sends every tier timestamp under the schema names`() {
+        val args = PushLiftMarksArgs("user-id", listOf(RollingLiftMarkDto("squat", 7, 5, "2026-11-20T00:00:00Z", listOf(0, 0, 0, 0, 0, 123, 0, 456, 0, 0, 0))))
+        assertEquals(
+            """{"expected_user_id":"user-id","marks":[{"lift":"squat","step":7,"recent_step":5,"recent_at":"2026-11-20T00:00:00Z","recent_steps":[0,0,0,0,0,123,0,456,0,0,0]}]}""",
+            rpcArgs(args).toString(),
+        )
+    }
+
     @Test fun `viewer reaction row decodes independently of recent liker names`() {
         val row = json.decodeFromString<SessionLikeDto>(
             """{"session_id":"session","user_id":"viewer","kind":"flame"}""",

@@ -214,6 +214,29 @@ class CloudPushHardeningTest {
     private val hour = 3_600_000L
 
     @Test
+    fun rollingLiftMarksUseTheNewRpcOnlyOnSchema35() = env("rolling-lifts") {
+        session("Pull", System.currentTimeMillis() - hour)
+        cloud.schemaVersion = 34
+        assertTrue(sync.push().getOrThrow().problems.isEmpty())
+        assertTrue(cloud.count("POST", "lift_marks") > 0)
+        assertEquals(0, cloud.count("POST", "push_lift_marks"))
+
+        cloud.schemaVersion = 35
+        assertTrue(sync.push().getOrThrow().problems.isEmpty())
+        val rpc = cloud.log.single { it.method == "POST" && it.table == "push_lift_marks" }
+        assertEquals(user, Json.parseToJsonElement(rpc.body).jsonObject.getValue("expected_user_id").jsonPrimitive.content)
+        val marks = Json.parseToJsonElement(rpc.body).jsonObject.getValue("marks").jsonArray
+        val pull = marks.map { it.jsonObject }.single { it.getValue("lift").jsonPrimitive.content == "one_arm_pull" }
+        assertEquals(11, pull.getValue("recent_steps").jsonArray.size)
+        assertTrue(pull.getValue("recent_steps").jsonArray[2].jsonPrimitive.content.toLong() > 0)
+
+        val before = cloud.log.size
+        cloud.schemaVersion = null
+        assertTrue(sync.push().getOrThrow().problems.isNotEmpty())
+        assertTrue(cloud.log.drop(before).none { it.table == "lift_marks" || it.table == "push_lift_marks" })
+    }
+
+    @Test
     fun anUnchangedSnapshotIsNotUploadedAgainAsTheClockMoves() = env("dedup") {
         Cloud.markWebCaughtUp(user)
         session("Earlier", morning - 3 * 24 * hour)

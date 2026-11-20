@@ -817,7 +817,6 @@ object Titles {
                 Instant.ofEpochMilli(it.first.completedAtMs ?: it.first.startedAtMs)
                     .atZone(zone).toLocalDate()
             }
-            .toSet()
         val claimed = practices.filter { it.claimed }
         // Best single-session distance per category, so a 10 km run inside a
         // mixed session still counts as a 10 km run.
@@ -912,7 +911,7 @@ object Titles {
             bestWeekWorkouts = bestWeekWorkouts(workoutDates),
             // This was never assigned, so it defaulted to 0 and every
             // TrainingStreak deed (7/14/30/100 days) was unreachable.
-            trainingStreakDays = trainingStreakDays(workoutDates),
+            trainingStreakDays = trainingStreakDays(workoutDates.toSet()),
             sex = sex,
             bestLiftMultiple = liftMultiples,
             bestSessionReps = bestSessionReps,
@@ -937,7 +936,7 @@ object Titles {
     ): Int = Streak.current(dates, today)
 
     /** Most workouts inside any rolling 7-day window. */
-    fun bestWeekWorkouts(dates: Set<LocalDate>): Int =
+    fun bestWeekWorkouts(dates: Collection<LocalDate>): Int =
         dates.maxOfOrNull { start ->
             dates.count { !it.isBefore(start) && it.isBefore(start.plusDays(7)) }
         } ?: 0

@@ -15,6 +15,8 @@ data class OverlapFinding(
     val b: PlannedEntry,
     val muscle: Muscle,
     val alternatives: Ranked,
+    val aIndex: Int,
+    val bIndex: Int,
 )
 
 /** Finds rows of one session that duplicate each other. */
@@ -49,7 +51,7 @@ object Overlap {
             if (!ProgramGenerator.sharesJob(pa, pb) || ProgramGenerator.similarity(pa, pb) < MIN_SIMILARITY) continue
             val muscle = ProgramGenerator.dominantMuscle(pa) ?: continue
             val (replaced, kept) = if (a.sets < b.sets) a to b else b to a
-            findings += OverlapFinding(a, b, muscle, alternativesFor(preset, replaced, kept, muscle, pool))
+            findings += OverlapFinding(a, b, muscle, alternativesFor(preset, replaced, kept, muscle, pool), i, j)
         }
         return findings
     }

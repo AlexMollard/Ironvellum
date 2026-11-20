@@ -1,10 +1,17 @@
 package com.ironvellum.app.ui
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.data.IronvellumDatabase
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.SeededDb
+import com.ironvellum.app.domain.CustomLogged
+import com.ironvellum.app.domain.CustomSave
+import com.ironvellum.app.domain.CustomSpec
+import com.ironvellum.app.domain.CustomType
+import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.ui.train.canSave
 import com.ironvellum.app.ui.train.PresetEditorViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -52,6 +59,33 @@ class PresetEditorWarmupTest {
         val reps = vm.ui.value.exercises.filter { it.metric.name == "REPS" }.take(3)
         withContext(Dispatchers.Main) { reps.forEach { vm.addEntry(it) } }
         return reps.map { it.name }
+    }
+
+    @Test
+    fun freshDistanceMovementKeepsItsMetricAndDraftAfterRecreation() = runBlocking {
+        val state = SavedStateHandle()
+        val editor = withContext(Dispatchers.Main) { PresetEditorViewModel(repo, presetId = null, savedState = state) }
+        withTimeout(10_000) { editor.ui.first { it.exercises.isNotEmpty() } }
+        val exercise = (repo.createCustomExercise(CustomSpec(
+            "Distance test movement", CustomType.CARDIO, CustomLogged.DISTANCE, emptySet(), emptyMap(),
+        )) as CustomSave.Saved).exercise
+        withContext(Dispatchers.Main) {
+            editor.setName("Draft")
+            editor.addEntry(exercise)
+        }
+        assertEquals(ExerciseMetric.DISTANCE_TIME, editor.ui.value.exercises.single { it.id == exercise.id }.metric)
+        withContext(Dispatchers.Main) {
+            editor.addEntry(editor.ui.value.exercises.first { it.metric == ExerciseMetric.REPS })
+            editor.swapEntry(1, exercise)
+        }
+        assertEquals(exercise.id, editor.ui.value.entries[1].exerciseId)
+        assertEquals("", editor.ui.value.entries[1].reps)
+        assertTrue(editor.ui.value.canSave())
+        val restored = withContext(Dispatchers.Main) { PresetEditorViewModel(repo, presetId = null, savedState = state) }
+        val draft = withTimeout(10_000) { restored.ui.first { it.entries.isNotEmpty() } }
+        assertEquals("Draft", draft.name)
+        assertEquals(ExerciseMetric.DISTANCE_TIME, draft.exercises.single { it.id == exercise.id }.metric)
+        assertTrue(draft.canSave())
     }
 
     @Test

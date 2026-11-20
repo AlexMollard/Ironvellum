@@ -70,6 +70,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 internal data class LifterUi(
@@ -109,12 +110,21 @@ internal class LifterViewModel(
     private val _ui = MutableStateFlow(LifterUi())
     val ui: StateFlow<LifterUi> = _ui.asStateFlow()
     private var loadGeneration = 0L
+    private var targetUserId: String? = null
+
+    init {
+        viewModelScope.launch {
+            socialOwners(accountRepo.account.map { it?.userId }) { accountRepo.account.value?.userId }
+                .collect { targetUserId?.let(::load) }
+        }
+    }
 
     // Device-local equipped crest frame; only worn when viewing one's own profile.
     val equippedFrame: StateFlow<String?> = repo.observeEquippedFrame()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun load(userId: String) {
+        targetUserId = userId
         val generation = ++loadGeneration
         if (userId.isBlank()) {
             _ui.value = LifterUi(loading = false, error = UiText.themed(R.string.lifter_none_selected, R.string.lifter_none_selected__t))

@@ -74,6 +74,18 @@ class OptimiseModelTest {
         rite("Push D", 6, entry("Bench Press", 4)),
     )
 
+    @Test
+    fun `overlap changes only the smaller occurrence of the same movement`() {
+        val larger = entry("Bench Press", 4).copy(reps = 12, targetWeightKg = 50.0)
+        val smaller = entry("Bench Press", 2).copy(reps = 6, targetWeightKg = 70.0)
+        val report = buildReport(input(rite("Push", 1, larger, smaller)))
+        val change = report.overlaps.single().changes.single()
+        val before = report.input.week.single().entries
+        val after = resolveWeek(report.input.week, listOf(change.options.first())).single().entries
+        assertEquals(before.first(), after.first())
+        assertTrue(after.size == 1 || after[1].exerciseName != smaller.exerciseName)
+    }
+
     // ---------------------------------------------------------------------------------------- heavy
 
     @Test

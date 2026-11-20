@@ -34,6 +34,7 @@ class CommentsViewModelTest {
         var post = CompletableDeferred<Result<Comment>>()
         var removal = CompletableDeferred<Result<Unit>>()
         var likerResult: Result<List<Liker>> = Result.success(emptyList())
+        var likerRead: CompletableDeferred<Result<List<Liker>>>? = null
         var summary: Result<Pair<Map<Reaction, Int>, Reaction?>> = Result.success(emptyMap<Reaction, Int>() to null)
         var reactionWrite: CompletableDeferred<Result<Unit>>? = null
         override suspend fun comments(sessionId: String, force: Boolean): Result<List<Comment>> {
@@ -44,7 +45,7 @@ class CommentsViewModelTest {
         override suspend fun addComment(sessionId: String, body: String) = withContext(NonCancellable) { post.await() }
         override suspend fun deleteComment(id: String) = withContext(NonCancellable) { removal.await() }
         override suspend fun workout(sessionId: String, force: Boolean): Result<AllyWorkout> = Result.failure(IllegalStateException("offline"))
-        override suspend fun likers(sessionId: String): Result<List<Liker>> = likerResult
+        override suspend fun likers(sessionId: String): Result<List<Liker>> = likerRead?.await() ?: likerResult
         override suspend fun reactionSummary(sessionId: String) = summary
         override suspend fun visibleProfile(userId: String): Result<ProfileNameDto?> = Result.success(null)
         override suspend fun react(sessionId: String, reaction: Reaction?) = reactionWrite?.await() ?: Result.success(Unit)
@@ -218,6 +219,44 @@ class CommentsViewModelTest {
         assertEquals(Reaction.FLAME, vm.ui.value.myReaction)
         assertEquals(50, vm.ui.value.reactionCounts!![Reaction.IRON])
         assertEquals(1, vm.ui.value.reactionCounts!![Reaction.FLAME])
+    }
+
+    @Test fun `failed optimistic reaction restarts an unfinished names read`() {
+        val fake = gateway()
+        val firstNames = CompletableDeferred<Result<List<Liker>>>()
+        fake.likerRead = firstNames
+        fake.summary = Result.success(mapOf(Reaction.FLAME to 1) to Reaction.FLAME)
+        fake.reactionWrite = CompletableDeferred()
+        val vm = model(fake)
+        vm.react(Reaction.IRON)
+        val recovered = listOf(Liker("a", "A", 1, Reaction.FLAME))
+        fake.likerRead = null
+        fake.likerResult = Result.success(recovered)
+        fake.reactionWrite!!.complete(Result.failure(IllegalStateException("offline")))
+        assertEquals(recovered, vm.ui.value.likers)
+        assertEquals(mapOf(Reaction.FLAME to 1), vm.ui.value.reactionCounts)
+        assertEquals(Reaction.FLAME, vm.ui.value.myReaction)
+        firstNames.complete(Result.success(emptyList()))
+        assertEquals(recovered, vm.ui.value.likers)
+    }
+
+    @Test fun `failed names retry exposes error without losing reaction rollback`() {
+        val fake = gateway()
+        val firstNames = CompletableDeferred<Result<List<Liker>>>()
+        fake.likerRead = firstNames
+        fake.summary = Result.success(mapOf(Reaction.FLAME to 1) to Reaction.FLAME)
+        fake.reactionWrite = CompletableDeferred()
+        val vm = model(fake)
+        vm.react(Reaction.IRON)
+        fake.likerRead = null
+        fake.likerResult = Result.failure(IllegalStateException("offline"))
+        fake.reactionWrite!!.complete(Result.failure(IllegalStateException("offline")))
+        assertNull(vm.ui.value.likers)
+        assertNotNull(vm.ui.value.likersError)
+        assertEquals(mapOf(Reaction.FLAME to 1), vm.ui.value.reactionCounts)
+        assertEquals(Reaction.FLAME, vm.ui.value.myReaction)
+        firstNames.complete(Result.success(emptyList()))
+        assertNull(vm.ui.value.likers)
     }
 
     @Test fun `switching owner clears previous reaction selection when new read fails`() {

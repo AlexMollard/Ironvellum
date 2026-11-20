@@ -322,7 +322,7 @@ internal class CommentsViewModel(
         if (previous == reaction) return
         val name = gateway.account()?.displayName ?: Words.text(UiText.res(R.string.comments_you))
         reacting = true
-        reactionVersion++
+        val writeVersion = ++reactionVersion
         val optimisticCounts = counts.toMutableMap()
         if (previous != null) optimisticCounts[previous] = ((optimisticCounts[previous] ?: 0) - 1).coerceAtLeast(0)
         if (reaction != null) optimisticCounts[reaction] = (optimisticCounts[reaction] ?: 0) + 1
@@ -340,14 +340,22 @@ internal class CommentsViewModel(
                     .onFailure {
                         _ui.value = _ui.value.copy(likers = before, reactionCounts = counts, myReaction = previous,
                             reactionError = if (it is CancellationException) null else it.reason())
+                        reacting = false
+                        if (before == null && it !is CancellationException) {
+                            val version = ++reactionVersion
+                            val names = gateway.likers(sessionId)
+                            if (!current(expected, scope) || version != reactionVersion || reacting) return@launch
+                            names.onSuccess { names -> _ui.value = _ui.value.copy(likers = names, likersError = null) }
+                                .onFailure { error -> if (error !is CancellationException) _ui.value = _ui.value.copy(likersError = error.reason()) }
+                        }
                     }
             } catch (cancelled: CancellationException) {
-                if (current(expected, scope)) {
+                if (current(expected, scope) && reactionVersion == writeVersion) {
                     _ui.value = _ui.value.copy(likers = before, reactionCounts = counts, myReaction = previous)
                 }
                 throw cancelled
             } finally {
-                if (current(expected, scope)) reacting = false
+                if (current(expected, scope) && reactionVersion == writeVersion) reacting = false
             }
         }
     }

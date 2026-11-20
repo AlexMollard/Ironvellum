@@ -42,13 +42,13 @@ internal sealed interface OptimiseState {
 
 /**
  * The changes a lifter applied, kept until they leave the page so Undo can put every touched rite back as it
- * was. [before] is each touched rite's id and its saved form from before the write.
+ * was. [before] contains the complete saved form of every touched rite.
  */
 internal data class Applied(
     val title: String,
     val lines: List<Pair<String, String>>,
     val skipped: Int,
-    val before: List<Pair<Long, PlannedPreset>>,
+    val before: List<com.ironvellum.app.domain.WorkoutPreset>,
     val riteNames: List<String>,
 )
 
@@ -135,7 +135,7 @@ internal class OptimiseViewModel(
         val applied = _applied.value ?: return
         if (!_saving.compareAndSet(false, true)) return
         viewModelScope.launch {
-            runCatching { repo.savePlannedPresets(applied.before) }
+            runCatching { repo.restoreWorkoutPresets(applied.before) }
                 .onSuccess {
                     _error.value = null
                     _applied.value = null

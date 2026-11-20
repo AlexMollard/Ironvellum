@@ -98,14 +98,14 @@ class ProgressPhotosViewModel(private val repo: Repository, private val appConte
     /** The picture for a row, or null when this phone has none (a restore that has not been given its folder yet). */
     fun fileOf(photo: ProgressPhoto): File? = repo.photoLibrary.store?.file(photo.fileName)?.takeIf { it.isFile }
 
-    fun save(pose: Pose, week: Long, uri: Uri) {
-        if (saving != null) return
+    fun save(pose: Pose, week: Long, uri: Uri, cleanup: () -> Unit) {
+        if (saving != null) { cleanup(); return }
         saving = pose
         failed = false
         viewModelScope.launch {
             runCatching { repo.photoLibrary.savePose(appContext, uri, week, pose) }.onFailure { failed = true }
             saving = null
-        }
+        }.invokeOnCompletion { cleanup() }
     }
 
     fun delete(id: Long) {
@@ -128,7 +128,21 @@ fun ProgressPhotosScreen(
 ) {
     val all by viewModel.photos.collectAsStateWithLifecycle()
     val zone = rememberZoneId()
-    val today = remember(zone) { LocalDate.now(zone) }
+    var today by remember(zone) { mutableStateOf(LocalDate.now(zone)) }
+    var resumeCount by remember { mutableLongStateOf(0L) }
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+        today = LocalDate.now(zone)
+        resumeCount++
+    }
+    androidx.compose.runtime.LaunchedEffect(zone, resumeCount) {
+        while (true) {
+            today = LocalDate.now(zone)
+            val delay = java.time.Duration.between(
+                java.time.ZonedDateTime.now(zone), today.plusDays(1).atStartOfDay(zone),
+            ).toMillis()
+            kotlinx.coroutines.delay(delay.coerceAtLeast(1L) + 1L)
+        }
+    }
     val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
     val dateFormat = remember(locale) { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale) }
     val poses = remember(all) { all.filter { it.kind == PhotoKind.POSE && it.pose != null } }
@@ -145,13 +159,16 @@ fun ProgressPhotosScreen(
     var editing by rememberSaveable { mutableStateOf<String?>(null) }
     // The pose a camera or picker was opened for; the launcher lives here, not in the sheet, which closes as it opens.
     var target by rememberSaveable { mutableStateOf<String?>(null) }
+    var targetWeek by rememberSaveable { mutableLongStateOf(NONE) }
     var removing by rememberSaveable { mutableLongStateOf(NONE) }
     var picking by rememberSaveable { mutableStateOf<String?>(null) }
     var pickingDay by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
-    val source = rememberPhotoSource { uri ->
-        Pose.fromKey(target.orEmpty())?.let { viewModel.save(it, thisWeek.toEpochDay(), uri) }
+    val source = rememberPhotoSource { uri, cleanup ->
+        val pose = Pose.fromKey(target.orEmpty())
+        if (pose != null && targetWeek != NONE) viewModel.save(pose, targetWeek, uri, cleanup) else cleanup()
         target = null
+        targetWeek = NONE
     }
 
     Column(Modifier.fillMaxSize().imePadding()) {
@@ -287,8 +304,8 @@ fun ProgressPhotosScreen(
                     helper = stringResource(R.string.photos_pose_helper, stringResource(poseLabel(pose)).lowercase(locale)),
                     source = PhotoSource(
                         canTake = source.canTake,
-                        take = { target = key; editing = null; source.take() },
-                        pick = { target = key; editing = null; source.pick() },
+                        take = { target = key; targetWeek = thisWeek.toEpochDay(); editing = null; source.take() },
+                        pick = { target = key; targetWeek = thisWeek.toEpochDay(); editing = null; source.pick() },
                     ),
                     enabled = viewModel.saving == null,
                 )

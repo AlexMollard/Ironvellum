@@ -201,6 +201,18 @@ data class LiftMarkDto(
     @SerialName("recent_at") val recentAt: String? = null,
 )
 
+@Serializable
+data class RollingLiftMarkDto(
+    val lift: String,
+    val step: Int,
+    @SerialName("recent_step") val recentStep: Int?,
+    @SerialName("recent_at") val recentAt: String?,
+    @SerialName("recent_steps") val recentSteps: List<Long>,
+)
+
+@Serializable
+data class PushLiftMarksArgs(@SerialName("expected_user_id") val expectedUserId: String, @SerialName("marks") val marks: List<RollingLiftMarkDto>)
+
 /** Decode-only shape of the `lift_board` view. `lift` stays a string so a lift this build lacks is skipped, not thrown. */
 @Serializable
 data class LiftBoardDto(
@@ -619,6 +631,7 @@ sealed interface InboxItem {
         override val occurredAtMs: Long,
         override val actorId: String,
         override val actorName: String,
+        val createdAt: String = Instant.ofEpochMilli(occurredAtMs).toString(),
     ) : InboxItem
 
     data class RequestAccepted(
@@ -728,7 +741,7 @@ data class InboxRowDto(
         }
         val name = actorName?.takeIf { it.isNotBlank() } ?: hiddenLifterName()
         return when (kind) {
-            "request" -> InboxItem.FriendRequest(at, actorId, name)
+            "request" -> InboxItem.FriendRequest(at, actorId, name, occurredAt)
             "accepted" -> InboxItem.RequestAccepted(at, actorId, name)
             "comment" -> InboxItem.NewComment(
                 occurredAtMs = at,

@@ -234,10 +234,18 @@ internal val ARCHIVE_MIME_TYPES = arrayOf("application/json", "text/plain", "*/*
 
 /** A picked file's text, read off the main thread (stream reads can stall on slow providers). */
 internal suspend fun readPickedText(context: Context, uri: android.net.Uri): String =
+    readPickedText { context.contentResolver.openInputStream(uri) }
+
+internal suspend fun readPickedText(open: () -> java.io.InputStream?): String =
     withContext(Dispatchers.IO) {
-        context.contentResolver.openInputStream(uri)
-            ?.use { stream -> stream.readBytes().toString(Charsets.UTF_8) }
-            .orEmpty()
+        try {
+            open()?.use { stream -> stream.readBytes().toString(Charsets.UTF_8) }
+                .orEmpty()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            ""
+        }
     }
 
 /** The one confirm in front of a restore, which replaces everything on this device. */

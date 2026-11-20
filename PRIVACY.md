@@ -19,8 +19,9 @@ Documentation reviewed against the codebase on 2026-11-17.
   selected for muscle maps.
 - **The database is excluded from Android's backups.** Android would otherwise
   copy app data to your Google account and to a new phone during device
-  transfer. `ironvellum.db`, its write-ahead sidecars, the local snapshot copies
-  of it, and the crash journal are all excluded in every domain
+  transfer. `ironvellum.db`, its write-ahead sidecars, local database snapshots,
+  exercise-conversion safety archives, and the crash journal are excluded
+  from both Android cloud backup and phone-to-phone transfer
   (`app/src/main/res/xml/backup_rules.xml`,
   `app/src/main/res/xml/data_extraction_rules.xml`). Raw measurements remain
   on the device that recorded them.

@@ -3,6 +3,7 @@ package com.ironvellum.app.ui.social
 import androidx.lifecycle.ViewModelStore
 import com.ironvellum.app.data.cloud.Inbox
 import com.ironvellum.app.data.cloud.InboxItem
+import com.ironvellum.app.data.cloud.InboxRowDto
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -36,9 +37,9 @@ class InboxViewModelTest {
         val declined = mutableListOf<String>()
         override suspend fun read(force: Boolean) = readCall(force)
         override suspend fun markSeen(owner: SocialOwner): Result<Unit> { seen += owner; return markResult }
-        override suspend fun accept(userId: String) = answerCall(userId)
-        override suspend fun decline(userId: String, owner: SocialOwner): Result<Boolean> {
-            declined += userId
+        override suspend fun accept(request: RequestIdentity, owner: SocialOwner) = answerCall(request.userId).map { true }
+        override suspend fun decline(request: RequestIdentity, owner: SocialOwner): Result<Boolean> {
+            declined += request.userId
             return declineResult
         }
         override fun dismissReadNotification(owner: SocialOwner, throughMs: Long) { dismissedThrough += throughMs }
@@ -100,8 +101,8 @@ class InboxViewModelTest {
         val old = CompletableDeferred<Result<Unit>>()
         gateway.answerCall = { withContext(NonCancellable) { old.await() } }
         val vm = model(gateway)
-        vm.accept("ally")
-        assertEquals(setOf("ally"), vm.ui.value.answering)
+        vm.accept(RequestIdentity("ally", 200))
+        assertEquals(setOf(RequestIdentity("ally", 200)), vm.ui.value.answering)
         gateway.owners.value = SocialOwner("b", "backend-one")
         old.complete(Result.failure(IllegalStateException("old failure")))
         runCurrent()
@@ -114,7 +115,7 @@ class InboxViewModelTest {
     @Test fun changingAccountDiscardsAnUncommittedDecline() {
         val gateway = Gateway()
         val vm = model(gateway)
-        vm.decline("ally", "Ally")
+        vm.decline(RequestIdentity("ally", 200), "Ally")
         gateway.owners.value = SocialOwner("b", "backend-one")
         vm.commitDecline()
         assertNull(vm.ui.value.pendingDecline)
@@ -144,7 +145,7 @@ class InboxViewModelTest {
             assertTrue(force)
             Result.success(Inbox(emptyList(), 200))
         }
-        vm.decline("current", "Current")
+        vm.decline(RequestIdentity("current", 200), "Current")
         vm.commitDecline()
         assertTrue(vm.ui.value.items.isEmpty())
         assertTrue(vm.ui.value.answered.isEmpty())
@@ -171,19 +172,56 @@ class InboxViewModelTest {
         val refreshed = mutableListOf<SocialOwner>()
         val vm = InboxViewModel(gateway) { refreshed += it }
         models.put("inbox", vm)
-        vm.accept("accepted")
+        vm.accept(RequestIdentity("accepted", 200))
         assertEquals(listOf(gateway.owner()), refreshed)
         gateway.declineResult = Result.success(false)
-        vm.decline("stale", "Stale")
+        vm.decline(RequestIdentity("stale", 200), "Stale")
         vm.commitDecline()
         assertEquals(1, refreshed.size)
         gateway.answerCall = { Result.failure(IllegalStateException("offline")) }
-        vm.accept("failed")
+        vm.accept(RequestIdentity("failed", 200))
         assertEquals(1, refreshed.size)
         gateway.declineResult = Result.success(true)
-        vm.decline("declined", "Declined")
+        vm.decline(RequestIdentity("declined", 200), "Declined")
         vm.commitDecline()
         assertEquals(listOf(gateway.owner(), gateway.owner()), refreshed)
+    }
+
+    @Test fun aNewRequestFromTheSamePersonIsNotMarkedDeclined() {
+        val gateway = Gateway()
+        val vm = model(gateway)
+        val old = RequestIdentity("current", 200)
+        val fresh = RequestIdentity("current", 300)
+        vm.open()
+        vm.decline(old, "Current")
+        vm.commitDecline()
+        gateway.readCall = { Result.success(Inbox(listOf(InboxItem.FriendRequest(300, "current", "Current")), null)) }
+        vm.open()
+        assertEquals(RequestAnswer.DECLINED, vm.ui.value.answered[old])
+        assertNull(vm.ui.value.answered[fresh])
+        vm.accept(fresh)
+        assertEquals(RequestAnswer.ACCEPTED, vm.ui.value.answered[fresh])
+    }
+
+    @Test fun requestIdentityKeepsSubMillisecondPrecisionFromInbox() {
+        fun row(at: String) = InboxRowDto("request", at, "current", "Current").toInboxItem() as InboxItem.FriendRequest
+        val old = row("2026-10-01T18:00:00.123123Z")
+        val fresh = row("2026-10-01T18:00:00.123456Z")
+        assertEquals(old.occurredAtMs, fresh.occurredAtMs)
+        val gateway = Gateway()
+        gateway.readCall = { Result.success(Inbox(listOf(old), null)) }
+        val vm = model(gateway)
+        vm.open()
+        val oldId = RequestIdentity(old.actorId, old.occurredAtMs, old.createdAt)
+        val freshId = RequestIdentity(fresh.actorId, fresh.occurredAtMs, fresh.createdAt)
+        vm.decline(oldId, old.actorName)
+        vm.commitDecline()
+        gateway.readCall = { Result.success(Inbox(listOf(fresh), null)) }
+        vm.open()
+        assertEquals(RequestAnswer.DECLINED, vm.ui.value.answered[oldId])
+        assertNull(vm.ui.value.answered[freshId])
+        vm.accept(freshId)
+        assertEquals(RequestAnswer.ACCEPTED, vm.ui.value.answered[freshId])
     }
 
     companion object {

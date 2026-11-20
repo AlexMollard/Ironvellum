@@ -53,4 +53,13 @@ class LoadFormatTest {
         assertTrue(foldedSubline(TrialBlock(1, 0, listOf(unknown)), ExerciseMetric.REPS, true).contains("—"))
         assertTrue(foldedSubline(TrialBlock(1, 0, listOf(zero)), ExerciseMetric.REPS, true).contains("0 kg"))
     }
+    @Test
+    fun `folded warmup only block has no best working set`() {
+        val warmup = SessionSet(exerciseId = 1, exerciseName = "Bench Press", setIndex = 0, reps = 8,
+            kind = com.ironvellum.app.domain.SetKind.WARMUP, warmupDone = true)
+        val block = TrialBlock(1, 0, listOf(warmup))
+        assertTrue(foldedSubline(block, ExerciseMetric.REPS, true).contains("0"))
+        assertTrue(foldedSubline(block, ExerciseMetric.DURATION, false).contains("0"))
+    }
+
 }

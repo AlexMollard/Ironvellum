@@ -1,7 +1,12 @@
 package com.ironvellum.app.domain
 
 /** One [ChangeOp] aimed at one rite of a week, named by its index in the week's list. */
-data class WeekEdit(val presetIndex: Int, val op: ChangeOp)
+data class WeekEdit(
+    val presetIndex: Int,
+    val op: ChangeOp,
+    val targetEntry: PlannedEntry? = null,
+    val targetIndex: Int? = null,
+)
 
 /**
  * Applies ops to a whole week. [ProgramChanges] works inside one rite and ignores a move to another day, and
@@ -28,18 +33,30 @@ object WeekEdits {
             week.mapIndexed { i, p -> if (i == edit.presetIndex) p.copy(entries = entries) else p }
 
         fun holds(name: String) = rite.entries.any { key(it.exerciseName) == key(name) }
+        fun target(name: String): Int {
+            val original = edit.targetEntry ?: return rite.entries.indexOfFirst { key(it.exerciseName) == key(name) }
+            val id = original.sourceEntryId?.takeIf { it != 0L }
+            if (id != null) return rite.entries.indexOfFirst { it.sourceEntryId == id && key(it.exerciseName) == key(name) }
+            val index = edit.targetIndex
+            if (index != null && rite.entries.getOrNull(index) === original) return index
+            return rite.entries.indexOfFirst { it === original }
+        }
 
         return when (val op = edit.op) {
             is ChangeOp.AddEntry ->
                 if (holds(op.entry.exerciseName)) week else with(rite.entries + op.entry)
 
-            is ChangeOp.RemoveEntry ->
-                if (!holds(op.exerciseName) || rite.entries.size == 1) week
-                else with(rite.entries.filterNot { key(it.exerciseName) == key(op.exerciseName) })
+            is ChangeOp.RemoveEntry -> {
+                val index = target(op.exerciseName)
+                if (index < 0 || rite.entries.size == 1) week
+                else with(rite.entries.filterIndexed { i, _ -> i != index })
+            }
 
-            is ChangeOp.SwapEntry ->
-                if (!holds(op.fromName) || (holds(op.to.exerciseName) && key(op.to.exerciseName) != key(op.fromName))) week
-                else with(rite.entries.map { if (key(it.exerciseName) == key(op.fromName)) op.to else it })
+            is ChangeOp.SwapEntry -> {
+                val index = target(op.fromName)
+                if (index < 0 || (holds(op.to.exerciseName) && key(op.to.exerciseName) != key(op.fromName))) week
+                else with(rite.entries.mapIndexed { i, entry -> if (i == index) op.to else entry })
+            }
 
             is ChangeOp.SetSets ->
                 with(rite.entries.map { if (key(it.exerciseName) == key(op.exerciseName)) it.copy(sets = op.sets) else it })

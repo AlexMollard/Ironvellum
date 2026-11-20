@@ -70,6 +70,34 @@ class BackupRulesTest {
     }
 
     @Test
+    fun `conversion safety archives are excluded from every backup channel`() {
+        val sections = listOf(
+            parse("backup_rules.xml").documentElement,
+            section("data_extraction_rules.xml", "cloud-backup"),
+            section("data_extraction_rules.xml", "device-transfer"),
+        )
+        for (section in sections) {
+            assertTrue("${section.tagName} must exclude conversion archives", "backups" in excludes(section, "file"))
+        }
+    }
+
+    @Test
+    fun `missing photos fail backup while destination copies need no source`() {
+        val attempted = mutableListOf<String>()
+        try {
+            PhotoBackup.mirrorMissing(listOf("already", "missing", "copied"), setOf("already")) {
+                attempted += it
+                it == "copied"
+            }
+            org.junit.Assert.fail("missing photo must fail backup")
+        } catch (e: IllegalStateException) {
+            assertEquals("1 photos could not be copied", e.message)
+        }
+        assertEquals(listOf("missing", "copied"), attempted)
+        assertEquals(0, PhotoBackup.mirrorMissing(listOf("already"), setOf("already")) { false })
+    }
+
+    @Test
     fun `the photos folder is where the store writes`() {
         // The exclusion above names the folder by string; the store builds its path from this constant.
         assertEquals("photos", PhotoStore.DIR)

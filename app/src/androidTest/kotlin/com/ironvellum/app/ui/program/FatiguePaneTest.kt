@@ -2,7 +2,22 @@ package com.ironvellum.app.ui.program
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.filter
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
+import com.ironvellum.app.domain.mostWorked
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
@@ -14,6 +29,7 @@ import com.ironvellum.app.domain.LoggedSet
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.ui.FlowDriver
+import com.ironvellum.app.ui.ShotRecorder
 import com.ironvellum.app.ui.TestProfile
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import java.time.ZoneId
@@ -84,6 +100,44 @@ class FatiguePaneTest {
         val rows = driver.allText().filter { it.startsWith("Fresh by") || it.startsWith("Fresh later") }
         assertTrue("rows: $rows", rows.size in 1..4)
         assertTrue(driver.allText().any { it.contains("from") && it.contains("Romanian Deadlift") })
+    }
+
+    @Test
+    fun largeTextCardKeepsMuscleAndFreshDateWholeAndClickable() {
+        val report = busy()
+        val reading = report.mostWorked(ZoneId.of("UTC"), 3).first()
+        val muscle = reading.muscle.label
+        val fresh = requireNotNull(freshByLine(reading.freshBy))
+        var opened = false
+        compose.activityRule.scenario.onActivity {
+            it.setContent {
+                val density = LocalDensity.current
+                CompositionLocalProvider(LocalDensity provides Density(density.density, 2f)) {
+                    IronvellumTheme {
+                        Column(Modifier.systemBarsPadding().verticalScroll(rememberScrollState())) {
+                            MusclesNowCard(FatigueUi(report, hasHistory = true, loaded = true), null, ZoneId.of("UTC"), { opened = true }, {})
+                        }
+                    }
+                }
+            }
+        }
+        driver.settle()
+        ShotRecorder.take(compose, "fatigue-card-large-text")
+        for (text in listOf(muscle, fresh)) {
+            val layouts = mutableListOf<TextLayoutResult>()
+            val node = compose.onAllNodes(hasText(text), useUnmergedTree = true)
+                .filter(SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult)).onFirst().fetchSemanticsNode()
+            val measured = node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(layouts)
+            assertTrue("$text was not measured: $measured", layouts.isNotEmpty())
+            assertTrue("$text is clipped or ellipsized", layouts.all { layout ->
+                layout.lineCount > 0 &&
+                    layout.getLineEnd(layout.lineCount - 1, visibleEnd = true) == layout.layoutInput.text.length &&
+                    (0 until layout.lineCount).none(layout::isLineEllipsized)
+            })
+        }
+        compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsActions.OnClick), useUnmergedTree = true).onFirst()
+            .performSemanticsAction(SemanticsActions.OnClick)
+        assertTrue(opened)
     }
 
     @Test

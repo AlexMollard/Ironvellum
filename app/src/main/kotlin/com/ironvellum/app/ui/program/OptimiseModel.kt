@@ -323,20 +323,21 @@ private fun easingChange(option: EasingOption, muscle: Muscle, input: OptimiseIn
 
 private fun overlapChange(index: Int, preset: PlannedPreset, finding: OverlapFinding, input: OptimiseInput): OptChange {
     val (replaced, kept) = if (finding.a.sets < finding.b.sets) finding.a to finding.b else finding.b to finding.a
+    val replacedIndex = if (finding.a.sets < finding.b.sets) finding.aIndex else finding.bIndex
     val options = finding.alternatives.options.map { candidate: Candidate ->
         val entry = Easing.entryFor(replaced, candidate.exercise, input.request, input.strength)
-        OptOption(candidate.exercise.name, reasonLine(candidate.tags), listOf(WeekEdit(index, ChangeOp.SwapEntry(replaced.exerciseName, entry))))
+        OptOption(candidate.exercise.name, reasonLine(candidate.tags), listOf(WeekEdit(index, ChangeOp.SwapEntry(replaced.exerciseName, entry), replaced, replacedIndex)))
     }.ifEmpty {
         listOf(
             OptOption(
                 Words.text(UiText.res(R.string.optimise_overlap_remove_option, replaced.exerciseName)),
                 Words.text(UiText.res(R.string.optimise_overlap_remove_reason)),
-                listOf(WeekEdit(index, ChangeOp.RemoveEntry(replaced.exerciseName))),
+                listOf(WeekEdit(index, ChangeOp.RemoveEntry(replaced.exerciseName), replaced, replacedIndex)),
             ),
         )
     }
     return OptChange(
-        id = "overlap:${preset.name}:${replaced.exerciseName}:${kept.exerciseName}",
+        id = "overlap:${preset.name}:${finding.aIndex}:${finding.bIndex}:${replaced.exerciseName}:${kept.exerciseName}",
         kind = OptKind.SWAP,
         title = "${replaced.exerciseName} → ${options.first().label}",
         detail = Words.text(

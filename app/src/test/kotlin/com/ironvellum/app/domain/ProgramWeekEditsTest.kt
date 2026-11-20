@@ -25,6 +25,18 @@ class ProgramWeekEditsTest {
     private fun names(p: PlannedPreset) = p.entries.map { it.exerciseName }
 
     @Test
+    fun `duplicate movement edits preserve the other saved row`() {
+        val keep = entry("Dips", 4).copy(reps = 12, targetWeightKg = 10.0, sourceEntryId = 11)
+        val replace = entry("Dips", 2).copy(reps = 6, targetWeightKg = 20.0, sourceEntryId = 12)
+        val original = listOf(preset("Push", 1, keep, replace))
+        val remove = WeekEdit(0, ChangeOp.RemoveEntry("Dips"), replace, 1)
+        val swap = WeekEdit(0, ChangeOp.SwapEntry("Dips", entry("Push-up", 2)), replace, 1)
+        assertEquals(listOf(keep), WeekEdits.apply(original, listOf(remove)).single().entries)
+        assertEquals(listOf(keep, entry("Push-up", 2)), WeekEdits.apply(original, listOf(swap)).single().entries)
+        assertEquals(listOf(keep), WeekEdits.apply(original, listOf(remove, swap)).single().entries)
+    }
+
+    @Test
     fun `a trim sets the count of just that movement`() {
         val out = WeekEdits.apply(week, listOf(WeekEdit(0, ChangeOp.SetSets("Dips", 2))))
         assertEquals(listOf(4, 2, 3), out[0].entries.map { it.sets })

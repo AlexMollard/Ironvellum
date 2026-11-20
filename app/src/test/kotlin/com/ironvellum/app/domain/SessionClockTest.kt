@@ -299,4 +299,20 @@ class SessionClockTest {
         assertEquals(3 * 225, remaining(listOf(top) + backoffs, 600, 225))
     }
 
+    @Test
+    fun `preset activity units are shared by plan and live set`() {
+        val duration = SessionClock.prescription(ExerciseMetric.DURATION, 30, null)
+        assertEquals(SessionClock.Prescription(0, 1800, null, null), duration)
+        val yoga = PlannedEntry(exerciseName = "Yoga", sets = 3, reps = 30, targetWeightKg = null)
+        val live = SessionSet(exerciseId = 1, exerciseName = "Yoga", setIndex = 0, reps = duration.reps, durationSec = duration.durationSec)
+        assertEquals(3 * SessionClock.setSeconds(live, ExerciseMetric.DURATION, TrainingFocus.MUSCLE),
+            SessionClock.planSeconds(listOf(yoga), TrainingFocus.MUSCLE, metricOf = { ExerciseMetric.DURATION }))
+        assertEquals(SessionClock.Prescription(0, null, 5000.0, null),
+            SessionClock.prescription(ExerciseMetric.DISTANCE_TIME, 0, 5.0))
+        assertEquals(SessionClock.Prescription(0, 60, null, 10.0),
+            SessionClock.prescription(ExerciseMetric.HOLD, 60, 10.0))
+        assertEquals(SessionClock.Prescription(8, null, null, 20.0),
+            SessionClock.prescription(ExerciseMetric.REPS, 8, 20.0))
+    }
+
 }

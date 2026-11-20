@@ -305,21 +305,21 @@ fun SkillDetailSheet(
                 InfoAction(UiText.res(R.string.skilldetail_keep_button).asString(), { confirmUnclaim = false }, quiet = true),
                 InfoAction(UiText.res(R.string.skilldetail_unclaim_button, refundXp).asString(), onUnclaim, danger = true),
             )
-            mastered -> listOf(
-                InfoAction(trainLabel, onTrain, quiet = true),
+            mastered -> listOfNotNull(
+                InfoAction(trainLabel, onTrain, quiet = true).takeUnless { skill.metric == Skills.Metric.METRES },
                 InfoAction(UiText.res(R.string.skilldetail_give_back_button).asString(), { confirmUnclaim = true }, danger = true),
             )
-            passed -> listOf(
-                InfoAction(trainLabel, onTrain, quiet = true),
+            passed -> listOfNotNull(
+                InfoAction(trainLabel, onTrain, quiet = true).takeUnless { skill.metric == Skills.Metric.METRES },
                 InfoAction(Words.claim.c, onClaim, quiet = true),
             )
-            unlocked -> listOf(
-                InfoAction(trainLabel, onTrain, quiet = true),
+            unlocked -> listOfNotNull(
+                InfoAction(trainLabel, onTrain, quiet = true).takeUnless { skill.metric == Skills.Metric.METRES },
                 InfoAction(Words.claim.c, onClaim, gold = cleared, quiet = !cleared),
             )
             // Locked skills can be claimed too: it passes everything beneath them.
-            else -> listOf(
-                InfoAction(trainLabel, onTrain, quiet = true),
+            else -> listOfNotNull(
+                InfoAction(trainLabel, onTrain, quiet = true).takeUnless { skill.metric == Skills.Metric.METRES },
                 InfoAction(Words.claim.c, onClaim, quiet = true),
             )
         },

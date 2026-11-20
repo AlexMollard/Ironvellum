@@ -222,4 +222,18 @@ class RoutineUpdateTest {
         // A lift outside both the rite and the additions drops the link.
         assertTrue(RoutineUpdate.links(rite, listOf(grouped(1, 0, 1), grouped(9, 1, 1)), emptySet()).isEmpty())
     }
+    @Test
+    fun `superset links preserve repeated entry occurrence`() {
+        val rite = listOf(entry(10, 1, 0, 1, 8, 40.0), entry(11, 1, 1, 1, 8, 40.0), entry(12, 2, 2, 1, 8, 40.0))
+        val sets = listOf(grouped(1, 0, null), grouped(1, 1, 1), grouped(2, 2, 1))
+        val already = rite.mapIndexed { index, entry -> if (index > 0) entry.copy(supersetGroup = 1) else entry }
+        assertTrue(RoutineUpdate.links(already, sets, emptySet()).isEmpty())
+        val link = RoutineUpdate.links(rite, sets, emptySet()).single()
+        assertEquals(listOf(11L, 12L), link.entryIds)
+        val arranged = RoutineUpdate.arrange(rite, emptyList(), listOf(link))
+        assertEquals(null, arranged.single { it.id == 10L }.supersetGroup)
+        assertTrue(arranged.single { it.id == 11L }.supersetGroup != null)
+        assertEquals(arranged.single { it.id == 11L }.supersetGroup, arranged.single { it.id == 12L }.supersetGroup)
+    }
+
 }

@@ -26,6 +26,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -372,6 +373,23 @@ class ExerciseInfoSheetFitsTest {
         ShotRecorder.take(compose, "skilldetail-dark-form")
         assertTrue(compose.onAllNodesWithText("CUES").fetchSemanticsNodes().isNotEmpty())
         assertTrue(compose.onAllNodesWithText("HOW TO").fetchSemanticsNodes().isNotEmpty())
+    }
+
+    @Test
+    fun distanceSkillOffersPracticeButNotARepBasedRite() {
+        val skill = com.ironvellum.app.domain.Skills.forName("Handstand Walk")!!
+        compose.setContent {
+            IronvellumTheme {
+                com.ironvellum.app.ui.titles.SkillDetailSheet(
+                    skill = skill, mastered = false, unlocked = true, entries = emptyList(),
+                    onLogPractice = { _, _ -> }, onClaim = {}, onUnclaim = {}, onDismiss = {},
+                )
+            }
+        }
+        val train = compose.activity.getString(com.ironvellum.app.R.string.skilldetail_train_button)
+        assertTrue(compose.onAllNodesWithText(train).fetchSemanticsNodes().isEmpty())
+        compose.onNodeWithText(compose.activity.getString(com.ironvellum.app.R.string.skilldetail_page_log)).performClick()
+        assertTrue(compose.onAllNodesWithText(compose.activity.getString(com.ironvellum.app.R.string.skilldetail_log_title)).fetchSemanticsNodes().isNotEmpty())
     }
 
     @Test

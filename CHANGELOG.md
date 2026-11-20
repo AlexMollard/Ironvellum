@@ -13,6 +13,15 @@ store listing; this is the whole list.
 - Open replies on shared workouts from the web Inbox, and stop old removal notices from opening your current Circle.
 - Keep reaction and comment counts accurate through refreshes, failures, and the handoff from Feed to a workout.
 - Keep friend names and status consistent after sending or answering a request, and distinguish recent profile stats from totals.
+- Keep prescribed minutes and distance when starting an activity, and prevent a crash when a workout exercise contains only warm-up sets.
+- Make Optimise change only the intended exercise entry and restore set schemes and supersets on Undo.
+- Preserve device-only notes on cloud restore, exclude conversion archives from Android backup, and explain private cloud sync before importing workouts.
+- Keep Health Connect weigh-ins on their original dates and retain cached readings when just one provider read fails.
+- Keep progress photos in the intended week, clear app-owned camera originals after import, and flag missing photos in folder backups.
+- Restore custom exercise definitions with their archive, handle unreadable import files, and use a new exercise’s logging unit straight away.
+- Count same-day workouts toward weekly deeds and stop showing reps as metres for Handstand Walk.
+- Recover unfinished Social loads, keep Inbox answers tied to the exact request, and keep newer lower lift tiers eligible when older records expire on schema 35.
+- Make Strength Rank and muscle recovery readable at large text sizes, clarify group management, and put workout actions and history ahead of recovery on Train.
 
 ## 1.12
 

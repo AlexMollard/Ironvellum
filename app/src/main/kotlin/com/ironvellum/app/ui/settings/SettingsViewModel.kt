@@ -719,7 +719,7 @@ class SettingsViewModel(
     fun syncFromHealth() {
         if (_sync.value.syncing) return
         viewModelScope.launch {
-            _sync.value = _sync.value.copy(syncing = true, message = null, historyMessage = null)
+            _sync.value = _sync.value.copy(syncing = true, result = null, message = null, historyMessage = null)
             try {
                 if (syncSnapshot()) syncHistory()
             } catch (e: CancellationException) {
@@ -765,6 +765,7 @@ class SettingsViewModel(
         }
 
         val read = runCatching { healthSync.readSnapshot() }
+            .onFailure { if (it is CancellationException) throw it }
         val snapshot = read.getOrNull()
         if (snapshot == null) {
             _sync.value = _sync.value.copy(
@@ -778,50 +779,16 @@ class SettingsViewModel(
             )
             return true
         }
-        val message: UiText
-        if (snapshot.weightKg != null && !BodyLimits.validWeight(snapshot.weightKg)) {
-            // Health Connect is another app's data, so it is a trust
-            // boundary like the keyboard: addStat REFUSES an implausible
-            // figure, and refusing by throwing here would crash the import
-            // rather than report it.
-            _sync.value = _sync.value.copy(
-                available = true,
-                message = say(R.string.settings_health_implausible_weight, formatBodyValue(snapshot.weightKg)),
-            )
-            return true
-        }
-        if (snapshot.weightKg != null) {
-            // Height is stamped from the profile inside addStat; no height
-            // on record yet means the row lands heightless (BMI stays "—").
-            // Bounds were checked above, so a throw here means something
-            // else went wrong; the import reports it rather than dying.
-            val stored = runCatching { repo.addStat(snapshot.weightKg, snapshot.bodyFatPct) }
-            if (stored.isFailure) {
-                _sync.value = _sync.value.copy(
-                    available = true,
-                    message = UiText.themed(
-                        R.string.settings_health_store_failed,
-                        R.string.settings_health_store_failed__t,
-                        stored.exceptionOrNull()?.messageText(say(R.string.settings_health_unknown_reason)) ?: say(R.string.settings_health_unknown_reason),
-                    ),
-                )
-                return true
-            }
-            message = if (bodyProfile.value.first == null) {
-                UiText.themed(R.string.settings_health_imported_no_height, R.string.settings_health_imported_no_height__t)
-            } else {
-                UiText.themed(R.string.settings_health_imported, R.string.settings_health_imported__t)
-            }
-        } else {
-            message = say(R.string.settings_health_no_weight)
-        }
-        _sync.value = _sync.value.copy(available = true, result = snapshot, message = message)
+        _sync.value = _sync.value.copy(available = true, result = snapshot, message = null)
         return true
     }
 
     private suspend fun syncHistory() {
-        val read = runCatching { repo.syncHealthHistory() }
-            .getOrElse { HealthSync.HistoryRead(problems = listOf(UiText.Raw(it.javaClass.simpleName))) }
+        val read = runCatching { repo.syncHealthHistory(365) }
+            .getOrElse {
+                if (it is CancellationException) throw it
+                HealthSync.HistoryRead(problems = listOf(UiText.Raw(it.javaClass.simpleName)))
+            }
         val coverageLine = read.coverage.entries.joinToString(" · ") { (metric, days) -> "$metric $days" }
         val newestStep = read.newestStepAtMs?.let {
             say(

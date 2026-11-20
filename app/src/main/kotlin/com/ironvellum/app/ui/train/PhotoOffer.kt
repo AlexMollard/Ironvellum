@@ -44,7 +44,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 internal fun PhotoOfferPage(
     saving: Boolean,
     failed: Boolean,
-    onPicked: (Uri) -> Unit,
+    onPicked: (Uri, () -> Unit) -> Unit,
     onSkip: () -> Unit,
 ) {
     val source = rememberPhotoSource(onPicked)

@@ -49,6 +49,8 @@ class InboxReadTest {
         var eventAt = OLD
         var eventCount = 1
         var seenAt: String? = null
+        var pendingRequestAt = "2026-10-01T18:00:00.123456Z"
+        var pendingRequest = true
         val storage = MemorySessionManager(UserSession("test-access", "test-refresh", expiresIn = 3600, tokenType = "bearer", user = UserInfo(aud = "authenticated", id = USER)))
         var failRefresh = false
         var refreshes = 0
@@ -77,6 +79,17 @@ class InboxReadTest {
                     if (failWatermark) throw IOException("watermark read unavailable")
                     if (holdWatermark) { watermarkStarted.complete(Unit); releaseWatermark.await() }
                     seenAt?.let { """[{"seen_at":"$it"}]""" } ?: "[]"
+                }
+                request.url.encodedPath.endsWith("/friendships") -> {
+                    val matches = pendingRequest &&
+                        request.url.parameters["requester_id"] == "eq.ally" &&
+                        request.url.parameters["addressee_id"] == "eq.$USER" &&
+                        request.url.parameters["accepted"] == "eq.false" &&
+                        request.url.parameters["created_at"] == "eq.$pendingRequestAt"
+                    if (matches) {
+                        pendingRequest = false
+                        """[{"requester_id":"ally"}]"""
+                    } else "[]"
                 }
                 request.url.encodedPath.endsWith("/logout") -> "{}"
                 request.url.encodedPath.endsWith("/token") -> {
@@ -111,6 +124,21 @@ class InboxReadTest {
             client.auth.stopAutoRefreshForCurrentSession()
             client.auth.setSessionStatus(io.github.jan.supabase.auth.status.SessionStatus.Initializing)
         }
+    }
+
+    @Test fun staleInboxAnswersCannotMutateANewerRequestInTheSameMillisecond() = runBlocking {
+        val fixture = Fixture()
+        try {
+            val sync = fixture.sync()
+            val stale = "2026-10-01T18:00:00.123123Z"
+            val current = fixture.pendingRequestAt
+            assertFalse(sync.acceptInboxFriendRequest("ally", stale, USER, fixture.client).getOrThrow())
+            assertFalse(sync.declineFriendRequest("ally", stale, USER, fixture.client).getOrThrow())
+            assertTrue(fixture.pendingRequest)
+            assertTrue(sync.acceptInboxFriendRequest("ally", current, USER, fixture.client).getOrThrow())
+            fixture.pendingRequest = true
+            assertTrue(sync.declineFriendRequest("ally", current, USER, fixture.client).getOrThrow())
+        } finally { fixture.close() }
     }
 
     @Test fun acknowledgementAfterAnOlderReadCannotResurrectItsUnreadBadge() = runBlocking {

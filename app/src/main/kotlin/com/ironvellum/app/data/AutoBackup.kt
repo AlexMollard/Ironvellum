@@ -145,10 +145,9 @@ object AutoBackup {
             val json = repo.exportJson()
             withContext(Dispatchers.IO) { write(context, tree, json) }
             // The progress photos ride beside the archive in the same folder: the archive names them, this copies the pictures.
-            val store = repo.photoLibrary.store
-            if (store != null) {
-                val names = repo.photoLibrary.fileNames()
-                withContext(Dispatchers.IO) { PhotoBackup.mirror(context, tree, store, names) }
+            val names = repo.photoLibrary.fileNames()
+            if (names.isNotEmpty()) {
+                withContext(Dispatchers.IO) { PhotoBackup.mirror(context, tree, repo.photoLibrary.store, names) }
             }
         }.exceptionOrNull()
         prefs(context).edit {

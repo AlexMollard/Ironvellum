@@ -486,6 +486,9 @@ interface HealthDayDao {
     @Query("SELECT * FROM health_days ORDER BY epochDay DESC")
     fun observeAll(): Flow<List<HealthDayEntity>>
 
+    @Query("SELECT * FROM health_days WHERE epochDay BETWEEN :first AND :last")
+    suspend fun between(first: Long, last: Long): List<HealthDayEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(days: List<HealthDayEntity>)
 

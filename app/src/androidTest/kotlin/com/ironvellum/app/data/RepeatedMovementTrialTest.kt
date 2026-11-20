@@ -240,6 +240,29 @@ class RepeatedMovementTrialTest {
         assertEquals("the scheme stays on the entry that had it", listOf(SchemeType.STRAIGHT, SchemeType.TOP_BACKOFF), after.map { it.scheme.type })
     }
 
+    @Test
+    fun undoRestoresOriginalSchemesAndSupersetMembers() = runBlocking {
+        val presetId = repo.savePreset(
+            null, "Original", "Keep this note", 3,
+            listOf(entry(row, 1, null).copy(warmup = true), entry(pushUp, 3, 10.0, incline),
+                entry(dip, 3, null).copy(supersetGroup = 1),
+                entry(pushUp, 3, 10.0, deficit, SetScheme(type = SchemeType.TOP_BACKOFF)).copy(supersetGroup = 1)),
+        )
+        val before = repo.observePresets().first().single { it.id == presetId }
+        assertEquals(listOf(1, 1), before.working.takeLast(2).map { it.supersetGroup })
+        val projected = before.working.map { e ->
+            com.ironvellum.app.domain.PlannedEntry(e.exerciseName, e.targetSets, e.targetReps, e.targetWeightKg, e.modifiers, sourceEntryId = e.id)
+        }
+        val retained = projected.filterNot { it.sourceEntryId == before.working.last().id }
+        val updated = com.ironvellum.app.domain.PlannedPreset("Edited", before.note, 4, retained)
+        repo.savePlannedPresets(listOf(presetId to updated))
+        assertEquals(retained.map { it.exerciseName }, repo.observePresets().first().single { it.id == presetId }.working.map { it.exerciseName })
+        assertEquals(SchemeType.STRAIGHT, repo.observePresets().first().single { it.id == presetId }.working.first { it.exerciseId == pushUp }.scheme.type)
+
+        repo.restoreWorkoutPresets(listOf(before))
+        assertEquals(before, repo.observePresets().first().single { it.id == presetId })
+    }
+
     private companion object {
         const val TEST_DB = "repeated_movement_test.db"
     }

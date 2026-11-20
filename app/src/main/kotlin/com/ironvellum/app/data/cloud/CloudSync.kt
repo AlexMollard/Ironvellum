@@ -615,7 +615,7 @@ class CloudSync private constructor(
             // schema 20 (no lift_marks table) costs one problem line, not the
             // sync. Only step integers leave the phone — never bodyweight.
             attempt {
-                uploadLiftMarks(client, me.userId, history)
+                uploadLiftMarks(client, me.userId, history, probed)
             }.onFailure { error ->
                 sideProblem(cloudThemed(R.string.cloud_sync_tiers_failed, R.string.cloud_sync_tiers_failed__t, Cloud.explain(error)))
             }
@@ -771,7 +771,9 @@ class CloudSync private constructor(
         client: io.github.jan.supabase.SupabaseClient,
         userId: String,
         history: List<Pair<WorkoutSession, List<SessionSet>>>,
+        schemaVersion: Int?,
     ) {
+        check(schemaVersion != null) { "Cannot sync lift marks without a known cloud schema version" }
         val marks = LiftBoards.marks(
             history = history,
             bodyweightAt = SetRecords.bodyweightLookup(repo.observeStats().first()),
@@ -779,7 +781,17 @@ class CloudSync private constructor(
             nowMs = System.currentTimeMillis(),
             practices = repo.observeSkillPractices().first(),
         )
-        if (marks.isNotEmpty()) {
+        if (marks.isNotEmpty() && schemaVersion >= 35) {
+            client.postgrest.rpc("push_lift_marks", rpcArgs(PushLiftMarksArgs(userId, marks.map {
+                RollingLiftMarkDto(
+                    lift = it.lift.wire,
+                    step = it.step,
+                    recentStep = it.recentStep,
+                    recentAt = it.recentAtMs?.let { at -> Instant.ofEpochMilli(at).toString() },
+                    recentSteps = it.recentSteps,
+                )
+            })))
+        } else if (marks.isNotEmpty()) {
             client.postgrest.from("lift_marks").upsert(
                 marks.map {
                     LiftMarkDto(
@@ -1826,8 +1838,36 @@ class CloudSync private constructor(
         }
     }
 
+    internal suspend fun acceptInboxFriendRequest(
+        userId: String,
+        createdAt: String,
+        expectedUserId: String,
+        expectedClient: io.github.jan.supabase.SupabaseClient,
+    ): Result<Boolean> = attempt {
+        account.withAccount(expectedUserId) {
+            if (!currentInboxScope(expectedUserId, expectedClient)) throw CancellationException("Inbox scope changed")
+            val updated = expectedClient.postgrest.from("friendships").update({
+                set("accepted", true)
+            }) {
+                filter {
+                    eq("requester_id", userId)
+                    eq("addressee_id", expectedUserId)
+                    eq("accepted", false)
+                    eq("created_at", createdAt)
+                }
+                select(Columns.raw("requester_id"))
+            }.decodeList<JsonObject>().isNotEmpty()
+            if (!currentInboxScope(expectedUserId, expectedClient)) throw CancellationException("Inbox scope changed")
+            invalidateSocialReads()
+            updated
+        }
+    }.recoverCatching { error ->
+        throw MessageException(Cloud.explain(error), error)
+    }
+
     internal suspend fun declineFriendRequest(
         userId: String,
+        createdAt: String,
         expectedUserId: String,
         expectedClient: io.github.jan.supabase.SupabaseClient,
     ): Result<Boolean> = attempt {
@@ -1838,6 +1878,7 @@ class CloudSync private constructor(
                     eq("requester_id", userId)
                     eq("addressee_id", expectedUserId)
                     eq("accepted", false)
+                    eq("created_at", createdAt)
                 }
                 select(Columns.raw("requester_id"))
             }.decodeList<JsonObject>().isNotEmpty()

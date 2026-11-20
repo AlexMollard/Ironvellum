@@ -999,6 +999,42 @@ begin
     perform assert_true(r = '5', 'lift_board dropped the row when its recent set aged out: the overall step must stay');
     reset role;
 
+    perform assert_true(has_column_privilege('authenticated', 'public.lift_marks', 'recent_steps', 'UPDATE'),
+        'authenticated cannot update rolling tier history');
+    perform assert_true(has_column_privilege('authenticated', 'public.lift_marks', 'recent_steps', 'SELECT')
+        and has_table_privilege('authenticated', 'public.lift_board', 'SELECT'),
+        'authenticated cannot read rolling history through the security-invoker view');
+    perform assert_true(not has_function_privilege('anon', 'public.push_lift_marks(uuid,jsonb)', 'EXECUTE'),
+        'anonymous callers can invoke the rolling lift RPC');
+    perform assert_true(refused_as(kit, format(
+        'select public.push_lift_marks(%L::uuid, ''[]''::jsonb)', lux), array['42501']),
+        'the rolling lift RPC accepted a different captured account');
+    perform assert_true(refused_as(kit,
+        'select public.push_lift_marks(null::uuid, ''[]''::jsonb)', array['42501']),
+        'the rolling lift RPC accepted a missing captured account');
+    -- A higher tier has expired, but a newer lower tier remains visible to allies.
+    perform must_run(lux, format(
+        'select public.push_lift_marks(%L::uuid, jsonb_build_array(jsonb_build_object(''lift'', ''pull_up'', ''step'', 7, ''recent_step'', 7, ''recent_at'', now() - interval ''8 days'', ''recent_steps'', %L::bigint[])))',
+        lux, array[0,0,0,0,0,(extract(epoch from now() - interval '1 day') * 1000)::bigint,0,(extract(epoch from now() - interval '8 days') * 1000)::bigint,0,0,0]),
+        'a lifter cannot upload rolling tier history');
+    perform set_config('probe.uid', kit::text, true);
+    set local role authenticated;
+    select recent_step::text into r from lift_board where user_id = lux and lift = 'pull_up';
+    perform assert_true(r = '5', format('the unexpired lower tier disappeared: %s', coalesce(r, 'null')));
+    select step::text into r from lift_board where user_id = lux and lift = 'pull_up';
+    perform assert_true(r = '7', 'rolling tier history changed the all-time mark');
+    reset role;
+    perform must_run(lux, format(
+        'update lift_marks set step = 7, recent_step = 6, recent_at = now() where user_id = %L and lift = ''pull_up''', lux),
+        'a legacy client cannot update its mark');
+    perform assert_true((select recent_steps is null from lift_marks where user_id = lux and lift = 'pull_up'),
+        'a legacy update retained stale tier history');
+    perform set_config('probe.uid', kit::text, true);
+    set local role authenticated;
+    select recent_step::text into r from lift_board where user_id = lux and lift = 'pull_up';
+    perform assert_true(r = '6', 'the board did not fall back to the legacy mark');
+    reset role;
+
     -- Writes across lifters and out of range.
     perform assert_true(
         refused_as(kit, format('insert into lift_marks (user_id, lift, step) values (%L, ''ohp'', 3)', lux), array['42501']),
@@ -1318,12 +1354,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 34,
-        format('schema_version() reports %s, not 34 — the hardening patch is not advertised', public.schema_version())
+        (select public.schema_version()) = 35,
+        format('schema_version() reports %s, not 35 — the rolling lift patch is not advertised', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 34,
+        (select public.schema_version()) = 35,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;

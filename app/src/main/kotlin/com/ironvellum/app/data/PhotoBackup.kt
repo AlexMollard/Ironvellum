@@ -18,21 +18,28 @@ object PhotoBackup {
     private const val IMAGE = "image/jpeg"
 
     /** Copies the [names] that [store] holds and the folder lacks; returns how many were copied. Throws after trying them all if any could not be. */
-    fun mirror(context: Context, tree: Uri, store: PhotoStore, names: Collection<String>): Int {
+    fun mirror(context: Context, tree: Uri, store: PhotoStore?, names: Collection<String>): Int {
         val resolver = context.contentResolver
         val root = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
         val folder = children(context, tree, DocumentsContract.getTreeDocumentId(tree))[FOLDER]?.let { DocumentsContract.buildDocumentUriUsingTree(tree, it) }
             ?: DocumentsContract.createDocument(resolver, root, DocumentsContract.Document.MIME_TYPE_DIR, FOLDER)
             ?: error("the folder refused a photos folder")
         val have = children(context, tree, DocumentsContract.getDocumentId(folder)).keys
+        return mirrorMissing(names, have) { name ->
+            val file = store?.file(name)?.takeIf { it.isFile } ?: return@mirrorMissing false
+            val doc = runCatching { DocumentsContract.createDocument(resolver, folder, IMAGE, name) }.getOrNull()
+                ?: return@mirrorMissing false
+            val ok = runCatching { resolver.openOutputStream(doc, "wt")!!.use { out -> file.inputStream().use { it.copyTo(out) } } }.isSuccess
+            if (!ok) runCatching { DocumentsContract.deleteDocument(resolver, doc) }
+            ok
+        }
+    }
+
+    internal fun mirrorMissing(names: Collection<String>, have: Set<String>, copy: (String) -> Boolean): Int {
         var copied = 0
         var failed = 0
-        names.filter { it !in have && store.exists(it) }.forEach { name ->
-            val file = store.file(name) ?: return@forEach
-            val doc = runCatching { DocumentsContract.createDocument(resolver, folder, IMAGE, name) }.getOrNull()
-            if (doc == null) { failed++; return@forEach }
-            val ok = runCatching { resolver.openOutputStream(doc, "wt")!!.use { out -> file.inputStream().use { it.copyTo(out) } } }.isSuccess
-            if (ok) copied++ else { failed++; runCatching { DocumentsContract.deleteDocument(resolver, doc) } }
+        names.filter { it !in have }.forEach { name ->
+            if (copy(name)) copied++ else failed++
         }
         check(failed == 0) { "$failed photos could not be copied" }
         return copied

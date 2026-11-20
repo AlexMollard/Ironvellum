@@ -87,7 +87,10 @@ class FontScaleSweepTest {
         screen("today-respite") { clickDescribed("Wednesday") }
         screen("today-sealed") { clickDescribed("Tuesday") }
         clickDescribed("Friday")
-        screen("today-rank-sheet") { clickLabelled("Show Strength Rank") }
+        screen("today-rank-sheet") {
+            clickLabelled("Show Strength Rank")
+            listOf("Push", "Pull", "Legs").forEach { whole(it) }
+        }
         back()
         screen("today-level-sheet") { clickLabelled("Explain level and XP") }
         back()

@@ -246,6 +246,8 @@ data class PlannedEntry(
     /** The rep window shown to the lifter; [reps] stays the anchor the load is computed from. */
     val repLow: Int = reps,
     val repHigh: Int = reps,
+    /** Saved row this entry came from, if it is an unchanged movement in an existing rite. */
+    val sourceEntryId: Long? = null,
 )
 
 /** One proposed session, scheduled on an ISO weekday (1 = Monday .. 7 = Sunday) or unscheduled. */

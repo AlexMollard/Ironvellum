@@ -170,6 +170,21 @@ class LiftBoardsTest {
     }
 
     @Test
+    fun recentHistoryKeepsLatestTimeForEachTier() {
+        val history = listOf(
+            workout(6, barbellAt("Back Squat", 2.76)),
+            workout(4, barbellAt("Back Squat", 1.26)),
+            workout(1, barbellAt("Back Squat", 1.26)),
+            workout(7, barbellAt("Back Squat", 3.5)),
+        )
+        val mark = marks(history).single()
+        assertEquals(10, mark.step)
+        assertEquals(now - 6 * day, mark.recentSteps[9])
+        assertEquals(now - day, mark.recentSteps[3])
+        assertEquals(0L, mark.recentSteps[10])
+    }
+
+    @Test
     fun oneMarkPerLiftAndOnlyForLiftsLogged() {
         val history = listOf(
             workout(1, set("Back Squat", 1, 100.0), set("Front Squat", 1, 150.0), set("Deadlift", 1, 150.0)),
