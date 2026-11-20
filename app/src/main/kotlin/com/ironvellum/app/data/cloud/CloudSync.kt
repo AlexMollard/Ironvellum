@@ -1520,13 +1520,21 @@ class CloudSync private constructor(
      *
      * TTL 20s on the FIRST page only: the feed is browsed by scrolling back
      * and forth, and a screen re-entry or tab switch within 20s should not
-     * re-download 50 rows. Older pages are not cached — they are append-only
+     * re-download the first page. Older pages are not cached — they are append-only
      * per scroll position and each is requested once anyway. Reaction taps
      * are recorded as an overlay applied to every handed-out page, so older
      * (paged) entries reflect the optimistic state too, not just page one.
      */
+    /** A previous first page can stay visible while the normal TTL read refreshes it. */
+    internal suspend fun cachedFeed(): List<FeedEntry>? {
+        val client = Cloud.requireConfigured.getOrNull() ?: return null
+        val userId = account.account.value?.userId ?: return null
+        val previous = cache.peek<List<FeedEntry>>(CloudReadCache.KEY_FEED_FIRST_PAGE, userId, client) ?: return null
+        return cache.applyReactions(previous)
+    }
+
     suspend fun feed(
-        limit: Int = 50,
+        limit: Int = 10,
         beforeMs: Long? = null,
         force: Boolean = false,
     ): Result<List<FeedEntry>> {
@@ -2336,6 +2344,13 @@ internal class CloudReadCache {
     // RLS answers and optimistic reactions belong to both identity and client.
     private var ownerUserId: String? = null
     private var ownerBackend: Any? = null
+
+    /** Preview only: expiration still makes getOrFetch perform its ordinary refresh. */
+    @Suppress("UNCHECKED_CAST")
+    suspend fun <T> peek(key: String, userId: String?, backend: Any): T? = lock.withLock {
+        if (ownerUserId != userId || ownerBackend !== backend) return@withLock null
+        (slots[key] as? Entry)?.value as T?
+    }
 
     suspend fun <T> getOrFetch(
         key: String,

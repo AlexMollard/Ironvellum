@@ -130,6 +130,7 @@ data class FeedUi(
 internal interface FeedGateway {
     val owners: Flow<SocialOwner>
     fun owner(): SocialOwner
+    suspend fun cachedFeed(): List<FeedEntry>? = null
     suspend fun feed(limit: Int, beforeMs: Long? = null, force: Boolean = false): Result<List<FeedEntry>>
     suspend fun friends(force: Boolean): Result<List<FriendRow>>
     suspend fun react(sessionId: String, reaction: Reaction?): Result<Unit>
@@ -142,6 +143,7 @@ private class CloudFeedGateway(
 ) : FeedGateway {
     override fun owner() = currentSocialOwner(accounts.account.value?.userId)
     override val owners = socialOwners(accounts.account.map { it?.userId }) { accounts.account.value?.userId }
+    override suspend fun cachedFeed() = cloud.cachedFeed()
     override suspend fun feed(limit: Int, beforeMs: Long?, force: Boolean) = cloud.feed(limit, beforeMs, force)
     override suspend fun friends(force: Boolean) = cloud.friends(force)
     override suspend fun react(sessionId: String, reaction: Reaction?) = cloud.react(sessionId, reaction)
@@ -151,13 +153,13 @@ private class CloudFeedGateway(
 class FeedViewModel internal constructor(
     private val gateway: FeedGateway,
     frame: Flow<String?>,
-    private val pageSize: Int = 50,
+    private val pageSize: Int = 10,
 ) : ViewModel() {
     constructor(
         cloudSync: CloudSync,
         accountRepo: com.ironvellum.app.data.cloud.AccountRepository,
         repo: Repository,
-        pageSize: Int = 50,
+        pageSize: Int = 10,
     ) : this(CloudFeedGateway(cloudSync, accountRepo), repo.observeEquippedFrame(), pageSize) {
         viewModelScope.launch {
             accountRepo.account.collect { account ->
@@ -225,6 +227,12 @@ class FeedViewModel internal constructor(
         _ui.value = _ui.value.copy(loading = true, loadingMore = false, error = null, pagingError = null)
         scope.launch {
             try {
+                val cached = gateway.cachedFeed()
+                if (!current(expected, scope) || generation != readGeneration) return@launch
+                if (_ui.value.entries.isEmpty() && cached != null) {
+                    oldestMs = cached.mapNotNull { it.completedAtMs }.minOrNull()
+                    _ui.value = _ui.value.copy(entries = cached, exhausted = cached.size < pageSize)
+                }
                 val page = gateway.feed(limit = pageSize, force = force).getOrThrow()
                 if (!current(expected, scope) || generation != readGeneration) return@launch
                 oldestMs = page.mapNotNull { it.completedAtMs }.minOrNull()
