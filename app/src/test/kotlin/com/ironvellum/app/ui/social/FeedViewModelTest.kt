@@ -29,6 +29,8 @@ class FeedViewModelTest {
         override val owners = MutableStateFlow(SocialOwner("a", "one"))
         override fun owner() = owners.value
         var read: suspend (Int, Long?, Boolean) -> Result<List<FeedEntry>> = { _, _, _ -> Result.success(emptyList()) }
+        var cachedRead: suspend () -> List<FeedEntry>? = { null }
+        override suspend fun cachedFeed() = cachedRead()
         var friendRead: suspend (Boolean) -> Result<List<FriendRow>> = { Result.success(emptyList()) }
         var reaction: suspend (String, Reaction?) -> Result<Unit> = { _, _ -> Result.success(Unit) }
         var ally: suspend (String) -> Result<Unit> = { Result.success(Unit) }
@@ -41,6 +43,65 @@ class FeedViewModelTest {
     @After fun tearDown() { models.clear(); Dispatchers.resetMain() }
     private fun model(gateway: Gateway, pageSize: Int = 50) =
         FeedViewModel(gateway, MutableStateFlow(null), pageSize).also { models.put("feed", it) }
+
+    @Test fun defaultPageShowsTenWorkoutsBeforeRequestingOlderOnes() {
+        val calls = mutableListOf<Pair<Int, Long?>>()
+        val gateway = Gateway().apply {
+            read = { limit, before, _ ->
+                calls += limit to before
+                Result.success(if (before == null) (20 downTo 11).map(::entry) else (10 downTo 1).map(::entry))
+            }
+        }
+        val vm = FeedViewModel(gateway, MutableStateFlow(null)).also { models.put("feed", it) }
+        assertEquals(listOf(10 to null), calls)
+        assertEquals((20 downTo 11).map(Int::toString), vm.ui.value.entries.map { it.sessionId })
+        assertFalse(vm.ui.value.exhausted)
+        vm.loadMore()
+        assertEquals(listOf(10 to null, 10 to 11L), calls)
+        assertEquals((20 downTo 1).map(Int::toString), vm.ui.value.entries.map { it.sessionId })
+    }
+
+    @Test fun cachedPageShowsDuringRefreshAndSurvivesARefreshFailure() = runTest {
+        val pending = CompletableDeferred<Result<List<FeedEntry>>>()
+        val cached = listOf(entry(2), entry(1))
+        val gateway = Gateway().apply {
+            cachedRead = { cached }
+            read = { _, _, _ -> pending.await() }
+        }
+        val vm = model(gateway, 2)
+        assertEquals(cached, vm.ui.value.entries)
+        assertTrue(vm.ui.value.loading)
+        pending.complete(Result.failure(IllegalStateException("offline")))
+        runCurrent()
+        assertEquals(cached, vm.ui.value.entries)
+        assertFalse(vm.ui.value.loading)
+        assertNotNull(vm.ui.value.error)
+        gateway.read = { _, before, _ ->
+            Result.success(if (before == null) listOf(entry(4), entry(3)) else listOf(entry(2), entry(1)))
+        }
+        vm.load(true)
+        assertEquals(listOf("4", "3"), vm.ui.value.entries.map { it.sessionId })
+        vm.loadMore()
+        assertEquals(listOf("4", "3", "2", "1"), vm.ui.value.entries.map { it.sessionId })
+        assertNull(vm.ui.value.error)
+    }
+
+    @Test fun delayedCachedPageCannotLeakAcrossAnOwnerChange() = runTest {
+        val cached = CompletableDeferred<List<FeedEntry>?>()
+        val gateway = Gateway().apply {
+            cachedRead = {
+                if (owner().userId == "a") withContext(NonCancellable) { cached.await() } else null
+            }
+            read = { _, _, _ -> Result.success(listOf(entry(9))) }
+        }
+        val vm = model(gateway)
+        gateway.owners.value = SocialOwner("b", "one")
+        assertEquals(listOf("9"), vm.ui.value.entries.map { it.sessionId })
+        cached.complete(listOf(entry(1)))
+        runCurrent()
+        assertEquals("b", vm.ui.value.myUserId)
+        assertEquals(listOf("9"), vm.ui.value.entries.map { it.sessionId })
+    }
 
     @Test fun forceRefreshReplacesCachedContentWhileOlderReadIsPending() = runTest {
         val gateway = Gateway()

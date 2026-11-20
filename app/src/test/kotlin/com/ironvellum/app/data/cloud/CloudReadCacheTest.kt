@@ -6,9 +6,31 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class CloudReadCacheTest {
+    @Test fun expiredValueCanBePreviewedButStillRequiresAFreshRead() = runBlocking {
+        val cache = CloudReadCache()
+        val backend = Any()
+        cache.getOrFetch("feed:first", 0, false, "user", backend) { "previous feed" }
+        assertEquals("previous feed", cache.peek<String>("feed:first", "user", backend))
+        assertEquals("fresh feed", cache.getOrFetch("feed:first", 0, false, "user", backend) { "fresh feed" })
+        assertEquals("fresh feed", cache.peek<String>("feed:first", "user", backend))
+    }
+
+    @Test fun cachedPreviewHonorsOwnerBackendAndInvalidation() = runBlocking {
+        val cache = CloudReadCache()
+        val backend = Any()
+        cache.getOrFetch("feed:first", 0, false, "user", backend) { "private feed" }
+        assertNull(cache.peek<String>("feed:first", "other", backend))
+        assertNull(cache.peek<String>("feed:first", "user", Any()))
+        assertNull(cache.peek<String>("feed:first", null, backend))
+        assertEquals("private feed", cache.peek<String>("feed:first", "user", backend))
+        cache.invalidate("feed:first")
+        assertNull(cache.peek<String>("feed:first", "user", backend))
+    }
+
     @Test fun sameUserDifferentBackendDoesNotReuseCachedOrInflightData() = runBlocking {
         val cache = CloudReadCache()
         val firstBackend = Any()
