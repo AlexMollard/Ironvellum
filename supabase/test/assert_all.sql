@@ -1006,6 +1006,8 @@ begin
         'authenticated cannot read rolling history through the security-invoker view');
     perform assert_true(not has_function_privilege('anon', 'public.push_lift_marks(uuid,jsonb)', 'EXECUTE'),
         'anonymous callers can invoke the rolling lift RPC');
+    perform assert_true(not has_function_privilege('anon', 'public.lift_mark_caller()', 'EXECUTE'),
+        'anonymous callers can invoke the rolling lift identity helper');
     perform assert_true(refused_as(kit, format(
         'select public.push_lift_marks(%L::uuid, ''[]''::jsonb)', lux), array['42501']),
         'the rolling lift RPC accepted a different captured account');

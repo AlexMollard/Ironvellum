@@ -91,6 +91,7 @@ drop function if exists public.push_aggregates(bigint, bigint, int, bigint, int,
 drop function if exists public.push_lift_marks(uuid, jsonb);
 drop function if exists public.push_lift_marks(jsonb);
 drop function if exists public.clear_rolling_lift_marks();
+drop function if exists public.lift_mark_caller();
 drop function if exists public.monarch_level(bigint);
 drop function if exists public.find_hunter(text);
 drop function if exists public.circle_keeper_lock(text);
