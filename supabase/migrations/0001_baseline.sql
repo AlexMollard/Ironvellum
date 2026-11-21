@@ -3147,9 +3147,9 @@ language sql immutable set search_path=pg_catalog as $$
 $$;
 create or replace function ironvellum_mcp.valid_scopes(s text[]) returns boolean
 language sql immutable set search_path=pg_catalog as $$
- select coalesce(cardinality(s) between 1 and 4 and array_position(s,null) is null and
+ select case when array_ndims(s)=1 then cardinality(s) between 1 and 4 and array_position(s,null) is null and
    s <@ array['training:read','progress:read','savedworkouts:read','workoutdrafts:create'] and
-   cardinality(s)=(select count(distinct x) from unnest(s) x),false)
+   cardinality(s)=(select count(distinct x) from unnest(s) x) else false end
 $$;
 create or replace function ironvellum_mcp.app_owner() returns uuid
 language plpgsql stable set search_path=pg_catalog as $$
@@ -3179,7 +3179,7 @@ begin
    insert into grants(owner_id,client_id,resource_url,scopes) values(uid,r.client_id,r.resource_url,p_scopes) returning id into gid;
    insert into tokens(hash,kind,grant_id,scopes,expires_at,challenge,redirect_uri,redirect_explicit)
      values(p_code_hash,'code',gid,p_scopes,clock_timestamp()+interval '2 minutes',r.challenge,r.redirect_uri,r.redirect_explicit);
- elsif cardinality(p_scopes)>0 or p_code_hash is not null then return fail('invalid_request');
+ elsif p_scopes is null or cardinality(p_scopes)<>0 or p_code_hash is not null then return fail('invalid_request');
  end if;
  update requests set decided=true where id=r.id;
  return ok(jsonb_build_object('approved',p_approved));
@@ -3333,20 +3333,23 @@ language sql stable set search_path=pg_catalog as $$
 $$;
 create or replace function ironvellum_mcp.workouts(uid uuid, tool text, args jsonb) returns jsonb
 language plpgsql stable set search_path=pg_catalog,ironvellum_mcp,pg_temp as $$
-declare ref text; cutoff timestamptz; n int:=20; rows jsonb; summary jsonb; workout_id uuid;
+declare ref text; cutoff timestamptz; next_cursor text; n int:=20; rows jsonb; summary jsonb; workout_id uuid;
 begin
  if tool='list_workouts' then
    if not shape(args,'{}','{limit,cursor}') or (args ? 'limit' and not intval(args,'limit',1,50)) then return fail('invalid_arguments'); end if;
    n:=coalesce((args->>'limit')::numeric::int,20);
    if args ? 'cursor' then
-     ref:=args->>'cursor';
-     select ended into cutoff from history(uid) h where h.id=ref;
+     ref:=split_part(args->>'cursor','@',1);
+     select ended into cutoff from history(uid) h where h.id=ref
+       and args->>'cursor'=h.id||'@'||encode(timestamptz_send(h.ended),'hex');
      if not found then return fail('invalid_cursor'); end if;
    end if;
    select coalesce(jsonb_agg(jsonb_build_object('id',h.id,'label',h.label,'startedAtMs',ms(h.started),
-     'completedAtMs',ms(h.ended)) order by h.ended desc,h.id desc),'[]'::jsonb) into rows
+     'completedAtMs',ms(h.ended)) order by h.ended desc,h.id desc),'[]'::jsonb),
+     (array_agg(h.id||'@'||encode(timestamptz_send(h.ended),'hex') order by h.ended desc,h.id desc))[n]
+     into rows,next_cursor
    from (select * from history(uid) where cutoff is null or (ended,id)<(cutoff,ref) order by ended desc,id desc limit n+1) h;
-   if jsonb_array_length(rows)>n then return ok(jsonb_build_object('workouts',rows-n,'nextCursor',rows->(n-1)->>'id')); end if;
+   if jsonb_array_length(rows)>n then return ok(jsonb_build_object('workouts',rows-n,'nextCursor',next_cursor)); end if;
    return ok(jsonb_build_object('workouts',rows,'nextCursor',null));
  end if;
  if not shape(args,'{id}') or not str(args,'id',1,48) then return fail('invalid_arguments'); end if;
@@ -3369,6 +3372,7 @@ end $$;
 create or replace function ironvellum_mcp.create_draft(g ironvellum_mcp.grants,args jsonb) returns jsonb
 language plpgsql set search_path=pg_catalog,ironvellum_mcp,pg_temp as $$
 declare body jsonb:=args->'draft'; entry jsonb; d drafts; digest text; ident text:=args->>'idempotencyKey'; normalized jsonb:='[]';
+        admitted_at timestamptz;
 begin
  if not shape(args,'{idempotencyKey,draft}') or not str(args,'idempotencyKey',1,80) or ident !~ '^[A-Za-z0-9._~-]+$' then return fail('invalid_arguments'); end if;
  if not shape(body,'{schemaVersion,name,warmup,cooldown,entries}') or body->'schemaVersion'<>'1'::jsonb
@@ -3394,8 +3398,12 @@ begin
  if exists(select from jsonb_array_elements(normalized) e where not exists(select from movements m where m.key=e->>'exerciseKey' and m.metric='REPS')) then
    return fail('unsupported_movement');
  end if;
- if (select count(*) from drafts where owner_id=g.owner_id and client_id=g.client_id and created_at>clock_timestamp()-interval '24 hours')>=20 then return fail('rate_limited'); end if;
- insert into drafts(owner_id,client_id,grant_id,idempotency_key,content,content_hash) values(g.owner_id,g.client_id,g.id,ident,body,digest) returning * into d;
+ -- run_tool holds the owner/client lock. Start the quota and review clocks
+ -- at actual admission, even if this transaction waited for another caller.
+ admitted_at:=clock_timestamp();
+ if (select count(*) from drafts where owner_id=g.owner_id and client_id=g.client_id and created_at>admitted_at-interval '24 hours')>=20 then return fail('rate_limited'); end if;
+ insert into drafts(owner_id,client_id,grant_id,idempotency_key,content,content_hash,created_at,changed_at,expires_at)
+   values(g.owner_id,g.client_id,g.id,ident,body,digest,admitted_at,admitted_at,admitted_at+interval '30 days') returning * into d;
  return ok(jsonb_build_object('draft',envelope(d)));
 end $$;
 
@@ -3533,9 +3541,10 @@ begin
    urls:=array(select jsonb_array_elements_text(a->'redirectUris'));
    if cardinality(urls) not between 1 and 16 or exists(select from unnest(urls) u where not redirect_ok(u)) then return fail('invalid_arguments'); end if;
    perform pg_advisory_xact_lock(36,1);
-   if (select count(*) from clients where created_at>clock_timestamp()-interval '1 minute')>=20
-      or (select count(*) from clients where created_at>clock_timestamp()-interval '24 hours')>=1000 then return fail('rate_limited'); end if;
-   insert into clients(id,name,ciphertext,redirects) values(a->>'clientId',a->>'clientName',a->>'metadataCiphertext',urls);
+   admitted_at:=clock_timestamp();
+   if (select count(*) from clients where created_at>admitted_at-interval '1 minute')>=20
+      or (select count(*) from clients where created_at>admitted_at-interval '24 hours')>=1000 then return fail('rate_limited'); end if;
+   insert into clients(id,name,ciphertext,redirects,created_at) values(a->>'clientId',a->>'clientName',a->>'metadataCiphertext',urls,admitted_at);
    return ok(jsonb_build_object('clientId',a->>'clientId'));
  when 'client.get' then
    select * into c from clients where id=a->>'clientId';

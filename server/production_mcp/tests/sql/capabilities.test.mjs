@@ -433,6 +433,16 @@ test('history orders ties, excludes incomplete/foreign rows, strips free text', 
   assert.ok(!JSON.stringify(w).includes('CANARY'))
   err(await call(a, 'list_workouts', { userId: other }), 'invalid_arguments')
   const foreignGrant = await issue(scopes, a.clientId, other)
+  err(await call(foreignGrant, 'list_workouts', { cursor: p.nextCursor }), 'invalid_cursor')
+  const [source, anchor] = p.workouts[0].id.split(':')
+  const table = source === 'synced' ? 'sessions' : 'imported_sessions'
+  // A one-microsecond correction is invisible in the displayed millisecond timestamp.
+  await admin('update ' + table + " set completed_at=completed_at+interval '1 microsecond' where id=$1", [
+    anchor,
+  ])
+  err(await call(a, 'list_workouts', { cursor: p.nextCursor }), 'invalid_cursor')
+  await admin('update ' + table + ' set completed_at=null where id=$1', [anchor])
+  err(await call(a, 'list_workouts', { cursor: p.nextCursor }), 'invalid_cursor')
   assert.equal(ok(await call(foreignGrant, 'list_workouts')).workouts[0].id, 'synced:' + foreign)
   err(await call(foreignGrant, 'get_workout', { id: 'synced:' + synced }), 'not_found')
   assert.equal(ok(await call(foreignGrant, 'get_progress')).freshness, 'absent')
@@ -625,7 +635,7 @@ test('grant cleanup preserves approved and terminal drafts, account erasure remo
   )
   err(await gateway('access.load', { accessHash: active.accessHash }), 'invalid_token')
 })
-async function race(role, statement, firstArgs, secondArgs) {
+async function race(role, statement, firstArgs, secondArgs, beforeCommit = async () => {}) {
   const first = cluster.getPgClient('postgres', '127.0.0.1'),
     second = cluster.getPgClient('postgres', '127.0.0.1')
   try {
@@ -656,6 +666,7 @@ async function race(role, statement, firstArgs, secondArgs) {
       if (!blocked) await new Promise((r) => setTimeout(r, 10))
     }
     assert.equal(blocked, true, 'second independent backend must actually wait on the first transaction')
+    await beforeCommit()
     await first.query('commit')
     const result = await contender
     if (result.error) throw result.error
@@ -733,6 +744,51 @@ if (native)
       err(await gateway('access.load', { accessHash: initial.accessHash }), 'invalid_token')
     }
   })
+for (const [description, approved, selection, expected] of [
+  ['multidimensional approval', true, [['training:read']], 'invalid_scope'],
+  ['null denial', false, null, 'invalid_request'],
+])
+  test('malformed consent leaves its request open: ' + description, async () => {
+    const client = await register(),
+      requestId = await request(client)
+    err(await consent(requestId, approved, selection, approved ? hash() : null), expected)
+    assert.equal(ok(await gateway('authorization.get', { requestId })).requestId, requestId)
+    ok(await consent(requestId, false, [], null))
+  })
+if (native)
+  for (const kind of ['registration', 'draft'])
+    test('queued ' + kind + ' uses its lock admission time', async () => {
+      const registration = kind === 'registration'
+      const a = registration ? null : await issue()
+      const operation = registration ? 'client.register' : 'tool.call'
+      const args = (id) =>
+        registration
+          ? {
+              clientId: id,
+              clientName: 'Timed',
+              metadataCiphertext: 'encrypted',
+              redirectUris: [redirectUri],
+            }
+          : { accessHash: a.accessHash, tool: 'create_workout_draft', args: { idempotencyKey: id, draft } }
+      const secondId = randomUUID()
+      let releaseTime
+      const result = ok(
+        await race(
+          'service_role',
+          'select public.ironvellum_mcp_gateway($1,$2) v',
+          [operation, args(randomUUID())],
+          [operation, args(secondId)],
+          async () => {
+            releaseTime = await sql('select clock_timestamp()::text v')
+          },
+        ),
+      )
+      await db.exec('reset role')
+      const check = registration
+        ? 'select created_at >= $2::timestamptz v from ironvellum_mcp.clients where id=$1'
+        : "select created_at >= $2::timestamptz and expires_at=created_at+interval '30 days' v from ironvellum_mcp.drafts where id=$1"
+      assert.equal(await sql(check, [registration ? secondId : result.draft.id, releaseTime]), true)
+    })
 test('public authorization creation enforces rolling per-client and service-wide limits', async () => {
   await admin("update ironvellum_mcp.requests set expires_at=now()-interval '1 day'")
   const clients = []
@@ -793,4 +849,24 @@ test('replays baseline and hosted patch, runs existing schema/social assertions'
   await db.exec(patch)
   assert.equal(await sql('select public.schema_version() v'), 36)
   await db.exec(assertions.replace(/^\\set ON_ERROR_STOP 1\r?$/m, ''))
+})
+test('reset aborts and rolls back when an operator view depends on MCP storage', async () => {
+  await db.exec(
+    'create schema operator_views; create view operator_views.connected_apps as select name from ironvellum_mcp.clients',
+  )
+  const count = await sql('select count(*)::int v from auth.users')
+  assert.ok(count > 0)
+  try {
+    await assert.rejects(db.exec(await file('supabase/reset.sql')), { code: '2BP01' })
+  } finally {
+    await db.exec('rollback')
+  }
+  assert.equal(await sql('select count(*)::int v from auth.users'), count)
+  assert.equal(await sql("select to_regclass('operator_views.connected_apps') is not null v"), true)
+  assert.equal(await sql("select to_regprocedure('public.ironvellum_mcp_connections()') is not null v"), true)
+  await db.exec('drop view operator_views.connected_apps; drop schema operator_views')
+  await db.exec(await file('supabase/reset.sql'))
+  await db.exec((await file('supabase/test/assert_reset.sql')).replace(/^\\set ON_ERROR_STOP 1\r?$/m, ''))
+  // The same operator reset also supports a database without the optional MCP schema.
+  await db.exec(await file('supabase/reset.sql'))
 })

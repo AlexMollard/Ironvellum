@@ -863,5 +863,24 @@
       ],
       "p_code_hash": "bb959c1cc13961f438d8c17b3a609dd3e2d60470349dc39c8f27fcad00019617"
     }
+  },
+  "historyPagination": {
+    "firstPage": {
+      "schemaVersion": 1,
+      "ok": true,
+      "workouts": [
+        {
+          "id": "synced:70308249-1118-424c-9cd3-25b4af2c1681",
+          "label": "Training",
+          "startedAtMs": 1794996400000,
+          "completedAtMs": 1795000000000
+        }
+      ],
+      "nextCursor": "synced:70308249-1118-424c-9cd3-25b4af2c1681@00030389c6275000"
+    },
+    "nextPageArgs": {
+      "limit": 1,
+      "cursor": "synced:70308249-1118-424c-9cd3-25b4af2c1681@00030389c6275000"
+    }
   }
 }

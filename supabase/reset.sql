@@ -42,7 +42,33 @@ drop function if exists public.ironvellum_mcp_drafts(integer);
 drop function if exists public.ironvellum_mcp_draft(uuid);
 drop function if exists public.ironvellum_mcp_review_draft(uuid,text,text);
 drop function if exists public.ironvellum_mcp_consent(uuid,boolean,text[],text);
-drop schema if exists ironvellum_mcp cascade;
+-- Explicit signatures keep operator functions of the same name intact. Any
+-- external view or other unexpected dependency aborts this transaction.
+drop function if exists
+    ironvellum_mcp.oauth(text,jsonb),
+    ironvellum_mcp.run_tool(ironvellum_mcp.grants,text[],text,jsonb),
+    ironvellum_mcp.create_draft(ironvellum_mcp.grants,jsonb),
+    ironvellum_mcp.workouts(uuid,text,jsonb),
+    ironvellum_mcp.history(uuid),
+    ironvellum_mcp.snapshot(uuid,text),
+    ironvellum_mcp.progress(jsonb),
+    ironvellum_mcp.project_fields(jsonb,jsonb),
+    ironvellum_mcp.leaf(jsonb,text,text),
+    ironvellum_mcp.envelope(ironvellum_mcp.drafts),
+    ironvellum_mcp.app_owner(),
+    ironvellum_mcp.valid_scopes(text[]),
+    ironvellum_mcp.intval(jsonb,text,integer,integer),
+    ironvellum_mcp.str(jsonb,text,integer,integer),
+    ironvellum_mcp.shape(jsonb,text[],text[]),
+    ironvellum_mcp.ms(timestamptz),
+    ironvellum_mcp.fail(text),
+    ironvellum_mcp.ok(jsonb),
+    ironvellum_mcp.redirect_ok(text) restrict;
+drop table if exists
+    ironvellum_mcp.audit, ironvellum_mcp.tokens, ironvellum_mcp.drafts,
+    ironvellum_mcp.grants, ironvellum_mcp.requests, ironvellum_mcp.clients,
+    ironvellum_mcp.movements, ironvellum_mcp.config restrict;
+drop schema if exists ironvellum_mcp restrict;
 
 drop trigger if exists on_auth_user_created on auth.users;
 
