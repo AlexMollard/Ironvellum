@@ -88,7 +88,11 @@ returns MCPServer; CLI `python -m ironvellum_mcp --repo-root <absolute path>`.
 Six tool names/signatures match the design and adapter; every serial is required.
 
 - [ ] Write protocol tests using official mcp.Client and StdioServerParameters
-  in modern and mode='legacy'. Use an executable fake-ADB fixture, not a phone.
+  in modern and mode='legacy'. Launch a real MCP subprocess fixture that builds
+  the production create_server with fake DevelopmentTools, not a phone or a
+  .cmd/.py pretending to be an ADB executable. Test the production CLI separately
+  through initialization/list-tools without device calls. Adapter fake-runner
+  tests and root's real emulator smoke cover the remaining integration boundary.
   Check the six schemas, structured results, error handling, PNG image content,
   input validation and absence of extra stdout. No generic shell tool exists.
 - [ ] Implement SDK MCPServer with tool annotations reflecting actual side effects.

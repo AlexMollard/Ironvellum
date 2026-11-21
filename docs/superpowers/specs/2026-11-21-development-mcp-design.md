@@ -22,6 +22,9 @@ training edits are outside v1.
 
 - Per-device tools require an explicit `serial`; never infer a phone or use
   `tools/device.py target()`. List offline and unauthorized devices honestly.
+  Resolve the current Android user for each operation. Broadcast only to that
+  user, filter observed notification keys by that user/package/tag, and collect
+  diagnostics only from that user's Ironvellum process, not a work profile's.
 - All emulator operations use the existing shared `device.emulator_lock` from
   the main checkout, including calls through worktrees. Redirect lock messages
   to stderr; stdout belongs exclusively to MCP. Bound lock acquisition to 30s.
