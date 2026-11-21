@@ -534,7 +534,9 @@
       "result": {
         "schemaVersion": 1,
         "ok": true,
-        "resourceUrl": "https://ironvellum.example/mcp"
+        "resourceUrl": "https://ironvellum.example/mcp",
+        "catalogueCount": 1,
+        "catalogueHash": "1f739c69e5483c3a109478cbba3aebcfc942d1d1ec82b049f488f471fe466b61"
       }
     },
     "configuration.configure": {

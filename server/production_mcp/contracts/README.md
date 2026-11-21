@@ -8,7 +8,7 @@ POST `/rest/v1/rpc/ironvellum_mcp_gateway` with `{"p_operation":"...","p_args":{
 
 | Operation | Exact input keys | Additional success fields |
 | --- | --- | --- |
-| configuration.get | none | resourceUrl (null before initialization) |
+| configuration.get | none | resourceUrl (null before initialization), catalogueCount, catalogueHash |
 | configuration.configure | resourceUrl | resourceUrl |
 | client.register | clientId, clientName, metadataCiphertext, redirectUris | clientId |
 | client.get | clientId | clientId, clientName, metadataCiphertext, redirectUris |
@@ -33,6 +33,8 @@ Generate each opaque credential from at least 32 random bytes. Each Hash field i
 Both code and refresh lookups **and** exchanges detect a consumed credential for its registered client. They revoke the whole grant and return `invalid_grant` as a normal committed result. Never wrap this response in an application rollback. Explicit revocation by this client of its access or refresh digest revokes the whole grant. Revocation returns the same success if the token is absent or belongs to another client. Credential lookup does not authorize tool execution. Each tool invocation rechecks digest, expiry, revocation, consent, resource and token scope inside the database transaction.
 
 Catalogue installation atomically replaces the version-1 manifest with 1-5,000 unique objects of exactly `{key,name,metric}`. A key is the lowercase trimmed canonical name. Metrics match the phone enum REPS, HOLD, DURATION, DISTANCE_TIME, ATTEMPTS_GRADE. Install the generated Seed manifest before serving traffic. Duplicate keys reject the entire install. Pruning processes up to 200 rows per category per invocation. Call periodically and repeat when backlogged. Audits last 30 days. Terminal drafts remain for at least 90 days after transition. Approved drafts remain resumable.
+
+The catalogue fingerprint is lowercase SHA-256 of UTF-8 `ironvellum-movements-v1` followed by a NUL byte and each record in ascending UTF-8 key byte order. Each record contains the key, name and metric in this order, each UTF-8 string followed by a NUL byte. PostgreSQL text cannot contain NUL. The count and fingerprint are calculated from the installed rows.
 
 ## Direct app RPCs
 

@@ -3528,7 +3528,13 @@ begin
  select resource_url into current_url from config;
  ru:=a->>'resourceUrl';
  case p_operation
- when 'configuration.get' then return ok(jsonb_build_object('resourceUrl',current_url));
+ when 'configuration.get' then
+   -- Bytewise key order and NUL-separated UTF-8 text are independent of collation/JSON formatting.
+   return (select ok(jsonb_build_object('resourceUrl',current_url,'catalogueCount',count(*),
+     'catalogueHash',encode(sha256(convert_to('ironvellum-movements-v1','UTF8') || decode('00','hex') ||
+       coalesce(string_agg(convert_to(key,'UTF8') || decode('00','hex') || convert_to(name,'UTF8') ||
+         decode('00','hex') || convert_to(metric,'UTF8') || decode('00','hex'),''::bytea
+         order by convert_to(key,'UTF8')),''::bytea)),'hex'))) from movements);
  when 'configuration.configure' then
    if not redirect_ok(ru) or ru !~ '^https?://[^/?#]+/mcp$' then return fail('invalid_arguments'); end if;
    insert into config(resource_url) values(ru) on conflict(singleton) do nothing;
