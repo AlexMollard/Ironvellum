@@ -4,41 +4,89 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.ParcelFileDescriptor
+import android.os.SystemClock
 import android.util.Base64
+import androidx.core.content.ContextCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.data.db.SetLogEntity
+import com.ironvellum.app.debug.DevelopmentStatusReceiver
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
+private const val READ_STATUS = "com.ironvellum.app.debug.READ_STATUS"
 private const val REQUEST_ID = "0123456789abcdef0123456789abcdef"
 
-internal fun developmentReply(context: Context, intent: Intent): JSONObject {
+internal fun developmentReply(context: Context, intent: Intent): JSONObject =
+    decodeDevelopmentReply(orderedDevelopmentResult(context, intent).orEmpty())
+
+private fun decodeDevelopmentReply(wire: String): JSONObject {
+    assertTrue("Expected an IVMCP1 ordered reply", wire.startsWith("IVMCP1:"))
+    return JSONObject(String(Base64.decode(wire.removePrefix("IVMCP1:"), Base64.DEFAULT), Charsets.UTF_8))
+}
+
+private fun orderedDevelopmentResult(context: Context, intent: Intent): String? {
     val replies = ArrayBlockingQueue<String>(1)
     context.sendOrderedBroadcast(intent, null, object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             replies.add(resultData.orEmpty())
         }
     }, null, 0, null, null)
-    val wire = replies.poll(10, TimeUnit.SECONDS).orEmpty()
-    assertTrue("Expected an IVMCP1 ordered reply", wire.startsWith("IVMCP1:"))
-    return JSONObject(String(Base64.decode(wire.removePrefix("IVMCP1:"), Base64.DEFAULT), Charsets.UTF_8))
+    return replies.poll(10, TimeUnit.SECONDS)
 }
 
 @RunWith(AndroidJUnit4::class)
 class DevelopmentStatusTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private val app = context.applicationContext as IronvellumApp
-    private val receiver = ComponentName(context, "com.ironvellum.app.debug.DevelopmentStatusReceiver")
+    private fun statusIntent(requestId: String = REQUEST_ID) =
+        Intent(READ_STATUS).setPackage(context.packageName).putExtra("request_id", requestId)
 
-    private fun reply(requestId: String = REQUEST_ID, action: String = "com.ironvellum.app.debug.READ_STATUS") =
-        developmentReply(context, Intent(action).setComponent(receiver).putExtra("request_id", requestId))
+    private fun reply(requestId: String? = REQUEST_ID): JSONObject {
+        val requestExtra = requestId?.let { " --es request_id $it" }.orEmpty()
+        val wire = shell("$statusCommand -a $READ_STATUS$requestExtra")
+        val data = Regex("data=\"(IVMCP1:[A-Za-z0-9+/=]+)\"").find(wire)?.groupValues?.get(1)
+        return decodeDevelopmentReply(data.orEmpty())
+    }
+
+    private val statusCommand = "am broadcast --receiver-registered-only -p ${context.packageName}"
+
+    private fun shell(command: String): String {
+        val pipe = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
+        return ParcelFileDescriptor.AutoCloseInputStream(pipe).bufferedReader().use { it.readText() }
+    }
+
+    @Test fun statusHasOnlyAPrivateStartupProviderAndNoManifestReceiver() {
+        val legacy = ComponentName(context, "com.ironvellum.app.debug.DevelopmentStatusReceiver")
+        assertThrows(PackageManager.NameNotFoundException::class.java) {
+            context.packageManager.getReceiverInfo(legacy, 0)
+        }
+        val provider = context.packageManager.resolveContentProvider("${context.packageName}.development-status", 0)
+        assertFalse(requireNotNull(provider).exported)
+        assertEquals("", orderedDevelopmentResult(context, statusIntent().setComponent(legacy)))
+    }
+
+    @Test fun onlyShellCanUseTheRegisteredStatusEndpoint() {
+        assertEquals(PackageManager.PERMISSION_DENIED, context.checkSelfPermission(android.Manifest.permission.DUMP))
+        assertEquals("", orderedDevelopmentResult(context, statusIntent()))
+        assertTrue(reply().getBoolean("ok"))
+
+        val missing = shell("$statusCommand -a com.ironvellum.app.debug.NOT_STATUS --es request_id $REQUEST_ID")
+        assertFalse(missing, missing.contains("IVMCP1:"))
+    }
 
     @Test fun returnsOnlyAppFieldsWhenNoWorkoutIsLive() = runBlocking {
         val dao = app.database.sessionDao()
@@ -48,9 +96,6 @@ class DevelopmentStatusTest {
         try {
             val reply = reply()
             val pkg = context.packageManager.getPackageInfo(context.packageName, 0)
-            val receiverInfo = context.packageManager.getReceiverInfo(receiver, 0)
-            assertEquals("android.permission.DUMP", receiverInfo.permission)
-            assertTrue(receiverInfo.exported)
             assertEquals(setOf("schemaVersion", "requestId", "ok", "app", "activeWorkout"), reply.keys().asSequence().toSet())
             assertEquals(1, reply.getInt("schemaVersion"))
             assertEquals(REQUEST_ID, reply.getString("requestId"))
@@ -101,15 +146,43 @@ class DevelopmentStatusTest {
         }
     }
 
-    @Test fun rejectsInvalidRequestsAndUnsupportedActions() {
-        listOf("", REQUEST_ID.uppercase(), "${REQUEST_ID}0").forEach { malformed ->
+    @Test fun stalledReadStillRepliesAtTheWatchdogDeadline() {
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val receiver = DevelopmentStatusReceiver { _, reply ->
+            entered.countDown()
+            release.await(15, TimeUnit.SECONDS)
+            reply.put("ok", true)
+        }
+        // A test-only URI confines delivery to the injected receiver. The
+        // production action filter does not match broadcasts carrying data.
+        val scheme = "ironvellum-status-test"
+        ContextCompat.registerReceiver(
+            context, receiver, IntentFilter(READ_STATUS).apply { addDataScheme(scheme) },
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
+        try {
+            val start = SystemClock.elapsedRealtime()
+            val reply = developmentReply(context, statusIntent().setData(Uri.parse("$scheme:stall")))
+            val elapsed = SystemClock.elapsedRealtime() - start
+            assertEquals(0L, entered.count)
+            assertEquals(1L, release.count)
+            assertTrue("Elapsed ${elapsed}ms", elapsed in 4_500L..8_000L)
+            assertEquals(REQUEST_ID, reply.getString("requestId"))
+            assertEquals(false, reply.getBoolean("ok"))
+            assertEquals("status_unavailable", reply.getJSONObject("error").getString("code"))
+        } finally {
+            release.countDown()
+            context.unregisterReceiver(receiver)
+        }
+    }
+
+    @Test fun rejectsInvalidRequestIds() {
+        listOf(null, REQUEST_ID.uppercase(), "${REQUEST_ID}0").forEach { malformed ->
             val reply = reply(malformed)
             assertTrue(reply.isNull("requestId"))
             assertEquals(false, reply.getBoolean("ok"))
             assertEquals("invalid_request", reply.getJSONObject("error").getString("code"))
         }
-        val reply = reply(action = "com.ironvellum.app.debug.NOT_STATUS")
-        assertEquals(false, reply.getBoolean("ok"))
-        assertEquals("unsupported_action", reply.getJSONObject("error").getString("code"))
     }
 }

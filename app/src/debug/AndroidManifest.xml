@@ -15,9 +15,9 @@
             android:name="com.ironvellum.app.debug.HealthSeedReceiver"
             android:exported="true"
             android:permission="android.permission.DUMP" />
-        <receiver
-            android:name="com.ironvellum.app.debug.DevelopmentStatusReceiver"
-            android:exported="true"
-            android:permission="android.permission.DUMP" />
+        <provider
+            android:name="com.ironvellum.app.debug.DevelopmentStatusInitializer"
+            android:authorities="${applicationId}.development-status"
+            android:exported="false" />
     </application>
 </manifest>
