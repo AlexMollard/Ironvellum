@@ -125,6 +125,15 @@ arbitrary forwarded IP headers. Audit only
 owner/client/tool/time/request/draft ID and safe result classification; no payload
 or token. Show the latest 50 audit entries; retain 30 days and bound pruning.
 
+Registration storage is capped at 10,000 clients, under the same serialized
+admission boundary. Bounded pruning can remove never-consented registrations
+after 24 hours only when no active or retained dependency needs them. Preserve
+existing registrations whose consent history cannot be established, and clients
+that have consented. Cleanup must not erase rolling admission-window evidence.
+An abandoned unused client may need to register again; raising the capacity
+ceiling requires an operator-reviewed change. Existing connected clients keep
+their grants when admission is full.
+
 ## Draft contract and acceptance
 
 DraftV1 is exactly one new, unscheduled saved workout:
@@ -164,6 +173,10 @@ retry returns original draft; conflicting content is an error. Preserve review
 tombstones/receipts. Drafts never create completed history, rewards or sessions.
 
 App fetch/review is scoped to backend/account/generation and cleared on changes.
+Actionable drafts have stable owner-scoped continuation, with at most 50 per
+page. The phone offers Load older drafts and keeps newer items untouched when
+opening and finishing an older approved recovery. Keep the legacy first-page
+RPC compatible; a separate paged RPC carries an opaque continuation cursor.
 An explicit Save workout first validates every local movement, then obtains an
 app-only server approval for the exact hash before writing. Approval is an atomic
 transition pending -> approved; rejection or expiry that wins first blocks it.
@@ -179,6 +192,9 @@ survives preset deletion, so retry cannot recreate a deleted accepted workout.
 Never replace existing presets. Add the new workout unscheduled. Acknowledge
 server status after the local commit and retry acknowledgements from the receipt;
 network failure must not reinsert presets. Reject is an explicit app action.
+Receipt maintenance attempts at most 20 acknowledgements per pass, remains
+scoped and cancellable, and must not delay loading or disconnecting connections.
+Entering or refreshing screens can make further bounded retry passes.
 
 Exactly-once means **per local device database**: existing presets are not shared
 live between devices. An already-open review on another device can save its own
@@ -205,6 +221,7 @@ App RPCs use the ordinary authenticated session and derive auth.uid(), rejecting
 any delegated `client_id` claim: `ironvellum_mcp_connections()`,
 `ironvellum_mcp_revoke_connection(p_grant_id uuid)`,
 `ironvellum_mcp_drafts(p_limit integer)`,
+`ironvellum_mcp_drafts_page(p_limit integer,p_cursor text)`,
 `ironvellum_mcp_draft(p_draft_id uuid)`,
 `ironvellum_mcp_review_draft(p_draft_id uuid,p_hash text,p_action text)`,
 `ironvellum_mcp_consent(p_request_id uuid,p_approved boolean,p_scopes text[],p_code_hash text)`.

@@ -116,6 +116,7 @@ class IronvellumApp : Application() {
      * would mean two sessions and a sign-in that only half the app can see.
      */
     val accountRepository: AccountRepository by lazy { AccountRepository() }
+    internal val mcpRepository by lazy { com.ironvellum.app.data.cloud.McpRepository(accountRepository, repository) }
     val cloudSync: CloudSync by lazy { CloudSync(repository, accountRepository, appearanceStore, com.ironvellum.app.data.TrialPrefs(this)::restPreferences) }
 
     /** Every circle read goes through this, so the weekly bonus is settled wherever the circle is read. */

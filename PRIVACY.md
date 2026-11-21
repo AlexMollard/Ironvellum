@@ -4,7 +4,7 @@ Ironvellum (package `com.ironvellum.app`) is a training tracker. This policy des
 what the app stores, what leaves your device, and what never does. It is written
 from the app's actual behaviour; nothing here is aspirational.
 
-Documentation reviewed against the codebase on 2026-11-17.
+Documentation reviewed against the codebase on 2026-11-17. AI connections section added on 2026-11-22.
 
 ## The short version
 
@@ -14,6 +14,7 @@ Documentation reviewed against the codebase on 2026-11-17.
 - **Cloud sync is optional.** Without signing in, no data ever leaves the
   device. The cloud features are disabled entirely unless Supabase credentials
   are configured (`Cloud.configured`, `data/cloud/Cloud.kt`).
+- **AI connections are optional.** A compatible AI provider can access the synced data you allow and suggest workouts for your review. You can disconnect it in Account.
 - **Raw body measurements stay on the device.** The owner-only web snapshot
   can contain strength estimates derived from body weight and the body figure
   selected for muscle maps.
@@ -152,6 +153,16 @@ data. The owner-only snapshot includes the selected body figure and estimates
 derived from body weight, but not the underlying readings. Session local IDs
 are uploaded to match synced workouts; other local-only row IDs are not. The
 cloud backup leaves out device-only readings, sex and private notes.
+
+## Optional AI connections
+
+If your cloud operator enables AI connections, you can add its MCP address to a compatible AI app. You sign in to Ironvellum and choose which requested permissions to grant. The AI receives a separate credential limited to those permissions. Your Ironvellum sign-in stays with Ironvellum.
+
+Depending on your choices, the AI provider can receive synced completed workouts and sets, training progress, or saved workouts. These views can lag behind your phone. Private notes, photos, raw health and body measurements, archives and unfinished sessions are excluded. The provider handles information it receives under its own policies.
+
+With draft permission, the AI can suggest a new workout and see the status of its own suggestion. Review it in Train. Saving adds a new workout on that device without scheduling it or logging a session. Ironvellum keeps a local receipt so a retry cannot add the same draft twice. The cloud stores the suggestion, source, dates and decision. Pending drafts expire after 30 days. The service keeps terminal records for at least 90 days and records limited access history for 30 days.
+
+In Account, open AI connections to see permissions and recent access, copy your server address or disconnect an AI. Disconnecting stops future access. Information already sent to the provider stays subject to its retention settings.
 
 ## What the app does NOT contain
 

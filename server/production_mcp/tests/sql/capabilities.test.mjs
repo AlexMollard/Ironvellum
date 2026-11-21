@@ -500,6 +500,7 @@ test('credential expiry, denied requests, private tables and safe error classes'
   for (const q of [
     'connections()',
     'drafts(10)',
+    'drafts_page(10,null)',
     'draft(null)',
     "review_draft(null,null,'approve')",
     'revoke_connection(null)',
@@ -840,6 +841,103 @@ test('public authorization creation enforces rolling per-client and service-wide
   await admin("update ironvellum_mcp.requests set expires_at=now()+interval '8 minutes'")
   ok(await gateway('authorization.create', args(clients[6])))
 })
+test('paged draft recovery follows owner and precise creation order after a status change', async () => {
+  await admin('begin')
+  try {
+    const uid = randomUUID()
+    await admin("insert into auth.users(id,raw_user_meta_data) values ($1,'{}')", [uid])
+    const a = await issue(scopes, null, uid)
+    const oldest = ok(await call(a, 'create_workout_draft', {idempotencyKey:'older', draft})).draft
+    ok(await review(oldest.id, oldest.contentHash, 'approve', uid))
+    await admin(`insert into ironvellum_mcp.drafts(owner_id,client_id,grant_id,idempotency_key,content,content_hash,created_at)
+      select owner_id,client_id,grant_id,i::text,content,content_hash,created_at + interval '1 microsecond' * (i/2+1)
+      from ironvellum_mcp.drafts cross join generate_series(1,50) i where id=$1`, [oldest.id])
+    const page = (n, cursor = null) => sql('select public.ironvellum_mcp_drafts_page($1,$2) v', [n,cursor])
+    await as('authenticated',uid)
+    const first = ok(await page(50))
+    assert.deepEqual(Object.keys(first).sort(), ['drafts','nextCursor','ok','schemaVersion'])
+    assert.equal(first.drafts.length,50)
+    assert.ok(first.nextCursor)
+    assert.ok(first.drafts.every(d => d.status === 'pending' && d.id !== oldest.id))
+    err(await page(51),'invalid_arguments')
+    err(await page(50,'malformed'),'invalid_arguments')
+    await as('authenticated',other)
+    err(await page(50,first.nextCursor),'invalid_arguments')
+    await as('authenticated',uid)
+    const last = ok(await page(50,first.nextCursor))
+    assert.equal(last.nextCursor,null)
+    assert.deepEqual(last.drafts.map(d=>[d.id,d.status]),[[oldest.id,'approved']])
+    ok(await review(oldest.id,oldest.contentHash,'accept',uid))
+    assert.deepEqual(ok(await page(50)).drafts,first.drafts)
+    const anchor = first.drafts.at(-1)
+    ok(await review(anchor.id,anchor.contentHash,'reject',uid))
+    assert.deepEqual(ok(await page(50,first.nextCursor)).drafts,[])
+    await as('anon')
+    await assert.rejects(page(1),{code:'42501'})
+  } finally { await db.exec('rollback') }
+})
+
+test('client pool cap, bounded unused retention, active requests and historical consent', async () => {
+  await admin('begin')
+  try {
+    await admin("update ironvellum_mcp.clients set created_at=now()-interval '3 days'")
+    const idle = await register(), active = await register(), young = await register()
+    const connected = await issue()
+    const old = [idle,active,connected.clientId]
+    await admin("update ironvellum_mcp.clients set created_at=now()-interval '2 days' where id=any($1)",[old])
+    await request(active)
+    await admin("delete from ironvellum_mcp.grants where id=$1",[connected.grantId])
+    await admin("delete from ironvellum_mcp.requests where client_id=$1",[connected.clientId])
+    await admin("insert into ironvellum_mcp.clients(id,name,ciphertext,redirects,created_at) values('legacy-unknown','Legacy','fixture','{}',now()-interval '3 days')")
+    ok(await gateway('prune'))
+    err(await gateway('client.get',{clientId:idle}),'not_found')
+    for (const id of [active,young,connected.clientId,'legacy-unknown']) ok(await gateway('client.get',{clientId:id}))
+    await admin(`insert into ironvellum_mcp.clients(id,name,ciphertext,redirects,created_at,ever_consented)
+      select gen_random_uuid()::text,'fixture','cipher','{}', now()-interval '3 days',false
+      from generate_series(1,(select 10000-count(*) from ironvellum_mcp.clients))`)
+    const reg = () => gateway('client.register',{clientId:randomUUID(),clientName:'test',metadataCiphertext:'cipher',redirectUris:[redirectUri],keyVerification})
+    err(await reg(),'rate_limited')
+    const before = await admin('select count(*)::int n from ironvellum_mcp.clients')
+    ok(await gateway('prune'))
+    const after = await admin('select count(*)::int n from ironvellum_mcp.clients')
+    assert.equal(before.rows[0].n-after.rows[0].n,200)
+    ok(await reg())
+    await admin("update ironvellum_mcp.clients set created_at=now()-interval '2 days' where created_at>now()-interval '1 day'")
+    for (let i=0; i<20; i++) ok(await reg())
+    ok(await gateway('prune'))
+    err(await reg(),'rate_limited')
+    await admin("update ironvellum_mcp.clients set created_at=now()-interval '2 minutes' where created_at>now()-interval '1 minute'")
+    await admin(`insert into ironvellum_mcp.clients(id,name,ciphertext,redirects,created_at,ever_consented)
+      select gen_random_uuid()::text,'recent','cipher','{}',now()-interval '23 hours',false from generate_series(1,980)`)
+    ok(await gateway('prune'))
+    err(await reg(),'rate_limited')
+  } finally { await db.exec('rollback') }
+})
+
+if (native) test('pruning waits for in-flight first authorization before deciding a client is unused', async () => {
+  const id = await register()
+  await admin("update ironvellum_mcp.clients set created_at=now()-interval '2 days' where id=$1",[id])
+  const fields = {clientId:id,resourceUrl,redirectUri,redirectUriExplicit:true,scopes,codeChallenge:challenge,state:null}
+  ok(await race('service_role','select public.ironvellum_mcp_gateway($1,$2) v',['authorization.create',fields],['prune',{}]))
+  ok(await gateway('client.get',{clientId:id}))
+})
+
+test('canonical HTTPS IPv6 resource and callback reach configuration and registration', async () => {
+  await admin('begin')
+  try {
+    await admin('truncate ironvellum_mcp.config,ironvellum_mcp.clients cascade')
+    await admin('truncate ironvellum_mcp.movements')
+    const addr = 'https://[2001:db8::17]:8443'
+    ok(await gateway('configuration.configure',{...configure,resourceUrl:addr+'/mcp'}))
+    const reg = url => gateway('client.register',{clientId:randomUUID(),clientName:'IPv6',metadataCiphertext:'cipher',redirectUris:[url],keyVerification})
+    for (const url of [addr+'/cb?route=1','https://[::]/cb','https://[::1]/cb','https://[::ffff:c000:201]/cb'])
+      ok(await reg(url))
+    for (const bad of ['[2001:0db8::17]', '[2001:::17]', '[::1]:65536','[::1]:443','[::1]:080']) {
+      err(await reg('https://'+bad+'/cb'),'invalid_arguments')
+    }
+  } finally { await db.exec('rollback') }
+})
+
 test('replays baseline and hosted patch, runs existing schema/social assertions', async () => {
   await db.exec('reset role')
   await db.exec(baseline)

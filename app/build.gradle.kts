@@ -41,6 +41,9 @@ val signingComplete = !keystorePassword.isNullOrBlank() &&
     !keyPasswordValue.isNullOrBlank() &&
     keystoreFile?.isFile == true
 
+// Opt-in standalone receipt instrumentation gets its own package, UID and component-free manifest.
+val receiptHost = providers.gradleProperty("mcpReceiptHost").orNull == "true"
+
 android {
     namespace = "com.ironvellum.app"
     compileSdk {
@@ -67,7 +70,11 @@ android {
         versionName = "1.12"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        testInstrumentationRunnerArguments["listener"] = "com.ironvellum.app.NoLiveSessionListener"
+        if (receiptHost) {
+            testInstrumentationRunnerArguments["class"] = "com.ironvellum.app.data.cloud.SqlDraftReceiptTest"
+        } else {
+            testInstrumentationRunnerArguments["listener"] = "com.ironvellum.app.NoLiveSessionListener"
+        }
 
         buildConfigField(
             "String",
@@ -102,6 +109,13 @@ android {
         create("play") {
             dimension = "distribution"
             buildConfigField("boolean", "SUPPORT_LINKS", "false")
+        }
+        if (receiptHost) {
+            create("receiptFixture") {
+                dimension = "distribution"
+                applicationIdSuffix = ".receiptfixture"
+                buildConfigField("boolean", "SUPPORT_LINKS", "true")
+            }
         }
     }
 
@@ -140,6 +154,7 @@ android {
     sourceSets {
         // Exported Room schema JSONs, consumed by MigrationTestHelper on device.
         getByName("androidTest").assets.srcDir("$projectDir/schemas")
+        if (receiptHost) getByName("receiptFixture").kotlin.srcDir("src/foss/kotlin")
     }
     testOptions.unitTests.all {
         it.systemProperty("golden.update", System.getProperty("golden.update", "false"))
@@ -164,6 +179,12 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+}
+
+if (receiptHost) {
+    androidComponents.beforeVariants { variant ->
+        variant.enable = variant.name == "receiptFixtureDebug"
     }
 }
 

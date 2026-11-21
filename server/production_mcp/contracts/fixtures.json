@@ -43,6 +43,12 @@
       "ok": true,
       "revoked": true
     },
+    "emptyDraftPage": {
+      "schemaVersion": 1,
+      "ok": true,
+      "drafts": [],
+      "nextCursor": null
+    },
     "drafts": {
       "schemaVersion": 1,
       "ok": true,
@@ -842,6 +848,10 @@
     "ironvellum_mcp_connections": {},
     "ironvellum_mcp_revoke_connection": {
       "p_grant_id": "8a87c86b-f636-43a1-b000-b4cb865524a3"
+    },
+    "ironvellum_mcp_drafts_page": {
+      "p_limit": 50,
+      "p_cursor": null
     },
     "ironvellum_mcp_drafts": {
       "p_limit": 50

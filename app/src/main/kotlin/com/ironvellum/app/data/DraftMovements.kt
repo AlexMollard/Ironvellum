@@ -7,6 +7,8 @@ import com.ironvellum.app.domain.WorkoutDraft
 
 internal data class DraftMovementCandidate(val id: Long, val name: String, val custom: Boolean, val metric: String)
 
+internal class DraftMovementUnavailable : IllegalArgumentException("Unavailable movement")
+
 internal object DraftMovements {
     private val builtIns by lazy { catalogue(Seed.exercises) }
 
@@ -26,10 +28,10 @@ internal object DraftMovements {
         for (row in rows) {
             val key = Titles.normaliseName(row.name)
             if (key !in wanted) continue
-            require(!row.custom && row.metric == ExerciseMetric.REPS.name &&
-                builtIns[key]?.metric == ExerciseMetric.REPS.name && key !in matches) { "Unavailable movement: $key" }
+            if (row.custom || row.metric != ExerciseMetric.REPS.name ||
+                builtIns[key]?.metric != ExerciseMetric.REPS.name || key in matches) throw DraftMovementUnavailable()
             matches[key] = row.id
         }
-        return draft.entries.map { requireNotNull(matches[it.exerciseKey]) { "Unavailable movement: ${it.exerciseKey}" } }
+        return draft.entries.map { matches[it.exerciseKey] ?: throw DraftMovementUnavailable() }
     }
 }

@@ -57,6 +57,39 @@ Use the non-cached release invocation above: the backend-validation task actions
 capture Gradle script objects and are not configuration-cache compatible.
 R8 minification and resource shrinking remain enabled.
 
+### Production MCP package checks (2026-11-22)
+
+Source `e7f4c09454dcc2e347b30810c585ddae307d31d3`. The service suite passed 30 tests, PGlite passed 18, and native PostgreSQL 16.16 passed 23. The complete 584-movement catalogue installed through the atomic operator command. The loopback readiness, discovery, challenge and bounded prune checks passed. The installed wheel passed both Edge browser checks, including the late management-response cases. The locked Python runtime, setuptools and SQL test dependencies had no known advisories in the local audits.
+
+The SQL-to-Android fixture created and approved a draft for one synthetic owner, saved one unscheduled preset in isolated Room on emulator-5554, retained its receipt through deletion and reopen, and returned the app's acknowledgement to PostgreSQL. Two acknowledgements produced the same accepted record. A second owner could not see it. The ordinary instrumented case passed once and a control supplying a still-pending SQL response at approval failed as expected. [Reproduction commands](../server/production_mcp/README.md#sql-to-android-receipt)
+
+The original standalone runner started the normal target Application before creating the isolated Room database. At `98bc9e09` the standalone test ran in a separate, component-free test package with Internet permission denied. The live SQL case and the recorded case each passed. Order controls detected a premature preset and a premature acknowledgement. A still-pending approval left zero new presets, receipts or acknowledgements.
+
+The image base digest and 29 Linux wheel hashes were verified. Image build/run and OS image scan require a Linux/amd64 container builder. Public TLS, hosted Auth/PostgREST, provider configuration, named AI clients and the full local Android/web gate need their own release evidence. [Deployment guide](../server/production_mcp/DEPLOYMENT.md)
+
+### Final production MCP source verification (2026-11-21 UTC)
+
+Source `1d512a6a`: the unchanged full Android/web gate passed in **8m43s**
+(523.640 seconds including its wrapper). It ran 2,923 unit cases with zero
+failures and one existing optional catalogue-export assumption skip, 920 device
+cases with zero failures or skips, and 380 web tests. Release lint reported no
+issues and the web production build passed. The existing large-chunk advisory
+remains. Raw local evidence is `.tmp/production-mcp-final-gate-3`.
+
+The complete production service suite separately passed 38 tests in 45.16s.
+The disposable native PostgreSQL suite passed all 27 groups, including baseline,
+hosted-patch replay, reset, existing app/social assertions and concurrent
+credential exchanges. These ran before the gate, without competing builds.
+All nine whole-change review findings are addressed, including the final
+Android Auth retirement guard confirmed independently at this exact source.
+[Scope, decisions and verification limits](superpowers/reviews/2026-11-22-production-mcp-verification.md)
+
+This is local source/package evidence, not a release or public deployment.
+No container builder was available: image build/run and OS scanning remain
+pending. An approved HTTPS host, hosted Auth/PostgREST, real Google sign-in and
+the intended AI clients still require deployment verification. No hosted schema
+was changed and no owner phone was used for testing.
+
 ### Recorded 1.11 verification (2026-11-12 to 2026-11-13)
 
 These results, artifact hashes and deployment references belong to the dated
@@ -206,10 +239,11 @@ cut from the baseline. Raise `NEEDED_SCHEMA_VERSION` only when the whole app
 requires it. `python3 tools/gate.py --backend` exercises the baseline, hosted
 patch replay and reset round trip against real Postgres.
 
-The current baseline returns **35**; the app minimum is **31**. Schema 32
+The current baseline returns **36**. The app minimum is **31**. Schema 32
 adds feed cards, 33 adds rolling workout-XP rankings, 34 hardens sync and
 social writes, and 35 lets each lift tier expire independently in the rolling
-standings. See [self-hosting](../supabase/SELF_HOSTING.md) for upgrade paths.
+standings. Schema 36 adds the production MCP gateway, consent, connection
+management and workout draft review. See [self-hosting](../supabase/SELF_HOSTING.md) for upgrade paths.
 
 Recorded hosted evidence: the owner applied the schema-32 feed-card patch on
 2026-10-30 and the schema-33 workout-XP patch for 1.11. The minified app's probe
@@ -227,6 +261,11 @@ The schema beacon confirms the upgrade, not that clients have published the
 new marks. Verify that a current client syncs its marks and that recent and
 lifetime standings remain distinct. Older clients still publish a single
 weekly mark.
+
+To upgrade an approved schema-35 backend, apply the
+[production MCP migration](../supabase/hosted/2026-11-22-production-mcp.sql).
+Verify the schema-36 beacon and the configured service's readiness before
+offering the MCP connection. [Deployment instructions](../server/production_mcp/DEPLOYMENT.md)
 
 **Never paste `supabase/reset.sql` into the hosted project.** It deletes every
 account. It exists for a throwaway project and for the gate's round trip.

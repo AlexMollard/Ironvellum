@@ -6,6 +6,12 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Before
 import com.ironvellum.app.MainActivity
@@ -75,15 +81,21 @@ class NavigationReachabilityTest {
 
         // The Garrison left the nav bar for Today's footer.
         open("Today", "Oath")
-        compose.onAllNodesWithText("The Veil").onFirst().performClick()
-        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-        assertShows("BACK")
-        compose.onAllNodesWithText("BACK").onFirst().performClick()
-        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-
-        // Returning to the launch destination must also work: a nav graph that
-        // only travels outward is a real failure mode.
-        open("Today", "Oath")
+        val veil = compose.onNode(SemanticsMatcher("Today’s Open the Veil action") {
+            it.config.getOrNull(SemanticsActions.OnClick)?.label == "Open the Veil"
+        })
+        veil.assertIsDisplayed().performSemanticsAction(SemanticsActions.OnClick)
+        val back = compose.onNodeWithText("BACK")
+        compose.waitUntil(6_000) {
+            compose.mainClock.advanceTimeByFrame()
+            back.isDisplayed()
+        }
+        back.assertIsDisplayed().performClick()
+        compose.waitUntil(6_000) {
+            compose.mainClock.advanceTimeByFrame()
+            veil.isDisplayed()
+        }
+        assertShows("Oath")
     }
 
     private companion object {

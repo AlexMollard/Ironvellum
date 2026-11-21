@@ -294,6 +294,11 @@ begin
         and not has_schema_privilege('anon','ironvellum_mcp','usage')
         and not has_schema_privilege('authenticated','ironvellum_mcp','usage'),
         'MCP gateway must be private to its service role');
+    perform assert_true(
+        has_function_privilege('authenticated','public.ironvellum_mcp_drafts_page(integer,text)','execute')
+        and not has_function_privilege('anon','public.ironvellum_mcp_drafts_page(integer,text)','execute')
+        and not has_function_privilege('service_role','public.ironvellum_mcp_drafts_page(integer,text)','execute'),
+        'MCP draft paging requires the authenticated app role');
     perform assert_true(not exists (
         select from pg_class c
         where c.relnamespace='ironvellum_mcp'::regnamespace and c.relkind='r' and

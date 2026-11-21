@@ -62,7 +62,7 @@ object InboxPolling {
             }
             val account = app.accountRepository.account.value ?: return@withLock Result.success(Unit)
             val config = Cloud.config.value ?: return@withLock Result.success(Unit)
-            val client = Cloud.client()
+            val client = Cloud.requireConfigured.getOrNull() ?: return@withLock Result.success(Unit)
             val generation = InboxNotifier.generation()
             val canNotify = InboxNotifier.canNotify(app)
             val now = SystemClock.elapsedRealtime()
@@ -71,7 +71,7 @@ object InboxPolling {
             val current = {
                 InboxNotifier.generation() == generation &&
                     app.accountRepository.account.value?.userId == account.userId &&
-                    Cloud.config.value == config && Cloud.client() === client
+                    Cloud.config.value == config && Cloud.requireConfigured.getOrNull() === client
             }
             val inbox = app.cloudSync.inbox(force = true).getOrThrow()
             if (!current()) return@withLock Result.success(Unit)

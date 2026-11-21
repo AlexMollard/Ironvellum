@@ -4,6 +4,10 @@ import com.ironvellum.app.domain.WorkoutDraft
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 
+internal const val MCP_DRAFT_PAGE_LIMIT = 50
+
+internal data class DraftPage<T>(val rows: List<T>, val nextCursor: String?)
+
 internal enum class DraftStatus { PENDING, APPROVED, ACCEPTED, REJECTED, EXPIRED }
 
 internal data class DraftEnvelope(
@@ -24,13 +28,15 @@ internal data class McpAccess(val requestId: String, val clientName: String, val
 internal data class McpConnections(val resourceUrl: String?, val connections: List<McpConnection>, val recentAccess: List<McpAccess>)
 
 internal class McpRpcFailure(val classification: String) : Exception(classification)
+internal class UnsupportedMcpBackend : IllegalArgumentException("Unsupported MCP schema")
+internal class StaleDraftReview(message: String) : IllegalArgumentException(message)
 
 internal object McpWire {
     private val digest = Regex("[0-9a-f]{64}")
 
     private fun response(raw: String, vararg fields: String): JsonObject {
         val obj = Json.parseToJsonElement(raw).jsonObject
-        require(obj["schemaVersion"] == JsonPrimitive(1))
+        if (obj["schemaVersion"] != JsonPrimitive(1)) throw UnsupportedMcpBackend()
         if (obj["ok"] == JsonPrimitive(false)) {
             require(obj.keys == setOf("schemaVersion", "ok", "error"))
             throw McpRpcFailure(Json.decodeFromJsonElement<String>(obj.getValue("error")))
@@ -61,11 +67,24 @@ internal object McpWire {
     }
 
     fun drafts(raw: String): List<DraftEnvelope> = response(raw, "drafts").getValue("drafts").jsonArray.map(::envelope)
+    fun draftsPage(raw: String): DraftPage<DraftEnvelope> {
+        val obj = response(raw, "drafts", "nextCursor")
+        val items = obj.getValue("drafts").jsonArray
+        require(items.size <= MCP_DRAFT_PAGE_LIMIT)
+        val cursor = Json.decodeFromJsonElement<String?>(obj.getValue("nextCursor"))
+        require(cursor == null || cursor.isNotBlank() && cursor.length <= 256 && items.isNotEmpty())
+        return DraftPage(items.map(::envelope), cursor)
+    }
     fun draft(raw: String): DraftEnvelope = envelope(response(raw, "draft").getValue("draft"))
     fun revoked(raw: String) = require(response(raw, "revoked")["revoked"] == JsonPrimitive(true))
     fun consent(raw: String, approved: Boolean) = require(response(raw, "approved")["approved"] == JsonPrimitive(approved))
 
-    fun listArgs(limit: Int) = buildJsonObject { require(limit in 1..50); put("p_limit", limit) }
+    fun listArgs(limit: Int) = buildJsonObject { require(limit in 1..MCP_DRAFT_PAGE_LIMIT); put("p_limit", limit) }
+    fun pageArgs(limit: Int, cursor: String?) = buildJsonObject {
+        require(limit in 1..MCP_DRAFT_PAGE_LIMIT)
+        put("p_limit", limit)
+        put("p_cursor", cursor)
+    }
     fun draftArgs(id: String) = buildJsonObject { put("p_draft_id", id) }
     fun revokeArgs(id: String) = buildJsonObject { put("p_grant_id", id) }
     fun reviewArgs(id: String, hash: String, action: String) = buildJsonObject {

@@ -51,10 +51,13 @@ class ProductionDraftAcceptanceTest {
             "id":"$draftId","revision":1,"contentHash":"$contentHash","clientName":"Assistant","createdAtMs":1,
             "expiresAtMs":2,"status":"$state","draft":{"schemaVersion":1,"name":"$name","warmup":"AUTO","cooldown":"NONE","entries":[$entries]}}}"""
 
-        val client = createSupabaseClient(backend, "test-key") {
+        private val config = CloudConfig(backend, "test-key", false)
+        private val storage = MemorySessionManager(UserSession(accessToken = "test-token", refreshToken = "test-refresh",
+            expiresIn = 3600, tokenType = "bearer", user = UserInfo(aud = "authenticated", id = userA, email = "a@example.invalid")))
+        private fun buildClient(config: CloudConfig) = createSupabaseClient(config.url, config.key) {
             install(Auth) {
-                sessionManager = MemorySessionManager(UserSession(accessToken = "test-token", refreshToken = "test-refresh",
-                    expiresIn = 3600, tokenType = "bearer", user = UserInfo(aud = "authenticated", id = userA, email = "a@example.invalid")))
+                sessionManager = storage
+                codeVerifierCache = MemoryCodeVerifierCache()
                 autoLoadFromStorage = false
                 alwaysAutoRefresh = false
                 enableLifecycleCallbacks = false
@@ -109,17 +112,21 @@ class ProductionDraftAcceptanceTest {
                 respond(body, HttpStatusCode.OK, headers)
             }
         }
-        val accounts = AccountRepository(client)
+        private val selection = CloudClientSelection(config, ::buildClient).also { it.initialize(config) }
+        val client get() = selection.client()
+        val accounts = AccountRepository { selection.requireConfigured }
         val service = McpRepository(accounts, Repository(db))
         fun scope() = checkNotNull(service.captureScope())
         suspend fun fetch() = service.draft(scope(), draftId)
         suspend fun switchBackend(beforeSwap: suspend () -> Unit = {}) {
+            val old = client
             var swapped = false
-            Cloud.reconfigure(accounts, oldClient = { client }, beforeSwap = {
-                check(client.auth.currentSessionOrNull() == null)
+            Cloud.reconfigure(selection, config, accounts, beforeSwap = {
+                check(old.auth.currentSessionOrNull() == null)
+                check(selection.requireConfigured.isFailure)
                 beforeSwap()
             }) { swapped = true }
-            check(swapped)
+            check(swapped && old !== client)
         }
         fun sql(query: String) = db.openHelper.writableDatabase.execSQL(query)
         fun value(query: String): String = db.openHelper.readableDatabase.query(query).use {

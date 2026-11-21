@@ -75,7 +75,11 @@ data class Account(
  * Authenticated identity + the one row of `profiles` the player owns.
  * All methods speak in Result so the UI never sees a raw stack trace.
  */
-class AccountRepository(private val clientOverride: SupabaseClient? = null) {
+class AccountRepository internal constructor(private val requireClient: () -> Result<SupabaseClient>) {
+    @JvmOverloads
+    constructor(clientOverride: SupabaseClient? = null) : this({
+        clientOverride?.let { Result.success(it) } ?: Cloud.requireConfigured
+    })
 
     private val _account = MutableStateFlow<Account?>(null)
     private val sessionLock = Mutex()
@@ -341,7 +345,7 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
     /** The signed-in account, or null while signed out / cloud unconfigured. */
     val account: StateFlow<Account?> = _account.asStateFlow()
 
-    private fun requireClient(): Result<SupabaseClient> = clientOverride?.let { Result.success(it) } ?: Cloud.requireConfigured
+
 
     /** Resume a persisted session on app start. Quiet success when signed out;
      *  a failed import surfaces as a Result — silently swallowing it left the

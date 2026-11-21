@@ -4,6 +4,8 @@ The standalone Python service provides seven tools for synced training reads and
 
 ## Install and run
 
+For the non-root Linux/amd64 image, private operator jobs, HTTPS ingress, credential-free smoke checks and recovery procedures, see the [deployment guide](DEPLOYMENT.md).
+
 Use CPython 3.11 or later and a separate virtual environment. From `server/production_mcp`, activate that environment and install the pinned runtime and package.
 
 ```sh
@@ -22,6 +24,7 @@ Set the [example environment variables](.env.example) through your process envir
 | `IRONVELLUM_MCP_ENCRYPTION_KEY` | Persistent Fernet key, generated from 32 random bytes, base64url encoded. Store in the host secret manager and retain across restarts and replicas. |
 | `IRONVELLUM_MCP_MANIFEST` | Path to the generated, version-1 Seed movement manifest with schemaVersion and movements |
 | `IRONVELLUM_MCP_LOOPBACK` | Set to `1` explicitly to permit HTTP origins on localhost, 127.0.0.1 or [::1] during development |
+| `IRONVELLUM_MCP_GOOGLE_CALLBACK` | Optional. Set to the issuer plus `/signin/callback` after enabling Google and allowlisting this callback on the backend. |
 
 After applying schema 36 to an approved backend, use explicit setup to pin the canonical resource and encryption-key marker and install the manifest in one database transaction. Repeating the same configuration is safe. Startup and readiness compare the installed resource, key marker, catalogue count and catalogue fingerprint with the local settings.
 
@@ -47,6 +50,10 @@ Back up the Fernet key in a secret manager. If a replica has a different key, re
 - On the person's decision, POST JSON to that same API path with exact Origin, the cookie, and `Authorization: Bearer <human session JWT>`. The body has exactly `approved` (boolean), `scopes` (a distinct requested subset, empty on denial) and `csrf`. On success, navigate the top-level browser to the returned `redirectUrl`. Treat it as sensitive. The callback contains the one-use code or access_denied and the original state. The human bearer goes only to the fixed consent RPC.
 - `GET /healthz` returns 200 and `{"ready":true}` when the backend matches. Error responses contain stable classifications. Admission quota failures return HTTP 429. Tool errors return a structured MCP result with `isError`, `ok:false` and a safe classification. External bodies are capped at 64 KiB, backend calls at 10 seconds, and rendered tool results at 1 MiB.
 
+The bundled pages also provide human connection management at `/connections`. The normal Supabase session stays in browser memory. Management calls the configured backend’s authenticated connections and revoke RPCs. It does not store a session across reloads.
+
+Email/password sign-in uses the configured backend. For Google, configure its provider on that backend, allowlist exactly `<issuer>/signin/callback` there, then set `IRONVELLUM_MCP_GOOGLE_CALLBACK` to that URL. The Google button is hidden by default. The original tab holds an S256 verifier and the reference to the provider popup. Before exchanging its authorization code, consent checks that the original request binding is still current. Do not log callback query strings in the reverse proxy. Hosted provider allowlists, TLS and browser popup policies need deployment verification.
+
 ## Local HTTP verification
 
 Install Node's locked SQL test dependencies as below and use the isolated service environment.
@@ -58,6 +65,22 @@ python -m pip check
 ```
 
 Transport tests exercise the actual SDK using ASGI and a deterministic gateway double. The separate network suite launches Uvicorn, the official SDK clients and a disposable native PostgreSQL cluster. A loopback HTTP bridge maps fixed PostgREST requests and synthetic human identities to the real SQL functions. It verifies two-owner isolation, durable restart, grants, rotation, quotas at the HTTP adapter, draft creation and revocation. Hosted Supabase Auth, hosted PostgREST, a public TLS deployment and third-party AI products require separate deployment verification.
+
+For the browser check, build a wheel, install it and its runtime dependencies into a separate browser test environment, then install pytest and Playwright 1.65.2 there. With Microsoft Edge installed, run `python -I tests/browser/verify_ui.py --channel msedge` and `python -I tests/browser/verify_ui.py --channel msedge --management-race` from this directory. Pass `--captures <directory>` for screenshots. The check serves the installed wheel on loopback and supplies synthetic Auth, RPC and AI callback responses. It exercises keyboard consent, bundled fonts, expiry, denial, Google PKCE, credential handling and confirmed revocation, including late responses from a superseded view.
+
+### SQL to Android receipt
+
+With the service and pytest installed in the active test environment, the locked SQL dependencies installed, and emulator-5554 running, use these commands from the repository root on Windows. Run separately from the full gate.
+
+```powershell
+$env:ANDROID_SERIAL = "emulator-5554"
+.\gradlew.bat -PmcpReceiptHost=true :app:assembleReceiptFixtureDebug :app:assembleReceiptFixtureDebugAndroidTest
+python server/production_mcp/tests/verify_android_receipt.py
+```
+
+The standalone check uses a dedicated test-only package and UID on the emulator. Its target has the plain Android Application, no startup providers or other app components and no Internet permission. The test verifies those properties on-device before opening its isolated database. The ordinary Android gate runs the same test with its checked-in SQL recording and usual app runner.
+
+The host configures the full catalogue, restarts the local service and creates a draft through an official SDK client. It passes the actual SQL pending and approved envelopes to the test under the shared emulator lock. A still-pending approval reply must leave zero new presets, zero receipts and zero acknowledgement calls. At the first accept request a separate read-only SQLite connection must see the committed, unscheduled preset and its matching pending receipt. The test interrupts acknowledgement, deletes the saved preset, reopens the database and retries. The host sends the captured app SDK body to the app review RPC twice and reads the accepted state through MCP. Output includes SHA-256 digests of the exchanged bytes. Hosted Auth, PostgREST and device-to-host HTTPS are separate checks.
 
 ## Local SQL verification
 

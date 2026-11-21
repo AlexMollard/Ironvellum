@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 internal data class SocialOwner(val userId: String?, val backend: Any?)
 
 internal fun currentSocialOwner(userId: String?): SocialOwner =
-    SocialOwner(userId, if (Cloud.config.value != null) Cloud.client() else null)
+    SocialOwner(userId, Cloud.requireConfigured.getOrNull())
 
 internal fun socialOwners(userIds: Flow<String?>, currentUserId: () -> String?): Flow<SocialOwner> =
     combine(userIds, Cloud.config) { _, _ -> currentSocialOwner(currentUserId()) }.distinctUntilChanged()

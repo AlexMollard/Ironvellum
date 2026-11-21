@@ -4,6 +4,7 @@ from dataclasses import replace
 import httpx2 as httpx
 import pytest
 from cryptography.fernet import Fernet
+from ironvellum_production_mcp.auth_routes import safe_redirect
 from ironvellum_production_mcp.backend import Failure, SupabaseBackend
 from ironvellum_production_mcp.config import Settings
 from ironvellum_production_mcp.server import create_app, fingerprint
@@ -20,6 +21,18 @@ from test_service import (
     register,
     session,
 )
+
+
+def test_canonical_ipv6_issuer_and_callback(settings):
+    address = "https://[2001:db8::17]:8443"
+    ipv6 = replace(settings, issuer=address)
+    assert ipv6.resource == address + "/mcp"
+
+    assert safe_redirect(address + "/callback?route=1")
+    for host in ["[2001:0db8::17]", "[2001:::17]", "[::1]:65536", "[::1]:443", "[::1]:080"]:
+        assert not safe_redirect("https://" + host + "/callback")
+        with pytest.raises(ValueError):
+            replace(settings, issuer="https://" + host)
 
 
 def test_manifest_and_configuration(settings, tmp_path, monkeypatch):
@@ -106,6 +119,11 @@ async def test_tls_proxy_keeps_sensitive_routes_on_the_canonical_path(settings):
         ]:
             response = await c.post(path + "/", headers={"x-forwarded-proto": "http"})
             assert response.status_code == 404 and "location" not in response.headers
+            before = list(db.calls)
+            encoded = "/%" + format(ord(path[1]), "02X") + path[2:]
+            alias = await c.post(encoded)
+            assert alias.status_code == 404 and "location" not in alias.headers
+            assert db.calls == before
             direct = await c.post(path)
             assert direct.status_code in {400, 401, 403, 415}
             assert "location" not in direct.headers

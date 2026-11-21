@@ -13,6 +13,7 @@ from starlette.routing import Mount, Route
 
 from . import auth_routes
 from .backend import Failure, SupabaseBackend
+from .browser import browser_routes
 from .config import MAX_BODY, SCOPES
 from .consent_api import Consent
 from .http_boundary import HttpBoundary, error_response
@@ -94,6 +95,7 @@ def create_app(settings, backend=None):
                 auth.resource_server_url, [auth.issuer_url], scopes_supported=list(SCOPES)
             ),
             Route("/consent/api/{request_id:uuid}", consent.api, methods=["GET", "POST"]),
+            *browser_routes(settings, consent),
             Mount("/", app=transport),
         ],
         lifespan=lifespan,

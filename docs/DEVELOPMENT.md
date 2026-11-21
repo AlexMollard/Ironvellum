@@ -114,6 +114,16 @@ Validated on 2026-11-21: the full FOSS gate passed in **9m21s**, with
 2,912 unit tests, 875 instrumented tests, all web checks and no lint issues.
 The six sample cards were also posted on the owner's phone and visually approved.
 
+## Production MCP browser and app
+
+The [production deployment guide](../server/production_mcp/DEPLOYMENT.md) covers the pinned container, private setup and pruning, canonical HTTPS ingress and recovery. The [receipt verification instructions](../server/production_mcp/README.md#sql-to-android-receipt) join the independent server and Android suites with a fresh SQL-issued draft and an Android-produced acknowledgement.
+
+The production service serves the request-bound consent page after authorization and human connection management at `/connections`. It bundles the browser code, stylesheet and Chakra Petch font in the wheel. Configure the issuer, backend and publishable key as described in [the production service guide](../server/production_mcp/README.md). The Android client discovers the public MCP address through its authenticated connections RPC. An unconfigured or older backend shows an unavailable state.
+
+Email/password uses the configured Supabase Auth password endpoint. To enable the optional Google button, enable Google on that Supabase backend, add the exact issuer URL ending in `/signin/callback` to its redirect allowlist and set `IRONVELLUM_MCP_GOOGLE_CALLBACK` to that exact URL. The original tab retains the PKCE verifier and completes the exchange for the popup's code. Closing or reloading the original tab abandons sign-in. Browsers that sever the popup reference cannot complete Google sign-in. The human token lives in tab memory. The app sends the consent decision to the bound API and navigates to the registered AI callback. Browser management uses only the fixed connections and revoke RPCs. Hosts and reverse proxies must disable query, body and authorization-header logging for these routes.
+
+Use Account → AI connections or Train → Workout drafts. Reopen or refresh a screen to retry acknowledgements for locally saved drafts. Each device database can save a draft once. Synthetic local checks cover browser and phone flows. Hosted identity providers and public HTTPS require operator verification.
+
 ## Web viewer
 
 The web dashboard lives in [`web/`](../web/README.md) (Vite and plain JavaScript).

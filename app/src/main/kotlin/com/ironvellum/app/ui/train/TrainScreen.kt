@@ -41,6 +41,7 @@ fun TrainScreen(
     onOpenLog: () -> Unit,
     onOpenMuscles: (MusclesView) -> Unit,
     onOpenWorkout: (Long) -> Unit = {},
+    draftEntry: @Composable () -> Unit = {},
     viewModel: PresetsViewModel =
         viewModel(factory = viewModelFactory {
             val appContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
@@ -74,6 +75,7 @@ fun TrainScreen(
                 onOpenLog = onOpenLog,
                 onOpenMuscles = onOpenMuscles,
                 onOpenWorkout = onOpenWorkout,
+                draftEntry = draftEntry,
                 viewModel = viewModel,
             )
         }

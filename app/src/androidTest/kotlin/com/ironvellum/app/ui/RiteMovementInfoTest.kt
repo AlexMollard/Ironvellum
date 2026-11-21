@@ -49,7 +49,7 @@ class RiteMovementInfoTest {
     fun aMovementOnTheRoutinePageAndInTheEditorOpensItsExerciseSheet() {
         driver.tab("Train")
         driver.awaitText("Empty workout")
-        clickLabelled("Open ")
+        driver.click(driver.awaitAnyText { it == "Heavy Pull" })
         driver.awaitText("Begin ")
         clickLabelled("About ")
         driver.awaitText("Close")

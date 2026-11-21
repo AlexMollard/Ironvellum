@@ -1,5 +1,7 @@
 import argparse
 import asyncio
+import http.client
+import json
 import logging
 import re
 import sys
@@ -8,6 +10,7 @@ import uvicorn
 
 from .backend import Failure, SupabaseBackend
 from .config import Settings
+from .operations import maintenance, probe
 from .server import create_app, fingerprint, verify_configuration
 
 
@@ -39,6 +42,13 @@ def main():
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8000)
     setup = cmds.add_parser("configure-backend")
+    cmds.add_parser("catalogue-status", help="Read the installed catalogue count and CAS fingerprint")
+    cmds.add_parser("prune", help="Run one bounded private cleanup batch")
+    cmds.add_parser(
+        "smoke", help="Check readiness and discovery at the configured issuer without credentials"
+    )
+    health = cmds.add_parser("healthcheck", help="Probe local HTTP readiness with the configured Host")
+    health.add_argument("--port", type=int, default=8000)
     setup.add_argument(
         "--previous-catalogue-hash", help="Expected installed SHA-256 for an intentional catalogue update"
     )
@@ -49,15 +59,20 @@ def main():
         logger.handlers = [logging.NullHandler()]
         logger.propagate = False
     try:
+        if args.command in {"healthcheck", "smoke"}:
+            probe(args.port if args.command == "healthcheck" else None)
+            return
         settings = Settings.from_env()
         if args.command == "configure-backend":
             asyncio.run(configure(settings, args.previous_catalogue_hash))
             print("Backend configuration verified.")
+        elif args.command in {"catalogue-status", "prune"}:
+            print(json.dumps(asyncio.run(maintenance(settings, args.command))))
         else:
             uvicorn.run(
                 create_app(settings), host=args.host, port=args.port, access_log=False, proxy_headers=False
             )
-    except (Failure, ValueError):
+    except (Failure, ValueError, OSError, http.client.HTTPException):
         sys.exit(
             "MCP configuration unavailable. Check the configured origins, keys, schema and movement manifest."
         )

@@ -58,6 +58,10 @@ class HttpBoundary:
         if "content-length" in headers and "transfer-encoding" in headers:
             return await error_response("invalid_request")(scope, receive, send)
         path = scope["path"]
+        # All service routes, including request UUIDs and static assets, use literal ASCII.
+        # Ingress must preserve the raw target so routing cannot silently normalize an alias.
+        if not path.isascii() or scope.get("raw_path") != path.encode("ascii"):
+            return await error_response("not_found")(scope, receive, send)
         for name in (
             "host",
             "origin",
@@ -77,7 +81,9 @@ class HttpBoundary:
             return await error_response("invalid_request")(scope, receive, send)
         if len(scope["query_string"]) > 8192 or len(headers.get("authorization", "")) > 16400:
             return await error_response("invalid_request", 413)(scope, receive, send)
-        if scope["query_string"] and (path != "/authorize" or scope["method"] != "GET"):
+        if scope["query_string"] and (
+            path not in {"/authorize", "/signin/callback"} or scope["method"] != "GET"
+        ):
             return await error_response("invalid_request")(scope, receive, send)
         length = headers.get("content-length")
         if length and (not re.fullmatch(r"[0-9]{1,12}", length) or int(length) > MAX_BODY):

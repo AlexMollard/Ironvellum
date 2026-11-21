@@ -15,6 +15,9 @@ create table if not exists ironvellum_mcp.clients (
   id text primary key, name text not null, ciphertext text not null, redirects text[] not null,
   created_at timestamptz not null default now()
 );
+-- NULL marks a pre-upgrade registration whose earlier consent history is unknown.
+-- Registration sets false explicitly, and a successful consent sets true permanently.
+alter table ironvellum_mcp.clients add column if not exists ever_consented boolean;
 create index if not exists mcp_registrations on ironvellum_mcp.clients(created_at);
 create table if not exists ironvellum_mcp.requests (
   id uuid primary key default gen_random_uuid(), client_id text not null references clients(id) on delete cascade,
@@ -58,6 +61,13 @@ create table if not exists ironvellum_mcp.audit (
 create index if not exists mcp_tool_quota on ironvellum_mcp.audit(owner_id,client_id,at_time desc);
 create index if not exists mcp_recent_access on ironvellum_mcp.audit(owner_id,at_time desc);
 create index if not exists mcp_audit_retention on ironvellum_mcp.audit(at_time);
+-- Keep registration maintenance proportional to its eligible candidates even as
+-- owner history grows independently of the 10,000-client pool.
+create index if not exists mcp_unused_clients on ironvellum_mcp.clients(created_at,id) where ever_consented=false;
+create index if not exists mcp_client_requests on ironvellum_mcp.requests(client_id);
+create index if not exists mcp_client_grants on ironvellum_mcp.grants(client_id);
+create index if not exists mcp_client_drafts on ironvellum_mcp.drafts(client_id);
+create index if not exists mcp_client_audit on ironvellum_mcp.audit(client_id);
 do $$
 declare t regclass;
 begin
@@ -120,6 +130,7 @@ begin
  if p_approved then
    if not valid_scopes(p_scopes) or not p_scopes <@ r.scopes then return fail('invalid_scope'); end if;
    if p_code_hash is null or p_code_hash !~ '^[a-f0-9]{64}$' then return fail('invalid_request'); end if;
+   update clients set ever_consented=true where id=r.client_id and ever_consented is distinct from true;
    insert into grants(owner_id,client_id,resource_url,scopes) values(uid,r.client_id,r.resource_url,p_scopes) returning id into gid;
    insert into tokens(hash,kind,grant_id,scopes,expires_at,challenge,redirect_uri,redirect_explicit)
      values(p_code_hash,'code',gid,p_scopes,clock_timestamp()+interval '2 minutes',r.challenge,r.redirect_uri,r.redirect_explicit);
@@ -158,6 +169,29 @@ begin
  return ok(jsonb_build_object('drafts',coalesce((select jsonb_agg(envelope(d) order by d.created_at desc,d.id)
    from (select * from drafts where owner_id=uid and (status='approved' or status='pending' and expires_at>now())
          order by created_at desc,id limit p_limit) d),'[]'::jsonb)));
+end $$;
+-- A UUID is an opaque bookmark. Read its immutable timestamp at database precision
+-- even after its actionable status changes. Foreign and unknown bookmarks look alike.
+create index if not exists mcp_draft_pages on ironvellum_mcp.drafts(owner_id,created_at desc,id);
+create or replace function public.ironvellum_mcp_drafts_page(p_limit integer,p_cursor text) returns jsonb
+language plpgsql security definer set search_path=pg_catalog,ironvellum_mcp,pg_temp as $$
+declare uid uuid:=app_owner(); anchor drafts; row_draft drafts; items jsonb:='[]'; last_id uuid; continuation uuid;
+begin
+ if p_limit is null or p_limit not between 1 and 50 then return fail('invalid_arguments'); end if;
+ if p_cursor is not null then
+   if p_cursor !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then return fail('invalid_arguments'); end if;
+   select * into anchor from drafts where owner_id=uid and id=p_cursor::uuid;
+   if not found then return fail('invalid_arguments'); end if;
+ end if;
+ for row_draft in select d.* from drafts d where owner_id=uid
+   and (d.status='approved' or d.status='pending' and d.expires_at>now())
+   and (anchor.id is null or d.created_at<anchor.created_at or d.created_at=anchor.created_at and d.id>anchor.id)
+   order by d.created_at desc,d.id limit p_limit+1 loop
+   if jsonb_array_length(items)=p_limit then continuation:=last_id; exit; end if;
+   items:=items || jsonb_build_array(envelope(row_draft));
+   last_id:=row_draft.id;
+ end loop;
+ return ok(jsonb_build_object('drafts',items,'nextCursor',continuation));
 end $$;
 create or replace function public.ironvellum_mcp_draft(p_draft_id uuid) returns jsonb
 language plpgsql security definer set search_path=pg_catalog,ironvellum_mcp,pg_temp as $$
@@ -446,11 +480,32 @@ exception when unique_violation then return fail('invalid_arguments');
 end $$;
 
 create or replace function ironvellum_mcp.redirect_ok(uri text) returns boolean
-language sql immutable set search_path=pg_catalog as $$
- select coalesce(length(uri) between 1 and 2048 and uri !~ '[[:space:][:cntrl:]#\\]' and
- (uri ~ '^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?([/?]|$)' or
-  uri ~ '^http://(127[.]0[.]0[.]1|localhost|\[::1\])(:[0-9]{1,5})?([/?]|$)'),false)
-$$;
+language plpgsql immutable set search_path=pg_catalog as $$
+declare parts text[]; literal text; port integer; canonical text; bits text;
+begin
+ if uri is null or length(uri) not between 1 and 2048 or uri ~ '[[:space:][:cntrl:]#\\]' then return false; end if;
+ parts:=regexp_match(uri,'^(https?)://(\[[0-9a-f:]+\]|[A-Za-z0-9.-]+)(:([0-9]{1,5}))?([/?]|$)');
+ if parts is null then return false; end if;
+ if parts[1]='http' and parts[2] not in ('127.0.0.1','localhost','[::1]') then return false; end if;
+ if parts[4] is not null then
+   port:=parts[4]::integer;
+   if port>65535 or parts[4]<>port::text or port=(case parts[1] when 'https' then 443 else 80 end) then return false; end if;
+ end if;
+ if left(parts[2],1)='[' then
+   literal:=trim(both '[]' from parts[2]);
+   if position(':' in literal)=0 then return false; end if;
+   canonical:=host(literal::inet);
+   -- inet formats mapped/compatible IPv4 tails as dotted decimal. URL hosts
+   -- spell the last two groups in hex, as the SDK URL parser does.
+   if position('.' in canonical)>0 then
+     bits:=right(encode(inet_send(literal::inet),'hex'),8);
+     canonical:=regexp_replace(canonical,'[0-9.]+$',to_hex(('x'||left(bits,4))::bit(16)::int)||':'||to_hex(('x'||right(bits,4))::bit(16)::int));
+   end if;
+   if canonical<>literal then return false; end if;
+ end if;
+ return true;
+exception when invalid_text_representation then return false;
+end $$;
 create or replace function public.ironvellum_mcp_gateway(p_operation text,p_args jsonb) returns jsonb
 language plpgsql security definer set search_path=pg_catalog,ironvellum_mcp,pg_temp as $$
 declare a alias for p_args; k text[]; c clients; r requests; urls text[]; selected text[]; ru text;
@@ -522,15 +577,18 @@ begin
    if cardinality(urls) not between 1 and 16 or exists(select from unnest(urls) u where not redirect_ok(u)) then return fail('invalid_arguments'); end if;
    perform pg_advisory_xact_lock(36,1);
    admitted_at:=clock_timestamp();
-   if (select count(*) from clients where created_at>admitted_at-interval '1 minute')>=20
+   if (select count(*) from clients)>=10000
+      or (select count(*) from clients where created_at>admitted_at-interval '1 minute')>=20
       or (select count(*) from clients where created_at>admitted_at-interval '24 hours')>=1000 then return fail('rate_limited'); end if;
-   insert into clients(id,name,ciphertext,redirects,created_at) values(a->>'clientId',a->>'clientName',a->>'metadataCiphertext',urls,admitted_at);
+   insert into clients(id,name,ciphertext,redirects,created_at,ever_consented)
+     values(a->>'clientId',a->>'clientName',a->>'metadataCiphertext',urls,admitted_at,false);
    return ok(jsonb_build_object('clientId',a->>'clientId'));
  when 'client.get' then
    select * into c from clients where id=a->>'clientId';
    if not found then return fail('not_found'); end if;
    return ok(jsonb_build_object('clientId',c.id,'clientName',c.name,'metadataCiphertext',c.ciphertext,'redirectUris',c.redirects));
  when 'authorization.create' then
+   perform pg_advisory_xact_lock(36,2);
    select * into c from clients where id=a->>'clientId';
    if not found or current_url is null or ru is distinct from current_url or not str(a,'redirectUri',1,2048)
       or not (a->>'redirectUri'=any(c.redirects)) or not str(a,'codeChallenge',43,43) or a->>'codeChallenge' !~ '^[A-Za-z0-9_-]{43}$'
@@ -540,7 +598,6 @@ begin
    if not valid_scopes(selected) then return fail('invalid_scope'); end if;
    -- Expiry is immutable and exactly ten minutes after admission. This index
    -- window includes already-decided requests until their admission is a minute old.
-   perform pg_advisory_xact_lock(36,2);
    admitted_at:=clock_timestamp();
    if (select count(*)>=120 or count(*) filter(where client_id=c.id)>=20
        from requests where expires_at>admitted_at+interval '9 minutes') then return fail('rate_limited'); end if;
@@ -575,6 +632,16 @@ begin
    delete from grants where id in (select g.id from grants g where least(g.expires_at,g.revoked_at)<now()-interval '90 days'
      and not exists(select from tokens t where t.grant_id=g.id) limit 200 for update skip locked);
    get diagnostics affected=row_count; cleaned:=cleaned+affected;
+   -- Serialize with first authorization, then use a fresh snapshot of dependencies.
+   perform pg_advisory_xact_lock(36,2);
+   delete from clients where id in (
+     select candidate.id from clients candidate where candidate.ever_consented=false and candidate.created_at<=now()-interval '24 hours'
+       and not exists(select from requests req where req.client_id=candidate.id)
+       and not exists(select from grants g where g.client_id=candidate.id)
+       and not exists(select from drafts d where d.client_id=candidate.id)
+       and not exists(select from audit entry where entry.client_id=candidate.id)
+     order by candidate.created_at,candidate.id limit 200 for update of candidate skip locked);
+   get diagnostics affected=row_count; cleaned:=cleaned+affected;
    return ok(jsonb_build_object('affected',cleaned));
  else return oauth(p_operation,a);
  end case;
@@ -590,7 +657,8 @@ declare f regprocedure;
 begin
  foreach f in array array[
    'public.ironvellum_mcp_connections()'::regprocedure,'public.ironvellum_mcp_revoke_connection(uuid)'::regprocedure,
-   'public.ironvellum_mcp_drafts(integer)'::regprocedure,'public.ironvellum_mcp_draft(uuid)'::regprocedure,
+   'public.ironvellum_mcp_drafts(integer)'::regprocedure,'public.ironvellum_mcp_drafts_page(integer,text)'::regprocedure,
+   'public.ironvellum_mcp_draft(uuid)'::regprocedure,
    'public.ironvellum_mcp_review_draft(uuid,text,text)'::regprocedure,'public.ironvellum_mcp_consent(uuid,boolean,text[],text)'::regprocedure
  ] loop
    execute format('revoke all on function %s from public,anon,service_role',f);

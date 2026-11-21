@@ -88,6 +88,7 @@ import java.util.Date
 fun AccountSettingsScreen(
     onBack: () -> Unit,
     profileOnly: Boolean = false,
+    onOpenConnections: () -> Unit = {},
     viewModel: AccountViewModel = viewModel(
         factory = viewModelFactory {
             initializer { AccountViewModel(ironvellumAccount(), ironvellumCloudSync()) }
@@ -237,6 +238,12 @@ fun AccountSettingsScreen(
         if (profileOnly) {
             ui.error?.let { SocialErrorBanner(it.asString()) }
             return@Column
+        }
+
+        SettingsGroup(stringResource(R.string.ai_services), rows = true) {
+            com.ironvellum.app.ui.components.SettingsValueRow(
+                stringResource(R.string.ai_connections), stringResource(R.string.ai_connections_caption), onOpenConnections,
+            )
         }
 
         SettingsGroup(stringResource(R.string.acct_section_cloud), rows = true) {

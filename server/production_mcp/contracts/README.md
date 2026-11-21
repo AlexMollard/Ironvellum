@@ -48,6 +48,7 @@ These calls require the ordinary authenticated user's session and derive its own
 | ironvellum_mcp_connections | {} | resourceUrl, connections[], recentAccess[] |
 | ironvellum_mcp_revoke_connection | p_grant_id | revoked (true) |
 | ironvellum_mcp_drafts | p_limit (1-50) | drafts[] |
+| ironvellum_mcp_drafts_page | p_limit (1–50), p_cursor (null on first call) | drafts[], nextCursor (opaque string or null) |
 | ironvellum_mcp_draft | p_draft_id | draft (envelope) |
 | ironvellum_mcp_review_draft | p_draft_id, p_hash, p_action | draft (envelope) |
 | ironvellum_mcp_consent | p_request_id, p_approved, p_scopes, p_code_hash | approved (boolean) |

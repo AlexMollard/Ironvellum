@@ -9,7 +9,10 @@ const db = await disposableNative()
 const file = (path) => readFile(new URL('../../../../' + path, import.meta.url), 'utf8')
 const users = new Map([['human.test.session', randomUUID()], ['other.test.session', randomUUID()]])
 const resourceUrl = process.argv[2]
-if (!/^http:\/\/127\.0\.0\.1:\d+\/mcp$/.test(resourceUrl)) throw new Error('Expected a loopback test resource')
+// The bridge always listens on loopback. The documentation IPv6 address is an
+// advertised TLS origin in the reverse-proxy fixture, never a network target.
+if (!/^http:\/\/127\.0\.0\.1:\d+\/mcp$/.test(resourceUrl) && resourceUrl !== 'https://[2001:db8::17]:8443/mcp')
+  throw new Error('Expected a local fixture resource')
 let server
 try {
   await db.exec(await file('supabase/test/supabase_stub.sql'))
@@ -60,6 +63,36 @@ try {
     if (command === 'expire-codes') {
       await db.query("update ironvellum_mcp.tokens set expires_at=now()-interval '1 minute' where kind='code' and not used")
       console.log('expired')
+    } else {
+      // Host-only fixture exchange. Run only the two fixed phone RPCs as an ordinary test owner.
+      const { actor, action, body } = JSON.parse(command)
+      if (!['owner','other'].includes(actor)) throw new Error('Unknown fixture identity')
+      const uid = users.get(actor === 'owner' ? 'human.test.session' : 'other.test.session')
+      if (action === 'identity') {
+        console.log(JSON.stringify({ userId: uid }))
+        continue
+      }
+      await db.query('begin')
+      try {
+        await db.query("select set_config('probe.uid',$1,true), set_config('request.jwt.claims',$2,true)",
+          [uid, JSON.stringify({ sub: uid })])
+        await db.query('set local role authenticated')
+        let result
+        if (action === 'detail' && Object.keys(body).sort().join() === 'p_draft_id') {
+          result = await db.query("select public.ironvellum_mcp_draft($1) v", [body.p_draft_id])
+        } else if (action === 'review' && ['approve','accept'].includes(body.p_action)
+            && Object.keys(body).sort().join() === 'p_action,p_draft_id,p_hash') {
+          result = await db.query("select public.ironvellum_mcp_review_draft($1,$2,$3) v",
+            [body.p_draft_id, body.p_hash, body.p_action])
+        } else {
+          throw new Error('Unsupported fixture command')
+        }
+        await db.query('commit')
+        console.log(JSON.stringify(result.rows[0].v))
+      } catch (error) {
+        await db.query('rollback')
+        throw error
+      }
     }
   }
 } finally {

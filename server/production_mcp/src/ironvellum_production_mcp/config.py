@@ -53,10 +53,13 @@ class Settings:
     encryption_key: str = field(repr=False)
     manifest: Path
     loopback: bool = False
+    google_callback: str | None = None
 
     def __post_init__(self):
         origin(self.issuer, self.loopback)
         origin(self.backend_origin, self.loopback)
+        if self.google_callback is not None and self.google_callback != self.issuer + "/signin/callback":
+            raise ValueError("Google callback must be the configured issuer's /signin/callback")
         if not browser_public_key(self.public_key):
             raise ValueError("A Supabase publishable key or legacy anon JWT is required for the browser")
         if not self.gateway_key or self.public_key == self.gateway_key:
@@ -92,6 +95,7 @@ class Settings:
             required("ENCRYPTION_KEY"),
             Path(required("MANIFEST")),
             os.getenv("IRONVELLUM_MCP_LOOPBACK") == "1",
+            os.getenv("IRONVELLUM_MCP_GOOGLE_CALLBACK") or None,
         )
 
     def catalogue(self):

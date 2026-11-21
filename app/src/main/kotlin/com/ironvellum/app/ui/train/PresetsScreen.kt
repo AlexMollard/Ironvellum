@@ -211,6 +211,7 @@ fun PresetsScreen(
     onOpenLog: () -> Unit,
     onOpenMuscles: (MusclesView) -> Unit,
     onOpenWorkout: (Long) -> Unit = {},
+    draftEntry: @Composable () -> Unit = {},
     viewModel: PresetsViewModel =
         viewModel(factory = viewModelFactory {
             val appContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
@@ -285,6 +286,7 @@ fun PresetsScreen(
                 onForge = { showNewChooser = true },
             )
         }
+        draftEntry()
         if (ui.presets.isNotEmpty()) {
         Spacer(Modifier.height(SECTION_GAP))
         val sealedThisWeek = { preset: WorkoutPreset -> sessions.any { it.presetId == preset.id && (it.completedAtMs ?: 0L) >= weekStart } }

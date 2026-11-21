@@ -1,0 +1,15 @@
+**
+!Dockerfile
+!pyproject.toml
+!requirements.lock
+!linux-amd64-wheels.sha256
+!contracts/
+!contracts/movements-v1.json
+!src/
+!src/ironvellum_production_mcp/
+!src/ironvellum_production_mcp/*.py
+!src/ironvellum_production_mcp/assets/
+!src/ironvellum_production_mcp/assets/*.js
+!src/ironvellum_production_mcp/assets/*.css
+!src/ironvellum_production_mcp/assets/*.ttf
+!src/ironvellum_production_mcp/assets/OFL-ChakraPetch.txt

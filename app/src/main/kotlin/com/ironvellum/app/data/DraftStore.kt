@@ -3,6 +3,7 @@ package com.ironvellum.app.data
 import com.ironvellum.app.data.cloud.AccountRepository
 import com.ironvellum.app.data.cloud.DraftEnvelope
 import com.ironvellum.app.data.cloud.DraftStatus
+import com.ironvellum.app.data.cloud.StaleDraftReview
 import com.ironvellum.app.data.db.*
 import com.ironvellum.app.domain.PreparationKind
 import com.ironvellum.app.domain.WorkoutDraft
@@ -20,7 +21,7 @@ internal class DraftStore(private val db: IronvellumDatabase) {
 
     private fun existing(scope: AccountRepository.Scope, envelope: DraftEnvelope): DraftReceipt? {
         val receipt = dao.receipt(scope.backend, scope.userId, envelope.id)
-        require(receipt == null || receipt.contentHash == envelope.contentHash) { "Draft receipt conflict" }
+        if (receipt != null && receipt.contentHash != envelope.contentHash) throw StaleDraftReview("Draft receipt conflict")
         return receipt
     }
 
@@ -71,7 +72,9 @@ internal class DraftStore(private val db: IronvellumDatabase) {
                 System.currentTimeMillis(), ackPending = true).also(dao::insertReceipt)
         }
 
-    suspend fun pending(scope: AccountRepository.Scope) = withContext(Dispatchers.IO) { dao.pending(scope.backend, scope.userId) }
+    suspend fun pending(scope: AccountRepository.Scope, after: String) = withContext(Dispatchers.IO) {
+        dao.pending(scope.backend, scope.userId, after)
+    }
 
     suspend fun markAcknowledged(accounts: AccountRepository, scope: AccountRepository.Scope, receipt: DraftReceipt) =
         write(accounts, scope) {

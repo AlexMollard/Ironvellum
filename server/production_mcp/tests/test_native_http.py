@@ -53,7 +53,11 @@ class NetworkService:
                 if self.process.poll() is not None:
                     break
                 try:
-                    if client.get(self.origin + "/healthz", timeout=1).status_code == 200:
+                    host = urlsplit(self.env["IRONVELLUM_MCP_ISSUER"]).netloc
+                    if (
+                        client.get(self.origin + "/healthz", headers={"Host": host}, timeout=1).status_code
+                        == 200
+                    ):
                         return
                 except httpx.HTTPError:
                     pass
@@ -66,12 +70,12 @@ class NetworkService:
             self.process.wait(timeout=10)
 
 
-def disposable_network(work):
+def disposable_network(work, *, full_manifest=False, advertised_issuer=None):
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         origin = "http://127.0.0.1:" + str(sock.getsockname()[1])
     bridge = subprocess.Popen(
-        ["node", str(ROOT / "tests/sql/service-bridge.mjs"), origin + "/mcp"],
+        ["node", str(ROOT / "tests/sql/service-bridge.mjs"), (advertised_issuer or origin) + "/mcp"],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         text=True,
@@ -80,13 +84,15 @@ def disposable_network(work):
         backend = bridge.stdout.readline().strip()
         if not backend.startswith("http://127.0.0.1:"):
             raise RuntimeError("Install locked native SQL test dependencies first")
-        manifest = work / "manifest.json"
-        catalogue = FIX["gateway"]["configuration.configure"]["args"]["catalogue"]
-        # Deliberately unsorted UTF-8 records exercise Python/PostgreSQL fingerprint compatibility.
-        rows = [{"key": "é press", "name": "é Press", "metric": "REPS"}, *catalogue["movements"]]
-        manifest.write_text(json.dumps({**catalogue, "movements": rows}))
+        manifest = ROOT / "contracts/movements-v1.json"
+        if not full_manifest:
+            manifest = work / "manifest.json"
+            catalogue = FIX["gateway"]["configuration.configure"]["args"]["catalogue"]
+            # Unsorted UTF-8 records exercise Python/PostgreSQL fingerprint compatibility.
+            rows = [{"key": "é press", "name": "é Press", "metric": "REPS"}, *catalogue["movements"]]
+            manifest.write_text(json.dumps({**catalogue, "movements": rows}), encoding="utf-8")
         conf = {
-            "ISSUER": origin,
+            "ISSUER": advertised_issuer or origin,
             "BACKEND_URL": backend,
             "PUBLIC_KEY": "sb_publishable_test",
             "GATEWAY_KEY": "private-test",
@@ -99,7 +105,7 @@ def disposable_network(work):
             **{"IRONVELLUM_MCP_" + k: v for k, v in conf.items()},
             "PYTHONPATH": str(ROOT / "src"),
         }
-        # Install the synthetic catalogue through the operator CLI. Repeating it must be idempotent.
+        # Install through the operator CLI. Repeating it must be idempotent.
         for _ in range(2):
             subprocess.run(
                 [sys.executable, "-m", "ironvellum_production_mcp", "configure-backend"],
@@ -119,6 +125,33 @@ def disposable_network(work):
     finally:
         bridge.stdin.close()
         bridge.wait(timeout=25)
+
+
+@pytest.fixture
+def ipv6_network(tmp_path):
+    yield from disposable_network(tmp_path, advertised_issuer="https://[2001:db8::17]:8443")
+
+
+@pytest.mark.anyio
+async def test_ipv6_resource_and_callback_through_real_service_and_sql(ipv6_network):
+    service, _, _ = ipv6_network
+    issuer = service.env["IRONVELLUM_MCP_ISSUER"]
+    async with httpx.AsyncClient(
+        base_url=service.origin, headers={"Host": urlsplit(issuer).netloc}, trust_env=False
+    ) as client:
+        metadata = await client.get("/.well-known/oauth-protected-resource/mcp")
+        assert metadata.json()["resource"] == issuer + "/mcp"
+        callback = "https://[2001:db8::27]:9443/callback"
+        reg = await client.post("/register", json={"redirect_uris": [callback], "scope": "training:read"})
+        assert reg.status_code == 201 and reg.json()["redirect_uris"] == [callback]
+        params = {
+            **authorize_params(reg.json()["client_id"]),
+            "resource": issuer + "/mcp",
+            "redirect_uri": callback,
+            "scope": "training:read",
+        }
+        reply = await client.get("/authorize", params=params)
+        assert reply.status_code == 302 and reply.headers["location"].startswith(issuer + "/consent/")
 
 
 @pytest.fixture(scope="module")

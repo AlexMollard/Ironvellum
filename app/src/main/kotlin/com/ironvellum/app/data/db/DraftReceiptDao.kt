@@ -26,8 +26,9 @@ internal interface DraftReceiptDao {
     @Query("SELECT * FROM mcp_draft_receipts WHERE backend=:backend AND userId=:user AND draftId=:id")
     fun receipt(backend: String, user: String, id: String): DraftReceipt?
 
-    @Query("SELECT * FROM mcp_draft_receipts WHERE backend=:backend AND userId=:user AND ackPending=1 ORDER BY savedAtMs,draftId")
-    fun pending(backend: String, user: String): List<DraftReceipt>
+    @Query("""SELECT * FROM mcp_draft_receipts WHERE backend=:backend AND userId=:user AND ackPending=1
+        ORDER BY CASE WHEN draftId > :after THEN 0 ELSE 1 END, draftId LIMIT 20""")
+    fun pending(backend: String, user: String, after: String = ""): List<DraftReceipt>
 
     @Query("UPDATE mcp_draft_receipts SET ackPending=0 WHERE backend=:backend AND userId=:user AND draftId=:id AND contentHash=:hash")
     fun acknowledged(backend: String, user: String, id: String, hash: String): Int

@@ -156,6 +156,8 @@ object Routes {
     internal const val FRIEND_PROFILE_PREVIEW = "social/profile/friend-preview"
     internal const val EDIT_SOCIAL_PROFILE = "social/profile/edit"
     const val ACCOUNT = "account"
+    const val AI_CONNECTIONS = "account/ai-connections"
+    const val WORKOUT_DRAFTS = "train/drafts"
     const val SIGN_IN = "sign_in"
     const val WORKOUT_LOG = "workout_log"
     const val RECAP = "recap/{week}"
@@ -472,6 +474,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 }
                 composable(Routes.PRESETS) {
                     TrainScreen(
+                        draftEntry = { com.ironvellum.app.ui.ai.DraftEntry(ironvellumApp.mcpRepository) { navController.navigate(Routes.WORKOUT_DRAFTS) } },
                         onOpenRite = { id -> navController.navigate(Routes.riteDetail(id)) },
                         onNew = { navController.navigate(Routes.presetEditor()) },
                         onGenerate = { mode, presetId ->
@@ -832,7 +835,16 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                     AccountScreen(onBack = { navController.popBackStack() }, pushed = true)
                 }
                 composable(Routes.ACCOUNT) {
-                    AccountSettingsScreen(onBack = { navController.popBackStack() })
+                    AccountSettingsScreen(onBack = { navController.popBackStack() },
+                        onOpenConnections = { navController.navigate(Routes.AI_CONNECTIONS) })
+                }
+                listOf(Routes.AI_CONNECTIONS, Routes.WORKOUT_DRAFTS).forEach { route ->
+                    composable(route) {
+                        val backend by com.ironvellum.app.data.cloud.Cloud.config.collectAsStateWithLifecycle()
+                        com.ironvellum.app.ui.ai.McpScreen(ironvellumApp.mcpRepository, route == Routes.AI_CONNECTIONS,
+                            backend != null, onBack = { navController.popBackStack() },
+                            onSignIn = { navController.navigate(Routes.SIGN_IN) })
+                    }
                 }
                 composable(
                     Routes.RECAP,

@@ -322,7 +322,7 @@ class FontScaleSweepTest {
     }
 
     private fun openFirstRite() {
-        compose.onAllNodes(hasOnClickLabel("Open ", prefix = true)).onFirst()
+        compose.onNode(hasOnClickLabel("Open Heavy Pull"))
             .performSemanticsAction(SemanticsActions.OnClick)
         driver.settle()
     }

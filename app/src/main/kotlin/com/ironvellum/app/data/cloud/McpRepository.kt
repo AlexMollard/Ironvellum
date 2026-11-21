@@ -1,15 +1,22 @@
 package com.ironvellum.app.data.cloud
 
+import android.database.sqlite.SQLiteException
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.db.DraftReceipt
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonObject
 
 /** App-session RPCs only. This adapter holds no OAuth credential or cross-account response cache. */
 internal class McpRepository(private val accounts: AccountRepository, repository: Repository) {
     private val store = repository.draftStore
+    private val retryLock = kotlinx.coroutines.sync.Mutex()
+    private var retryOwner: Pair<String, String>? = null
+    private var retryAfter = ""
     val scopeChanges get() = accounts.scopeChanges
     fun captureScope() = accounts.captureScope()
     fun isCurrent(scope: AccountRepository.Scope) = accounts.isCurrent(scope)
@@ -35,8 +42,14 @@ internal class McpRepository(private val accounts: AccountRepository, repository
     suspend fun revoke(scope: AccountRepository.Scope, grantId: String) =
         rpc(scope, "revoke_connection", McpWire.revokeArgs(grantId), McpWire::revoked)
 
-    suspend fun drafts(scope: AccountRepository.Scope, limit: Int = 50): List<Review> =
+    suspend fun drafts(scope: AccountRepository.Scope, limit: Int = MCP_DRAFT_PAGE_LIMIT): List<Review> =
         rpc(scope, "drafts", McpWire.listArgs(limit)) { raw -> McpWire.drafts(raw).map { ScopedReview(scope, it) } }
+
+    suspend fun draftsPage(scope: AccountRepository.Scope, cursor: String? = null): DraftPage<Review> =
+        rpc(scope, "drafts_page", McpWire.pageArgs(MCP_DRAFT_PAGE_LIMIT, cursor)) { raw ->
+            val page = McpWire.draftsPage(raw)
+            DraftPage(page.rows.map { ScopedReview(scope, it) }, page.nextCursor)
+        }
 
     suspend fun draft(scope: AccountRepository.Scope, id: String): Review =
         rpc(scope, "draft", McpWire.draftArgs(id)) { raw ->
@@ -46,7 +59,7 @@ internal class McpRepository(private val accounts: AccountRepository, repository
     private suspend fun review(review: ScopedReview, action: String): DraftEnvelope {
         val original = review.envelope
         return rpc(review.scope, "review_draft", McpWire.reviewArgs(original.id, original.contentHash, action)) { raw ->
-            McpWire.draft(raw).also { require(original.sameRevision(it)) { "Reviewed revision changed" } }
+            McpWire.draft(raw).also { if (!original.sameRevision(it)) throw StaleDraftReview("Reviewed revision changed") }
         }
     }
 
@@ -71,10 +84,20 @@ internal class McpRepository(private val accounts: AccountRepository, repository
 
     /** Reopening Settings/Train can finish old acknowledgements under a fresh scope without reimporting. */
     suspend fun retryAcknowledgements(scope: AccountRepository.Scope): Int {
-        accounts.requireCurrent(scope)
-        val remaining = store.pending(scope).count { !tryAcknowledge(scope, it) }
-        accounts.requireCurrent(scope)
-        return remaining
+        return retryLock.withLock {
+            accounts.requireCurrent(scope)
+            val owner = scope.backend to scope.userId
+            if (retryOwner != owner) {
+                retryOwner = owner
+                retryAfter = ""
+            }
+            val failures = store.pending(scope, retryAfter).count { receipt ->
+                retryAfter = receipt.draftId
+                !tryAcknowledge(scope, receipt)
+            }
+            accounts.requireCurrent(scope)
+            failures
+        }
     }
 
     private suspend fun tryAcknowledge(scope: AccountRepository.Scope, receipt: DraftReceipt): Boolean {
@@ -90,7 +113,14 @@ internal class McpRepository(private val accounts: AccountRepository, repository
             accounts.requireCurrent(scope)
             return false
         }
-        store.markAcknowledged(accounts, scope, receipt)
+        try {
+            store.markAcknowledged(accounts, scope, receipt)
+        } catch (_: SQLiteException) {
+            // The preset and pending receipt already committed. The accept RPC is idempotent.
+            currentCoroutineContext().ensureActive()
+            accounts.requireCurrent(scope)
+            return false
+        }
         return true
     }
 }

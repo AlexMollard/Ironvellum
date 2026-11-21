@@ -1,0 +1,14 @@
+@font-face{font-family:Chakra;src:url('/ui/chakra-medium.ttf') format('truetype');font-weight:400 500;font-display:swap}
+@font-face{font-family:Chakra;src:url('/ui/chakra.ttf') format('truetype');font-weight:600 900;font-display:swap}
+/* Default Emerald & Gold and Forest & Gold from web/src/generated/accents.json and tokens.json. */
+:root{color-scheme:dark;--paper:#0c0c0b;--panel:#171715;--ink:#e8e8e4;--muted:#a3a099;--rule:#4a473f;--green:#34d399;--inverse:#000}
+@media(prefers-color-scheme:light){:root{color-scheme:light;--paper:#f7f3ea;--panel:#fefbf5;--ink:#241b15;--muted:#65584c;--rule:#aa9c8a;--green:#208046;--inverse:#fefbf5}}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:1rem/1.5 Chakra,system-ui,sans-serif}
+header,main{width:min(100% - 40px,36rem);margin:auto}header{font:700 1.15rem Chakra,sans-serif;color:var(--green);border-bottom:1px solid var(--rule);padding:2rem 0 .8rem}
+main{padding:1rem 0 3rem;overflow-wrap:anywhere}h1,h2,button,legend{font-family:Chakra,sans-serif}h1{line-height:1.15;font-size:2rem}h2,legend{font-size:1.15rem}
+p{margin:.6rem 0;color:var(--muted)}section,fieldset{border:1px solid var(--rule);padding:1rem;margin:1rem 0;background:var(--panel);min-width:0}fieldset{margin-bottom:1rem}
+label{display:block;margin:.8rem 0}.choice{display:flex;gap:.7rem;align-items:start;min-height:44px}.choice input{margin-top:.4em;accent-color:var(--green)}
+input:not([type=checkbox]){width:100%;padding:.7rem;background:var(--paper);border:1px solid var(--rule);color:var(--ink);font:inherit;border-radius:3px}
+button{font-size:1rem;min-height:46px;padding:.5rem 1.3rem;background:var(--green);color:var(--inverse);border:1px solid var(--green);border-radius:3px;font-weight:600;cursor:pointer;margin:4px 8px 4px 0}
+button.secondary{border-color:var(--rule);color:var(--ink);background:var(--panel)}button:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible{outline:3px solid var(--green);outline-offset:3px}h1:focus{outline:none}[role=alert]{color:var(--ink)}time{font-variant-numeric:tabular-nums}

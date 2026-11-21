@@ -43,6 +43,7 @@ class AccountRestoreTest {
         if (dispatcher != null) coroutineDispatcher = dispatcher
         install(Auth) {
             sessionManager = storage
+            codeVerifierCache = io.github.jan.supabase.auth.MemoryCodeVerifierCache()
             autoLoadFromStorage = false
             alwaysAutoRefresh = false
             enableLifecycleCallbacks = false
@@ -853,23 +854,24 @@ class AccountRestoreTest {
 
     @Test fun backendSwitchClearsPublishedIdentityAndPreventsOldSessionRestore() = runBlocking {
         val storage = MemorySessionManager(session())
-        val engine = MockEngine { request ->
+        fun engine() = MockEngine { request ->
             check(request.url.encodedPath.endsWith("/profiles"))
             respond(PROFILE, HttpStatusCode.OK, JSON_HEADERS)
         }
-        val client = client(storage, engine)
+        val cfg = CloudConfig("https://account-test.invalid", "test-key", false)
+        val selection = CloudClientSelection(cfg) { client(storage, engine()) }.also { it.initialize(cfg) }
         try {
-            val accounts = AccountRepository(client)
+            val accounts = AccountRepository { selection.requireConfigured }
             accounts.restore().getOrThrow()
             assertEquals(USER, accounts.account.value?.userId)
 
-            Cloud.reconfigure(accounts, oldClient = { client }, beforeSwap = {}, swap = {})
+            Cloud.reconfigure(selection, cfg, accounts, beforeSwap = {}, persist = {})
 
             assertNull("The previous backend's account must not remain signed in", accounts.account.value)
             accounts.restore().getOrThrow()
             assertNull("A queued startup restore must not resurrect the old project", accounts.account.value)
         } finally {
-            client.close()
+            selection.client().close()
         }
     }
 

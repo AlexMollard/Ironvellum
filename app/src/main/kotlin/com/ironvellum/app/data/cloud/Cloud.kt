@@ -3,6 +3,7 @@ package com.ironvellum.app.data.cloud
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.core.content.edit
 import com.ironvellum.app.BuildConfig
 import com.ironvellum.app.R
@@ -24,11 +25,16 @@ import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.exception.PostgrestRestException
 import io.github.jan.supabase.postgrest.postgrest
 import io.ktor.client.engine.okhttp.OkHttp
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.job
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.withLock
 import java.io.IOException
 
 /**
@@ -106,6 +112,89 @@ internal fun probeResultFor(status: Int?, code: String?, versionText: String?): 
 }
 
 /**
+ * Only initialization and backend switches can construct SDKs. Reading an old
+ * generation has no side effects, even if the reader resumes after a switch.
+ */
+internal class CloudClientSelection(private val fallback: CloudConfig, private val build: (CloudConfig) -> SupabaseClient) {
+    private data class Generation(val effective: CloudConfig?, val client: Result<SupabaseClient>?, val available: Boolean = true)
+    private val selected = MutableStateFlow<Generation?>(null)
+    private val writer = Mutex()
+
+    @OptIn(kotlinx.coroutines.ExperimentalForInheritanceCoroutinesApi::class)
+    val config: StateFlow<CloudConfig?> = object : StateFlow<CloudConfig?> {
+        override val value get() = selected.value?.effective
+        override val replayCache get() = listOf(value)
+        override suspend fun collect(collector: FlowCollector<CloudConfig?>): Nothing =
+            selected.collect { collector.emit(it?.effective) }
+    }
+
+    private fun create(config: CloudConfig?): Generation {
+        // The legacy client() API exposes construction errors only when used.
+        // A local-only build must still start even with blank BuildConfig fields.
+        val client = try {
+            Result.success(build(config ?: fallback))
+        } catch (error: Exception) {
+            Result.failure(error)
+        }
+        return Generation(config, client)
+    }
+
+    /** Application startup calls this before consumers or writers start. Repeated init is a no-op. */
+    fun initialize(config: CloudConfig?) {
+        if (selected.value != null) return
+        runBlocking {
+            writer.withLock {
+                if (selected.value == null) selected.value = create(config)
+            }
+        }
+    }
+
+    @OptIn(io.github.jan.supabase.annotations.SupabaseInternal::class)
+    suspend fun select(config: CloudConfig?, beforePublish: suspend () -> Unit = {}) = writer.withLock {
+        val previous = selected.value
+        // Readers fail promptly during disposal. They never wait on a publisher
+        // that might need their account monitor or the Android main thread.
+        selected.value = previous?.copy(available = false) ?: Generation(null, null, available = false)
+        val old = previous?.client?.getOrNull()
+        if (old != null) {
+            val auth = old.auth
+            val jobs = auth.authScope.coroutineContext.job
+            try {
+                runCatching { auth.signOut(SignOutScope.LOCAL) }
+            } finally {
+                old.close()
+                jobs.join()
+            }
+            // No retired job can now restore or re-save credentials behind this clear.
+            // If persistent cleanup fails, keep the previous configuration unavailable.
+            auth.clearSession()
+        }
+        try {
+            beforePublish()
+        } catch (failure: Throwable) {
+            selected.value = create(previous?.effective)
+            throw failure
+        }
+        selected.value = create(config)
+    }
+
+    val requireConfigured: Result<SupabaseClient>
+        get() = current(allowFallback = false) ?: Result.failure(MessageException(UiText.res(R.string.cloud_not_configured)))
+    fun client(afterSnapshot: (() -> Unit)? = null): SupabaseClient =
+        current(allowFallback = true, afterSnapshot)?.getOrThrow() ?: throw CancellationException("Cloud backend is changing")
+
+    private fun current(allowFallback: Boolean, afterSnapshot: (() -> Unit)? = null): Result<SupabaseClient>? {
+        while (true) {
+            val generation = selected.value
+            afterSnapshot?.invoke()
+            if (selected.value !== generation) continue
+            if (generation == null || !generation.available || (!allowFallback && generation.effective == null)) return null
+            return generation.client
+        }
+    }
+}
+
+/**
  * Single entry point to the cloud. `config` is the source of truth: the
  * BuildConfig default unless the lifter pointed the app at their own Supabase
  * project from Settings. Every repository then answers with a readable
@@ -123,21 +212,19 @@ object Cloud {
 
     private var prefs: SharedPreferences? = null
 
-    @Volatile
-    private var override: CloudConfig? = null
+    private val clients = CloudClientSelection(
+        CloudConfig(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, isDefault = true), ::buildClient,
+    )
+    val config: StateFlow<CloudConfig?> get() = clients.config
 
-    private val _config = MutableStateFlow<CloudConfig?>(null)
-    val config: StateFlow<CloudConfig?> = _config.asStateFlow()
-
-    val configured: Boolean get() = _config.value != null
-    val googleConfigured: Boolean get() = googleConfiguredFor(_config.value, BuildConfig.GOOGLE_WEB_CLIENT_ID)
+    val configured: Boolean get() = config.value != null
+    val googleConfigured: Boolean get() = googleConfiguredFor(config.value, BuildConfig.GOOGLE_WEB_CLIENT_ID)
 
     /** Read the stored override once, before anything asks who we talk to. */
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE)
         this.prefs = prefs
-        override = readOverride(prefs)
-        _config.value = resolve(override)
+        clients.initialize(resolve(readOverride(prefs)))
     }
 
     private fun resolve(ov: CloudConfig?): CloudConfig? = resolveCloudConfig(
@@ -147,39 +234,12 @@ object Cloud {
         defaultKey = BuildConfig.SUPABASE_KEY,
     )
 
-    @Volatile
-    private var instance: SupabaseClient? = null
+    fun client(): SupabaseClient = clients.client()
 
-    fun client(): SupabaseClient {
-        val cfg = _config.value ?: run {
-            // Unconfigured build: preserve the historical behaviour of building
-            // straight from BuildConfig so a caller that skipped the
-            // configured check still gets a client-shaped object, not a crash
-            // in a getter.
-            CloudConfig(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, isDefault = true)
-        }
-        return instance ?: synchronized(this) {
-            instance ?: createSupabaseClient(
-                supabaseUrl = cfg.url,
-                supabaseKey = cfg.key,
-            ) {
-                install(Auth)
-                install(Postgrest)
-                // Name the engine instead of letting ktor discover it through
-                // ServiceLoader: R8 renames the META-INF/services entries in a
-                // minified release, and a failed engine lookup would take the whole
-                // cloud down at runtime in a way no debug build can reveal.
-                httpEngine = OkHttp.create()
-            }.also { instance = it }
-        }
-    }
+    private fun buildClient(cfg: CloudConfig) = buildCloudClient(cfg, ProcessLifecycleOwner.get().lifecycle)
 
     val requireConfigured: Result<SupabaseClient>
-        get() = if (configured) {
-            Result.success(client())
-        } else {
-            Result.failure(MessageException(UiText.res(R.string.cloud_not_configured)))
-        }
+        get() = clients.requireConfigured
 
     /**
      * Point the app at [next] (null = back to the BuildConfig default).
@@ -189,38 +249,24 @@ object Cloud {
      * 1. fence account-scoped work and forget the published identity, then
      *    sign out THIS device's session against the OLD project (LOCAL scope:
      *    the lifter's other phones stay signed in there) — best effort, then
-     *    always [Auth.clearSession] so the local session goes even when the
-     *    old server is unreachable;
+     *    close its SDK and join its Auth work (including the lifecycle observer),
+     *    then [Auth.clearSession] before a successor can access session storage;
      * 2. [beforeSwap] resets the push watermark so sessions re-upload to the new backend;
-     * 3. under the client lock, drop the cached client and persist the new
-     *    override;
-     * 4. emit the new [config], redrawing every screen that collects it.
+     * 3. persist the override and publish a fresh configuration/SDK generation.
      */
-    suspend fun reconfigure(next: CloudConfig?, accounts: AccountRepository, beforeSwap: suspend () -> Unit) {
-        reconfigure(accounts, oldClient = { instance ?: synchronized(this) { instance } }, beforeSwap = beforeSwap) {
-            synchronized(this) {
-                instance = null
-                override = next
-                writeOverride(next)
-            }
-            _config.value = resolve(next)
-        }
-    }
+    suspend fun reconfigure(next: CloudConfig?, accounts: AccountRepository, beforeSwap: suspend () -> Unit) =
+        reconfigure(clients, resolve(next), accounts, beforeSwap) { writeOverride(next) }
 
     internal suspend fun reconfigure(
+        selection: CloudClientSelection,
+        config: CloudConfig?,
         accounts: AccountRepository,
-        oldClient: () -> SupabaseClient?,
         beforeSwap: suspend () -> Unit,
-        swap: () -> Unit,
-    ) {
-        accounts.withBackendSwitch {
-            val old = oldClient()
-            if (old != null) {
-                runCatching { old.auth.signOut(SignOutScope.LOCAL) }
-                runCatching { old.auth.clearSession() }
-            }
+        persist: () -> Unit,
+    ) = accounts.withBackendSwitch {
+        selection.select(config) {
             beforeSwap()
-            swap()
+            persist()
         }
     }
 
@@ -237,7 +283,7 @@ object Cloud {
         }
 
     private fun webCatchUpKey(prefix: String, userId: String): String? =
-        _config.value?.url?.let { "$prefix:$it:$userId" }
+        config.value?.url?.let { "$prefix:$it:$userId" }
 
     internal fun webCaughtUp(userId: String): Boolean =
         webCatchUpKey("web_caught_up", userId)?.let { prefs?.getBoolean(it, false) } == true
