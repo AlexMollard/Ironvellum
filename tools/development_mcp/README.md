@@ -62,6 +62,17 @@ The macOS and Linux entry uses the virtual environment's `bin/python`.
 }
 ```
 
+For Codex, register the stdio server with the CLI. Substitute your absolute
+checkout path, and use `bin/python` on macOS or Linux:
+
+```powershell
+codex mcp add ironvellum-dev --env PYTHONUTF8=1 -- "C:/src/Ironvellum/tools/development_mcp/.venv/Scripts/python.exe" -m ironvellum_mcp --repo-root "C:/src/Ironvellum"
+```
+
+Set `tool_timeout_sec = 120.0` inside the resulting
+`[mcp_servers.ironvellum-dev]` section of your Codex `config.toml`. Restart the
+client if the newly registered tools do not appear in an existing chat.
+
 If your client does not inherit your SDK settings, set `IRONVELLUM_ADB` in the
 server entry's `env` object. The server starts without contacting ADB. The client
 owns stdin and stdout, and server logs go to stderr.
