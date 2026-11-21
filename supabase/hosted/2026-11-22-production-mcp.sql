@@ -7,6 +7,10 @@ set local search_path = pg_catalog, ironvellum_mcp;
 create table if not exists ironvellum_mcp.config (
   singleton boolean primary key default true check(singleton), resource_url text not null
 );
+-- Historical schema-36 databases can already contain encrypted registrations.
+-- A null marker is deliberately not adopted while any of those clients exist.
+alter table ironvellum_mcp.config add column if not exists key_verification text
+  check (key_verification ~ '^[a-f0-9]{64}$');
 create table if not exists ironvellum_mcp.clients (
   id text primary key, name text not null, ciphertext text not null, redirects text[] not null,
   created_at timestamptz not null default now()
@@ -450,37 +454,67 @@ $$;
 create or replace function public.ironvellum_mcp_gateway(p_operation text,p_args jsonb) returns jsonb
 language plpgsql security definer set search_path=pg_catalog,ironvellum_mcp,pg_temp as $$
 declare a alias for p_args; k text[]; c clients; r requests; urls text[]; selected text[]; ru text;
-        current_url text; item jsonb; cleaned int:=0; affected int; admitted_at timestamptz;
+        current_url text; current_key text; item jsonb; catalogue jsonb; installed jsonb; matches boolean;
+        cleaned int:=0; affected int; admitted_at timestamptz;
 begin
- if jsonb_typeof(a) is distinct from 'object' or octet_length(a::text)>(case when p_operation='catalogue.put' then 1048576 else 65536 end) then return fail('invalid_arguments'); end if;
+ if jsonb_typeof(a) is distinct from 'object' or octet_length(a::text)>(case when p_operation='configuration.configure' then 1048576 else 65536 end) then return fail('invalid_arguments'); end if;
  k:=case p_operation
- when 'configuration.get' then '{}'::text[] when 'configuration.configure' then '{resourceUrl}'::text[]
- when 'client.get' then '{clientId}'::text[] when 'client.register' then '{clientId,clientName,metadataCiphertext,redirectUris}'::text[]
+ when 'configuration.get' then '{}'::text[] when 'configuration.configure' then '{resourceUrl,keyVerification,previousCatalogueHash,catalogue}'::text[]
+ when 'client.get' then '{clientId}'::text[] when 'client.register' then '{clientId,clientName,metadataCiphertext,redirectUris,keyVerification}'::text[]
  when 'authorization.create' then '{clientId,redirectUri,redirectUriExplicit,resourceUrl,scopes,codeChallenge,state}'::text[]
  when 'authorization.get' then '{requestId}'::text[] when 'code.load' then '{clientId,codeHash}'::text[]
  when 'code.exchange' then '{clientId,resourceUrl,redirectUri,codeChallenge,codeHash,accessHash,refreshHash}'::text[]
  when 'access.load' then '{accessHash}'::text[] when 'refresh.load' then '{clientId,refreshHash}'::text[]
  when 'refresh.exchange' then '{clientId,resourceUrl,refreshHash,newRefreshHash,accessHash,scopes}'::text[]
  when 'token.revoke' then '{clientId,tokenHash}'::text[] when 'tool.call' then '{accessHash,tool,args}'::text[]
- when 'catalogue.put' then '{schemaVersion,movements}'::text[] when 'prune' then '{}'::text[] end;
+ when 'prune' then '{}'::text[] end;
  if k is null then return fail('invalid_operation'); end if;
  if not shape(a,k) then return fail('invalid_arguments'); end if;
- select resource_url into current_url from config;
+ select resource_url,key_verification into current_url,current_key from config;
  ru:=a->>'resourceUrl';
  case p_operation
  when 'configuration.get' then
    -- Bytewise key order and NUL-separated UTF-8 text are independent of collation/JSON formatting.
-   return (select ok(jsonb_build_object('resourceUrl',current_url,'catalogueCount',count(*),
+   return (select ok(jsonb_build_object('resourceUrl',(select resource_url from config),
+     'keyVerification',(select key_verification from config),'catalogueCount',count(*),
      'catalogueHash',encode(sha256(convert_to('ironvellum-movements-v1','UTF8') || decode('00','hex') ||
        coalesce(string_agg(convert_to(key,'UTF8') || decode('00','hex') || convert_to(name,'UTF8') ||
          decode('00','hex') || convert_to(metric,'UTF8') || decode('00','hex'),''::bytea
          order by convert_to(key,'UTF8')),''::bytea)),'hex'))) from movements);
  when 'configuration.configure' then
-   if not redirect_ok(ru) or ru !~ '^https?://[^/?#]+/mcp$' then return fail('invalid_arguments'); end if;
-   insert into config(resource_url) values(ru) on conflict(singleton) do nothing;
-   if (select resource_url from config)<>ru then return fail('conflict'); end if;
-   return ok(jsonb_build_object('resourceUrl',ru));
+   catalogue:=a->'catalogue';
+   if not redirect_ok(ru) or ru !~ '^https?://[^/?#]+/mcp$'
+      or not str(a,'keyVerification',64,64) or a->>'keyVerification' !~ '^[a-f0-9]{64}$'
+      or not (a->'previousCatalogueHash'='null' or (str(a,'previousCatalogueHash',64,64) and a->>'previousCatalogueHash' ~ '^[a-f0-9]{64}$'))
+      or not shape(catalogue,'{schemaVersion,movements}') or catalogue->'schemaVersion' is distinct from '1'::jsonb
+      or jsonb_typeof(catalogue->'movements') is distinct from 'array' then return fail('invalid_arguments'); end if;
+   if jsonb_array_length(catalogue->'movements') not between 1 and 5000 then return fail('invalid_arguments'); end if;
+   for item in select value from jsonb_array_elements(catalogue->'movements') loop
+     if not shape(item,'{key,name,metric}') or not str(item,'key',1,128) or not str(item,'name',1,128)
+        or item->>'key'<>lower(btrim(item->>'name')) or not str(item,'metric',1,32)
+        or item->>'metric' not in ('REPS','HOLD','DURATION','DISTANCE_TIME','ATTEMPTS_GRADE') then return fail('invalid_arguments'); end if;
+   end loop;
+   if exists(select from jsonb_array_elements(catalogue->'movements') x group by x->>'key' having count(*)>1) then return fail('conflict'); end if;
+   -- Lock even an empty singleton, then read the committed winner in a fresh statement.
+   perform pg_advisory_xact_lock(36,3);
+   installed:=public.ironvellum_mcp_gateway('configuration.get','{}');
+   if (installed->>'resourceUrl' is not null and installed->>'resourceUrl'<>ru)
+      or (installed->>'keyVerification' is not null and installed->>'keyVerification'<>a->>'keyVerification')
+      or (installed->>'keyVerification' is null and exists(select from clients)) then return fail('conflict'); end if;
+   matches:=(installed->>'catalogueCount')::int=jsonb_array_length(catalogue->'movements') and not exists(
+     select from jsonb_array_elements(catalogue->'movements') x left join movements m on m.key=x->>'key'
+       where m.name is distinct from x->>'name' or m.metric is distinct from x->>'metric');
+   if not matches then
+     if ((installed->>'catalogueCount')::int>0 or installed->>'keyVerification' is not null or a->>'previousCatalogueHash' is not null)
+        and installed->>'catalogueHash' is distinct from a->>'previousCatalogueHash' then return fail('conflict'); end if;
+     delete from movements;
+     insert into movements select x->>'key',x->>'name',x->>'metric' from jsonb_array_elements(catalogue->'movements') x;
+   end if;
+   insert into config(resource_url,key_verification) values(ru,a->>'keyVerification')
+     on conflict(singleton) do update set key_verification=excluded.key_verification where config.key_verification is null;
+   return public.ironvellum_mcp_gateway('configuration.get','{}');
  when 'client.register' then
+   if current_key is null or current_key is distinct from a->>'keyVerification' then return fail('conflict'); end if;
    if not str(a,'clientId',1,128) or a->>'clientId' !~ '^[A-Za-z0-9._~-]+$' or not str(a,'clientName',1,100)
       or a->>'clientName' ~ '[[:cntrl:]]' or not str(a,'metadataCiphertext',1,32768)
       or jsonb_typeof(a->'redirectUris') is distinct from 'array' then return fail('invalid_arguments'); end if;
@@ -520,18 +554,7 @@ begin
    return ok(jsonb_build_object('requestId',r.id,'clientId',r.client_id,'clientName',(select name from clients where id=r.client_id),
      'resourceUrl',r.resource_url,'redirectUri',r.redirect_uri,'redirectUriExplicit',r.redirect_explicit,'scopes',r.scopes,
      'state',r.state,'codeChallenge',r.challenge,'expiresAtMs',ms(r.expires_at)));
- when 'catalogue.put' then
-   if a->'schemaVersion' is distinct from '1'::jsonb or jsonb_typeof(a->'movements') is distinct from 'array' then return fail('invalid_arguments'); end if;
-   if jsonb_array_length(a->'movements') not between 1 and 5000 then return fail('invalid_arguments'); end if;
-   for item in select value from jsonb_array_elements(a->'movements') loop
-     if not shape(item,'{key,name,metric}') or not str(item,'key',1,128) or not str(item,'name',1,128)
-        or item->>'key'<>lower(btrim(item->>'name')) or not str(item,'metric',1,32)
-        or item->>'metric' not in ('REPS','HOLD','DURATION','DISTANCE_TIME','ATTEMPTS_GRADE') then return fail('invalid_arguments'); end if;
-   end loop;
-   lock table movements in exclusive mode;
-   delete from movements;
-   insert into movements select x->>'key',x->>'name',x->>'metric' from jsonb_array_elements(a->'movements') x;
-   return ok(jsonb_build_object('count',jsonb_array_length(a->'movements')));
+
  when 'prune' then
    update drafts set status='expired',changed_at=clock_timestamp() where id in
     (select id from drafts where status='pending' and expires_at<=now() limit 200 for update skip locked);

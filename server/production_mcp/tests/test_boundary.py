@@ -74,10 +74,65 @@ async def test_wrong_key_and_swapped_client_metadata_fail_closed(settings):
         db.clients[a["client_id"]]["metadataCiphertext"] = db.clients[b["client_id"]]["metadataCiphertext"]
         resp = await c.post("/revoke", data={"client_id": a["client_id"], "token": TOKEN})
         assert resp.status_code == 503
-    async with session(replace(settings, encryption_key=Fernet.generate_key().decode()), db) as c:
-        resp = await c.post("/revoke", data={"client_id": b["client_id"], "token": TOKEN})
-        assert resp.status_code == 503
+    wrong = replace(settings, encryption_key=Fernet.generate_key().decode())
+    app = create_app(wrong, db)
+    with pytest.raises(Failure, match="unavailable"):
+        async with app.router.lifespan_context(app):
+            pytest.fail("Wrong-key process served traffic")
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url=ORIGIN) as c:
+        assert (await c.get("/healthz")).status_code == 503
+    assert len(db.clients) == 2
     assert not any(op == "token.revoke" for op, _ in db.calls)
+
+
+@pytest.mark.anyio
+async def test_tls_proxy_keeps_sensitive_routes_on_the_canonical_path(settings):
+    db = Gateway()
+    app = create_app(settings, db)
+    # TLS terminates at the proxy and its backend socket uses HTTP.
+    async with (
+        app.router.lifespan_context(app),
+        httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url=ORIGIN.replace("https:", "http:")
+        ) as c,
+    ):
+        for path in [
+            "/mcp",
+            "/token",
+            "/revoke",
+            "/register",
+            "/authorize",
+            "/consent/api/00000000-0000-4000-a000-000000000001",
+        ]:
+            response = await c.post(path + "/", headers={"x-forwarded-proto": "http"})
+            assert response.status_code == 404 and "location" not in response.headers
+            direct = await c.post(path)
+            assert direct.status_code in {400, 401, 403, 415}
+            assert "location" not in direct.headers
+
+
+@pytest.mark.anyio
+async def test_consent_head_and_authorization_error_preserve_callback_query(settings):
+    db = Gateway()
+    callback = CALLBACK + "?route=&flag=a&copy=%2F&flag=b"
+    async with session(settings, db) as c:
+        info = await register(c)
+        path, _ = await begin(c, info["client_id"])
+        head = await c.head(path)
+        assert head.status_code == 200 and head.content == b""
+        assert not db.decisions
+        reg = await c.post("/register", json={"redirect_uris": [callback], "scope": "training:read"})
+        params = {
+            **authorize_params(reg.json()["client_id"]),
+            "redirect_uri": callback,
+            "scope": "progress:read",
+        }
+        for explicit in (True, False):
+            if not explicit:
+                del params["redirect_uri"]
+            response = await c.get("/authorize", params=params)
+            assert response.status_code == 302
+            assert response.headers["location"] == callback + "&error=invalid_scope&state=return+state"
 
 
 @pytest.mark.anyio

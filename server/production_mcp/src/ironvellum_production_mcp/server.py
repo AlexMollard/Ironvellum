@@ -28,13 +28,17 @@ def fingerprint(manifest):
     return len(manifest["movements"]), h.hexdigest()
 
 
-async def verify_backend(settings, backend, expected):
-    current = await backend.gateway("configuration.get", {})
+def verify_configuration(settings, current, expected):
     if (
         current.get("resourceUrl") != settings.resource
+        or current.get("keyVerification") != settings.key_verification
         or (current.get("catalogueCount"), current.get("catalogueHash")) != expected
     ):
         raise Failure("unavailable")
+
+
+async def verify_backend(settings, backend, expected):
+    verify_configuration(settings, await backend.gateway("configuration.get", {}), expected)
 
 
 def create_app(settings, backend=None):
@@ -62,6 +66,9 @@ def create_app(settings, backend=None):
         ),
     )
 
+    # A TLS-terminating proxy may use HTTP internally. Never redirect a POST using that scheme.
+    transport.router.redirect_slashes = False
+
     @asynccontextmanager
     async def lifespan(app):
         try:
@@ -79,7 +86,7 @@ def create_app(settings, backend=None):
     async def failure(request, exc):
         return error_response(exc.code)
 
-    return Starlette(
+    app = Starlette(
         routes=[
             Route("/healthz", health),
             *auth_routes.routes(provider, settings, auth, consent),
@@ -93,3 +100,5 @@ def create_app(settings, backend=None):
         middleware=[Middleware(HttpBoundary, issuer=settings.issuer)],
         exception_handlers={Failure: failure},
     )
+    app.router.redirect_slashes = False
+    return app

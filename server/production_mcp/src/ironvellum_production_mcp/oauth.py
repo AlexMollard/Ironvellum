@@ -68,6 +68,7 @@ class Provider(OAuthAuthorizationServerProvider[AuthorizationCode, RefreshToken,
                 "clientId": info.client_id,
                 "clientName": info.client_name or "Unverified client",
                 "metadataCiphertext": ciphertext,
+                "keyVerification": self.settings.key_verification,
                 "redirectUris": [str(uri) for uri in info.redirect_uris],
             },
         )

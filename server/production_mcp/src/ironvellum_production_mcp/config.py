@@ -1,4 +1,5 @@
 import base64
+import hmac
 import json
 import os
 import re
@@ -69,6 +70,12 @@ class Settings:
     def resource(self):
         return self.issuer + "/mcp"
 
+    @property
+    def key_verification(self):
+        # The private DB stores a domain-separated HMAC, never the Fernet key.
+        message = b"ironvellum-mcp-key-verification-v1\0" + self.resource.encode("utf-8")
+        return hmac.digest(base64.urlsafe_b64decode(self.encryption_key), message, "sha256").hex()
+
     @classmethod
     def from_env(cls):
         def required(name):
@@ -111,6 +118,8 @@ class Settings:
                     or not isinstance(row["name"], str)
                     or not 1 <= len(row["name"]) <= 128
                     or "\0" in row["name"]
+                    or not isinstance(row["key"], str)
+                    or not 1 <= len(row["key"]) <= 128
                     or row["key"] != row["name"].strip().lower()
                     or row["key"] in keys
                     or row["metric"] not in {"REPS", "HOLD", "DURATION", "DISTANCE_TIME", "ATTEMPTS_GRADE"}

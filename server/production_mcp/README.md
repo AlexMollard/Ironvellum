@@ -20,17 +20,21 @@ Set the [example environment variables](.env.example) through your process envir
 | `IRONVELLUM_MCP_PUBLIC_KEY` | Browser-safe Supabase publishable key or legacy anon-role JWT |
 | `IRONVELLUM_MCP_GATEWAY_KEY` | Private gateway-role credential. The default schema grant uses service_role. |
 | `IRONVELLUM_MCP_ENCRYPTION_KEY` | Persistent Fernet key, generated from 32 random bytes, base64url encoded. Store in the host secret manager and retain across restarts and replicas. |
-| `IRONVELLUM_MCP_MANIFEST` | Path to the generated, version-1 Seed movement manifest in the contract's catalogue.put format |
+| `IRONVELLUM_MCP_MANIFEST` | Path to the generated, version-1 Seed movement manifest with schemaVersion and movements |
 | `IRONVELLUM_MCP_LOOPBACK` | Set to `1` explicitly to permit HTTP origins on localhost, 127.0.0.1 or [::1] during development |
 
-After applying schema 36 to an approved backend, install the manifest and pin the canonical resource. Repeating configuration with the same deployment is supported. The service and health check compare both the count and fingerprint of the installed catalogue against the local manifest.
+After applying schema 36 to an approved backend, use explicit setup to pin the canonical resource and encryption-key marker and install the manifest in one database transaction. Repeating the same configuration is safe. Startup and readiness compare the installed resource, key marker, catalogue count and catalogue fingerprint with the local settings.
 
 ```sh
 ironvellum-production-mcp configure-backend
 ironvellum-production-mcp serve --host 127.0.0.1 --port 8000
 ```
 
-For a container, bind to its internal interface and terminate HTTPS at a trusted proxy. Preserve the canonical Host. Keep query strings, headers and bodies out of proxy and application telemetry. The CLI disables HTTP access logging and SDK diagnostics. Starting the server performs read-only checks. A missing manifest or mismatched database configuration prevents startup. Keep the encryption key stable. A different key prevents previously registered clients from authenticating and invalidates browser consent cookies.
+For a container, bind to its internal interface and terminate HTTPS at a trusted proxy. Preserve the canonical Host. The service rejects trailing-slash aliases for its endpoints. Keep query strings, headers and bodies out of proxy and application telemetry. The CLI disables HTTP access logging and SDK diagnostics. Starting the server performs read-only checks. A missing manifest or mismatch in the resource, key or catalogue prevents startup.
+
+To change the catalogue deliberately, read `catalogueHash` from the private `configuration.get` response, verify the intended changes, point the manifest setting to the replacement, then run `ironvellum-production-mcp configure-backend --previous-catalogue-hash <observed-sha256>`. A concurrent change causes a conflict. Update serving replicas to the matching manifest.
+
+Back up the Fernet key in a secret manager. If a replica has a different key, restore the established key. Both setup and readiness refuse a replacement key. For a database with legacy encrypted registrations and an unset verification marker, stop admission and drain old replicas. A reviewed recovery must authenticate every existing client record with the backed-up key and verify its client identity before binding that key. Rotation requires a coordinated offline re-encryption and marker update across all replicas. If the key is lost, old client secrets are unrecoverable. A separate operator-approved recovery must revoke affected grants, preserve user data, and have clients register and users reconnect. The configuration command cannot perform a destructive reset.
 
 ## Protocol and browser integration
 

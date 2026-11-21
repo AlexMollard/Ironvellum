@@ -1,8 +1,8 @@
+import base64
 import json
 from pathlib import Path
 
 import pytest
-from cryptography.fernet import Fernet
 from ironvellum_production_mcp.config import Settings
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,12 +18,12 @@ def anyio_backend():
 @pytest.fixture
 def settings(tmp_path):
     manifest = tmp_path / "manifest.json"
-    manifest.write_text(json.dumps(FIX["gateway"]["catalogue.put"]["args"]))
+    manifest.write_text(json.dumps(FIX["gateway"]["configuration.configure"]["args"]["catalogue"]))
     return Settings(
         ORIGIN,
         "https://backend.example",
         "sb_publishable_test",
         "private-test",
-        Fernet.generate_key().decode(),
+        base64.urlsafe_b64encode(bytes(range(32))).decode(),
         manifest,
     )

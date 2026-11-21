@@ -1,7 +1,7 @@
 import base64
 import json
 import re
-from urllib.parse import parse_qsl, unquote, urlencode, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, unquote, urlencode, urlsplit
 
 from mcp.server.auth.handlers.authorize import AuthorizationHandler
 from mcp.server.auth.handlers.metadata import MetadataHandler
@@ -256,13 +256,22 @@ def routes(provider, settings, auth, consent):
                 detail = pairs.pop("error_description", None)
                 if pairs["error"] == "temporarily_unavailable":
                     return error_response("rate_limited" if detail == "rate_limited" else "unavailable")
-                # Preserve the registered callback and its existing query, including repeated keys.
-                query = [
-                    (k, v)
-                    for k, v in parse_qsl(target.query, keep_blank_values=True)
-                    if k != "error_description"
-                ]
-                return RedirectResponse(urlunsplit(target._replace(query=urlencode(query))), 302)
+                # The SDK has validated the redirect but rewrites its query. Recover the exact
+                # registered string and append only its safe protocol response parameters.
+                try:
+                    client = await provider.get_client(form["client_id"])
+                except Failure as exc:
+                    return error_response(exc.code)
+                registered = [str(uri) for uri in client.redirect_uris or ()] if client else []
+                callback = form.get("redirect_uri")
+                if callback is None and len(registered) == 1:
+                    callback = registered[0]
+                if callback not in registered:
+                    return error_response("invalid_request")
+                fields = {"error": pairs["error"]}
+                if "state" in form:
+                    fields["state"] = form["state"]
+                return RedirectResponse(callback + ("&" if "?" in callback else "?") + urlencode(fields), 302)
             if not location.startswith(settings.issuer + "/consent/"):
                 return error_response("unavailable")
             consent.bind(response, target.path.rsplit("/", 1)[1])

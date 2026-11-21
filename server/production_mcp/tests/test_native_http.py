@@ -1,5 +1,6 @@
 """Network HTTP and PostgreSQL integration, using disposable stub identities and fixed RPCs."""
 
+import asyncio
 import base64
 import json
 import os
@@ -80,7 +81,7 @@ def disposable_network(work):
         if not backend.startswith("http://127.0.0.1:"):
             raise RuntimeError("Install locked native SQL test dependencies first")
         manifest = work / "manifest.json"
-        catalogue = FIX["gateway"]["catalogue.put"]["args"]
+        catalogue = FIX["gateway"]["configuration.configure"]["args"]["catalogue"]
         # Deliberately unsorted UTF-8 records exercise Python/PostgreSQL fingerprint compatibility.
         rows = [{"key": "é press", "name": "é Press", "metric": "REPS"}, *catalogue["movements"]]
         manifest.write_text(json.dumps({**catalogue, "movements": rows}))
@@ -211,6 +212,28 @@ async def call(origin, token, name, args, mode="2026-07-28"):
         Client(streamable_http_client(origin + "/mcp", http_client=http), mode=mode) as sdk,
     ):
         return (await sdk.call_tool(name, args)).structured_content
+
+
+@pytest.mark.anyio
+async def test_wrong_key_replica_and_setup_refused_with_existing_clients(network):
+    service, _, _ = network
+    async with httpx.AsyncClient(base_url=service.origin, trust_env=False) as c:
+        info = await register(c, "client_secret_post")
+        env = {**service.env, "IRONVELLUM_MCP_ENCRYPTION_KEY": Fernet.generate_key().decode()}
+        for args in [["serve", "--port", "0"], ["configure-backend"]]:
+            failed = await asyncio.to_thread(
+                subprocess.run,
+                [sys.executable, "-m", "ironvellum_production_mcp", *args],
+                check=False,
+                env=env,
+                timeout=15,
+                capture_output=True,
+            )
+            assert failed.returncode != 0
+            assert env["IRONVELLUM_MCP_ENCRYPTION_KEY"].encode() not in failed.stderr
+        assert (await c.get("/healthz")).status_code == 200
+        granted = await issue(c, info)
+        assert set(granted["scope"].split()) == set(SCOPES)
 
 
 @pytest.mark.anyio

@@ -72,7 +72,7 @@ class Consent:
         row = await self.backend.gateway("authorization.get", {"requestId": request_id})
         if row["resourceUrl"] != self.settings.resource or row["requestId"] != request_id:
             raise Failure("invalid_request")
-        if request.method == "GET":
+        if request.method in {"GET", "HEAD"}:
             return JSONResponse(
                 {
                     "requestId": request_id,
