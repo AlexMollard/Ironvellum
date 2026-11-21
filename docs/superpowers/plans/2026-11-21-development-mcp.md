@@ -26,6 +26,7 @@ Implementers may not spawn agents. Each task ends with tests and a coherent comm
 
 **Files:** Create debug DevelopmentStatusReceiver.kt and Android DevelopmentStatusTest.kt;
 modify debug AndroidManifest.xml, NotificationPreviewReceiver.kt and NotificationPreviewTest.kt.
+Create tools/development_mcp/protocol-fixtures.json with the spec's canonical replies.
 **Interfaces:** Produce exact READ_STATUS/IVMCP1 schema and optional scenario/reply
 contract from the spec. Existing SHOW with no extras still posts six previews.
 
@@ -54,6 +55,8 @@ implementer's choice. Production functions are synchronous and callable by SDK.
 - [ ] Write failing fake-ADB tests for every Review Focus case belonging to this
   adapter, serial validation, offline/unauthorized handling, request ID correlation,
   malformed Base64/JSON, explicit override errors, timeouts and bounded output.
+  A continuously foreground app with a system overlay remains a documented
+  display screenshot; do not claim app-window pixel isolation.
 - [ ] Implement each operation using the exact design bounds and bridge protocol.
   Import/reuse the existing emulator lock with a 30-second acquisition bound;
   use stderr redirection for lock diagnostics and ensure it releases on error.

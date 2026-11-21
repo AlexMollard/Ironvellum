@@ -33,9 +33,13 @@ training edits are outside v1.
   with a letter or digit. Reject leading options and all shell metacharacters.
 - Resolve ADB from `IRONVELLUM_ADB`, Android SDK environment/local properties,
   or PATH. An explicit invalid executable configuration fails visibly.
-- Screenshots and UI inspection require Ironvellum foreground before and after
-  capture. Do not return another app's screen. Screenshot is a PNG image MCP
-  content block, maximum 16 MiB. No default screenshot files or telemetry.
+- Screenshots and UI inspection check Ironvellum foreground before and after
+  capture and reject if another app is foreground at either check. A screenshot
+  is a device-display capture, not an isolated app-window capture: Android status
+  bars, notifications, keyboards and other overlays can appear. State that scope
+  in the tool description and README; these checks cannot guarantee every pixel
+  belongs to Ironvellum. Screenshot is a PNG image MCP content block, maximum
+  16 MiB. No default screenshot files or telemetry.
 - UI inspection uses a fresh UUID path under `/data/local/tmp/`, reads it only
   after a successful dump, removes only that path in cleanup, and returns only
   Ironvellum nodes. Cap XML at 2 MiB and returned nodes at 2,000. Redact password
@@ -81,10 +85,30 @@ An unavailable debug bridge is reported distinctly from no active workout.
 Activity names are not claimed to identify an exact Compose navigation route;
 the UI inspection tool provides visible controls and headings instead.
 
-The notification receiver may add the optional `scenario` extra. Preserve its
-existing no-extra SHOW behavior and six stable preview IDs 0–5. Its ordered
-reply uses the same encoded envelope and reports submitted IDs and blocked
-channels. Unknown actions/scenarios must not post cards or clear real alerts.
+The notification receiver adds optional `scenario` and `request_id` extras.
+Preserve existing no-extra SHOW behavior. Map stable IDs: comment=0, reaction=1,
+group_goal=2, batch=3, rest=4, accepted=5. `all` requests IDs 0–5. CLEAR always
+clears all previews; supplying a different scenario to CLEAR is invalid.
+The host always supplies a valid request ID. A manual legacy call may omit it
+and receive `requestId: null`; a supplied malformed ID fails before side effects.
+
+The ordered reply uses `IVMCP1:` plus Base64 UTF-8 JSON with `schemaVersion: 1`,
+`requestId`, `ok`, `operation: "notification_preview"`, `action: "show"|"clear"`,
+`scenario`, `requestedIds`, `submittedIds`, and `blocked`. Each blocked entry is
+exactly `id`, `channelId`, `reason`, where reason is `permission_denied`,
+`channel_blocked` or `app_notifications_disabled`. For CLEAR, requestedIds is
+0–5, submittedIds and blocked are empty. Error replies have `ok: false` and
+`error: {code: ...}` with no raw exception text; fixed codes are invalid_request,
+unsupported_action, unknown_scenario or status_unavailable. Preserve the existing
+real PendingIntent/inbox-isolation guarantees. Unknown actions/scenarios must
+not post cards or clear real alerts.
+
+Task 1 writes `tools/development_mcp/protocol-fixtures.json` containing canonical
+status/show/blocked/clear/error examples for Task 2's parser tests. Broadcast
+submission is not observation: the host polls tagged notification keys for up to
+three seconds, returning requested/submitted/observed/blocked IDs. A submitted
+ID not observed by the deadline, or a clear that leaves preview IDs, raises a
+typed preview_delivery_timeout error carrying those IDs, never silent success.
 
 ## Validation and delivery
 
