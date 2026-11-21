@@ -156,6 +156,25 @@ object InboxNotifier {
         val fresh = coalesce(newer, tributed.toSet())
         if (fresh.isEmpty() || !canNotify(context)) return
 
+        val notification = build(context, fresh)
+        // Checked inline where lint can see it: hasPermission() is the same
+        // test, but lint only trusts a checkSelfPermission in this function.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        if (!isCurrent() || !canNotify(context)) return
+        NotificationManagerCompat.from(context).notify(Notifications.ID_ALLIES, notification)
+        p.edit {
+            putLong(KEY_MARK, maxOf(floor, newer.first().occurredAtMs))
+            putString(KEY_TRIBUTED, rememberTributes(tributed, fresh).joinToString("\n"))
+        }
+    }
+
+    /** Builds the card only; callers own delivery bookkeeping. Items are newest first. */
+    internal fun build(context: Context, fresh: List<InboxItem>, contentIntent: PendingIntent? = null): android.app.Notification {
+        require(fresh.isNotEmpty())
         val latest = line(fresh.first()).asString(context)
         val title = if (fresh.size == 1) {
             title(fresh.first())
@@ -165,7 +184,7 @@ object InboxNotifier {
         val intent = Intent(context, MainActivity::class.java)
             .putExtra(Notifications.EXTRA_OPEN_TAB, Notifications.TAB_INBOX)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        val pending = PendingIntent.getActivity(
+        val pending = contentIntent ?: PendingIntent.getActivity(
             context, Notifications.REQUEST_ALLIES, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -183,7 +202,7 @@ object InboxNotifier {
                 }.asString(context),
             )
             .build()
-        val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_ALLIES)
+        return NotificationCompat.Builder(context, Notifications.CHANNEL_ALLIES)
             .setSmallIcon(R.drawable.ic_reminder)
             .setColor(Notifications.accent(context))
             .setContentTitle(title)
@@ -195,19 +214,6 @@ object InboxNotifier {
             .setAutoCancel(true)
             .setOnlyAlertOnce(true)
             .build()
-        // Checked inline where lint can see it: hasPermission() is the same
-        // test, but lint only trusts a checkSelfPermission in this function.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
-        if (!isCurrent() || !canNotify(context)) return
-        NotificationManagerCompat.from(context).notify(Notifications.ID_ALLIES, notification)
-        p.edit {
-            putLong(KEY_MARK, maxOf(floor, newer.first().occurredAtMs))
-            putString(KEY_TRIBUTED, rememberTributes(tributed, fresh).joinToString("\n"))
-        }
     }
 
     /**

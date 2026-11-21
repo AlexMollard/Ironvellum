@@ -2,6 +2,7 @@ package com.ironvellum.app
 
 import com.ironvellum.app.data.Units
 import android.app.Notification
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -73,11 +74,11 @@ class WorkoutSessionService : Service() {
             }
         }
 
-        internal fun restOverNotification(context: Context, sessionId: Long, sets: List<SessionSet>): Notification {
+        internal fun restOverNotification(context: Context, sessionId: Long, sets: List<SessionSet>, contentIntent: PendingIntent? = null): Notification {
             val next = Supersets.nextSet(sets)
             val prefs = TrialPrefs(context)
             val channel = Notifications.restChannel(context, prefs.restAlert)
-            val pending = LiveWorkoutNotification.trialIntent(context, sessionId, seal = false, requestCode = Notifications.REQUEST_REST_OVER)
+            val pending = contentIntent ?: LiveWorkoutNotification.trialIntent(context, sessionId, seal = false, requestCode = Notifications.REQUEST_REST_OVER)
             val public = NotificationCompat.Builder(context, channel)
                 .setSmallIcon(R.drawable.ic_reminder)
                 .setColor(Notifications.accent(context))
