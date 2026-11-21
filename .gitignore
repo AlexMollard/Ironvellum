@@ -9,6 +9,9 @@ captures/
 .tmp/
 __pycache__/
 tools/exercise_art/.venv/
+tools/development_mcp/.venv/
+tools/development_mcp/dist/
+tools/development_mcp/src/*.egg-info/
 .claude/worktrees/
 .superpowers/
 *.log

@@ -34,6 +34,8 @@ import subprocess
 import sys
 import threading
 import time
+from collections.abc import Callable
+from uuid import uuid4
 
 SDK = pathlib.Path(os.path.expandvars(r"%LOCALAPPDATA%\Android\Sdk"))
 ADB = SDK / "platform-tools" / "adb.exe"
@@ -242,21 +244,39 @@ BARE_STALE = 30 * 60       # a bare mkdir lock has no owner to ask; past this ag
 WAIT_POLL = 15
 
 
-def pid_alive(pid: int) -> bool:
-    out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH", "/FO", "CSV"],
-                         capture_output=True, text=True).stdout
-    return f'"{pid}"' in out
+def pid_alive(pid: int, *, timeout_s: float = 2) -> bool:
+    """Return False only when the process is known to be absent."""
+    if pid <= 0 or pid > 2**32 - 1 or timeout_s <= 0:
+        return True
+    if os.name != "nt":
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return False
+        except (OSError, OverflowError):
+            pass
+        return True
+    try:
+        result = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH", "/FO", "CSV"],
+                                capture_output=True, text=True, errors="replace", timeout=timeout_s)
+    except (OSError, subprocess.TimeoutExpired):
+        return True
+    return not (
+        result.returncode == 0
+        and result.stdout.strip() == "INFO: No tasks are running which match the specified criteria."
+    )
 
 
 def lock_owner(path: str) -> dict | None:
     try:
         with open(os.path.join(path, OWNER), encoding="utf-8") as handle:
-            return json.load(handle)
+            owner = json.load(handle)
+            return owner if isinstance(owner, dict) else None
     except (OSError, ValueError):
         return None
 
 
-def lock_stale(path: str) -> str | None:
+def lock_stale(path: str, *, timeout_s: float = 2) -> str | None:
     """Why the lock at `path` has no live holder, or None when it is held (or gone)."""
     now = time.time()
     owner = lock_owner(path)
@@ -267,32 +287,41 @@ def lock_stale(path: str) -> str | None:
         beat = now - os.stat(os.path.join(path, OWNER)).st_mtime
     except OSError:
         return None  # released between the checks
-    if owner.get("host") == socket.gethostname() and not pid_alive(int(owner.get("pid", 0))):
-        return f"owner pid {owner.get('pid')} is not running"
+    pid = owner.get("pid")
+    if type(pid) is int and owner.get("host") == socket.gethostname() and not pid_alive(pid, timeout_s=timeout_s):
+        return f"owner pid {pid} is not running"
     if beat > HEARTBEAT_STALE:
         return f"no heartbeat for {beat / 60:.0f} min"
     return None
 
 
-def lock_take_over(reason: str) -> None:
+def lock_take_over(reason: str, *, timeout_s: float = 2, log: Callable[[str], None] = print) -> bool:
     """Remove a dead holder's lock. The rename is atomic, so of several waiters only one gets the directory;
     it then re-checks what it renamed, and puts the lock back if a live holder slipped in first."""
-    grave = f"{LOCK}.stale-{os.getpid()}"
+    grave = f"{LOCK}.stale-{uuid4().hex}"
     try:
         os.rename(LOCK, grave)
     except OSError:
-        return
-    if lock_stale(grave) is None:
+        return False
+    if lock_stale(grave, timeout_s=timeout_s) is None:
         try:
             os.rename(grave, LOCK)
         except OSError:
             pass
-        return
-    print(f"-- emulator lock was stale ({reason}); taking it over")
+        return False
+    log(f"-- emulator lock was stale ({reason}); taking it over")
     shutil.rmtree(grave, ignore_errors=True)
+    return True
 
 
-def lock_acquire(label: str) -> None:
+def lock_acquire(
+    label: str, *, timeout_s: float | None = None, log: Callable[[str], None] = print,
+) -> dict:
+    deadline = None if timeout_s is None else time.monotonic() + timeout_s
+
+    def remaining() -> float:
+        return float("inf") if deadline is None else max(0, deadline - time.monotonic())
+
     os.makedirs(os.path.dirname(LOCK), exist_ok=True)
     waited = False
     while True:
@@ -300,30 +329,43 @@ def lock_acquire(label: str) -> None:
             os.mkdir(LOCK)
             break
         except FileExistsError:
-            reason = lock_stale(LOCK)
-            if reason:
-                lock_take_over(reason)
+            reason = lock_stale(LOCK, timeout_s=min(2, remaining()))
+            if reason and remaining() > 0 and lock_take_over(reason, timeout_s=min(2, remaining()), log=log):
                 continue
+            if remaining() <= 0:
+                raise TimeoutError("Timed out waiting for the shared emulator lock")
             if not waited:
                 owner = lock_owner(LOCK) or {}
-                print(f"-- {LOCK} is held by {owner.get('label', 'another session')}"
-                      f" (pid {owner.get('pid', '?')}); waiting")
+                log(f"-- {LOCK} is held by {owner.get('label', 'another session')}"
+                    f" (pid {owner.get('pid', '?')}); waiting")
                 waited = True
-            time.sleep(WAIT_POLL)
-    record = {"pid": os.getpid(), "host": socket.gethostname(), "label": label, "started": time.time()}
-    with open(os.path.join(LOCK, OWNER), "w", encoding="utf-8") as handle:
-        json.dump(record, handle)
+            time.sleep(min(WAIT_POLL, remaining()))
+            if remaining() <= 0:
+                raise TimeoutError("Timed out waiting for the shared emulator lock")
+    record = {"pid": os.getpid(), "host": socket.gethostname(), "label": label, "started": time.time(),
+              "lease": uuid4().hex}
+    try:
+        with open(os.path.join(LOCK, OWNER), "w", encoding="utf-8") as handle:
+            json.dump(record, handle)
+    except BaseException:
+        shutil.rmtree(LOCK, ignore_errors=True)
+        raise
+    return record
 
 
-def lock_release() -> None:
+def lock_release(record: dict | None = None) -> None:
     """Drop the lock, but only when it is ours: a taken-over holder must not delete its successor's."""
     owner = lock_owner(LOCK)
-    if owner and owner.get("pid") == os.getpid() and owner.get("host") == socket.gethostname():
+    if record is not None:
+        ours = owner == record
+    else:
+        ours = owner and owner.get("pid") == os.getpid() and owner.get("host") == socket.gethostname()
+    if ours:
         shutil.rmtree(LOCK, ignore_errors=True)
 
 
 @contextlib.contextmanager
-def emulator_lock(label: str):
+def emulator_lock(label: str, *, timeout_s: float | None = None, log: Callable[[str], None] = print):
     """Hold the emulator lock that parallel sessions share.
 
     An install, `pm clear` or uninstall from one session kills another's suite part way through. The lock is
@@ -331,32 +373,39 @@ def emulator_lock(label: str):
     SIGTERM (turned into SystemExit so the finally runs). A kill -9 or closed console cannot be caught; those
     leave a lock whose pid is gone or whose heartbeat stopped, and the next waiter takes it over.
     """
-    lock_acquire(label)
+    record = lock_acquire(label, timeout_s=timeout_s, log=log)
     done = threading.Event()
 
     def beat() -> None:
         while not done.wait(HEARTBEAT):
             try:
-                os.utime(os.path.join(LOCK, OWNER))
+                if lock_owner(LOCK) == record:
+                    os.utime(os.path.join(LOCK, OWNER))
             except OSError:
                 pass  # a waiter's rename-and-restore can land mid-beat; the next beat finds it again
 
     def stop(signum, frame) -> None:
         raise SystemExit(128 + signum)
 
+    def release() -> None:
+        lock_release(record)
+
     previous = {}
     if threading.current_thread() is threading.main_thread():
         for name in ("SIGTERM", "SIGBREAK"):
             if hasattr(signal, name):
                 previous[getattr(signal, name)] = signal.signal(getattr(signal, name), stop)
-    atexit.register(lock_release)
-    threading.Thread(target=beat, daemon=True).start()
+    atexit.register(release)
+    heartbeat = threading.Thread(target=beat, daemon=True)
     try:
+        heartbeat.start()
         yield
     finally:
         done.set()
-        lock_release()
-        atexit.unregister(lock_release)
+        if heartbeat.ident is not None:
+            heartbeat.join()
+        release()
+        atexit.unregister(release)
         for signum, handler in previous.items():
             signal.signal(signum, handler)
 
