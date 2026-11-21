@@ -75,6 +75,12 @@ Web development and rebuilding exercise art do: run
 
 Two flavours share one application id. `foss` is the F-Droid and GitHub build and shows support links. `play` adds Google sign-in and shows none; build it with `assemblePlayDebug`. The app needs Android 10 (API 29) or newer.
 
+## Local development MCP
+
+The [development MCP setup](../tools/development_mcp/README.md) covers device
+selection, app status, screenshots, UI inspection, notification previews
+and diagnostics from a local MCP client.
+
 ## Notification previews
 
 Debug builds can show six sample notification cards without creating workouts,
