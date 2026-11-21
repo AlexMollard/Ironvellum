@@ -5,6 +5,7 @@ store listing; this is the whole list.
 
 ## Unreleased
 
+- Update Android build and Compose dependencies and compile against SDK 37.1.
 - Load the Social feed in smaller pages and show its cached cards while refreshing when you return.
 - Show the estimated finish time in a running workout, using your phone’s clock format.
 - Put Inbox and your training profile in the Social header, keep the bottom navigation in comment threads, and use icons for reactions and sending comments.

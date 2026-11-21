@@ -32,6 +32,7 @@ Install these SDK packages with SDK Manager:
 
 - `platform-tools`
 - `platforms;android-37.0`
+- `platforms;android-37.1` for the phone app's Compose dependencies
 - `build-tools;36.0.0` for the runner's artifact inspector
 - `build-tools;37.0.0` for the current Android build toolchain
 

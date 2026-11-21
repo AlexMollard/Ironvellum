@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui
 
 import android.util.Log
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
@@ -278,17 +279,24 @@ class AccessibilityChecksTest {
      * shows neither, so a missing feature is skipped rather than failed.
      */
     private fun openSurface(label: String): Boolean {
+        // Room emissions can change Today's Veil card from full to compact.
+        // Wait for its tap target to settle before injecting screen coordinates.
+        var previousBounds: Rect? = null
         // Screens that wait for Room before drawing (the Ledger) answer on a
         // real thread, not the paused compose clock: poll a little real time.
         repeat(SURFACE_POLLS) {
             compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
             val byText = compose.onAllNodesWithText(label, substring = true)
             if (byText.fetchSemanticsNodes().isNotEmpty()) {
-                byText.onFirst().performClick()
-                return true
+                val bounds = byText.onFirst().fetchSemanticsNode().boundsInRoot
+                if (bounds == previousBounds) {
+                    byText.onFirst().performClick()
+                    return true
+                }
+                previousBounds = bounds
             }
             val byDescription = compose.onAllNodesWithContentDescription(label, substring = true)
-            if (byDescription.fetchSemanticsNodes().isNotEmpty()) {
+            if (byText.fetchSemanticsNodes().isEmpty() && byDescription.fetchSemanticsNodes().isNotEmpty()) {
                 byDescription.onFirst().performClick()
                 return true
             }
