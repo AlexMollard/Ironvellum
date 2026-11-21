@@ -10,6 +10,8 @@ import androidx.core.app.NotificationCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.data.Notifications
+import com.ironvellum.app.data.TrialPrefs
+import com.ironvellum.app.domain.RestAlert
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.RestTimer
 import com.ironvellum.app.domain.SessionSet
@@ -61,6 +63,40 @@ class LiveWorkoutNotificationTest {
         LiveWorkoutNotification.build(context, 7L, sets, "Push A", System.currentTimeMillis() - 60_000, rest, live = live, showLifts = showLifts)
 
     private fun Notification.text(key: String) = extras.getCharSequence(key)?.toString()
+
+    @Test
+    fun restFinishedRespectsTheLockScreenPrivacySettingOnEveryAlertChannel() {
+        val prefs = TrialPrefs(context)
+        val oldPrivacy = prefs.showLiftsOnLock
+        val oldAlert = prefs.restAlert
+        try {
+            for (themed in listOf(false, true)) {
+                Words.setThemed(app, themed)
+                for (alert in RestAlert.entries) {
+                    prefs.restAlert = alert
+                    for (show in listOf(false, true)) {
+                        prefs.showLiftsOnLock = show
+                        val notification = WorkoutSessionService.restOverNotification(context, 7L, sets)
+                        assertEquals("Rest is over", notification.text(Notification.EXTRA_TITLE))
+                        assertTrue(notification.text(Notification.EXTRA_TEXT)!!.contains("Overhead Press"))
+                        assertEquals(Notifications.restChannel(context, alert), notification.channelId)
+                        assertEquals(if (show) Notification.VISIBILITY_PUBLIC else Notification.VISIBILITY_PRIVATE, notification.visibility)
+                        if (!show) {
+                            val public = checkNotNull(notification.publicVersion)
+                            assertEquals("Rest is over", public.text(Notification.EXTRA_TITLE))
+                            assertEquals("Unlock to see your set.", public.text(Notification.EXTRA_TEXT))
+                            assertFalse(public.extras.toString().contains("Overhead Press"))
+                            assertFalse(public.extras.toString().contains("47.5"))
+                            assertEquals(notification.contentIntent, public.contentIntent)
+                        }
+                    }
+                }
+            }
+        } finally {
+            prefs.showLiftsOnLock = oldPrivacy
+            prefs.restAlert = oldAlert
+        }
+    }
 
     @Test
     fun theLiveUpdateAsksToBePromotedAndShowsSetProgressOnTheChip() {

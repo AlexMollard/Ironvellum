@@ -156,45 +156,7 @@ object InboxNotifier {
         val fresh = coalesce(newer, tributed.toSet())
         if (fresh.isEmpty() || !canNotify(context)) return
 
-        val latest = line(fresh.first()).asString(context)
-        val title = if (fresh.size == 1) {
-            UiText.themed(R.string.notification_inbox_title_one, R.string.notification_inbox_title_one__t)
-        } else {
-            UiText.themedPlural(R.plurals.notification_inbox_title_many, R.plurals.notification_inbox_title_many__t, fresh.size)
-        }.asString(context)
-        val intent = Intent(context, MainActivity::class.java)
-            .putExtra(Notifications.EXTRA_OPEN_TAB, Notifications.TAB_INBOX)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        val pending = PendingIntent.getActivity(
-            context, Notifications.REQUEST_ALLIES, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        // The lock screen shows who and what was said to anyone holding the
-        // phone; it gets only that something arrived.
-        val public = NotificationCompat.Builder(context, Notifications.CHANNEL_ALLIES)
-            .setSmallIcon(R.drawable.ic_reminder)
-            .setColor(Notifications.accent(context))
-            .setContentTitle(title)
-            .setContentText(
-                if (fresh.size == 1) {
-                    UiText.themed(R.string.notification_inbox_public_one, R.string.notification_inbox_public_one__t)
-                } else {
-                    UiText.themed(R.string.notification_inbox_public_many, R.string.notification_inbox_public_many__t)
-                }.asString(context),
-            )
-            .build()
-        val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_ALLIES)
-            .setSmallIcon(R.drawable.ic_reminder)
-            .setColor(Notifications.accent(context))
-            .setContentTitle(title)
-            .setContentText(latest)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(latest))
-            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-            .setPublicVersion(public)
-            .setContentIntent(pending)
-            .setAutoCancel(true)
-            .setOnlyAlertOnce(true)
-            .build()
+        val notification = build(context, fresh)
         // Checked inline where lint can see it: hasPermission() is the same
         // test, but lint only trusts a checkSelfPermission in this function.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -208,6 +170,50 @@ object InboxNotifier {
             putLong(KEY_MARK, maxOf(floor, newer.first().occurredAtMs))
             putString(KEY_TRIBUTED, rememberTributes(tributed, fresh).joinToString("\n"))
         }
+    }
+
+    /** Builds the card only; callers own delivery bookkeeping. Items are newest first. */
+    internal fun build(context: Context, fresh: List<InboxItem>, contentIntent: PendingIntent? = null): android.app.Notification {
+        require(fresh.isNotEmpty())
+        val latest = line(fresh.first()).asString(context)
+        val title = if (fresh.size == 1) {
+            title(fresh.first())
+        } else {
+            UiText.themedPlural(R.plurals.notification_inbox_title_many, R.plurals.notification_inbox_title_many__t, fresh.size)
+        }.asString(context)
+        val intent = Intent(context, MainActivity::class.java)
+            .putExtra(Notifications.EXTRA_OPEN_TAB, Notifications.TAB_INBOX)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val pending = contentIntent ?: PendingIntent.getActivity(
+            context, Notifications.REQUEST_ALLIES, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        // The lock screen shows who and what was said to anyone holding the
+        // phone; it gets only that something arrived.
+        val public = NotificationCompat.Builder(context, Notifications.CHANNEL_ALLIES)
+            .setSmallIcon(R.drawable.ic_reminder)
+            .setColor(Notifications.accent(context))
+            .setContentTitle(UiText.themed(R.string.notification_inbox_title_one, R.string.notification_inbox_title_one__t).asString(context))
+            .setContentText(
+                if (fresh.size == 1) {
+                    UiText.themed(R.string.notification_inbox_public_one, R.string.notification_inbox_public_one__t)
+                } else {
+                    UiText.themed(R.string.notification_inbox_public_many, R.string.notification_inbox_public_many__t)
+                }.asString(context),
+            )
+            .build()
+        return NotificationCompat.Builder(context, Notifications.CHANNEL_ALLIES)
+            .setSmallIcon(R.drawable.ic_reminder)
+            .setColor(Notifications.accent(context))
+            .setContentTitle(title)
+            .setContentText(latest)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(latest))
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(public)
+            .setContentIntent(pending)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .build()
     }
 
     /**
@@ -226,6 +232,21 @@ object InboxNotifier {
             .takeLast(TRIBUTE_MEMORY)
 
     private fun tributeKey(item: InboxItem.NewReaction) = "${item.sessionId}:${item.actorId}"
+
+    private fun title(item: InboxItem): UiText = when (item) {
+        is InboxItem.FriendRequest -> UiText.themed(R.string.notification_inbox_title_request, R.string.notification_inbox_title_request__t)
+        is InboxItem.RequestAccepted -> UiText.themed(R.string.notification_inbox_title_accepted, R.string.notification_inbox_title_accepted__t)
+        is InboxItem.NewComment -> UiText.themed(R.string.notification_inbox_title_comment, R.string.notification_inbox_title_comment__t)
+        is InboxItem.NewReply -> UiText.res(R.string.notification_inbox_title_reply)
+        is InboxItem.NewReaction -> UiText.themed(R.string.notification_inbox_title_reaction, R.string.notification_inbox_title_reaction__t)
+        is InboxItem.NewCircleMember -> UiText.themed(R.string.notification_inbox_title_joined, R.string.notification_inbox_title_joined__t)
+        is InboxItem.CircleGoalMet -> UiText.themed(R.string.notification_inbox_title_goal, R.string.notification_inbox_title_goal__t)
+        is InboxItem.CircleNotice -> when (item.change) {
+            CircleChange.LEFT -> UiText.themed(R.string.notification_inbox_title_left, R.string.notification_inbox_title_left__t)
+            CircleChange.KEEPER -> UiText.themed(R.string.notification_inbox_title_keeper, R.string.notification_inbox_title_keeper__t)
+            CircleChange.REMOVED -> UiText.themed(R.string.notification_inbox_title_removed, R.string.notification_inbox_title_removed__t)
+        }
+    }
 
     private fun line(item: InboxItem): UiText = when (item) {
         is InboxItem.NewComment ->

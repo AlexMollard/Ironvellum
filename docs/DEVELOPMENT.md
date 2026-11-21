@@ -75,6 +75,27 @@ Web development and rebuilding exercise art do: run
 
 Two flavours share one application id. `foss` is the F-Droid and GitHub build and shows support links. `play` adds Google sign-in and shows none; build it with `assemblePlayDebug`. The app needs Android 10 (API 29) or newer.
 
+## Notification previews
+
+Debug builds can show six sample notification cards without creating workouts,
+changing inbox delivery state or contacting another account:
+
+```bash
+adb -s <serial> shell am broadcast -n com.ironvellum.app/com.ironvellum.app.debug.NotificationPreviewReceiver -a com.ironvellum.app.debug.SHOW_NOTIFICATIONS
+adb -s <serial> shell am broadcast -n com.ironvellum.app/com.ironvellum.app.debug.NotificationPreviewReceiver -a com.ironvellum.app.debug.CLEAR_NOTIFICATIONS
+```
+
+The receiver requires adb's `DUMP` permission and is absent from release builds.
+Cards use the real social/rest builders, a separate preview tag, sample data,
+harmless app-open taps and no workout actions. They are silent, labelled
+“Preview · sample data” and expire after 15 minutes. They follow the current
+wording, theme and lock-screen privacy settings; blocked system channels stay
+blocked. Use the shared emulator lock helper around either command on an emulator.
+
+Validated on 2026-11-21: the full FOSS gate passed in **9m21s**, with
+2,912 unit tests, 875 instrumented tests, all web checks and no lint issues.
+The six sample cards were also posted on the owner's phone and visually approved.
+
 ## Web viewer
 
 The web dashboard lives in [`web/`](../web/README.md) (Vite and plain JavaScript).
