@@ -26,6 +26,9 @@ Implementers may not spawn agents. Each task ends with tests and a coherent comm
 
 **Files:** Create debug DevelopmentStatusReceiver.kt and Android DevelopmentStatusTest.kt;
 modify debug AndroidManifest.xml, NotificationPreviewReceiver.kt and NotificationPreviewTest.kt.
+Use a non-exported debug initialization ContentProvider to register the DUMP-
+guarded status receiver dynamically. Status reads use registered-only package
+broadcasts and never cold-start the app. Test manifest isolation and delivery.
 Create tools/development_mcp/protocol-fixtures.json with the spec's canonical replies.
 **Interfaces:** Produce exact READ_STATUS/IVMCP1 schema and optional scenario/reply
 contract from the spec. Existing SHOW with no extras still posts six previews.
@@ -35,6 +38,8 @@ contract from the spec. Existing SHOW with no extras still posts six previews.
   existing real PendingIntent and inbox preference tests.
 - [ ] Implement the specified bridge with bounded IO/goAsync, sanitized errors,
   manifest DUMP guards and fixed scenario-to-existing-ID mapping.
+  Status uses a five-second onReceive watchdog independent of IO scheduling;
+  test a stalled status operation still completes with status_unavailable.
 - [ ] Run only the scoped relevant Android tests through tools/device.py lock,
   pinned to emulator-5554. Never use a phone. If it is absent, ask root to boot
   the installed AVD; do not change device settings. Record actual RED/GREEN.

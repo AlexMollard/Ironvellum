@@ -61,6 +61,10 @@ training edits are outside v1.
   Existing plain/themed/localized notification resources remain authoritative.
 - Keep all new Android bridge code under `src/debug`, protected by DUMP and
   absent from release manifests. Never serialize an entire workout/session.
+  Status requests must not cold-start the app: register the status receiver
+  dynamically during normal app startup through a debug-only non-exported
+  initialization provider. Host status broadcasts use `--receiver-registered-only`
+  and `-p com.ironvellum.app`, never an explicit manifest status component.
 - Pin dependencies. Test MCP transport with a real stdio client in both modern
   and legacy protocol modes, including error and image results.
 - Root owns the final Android gate; only the Task 1 implementer may run scoped
@@ -71,10 +75,13 @@ training edits are outside v1.
 
 ## App status bridge
 
-`com.ironvellum.app.debug.DevelopmentStatusReceiver` accepts only action
+The dynamically registered `com.ironvellum.app.debug.DevelopmentStatusReceiver` accepts only action
 `com.ironvellum.app.debug.READ_STATUS`, with `request_id` matching exactly 32
 lowercase hex characters. An ordered broadcast returns `IVMCP1:` followed by
-Base64 UTF-8 JSON. Use `goAsync`, IO work and a five-second timeout.
+Base64 UTF-8 JSON. Use `goAsync`, IO work and a five-second response deadline
+measured from onReceive with an independent completion watchdog. A stalled IO
+operation must not prevent the error reply/finish. Host commands also have an
+overall timeout; do not claim control over Android's pre-delivery scheduling.
 
 Envelope: `schemaVersion: 1`, echoed `requestId`, `ok: true`, `app` containing
 only `package`, `versionName`, `versionCode`, `debuggable`, and a separate
@@ -87,6 +94,9 @@ Do not return private notes, account tokens, historical workouts or backend URLs
 
 The host combines this with package/version and foreground information from ADB.
 An unavailable debug bridge is reported distinctly from no active workout.
+If the process is absent or the dynamically registered bridge does not answer,
+report live state unavailable without launching the app. A process-exit race
+cannot cold-start it because registered-only delivery has no manifest fallback.
 Activity names are not claimed to identify an exact Compose navigation route;
 the UI inspection tool provides visible controls and headings instead.
 
