@@ -5,7 +5,7 @@ or run Supabase yourself with Docker. Configure it under **Settings → Advanced
 → Use my own backend**. Training then syncs to that project, not the shared
 Ironvellum backend. No custom Android build is required.
 
-This guide describes the current schema **33**. The app requires **31** for
+This guide describes the current schema **36**. The app requires **31** for
 core sync; **32** adds friend-safe workout cards and **33** adds rolling
 seven-day workout-XP rankings.
 
@@ -52,7 +52,7 @@ universal upgrade migration for older installations**.
 Verify in the SQL editor:
 
 ```sql
-select public.schema_version();  -- 35
+select public.schema_version();  -- 36
 ```
 
 **Never run [`reset.sql`](reset.sql) on a project holding real data.** It
@@ -75,6 +75,7 @@ not every historical patch on top of a current baseline.
   invalid session clocks/XP, preserves existing oversized backups while
   bounding new writes, and retains departed-circle bonuses for collection.
 - **Schema 34:** apply `2026-11-20-rolling-lift-marks.sql` for schema 35.
+- **Schema 35:** apply [the production MCP patch](hosted/2026-11-22-production-mcp.sql) for schema 36. It adds private capability storage and app consent, connection, and draft-review RPCs. Core sync still requires schema 31. The patch does not deploy the separate HTTPS service. See the [local SQL checks and deployment prerequisites](../server/production_mcp/README.md).
   After a lifter syncs from a current client, each tier expires independently.
   Older clients continue to publish their single weekly mark.
 - **Earlier schemas:** review the earlier patches and their prerequisites
@@ -107,7 +108,7 @@ client key configured by your Supabase deployment. **Never use a secret or
 
 1. Open **Settings → Advanced → Use my own backend**.
 2. Enter the URL and public key, then press **Test**.
-3. Expect **Backend ready** with schema 35. **Save** is enabled only for the
+3. Expect **Backend ready** with schema 36. **Save** is enabled only for the
    tested URL/key pair on a supported schema.
 4. Press **Save** and confirm **Switch**. You are signed out of the old
    backend; your local training stays on the phone.

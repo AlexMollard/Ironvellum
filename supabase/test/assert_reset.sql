@@ -9,6 +9,9 @@ do $$
 declare
     stray text;
 begin
+    if to_regnamespace('ironvellum_mcp') is not null then
+        raise exception 'ASSERTION FAILED: reset left the private MCP schema';
+    end if;
     if (select count(*) from auth.users) <> 0 then
         raise exception 'ASSERTION FAILED: reset left % row(s) in auth.users', (select count(*) from auth.users);
     end if;

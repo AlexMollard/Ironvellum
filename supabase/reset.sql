@@ -34,6 +34,16 @@ begin;
 -- while their triggers and functions still exist.
 delete from auth.users;
 
+-- The capability service owns this private schema and these seven public RPCs.
+drop function if exists public.ironvellum_mcp_gateway(text,jsonb);
+drop function if exists public.ironvellum_mcp_connections();
+drop function if exists public.ironvellum_mcp_revoke_connection(uuid);
+drop function if exists public.ironvellum_mcp_drafts(integer);
+drop function if exists public.ironvellum_mcp_draft(uuid);
+drop function if exists public.ironvellum_mcp_review_draft(uuid,text,text);
+drop function if exists public.ironvellum_mcp_consent(uuid,boolean,text[],text);
+drop schema if exists ironvellum_mcp cascade;
+
 drop trigger if exists on_auth_user_created on auth.users;
 
 drop view if exists public.lift_board;
