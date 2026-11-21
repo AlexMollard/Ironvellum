@@ -72,9 +72,9 @@ class OperationTest(unittest.TestCase):
 
     def preview(self, action, scenario, reply):
         self.begin()
-        self.cmd("shell", "am", "broadcast", "--user", "10", "-n", f"{PKG}/.debug.NotificationPreviewReceiver",
+        self.cmd("shell", "am", "broadcast", "--user", "10", "--receiver-registered-only", "-p", PKG,
                  "-a", f"{PKG}.debug.{action.upper()}_NOTIFICATIONS", "--es", "scenario", scenario,
-                 "--es", "request_id", NONCE, stdout=bridge(reply))
+                 "--es", "request_id", NONCE, stdout=bridge(reply) if reply is not None else b"Broadcast completed: result=0\n")
 
     def keys(self, stdout, **kwargs):
         self.cmd("shell", "cmd", "notification", "list", stdout=stdout, **kwargs)
@@ -262,6 +262,16 @@ class OperationTest(unittest.TestCase):
         result = self.tools.inspect_screen(SERIAL)
         self.assertEqual(len(result["nodes"]), 2000)
         self.assertTrue(result["truncated"])
+
+    def test_preview_reports_a_missing_registered_receiver_without_retrying(self):
+        # The process may be cold or exit immediately before Android delivers.
+        for action in ("show", "clear"):
+            with self.subTest(action=action):
+                self.preview(action, "all", None)
+                with self.assertRaises(DevelopmentError) as failure:
+                    self.tools.preview_notifications(SERIAL, action)
+                self.assertEqual(failure.exception.code, "preview_bridge_unavailable")
+                self.assertIn("running debug", str(failure.exception))
 
     def test_preview_validates_input_before_contacting_device(self):
         for action, scenario in (("post", "all"), ("show", "all;id"), ("clear", "accepted")):

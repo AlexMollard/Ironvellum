@@ -359,7 +359,7 @@ class _Device:
             raise DevelopmentError("invalid_preview", "Select a supported preview action and scenario")
         return self._run(
             "shell", "am", "broadcast", "--user", str(self.user),
-            "-n", f"{PACKAGE}/.debug.NotificationPreviewReceiver",
+            "--receiver-registered-only", "-p", PACKAGE,
             "-a", f"{PACKAGE}.debug.{PREVIEW_ACTIONS[action]}",
             "--es", "scenario", scenario, "--es", "request_id", request.hex,
             timeout=12, max_stdout=64 * 1024,

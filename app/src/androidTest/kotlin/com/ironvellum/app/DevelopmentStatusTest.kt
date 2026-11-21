@@ -57,12 +57,16 @@ class DevelopmentStatusTest {
 
     private fun reply(requestId: String? = REQUEST_ID): JSONObject {
         val requestExtra = requestId?.let { " --es request_id $it" }.orEmpty()
-        val wire = shell("$statusCommand -a $READ_STATUS$requestExtra")
+        return registeredReply(READ_STATUS, requestExtra)
+    }
+
+    private fun registeredReply(action: String, extras: String): JSONObject {
+        val wire = shell("$registeredCommand -a $action$extras")
         val data = Regex("data=\"(IVMCP1:[A-Za-z0-9+/=]+)\"").find(wire)?.groupValues?.get(1)
         return decodeDevelopmentReply(data.orEmpty())
     }
 
-    private val statusCommand = "am broadcast --receiver-registered-only -p ${context.packageName}"
+    private val registeredCommand = "am broadcast --receiver-registered-only -p ${context.packageName}"
 
     private fun shell(command: String): String {
         val pipe = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
@@ -84,8 +88,27 @@ class DevelopmentStatusTest {
         assertEquals("", orderedDevelopmentResult(context, statusIntent()))
         assertTrue(reply().getBoolean("ok"))
 
-        val missing = shell("$statusCommand -a com.ironvellum.app.debug.NOT_STATUS --es request_id $REQUEST_ID")
+        val missing = shell("$registeredCommand -a com.ironvellum.app.debug.NOT_STATUS --es request_id $REQUEST_ID")
         assertFalse(missing, missing.contains("IVMCP1:"))
+    }
+
+    @Test fun registeredPreviewsRequireShellPermissionAndAnswerBothActions() {
+        val request = " --es request_id $REQUEST_ID"
+        try {
+            for (action in listOf("SHOW", "CLEAR")) {
+                val name = "com.ironvellum.app.debug.${action}_NOTIFICATIONS"
+                val intent = Intent(name).setPackage(context.packageName)
+                    .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
+                    .putExtra("request_id", REQUEST_ID)
+                assertEquals("", orderedDevelopmentResult(context, intent))
+                val result = registeredReply(name, request)
+                assertEquals(true, result.getBoolean("ok"))
+                assertEquals(REQUEST_ID, result.getString("requestId"))
+                assertEquals(action.lowercase(), result.getString("action"))
+            }
+        } finally {
+            shell("$registeredCommand -a com.ironvellum.app.debug.CLEAR_NOTIFICATIONS$request")
+        }
     }
 
     @Test fun returnsOnlyAppFieldsWhenNoWorkoutIsLive() = runBlocking {

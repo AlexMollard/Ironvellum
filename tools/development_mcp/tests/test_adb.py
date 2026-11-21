@@ -2,6 +2,7 @@ from pathlib import Path
 from contextlib import redirect_stderr
 from io import StringIO
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -108,6 +109,45 @@ class AdbTest(unittest.TestCase):
             self.assertEqual(lock.lock_owner(lock.LOCK)["label"], "local gate")
         self.assertEqual(error.exception.code, "emulator_lock_timeout")
 
+    def test_linked_checkout_resolves_the_same_lock_as_its_main_checkout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            main = Path(directory) / "main"
+            linked = Path(directory) / "linked checkout"
+            subprocess.run(["git", "init", "--quiet", str(main)], check=True)
+            subprocess.run(["git", "-C", str(main), "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                            "-c", "commit.gpgsign=false", "commit", "--quiet", "--allow-empty", "-m", "Fixture"],
+                           check=True, capture_output=True)
+            subprocess.run(["git", "-C", str(main), "worktree", "add", "--quiet", "--detach", str(linked)],
+                           check=True, capture_output=True)
+            for checkout in (main, linked):
+                (checkout / "tools").mkdir()
+                shutil.copyfile(ROOT / "tools/device.py", checkout / "tools/device.py")
+                self.assertEqual(Path(_lock_module(checkout).LOCK), main / ".tmp/emulator.lock")
+
+    def test_unresolved_linked_checkout_fails_before_selected_device_commands(self):
+        for failure in ("rejected", "stalled"):
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory) / "linked"
+                (root / "tools").mkdir(parents=True)
+                (root / ".git").write_text("gitdir: ../main/.git/worktrees/linked\n", encoding="utf-8")
+                shutil.copyfile(ROOT / "tools/device.py", root / "tools/device.py")
+
+                def git_lookup(*args, **kwargs):
+                    if failure == "stalled":
+                        raise subprocess.TimeoutExpired("private command", 1)
+                    return subprocess.CompletedProcess(args, 128, "", "private error")
+
+                client = AdbClient(root, sys.executable, runner=self.runner)
+                self.runner.expect(("devices", "-l"), DEVICES)
+                with patch("subprocess.run", side_effect=git_lookup) as lookup:
+                    with self.assertRaises(DevelopmentError) as error:
+                        with client.device(SERIAL):
+                            self.fail("Unresolved checkout acquired a private lock")
+                    self.assertLessEqual(lookup.call_args.kwargs["timeout"], 5)
+                self.assertEqual(error.exception.code, "emulator_lock_unavailable")
+                self.assertNotIn("private", str(error.exception))
+                self.assertFalse((root / ".tmp").exists())
+
     def test_adb_timeout_and_nonzero_exit_are_safe(self):
         for code, kwargs in (
             ("adb_timeout", {"error": subprocess.TimeoutExpired("secret command", 1)}),
@@ -125,7 +165,7 @@ class AdbTest(unittest.TestCase):
     def test_explicit_invalid_configuration_does_not_fall_back_to_path(self):
         with tempfile.TemporaryDirectory() as directory:
             missing = str(Path(directory) / "not adb")
-            with patch.dict(os.environ, {"IRONVELLUM_ADB": missing}), patch(
+            with patch.object(os, "environ", {**os.environ, "IRONVELLUM_ADB": missing}), patch(
                 "ironvellum_mcp.adb.shutil.which", return_value=sys.executable
             ):
                 for executable in (None, missing, ""):
@@ -143,7 +183,7 @@ class AdbTest(unittest.TestCase):
             escaped = str(sdk).replace("\\", "\\\\").replace(":", "\\:")
             (root / "local.properties").write_text(f"sdk.dir={escaped}\n", encoding="utf-8")
             result = subprocess.CompletedProcess([], 0, DEVICES, b"")
-            with patch.dict(os.environ, {}, clear=True), patch(
+            with patch.object(os, "environ", {}), patch(
                 "ironvellum_mcp.adb._run_bounded", return_value=result
             ) as run:
                 AdbClient(root).list_devices()

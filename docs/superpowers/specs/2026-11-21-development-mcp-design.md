@@ -64,10 +64,11 @@ training edits are outside v1.
   Existing plain/themed/localized notification resources remain authoritative.
 - Keep all new Android bridge code under `src/debug`, protected by DUMP and
   absent from release manifests. Never serialize an entire workout/session.
-  Status requests must not cold-start the app: register the status receiver
-  dynamically during normal app startup through a debug-only non-exported
-  initialization provider. Host status broadcasts use `--receiver-registered-only`
-  and `-p com.ironvellum.app`, never an explicit manifest status component.
+  Status and notification preview requests require a running app. Register both
+  receivers dynamically through a debug-only non-exported initialization
+  provider. Host broadcasts use `--receiver-registered-only` and
+  `-p com.ironvellum.app`. Keep the DUMP-protected manifest preview component
+  for explicit manual broadcasts.
 - Pin dependencies. Test MCP transport with a real stdio client in both modern
   and legacy protocol modes, including error and image results.
 - Root owns the final Android gate; only the Task 1 implementer may run scoped

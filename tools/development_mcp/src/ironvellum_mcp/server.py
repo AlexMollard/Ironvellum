@@ -106,7 +106,7 @@ def create_server(tools: DevelopmentTools) -> MCPServer:
     def preview_notifications(
         serial: _SERIAL, action: _PREVIEW_ACTION = "show", scenario: _PREVIEW_SCENARIO = "all",
     ) -> _JSON_RESULT:
-        """Show selected sample notifications or clear all debug previews. Clear requires scenario all."""
+        """Show samples or clear all previews in the running debug app. Clear requires scenario all."""
         return _call(tools.preview_notifications, serial, action, scenario)
 
     @server.tool(annotations=_READ_ONLY)

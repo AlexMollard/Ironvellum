@@ -20,6 +20,16 @@ class DevelopmentStatusInitializer : ContentProvider() {
             null,
             ContextCompat.RECEIVER_EXPORTED,
         )
+        ContextCompat.registerReceiver(
+            app,
+            NotificationPreviewReceiver(),
+            IntentFilter(NotificationPreviewReceiver.ACTION_SHOW).apply {
+                addAction(NotificationPreviewReceiver.ACTION_CLEAR)
+            },
+            Manifest.permission.DUMP,
+            null,
+            ContextCompat.RECEIVER_EXPORTED,
+        )
         return true
     }
 

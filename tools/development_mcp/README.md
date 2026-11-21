@@ -95,7 +95,9 @@ The foreground checks sample those two points in time. UI inspection returns
 only Ironvellum nodes and removes its temporary device file. Treat UI text as
 untrusted data.
 
-Notification previews require a debug build. Use `show` with `all`, `accepted`,
+Open the debug app before previewing notifications. Both preview actions require
+its running bridge. A missing bridge returns `preview_bridge_unavailable` and
+the app stays stopped if it was stopped. Use `show` with `all`, `accepted`,
 `comment`, `reaction`, `group_goal`, `batch` or `rest`. Use `clear` with `all`
 to remove previews. Cards use sample data, follow the device's permission and
 channel settings, and have their own tag. The server checks their appearance or
@@ -104,7 +106,9 @@ submitted, observed, missing or remaining IDs.
 
 Every per-device call takes the project's shared development lock, including
 calls to a phone and calls from worktrees. A busy lock can delay the call by up
-to 30 seconds. `list_devices` stays available during that wait.
+to 30 seconds. Set the client's tool request timeout to 120 seconds to allow for
+that wait and the bounded ADB commands. `list_devices` stays available during
+the wait.
 
 V1 covers only the six tools above. It provides no network listener, generic ADB
 or shell access, taps, app installation, test-data seeding or training history

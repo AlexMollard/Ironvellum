@@ -27,8 +27,9 @@ Implementers may not spawn agents. Each task ends with tests and a coherent comm
 **Files:** Create debug DevelopmentStatusReceiver.kt and Android DevelopmentStatusTest.kt;
 modify debug AndroidManifest.xml, NotificationPreviewReceiver.kt and NotificationPreviewTest.kt.
 Use a non-exported debug initialization ContentProvider to register the DUMP-
-guarded status receiver dynamically. Status reads use registered-only package
-broadcasts and never cold-start the app. Test manifest isolation and delivery.
+guarded status and preview receivers dynamically. MCP uses registered-only
+package broadcasts for both and never cold-starts the app. Preserve the explicit
+manifest preview component for manual use. Test manifest isolation and delivery.
 Create tools/development_mcp/protocol-fixtures.json with the spec's canonical replies.
 **Interfaces:** Produce exact READ_STATUS/IVMCP1 schema and optional scenario/reply
 contract from the spec. Existing SHOW with no extras still posts six previews.

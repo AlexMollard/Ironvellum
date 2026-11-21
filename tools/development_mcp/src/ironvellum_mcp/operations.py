@@ -307,7 +307,9 @@ class DevelopmentTools:
             request = uuid4()
             reply = _bridge_reply(device.preview(action, scenario, request), request)
             if reply is None:
-                raise DevelopmentError("preview_bridge_unavailable", "The debug notification receiver did not answer")
+                raise DevelopmentError(
+                    "preview_bridge_unavailable", "The preview bridge requires a running debug app with preview support",
+                )
             result = {
                 "serial": serial, "userId": device.user,
                 **_preview_fields(reply, action, scenario), "observedIds": [],

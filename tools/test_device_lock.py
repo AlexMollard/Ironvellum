@@ -4,6 +4,7 @@ Uses a throwaway lock directory, never the real .tmp/emulator.lock.
 """
 
 import os
+import multiprocessing
 import subprocess
 import sys
 import tempfile
@@ -22,6 +23,23 @@ def dead_pid() -> int:
     proc = subprocess.Popen([sys.executable, "-c", "pass"])
     proc.wait()
     return proc.pid
+
+
+def hold_transition(lock_path, scanning, resume, acquired, finish):
+    """Pause one stale check, then hold the new lease until the parent finishes."""
+    device.LOCK = lock_path
+    check = device.lock_stale
+
+    def suspended(path, **kwargs):
+        scanning.set()
+        if not resume.wait(10):
+            raise RuntimeError("Test did not resume stale check")
+        return check(path, **kwargs)
+
+    with patch.object(device, "lock_stale", side_effect=suspended):
+        with device.emulator_lock("child", timeout_s=10, log=lambda _: None):
+            acquired.set()
+            finish.wait(10)
 
 
 class LockTest(unittest.TestCase):
@@ -57,6 +75,93 @@ class LockTest(unittest.TestCase):
         old = time.time() - device.BARE_STALE - 60
         os.utime(device.LOCK, (old, old))
         self.assertIn("no owner", device.lock_stale(device.LOCK))
+
+    def test_competing_takeovers_serialize_before_inspecting_the_canonical_owner(self):
+        self.plant(dead_pid())
+        ctx = multiprocessing.get_context("spawn")
+        scanning, resume, acquired, finish = (ctx.Event() for _ in range(4))
+        worker = ctx.Process(target=hold_transition, args=(device.LOCK, scanning, resume, acquired, finish))
+        worker.start()
+        try:
+            self.assertTrue(scanning.wait(5))
+            with patch.object(device, "lock_stale", wraps=device.lock_stale) as check:
+                started = time.monotonic()
+                with self.assertRaises(TimeoutError):
+                    with device.emulator_lock("competing waiter", timeout_s=0.15, log=lambda _: None):
+                        self.fail("Acquired while ownership transition was in progress")
+                self.assertLess(time.monotonic() - started, 2)
+                check.assert_not_called()
+            resume.set()
+            self.assertTrue(acquired.wait(5))
+            with self.assertRaises(TimeoutError):
+                with device.emulator_lock("third waiter", timeout_s=0, log=lambda _: None):
+                    self.fail("Entered a live successor's lease")
+            self.assertEqual(device.lock_owner(device.LOCK)["pid"], worker.pid)
+        finally:
+            resume.set()
+            finish.set()
+            worker.join(12)
+            if worker.is_alive():
+                worker.terminate()
+                worker.join(5)
+        self.assertEqual(worker.exitcode, 0)
+
+    def test_paused_waiter_rechecks_the_live_successor_at_the_canonical_path(self):
+        self.plant(dead_pid())
+        previous = device.lock_stale(device.LOCK)
+        self.assertIsNotNone(previous)
+        start_check, checking, finish = (threading.Event() for _ in range(3))
+        observed, results = [], []
+        check = device.lock_stale
+
+        def inspect_current(path, **kwargs):
+            observed.append(device.lock_owner(device.LOCK))
+            checking.set()
+            finish.wait(5)
+            return check(path, **kwargs)
+
+        def delayed_takeover():
+            if start_check.wait(5):
+                with patch.object(device, "lock_stale", side_effect=inspect_current):
+                    results.append(device.lock_take_over(previous, log=lambda _: None))
+
+        waiter = threading.Thread(target=delayed_takeover)
+        waiter.start()
+        try:
+            with device.emulator_lock("successor", log=lambda _: None):
+                successor = device.lock_owner(device.LOCK)
+                start_check.set()
+                try:
+                    self.assertTrue(checking.wait(5))
+                    self.assertEqual(observed, [successor])
+                    with self.assertRaises(TimeoutError):
+                        with device.emulator_lock("third", timeout_s=0):
+                            self.fail("Second live holder entered")
+                    self.assertEqual(device.lock_owner(device.LOCK), successor)
+                finally:
+                    finish.set()
+                    waiter.join(5)
+                self.assertEqual(results, [False])
+                self.assertEqual(device.lock_owner(device.LOCK), successor)
+        finally:
+            start_check.set()
+            finish.set()
+            waiter.join(5)
+
+    def test_interrupted_process_releases_the_transition_guard(self):
+        self.plant(dead_pid())
+        ctx = multiprocessing.get_context("spawn")
+        scanning, resume, acquired, finish = (ctx.Event() for _ in range(4))
+        worker = ctx.Process(target=hold_transition, args=(device.LOCK, scanning, resume, acquired, finish))
+        worker.start()
+        try:
+            self.assertTrue(scanning.wait(5))
+        finally:
+            worker.terminate()
+            worker.join(5)
+        self.assertFalse(worker.is_alive())
+        with device.emulator_lock("recovery", timeout_s=2, log=lambda _: None):
+            self.assertEqual(device.lock_owner(device.LOCK)["label"], "recovery")
 
     def test_released_on_exception(self):
         with self.assertRaises(RuntimeError):
