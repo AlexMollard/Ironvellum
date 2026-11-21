@@ -45,6 +45,9 @@ contract from the spec. Existing SHOW with no extras still posts six previews.
 
 **Files:** tools/development_mcp/pyproject.toml; src/ironvellum_mcp/adb.py,
 operations.py, __init__.py; tests/test_adb.py and test_operations.py; .gitignore.
+Modify tools/device.py lock helpers with optional timeout_s/log parameters;
+extend tools/test_device_lock.py. Preserve existing caller defaults. Make PID
+liveness portable for POSIX callers while retaining the Windows tasklist path.
 **Interfaces:** `AdbClient(repo_root: Path, executable: str | None = None)`;
 `DevelopmentTools(adb: AdbClient)` exposes list_devices(), get_app_status(serial),
 capture_screen(serial)->bytes, inspect_screen(serial)->dict,
@@ -59,8 +62,10 @@ implementer's choice. Production functions are synchronous and callable by SDK.
   display screenshot; do not claim app-window pixel isolation.
 - [ ] Implement each operation using the exact design bounds and bridge protocol.
   Import/reuse the existing emulator lock with a 30-second acquisition bound;
-  use stderr redirection for lock diagnostics and ensure it releases on error.
-  Do not alter tools/device.py behavior for other callers without necessity.
+  pass a stderr logger (never globally redirect stdout), one lease per operation,
+  and ensure it releases on error. Add optional timeout_s/log parameters to
+  lock_acquire, lock_take_over and emulator_lock as needed, preserving existing
+  defaults. Test timeout leaves the live holder intact and stdout unpolluted.
 - [ ] Use Python setuptools src layout, package name ironvellum-development-mcp,
   requires-python >=3.11 and dependency mcp==2.3.0. Root may create the isolated
   .venv. Ignore only this tool's .venv and build/install metadata.

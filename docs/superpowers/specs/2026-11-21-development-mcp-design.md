@@ -25,6 +25,10 @@ training edits are outside v1.
 - All emulator operations use the existing shared `device.emulator_lock` from
   the main checkout, including calls through worktrees. Redirect lock messages
   to stderr; stdout belongs exclusively to MCP. Bound lock acquisition to 30s.
+  Add optional `timeout_s` and `log` parameters to the existing lock helpers,
+  preserving default indefinite waits/stdout for existing callers. MCP passes
+  an explicit stderr logger; never globally redirect stdout in a concurrent
+  stdio server. Use one lease per operation, not nested per-command leases.
 - No instrumentation, clear, uninstall, settings changes, generic shell, SQL,
   Health Connect seeding, account messages or history writes in MCP tools.
 - Use checked argument-array subprocess calls, no host shell, no arbitrary
