@@ -733,11 +733,46 @@ if (native)
       err(await gateway('access.load', { accessHash: initial.accessHash }), 'invalid_token')
     }
   })
+test('public authorization creation enforces rolling per-client and service-wide limits', async () => {
+  await admin("update ironvellum_mcp.requests set expires_at=now()-interval '1 day'")
+  const clients = []
+  for (let i = 0; i < 7; i++) clients.push(await register())
+  const template = {
+    resourceUrl,
+    redirectUri,
+    redirectUriExplicit: true,
+    scopes,
+    codeChallenge: challenge,
+    state: null,
+  }
+  const args = (clientId) => ({ ...template, clientId })
+  for (let i = 0; i < 19; i++) {
+    const admission = ok(await gateway('authorization.create', args(clients[0])))
+    if (i === 0) ok(await consent(admission.requestId, false, [], null))
+  }
+  if (native) {
+    const params = ['authorization.create', args(clients[0])]
+    err(
+      await race('service_role', 'select public.ironvellum_mcp_gateway($1,$2) v', params, params),
+      'rate_limited',
+    )
+  } else {
+    ok(await gateway('authorization.create', args(clients[0])))
+    err(await gateway('authorization.create', args(clients[0])), 'rate_limited')
+  }
+  for (const clientId of clients.slice(1, 6)) {
+    for (let i = 0; i < 20; i++) ok(await gateway('authorization.create', args(clientId)))
+  }
+  err(await gateway('authorization.create', args(clients[6])), 'rate_limited')
+  // Move all admissions outside their rolling minute, keeping their requests pending.
+  await admin("update ironvellum_mcp.requests set expires_at=now()+interval '8 minutes'")
+  ok(await gateway('authorization.create', args(clients[6])))
+})
 test('replays baseline and hosted patch, runs existing schema/social assertions', async () => {
   await db.exec('reset role')
   await db.exec(baseline)
   const patch = await file(upgrade)
-  assert.ok(baseline.replaceAll('\r\n','\n').endsWith(patch.replaceAll('\r\n','\n')))
+  assert.ok(baseline.replaceAll('\r\n', '\n').endsWith(patch.replaceAll('\r\n', '\n')))
   await db.exec(patch)
   await db.exec(patch)
   const assertions = await file('supabase/test/assert_all.sql')

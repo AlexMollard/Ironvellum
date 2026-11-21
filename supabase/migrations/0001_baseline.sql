@@ -3078,6 +3078,7 @@ create table if not exists ironvellum_mcp.requests (
   scopes text[] not null, challenge text not null, state text, decided boolean not null default false,
   expires_at timestamptz not null default now()+interval '10 minutes'
 );
+create index if not exists mcp_request_expiry on ironvellum_mcp.requests(expires_at,client_id);
 create table if not exists ironvellum_mcp.grants (
   id uuid primary key default gen_random_uuid(), owner_id uuid not null references auth.users(id) on delete cascade,
   client_id text not null references clients(id), resource_url text not null, scopes text[] not null,
@@ -3501,7 +3502,7 @@ $$;
 create or replace function public.ironvellum_mcp_gateway(p_operation text,p_args jsonb) returns jsonb
 language plpgsql security definer set search_path=pg_catalog,ironvellum_mcp,pg_temp as $$
 declare a alias for p_args; k text[]; c clients; r requests; urls text[]; selected text[]; ru text;
-        current_url text; item jsonb; cleaned int:=0; affected int;
+        current_url text; item jsonb; cleaned int:=0; affected int; admitted_at timestamptz;
 begin
  if jsonb_typeof(a) is distinct from 'object' or octet_length(a::text)>(case when p_operation='catalogue.put' then 1048576 else 65536 end) then return fail('invalid_arguments'); end if;
  k:=case p_operation
@@ -3548,8 +3549,15 @@ begin
    if jsonb_typeof(a->'scopes') is distinct from 'array' then return fail('invalid_scope'); end if;
    selected:=array(select jsonb_array_elements_text(a->'scopes'));
    if not valid_scopes(selected) then return fail('invalid_scope'); end if;
-   insert into requests(client_id,resource_url,redirect_uri,redirect_explicit,scopes,challenge,state)
-     values(c.id,ru,a->>'redirectUri',(a->>'redirectUriExplicit')::boolean,selected,a->>'codeChallenge',a->>'state') returning * into r;
+   -- Expiry is immutable and exactly ten minutes after admission. This index
+   -- window includes already-decided requests until their admission is a minute old.
+   perform pg_advisory_xact_lock(36,2);
+   admitted_at:=clock_timestamp();
+   if (select count(*)>=120 or count(*) filter(where client_id=c.id)>=20
+       from requests where expires_at>admitted_at+interval '9 minutes') then return fail('rate_limited'); end if;
+   insert into requests(client_id,resource_url,redirect_uri,redirect_explicit,scopes,challenge,state,expires_at)
+     values(c.id,ru,a->>'redirectUri',(a->>'redirectUriExplicit')::boolean,selected,a->>'codeChallenge',a->>'state',
+       admitted_at+interval '10 minutes') returning * into r;
    return ok(jsonb_build_object('requestId',r.id,'expiresAtMs',ms(r.expires_at)));
  when 'authorization.get' then
    select * into r from requests where id::text=a->>'requestId' and expires_at>clock_timestamp() and not decided;
