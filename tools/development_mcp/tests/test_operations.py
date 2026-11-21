@@ -372,6 +372,20 @@ class OperationTest(unittest.TestCase):
         self.assertIn("encrypted [REDACTED] inspected", result["lines"])
         self.assertIn("com.ironvellum.app startup complete", result["lines"])
 
+    def test_diagnostics_redacts_a_jwt_after_a_dotted_prefix(self):
+        jwt = b"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.c2lnbmF0dXJl"
+        self.begin()
+        self.package()
+        self.process()
+        self.cmd(
+            "logcat", "--pid=142", "--uid=1010234", "-d", "-t", "100", "-v", "brief",
+            stdout=b"I/Tag( 142): session." + jwt + b" observed com.ironvellum.app\n",
+        )
+        self.process()
+        result = self.tools.get_diagnostics(SERIAL)
+        self.assertFalse(result["truncated"])
+        self.assertEqual(result["lines"], ["session.[REDACTED] observed com.ironvellum.app"])
+
     def test_diagnostics_clamps_line_limit_and_truncates_utf8_tail(self):
         self.begin()
         self.package()

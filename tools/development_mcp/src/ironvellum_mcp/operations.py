@@ -190,16 +190,26 @@ def _ui_nodes(xml: bytes) -> dict:
     return {"nodes": nodes, "truncated": False}
 
 
-def _redact_jwt(match: re.Match[str]) -> str:
-    header = match[1]
-    try:
-        decoded = base64.urlsafe_b64decode(header + "=" * (-len(header) % 4))
-        fields = json.loads(decoded.decode("utf-8"))
-    except (ValueError, RecursionError):
-        return match[0]
-    if isinstance(fields, dict) and isinstance(fields.get("alg"), str):
-        return "[REDACTED]"
-    return match[0]
+def _redact_jwts(text: str) -> str:
+    pieces = []
+    copied_through = 0
+    search_from = 0
+    while match := _JWT.search(text, search_from):
+        header = match[1]
+        # If this is an ordinary dotted prefix, retry at the next segment.
+        # A full candidate may overlap a real token that starts there.
+        search_from = match.end(1) + 1
+        try:
+            decoded = base64.urlsafe_b64decode(header + "=" * (-len(header) % 4))
+            fields = json.loads(decoded.decode("utf-8"))
+        except (ValueError, RecursionError):
+            continue
+        if isinstance(fields, dict) and isinstance(fields.get("alg"), str):
+            pieces.extend((text[copied_through:match.start()], "[REDACTED]"))
+            copied_through = match.end()
+            search_from = copied_through
+    pieces.append(text[copied_through:])
+    return "".join(pieces)
 
 
 def _diagnostic_lines(raw: str, pid: int, limit: int) -> tuple[list[str], bool]:
@@ -218,7 +228,7 @@ def _diagnostic_lines(raw: str, pid: int, limit: int) -> tuple[list[str], bool]:
         else:
             current = None
     clean = _CREDENTIAL.sub("[REDACTED]", "\n".join(messages))
-    clean = _JWT.sub(_redact_jwt, _BEARER.sub("Bearer [REDACTED]", clean))
+    clean = _redact_jwts(_BEARER.sub("Bearer [REDACTED]", clean))
     lines = clean.splitlines()
     tail = "\n".join(lines[-limit:]).encode("utf-8")
     truncated = len(lines) > limit or len(tail) > _LOG_BYTES
