@@ -18,5 +18,6 @@ tools/development_mcp/src/*.egg-info/
 *.jks
 *.keystore
 web/node_modules/
+server/production_mcp/tests/sql/node_modules/
 web/dist/
 web/public/art/

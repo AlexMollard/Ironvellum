@@ -1,0 +1,14 @@
+{
+  "name": "ironvellum-mcp-sql-tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test capabilities.test.mjs",
+    "test:native": "node capabilities.test.mjs --native"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.17",
+    "embedded-postgres": "16.16.0-beta.19"
+  }
+}

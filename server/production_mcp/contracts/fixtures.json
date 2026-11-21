@@ -1,0 +1,888 @@
+{
+  "schemaVersion": 1,
+  "app": {
+    "connections": {
+      "schemaVersion": 1,
+      "ok": true,
+      "resourceUrl": "https://ironvellum.example/mcp",
+      "connections": [
+        {
+          "id": "8a87c86b-f636-43a1-b000-b4cb865524a3",
+          "clientName": "Example",
+          "scopes": [
+            "training:read",
+            "progress:read",
+            "savedworkouts:read",
+            "workoutdrafts:create"
+          ],
+          "createdAtMs": 1795000000000,
+          "expiresAtMs": 1802776000000,
+          "revokedAtMs": null
+        }
+      ],
+      "recentAccess": [
+        {
+          "requestId": "70308249-1118-424c-9cd3-25b4af2c1681",
+          "clientName": "Example",
+          "tool": "create_workout_draft",
+          "atMs": 1795000000000,
+          "result": "ok",
+          "draftId": "4452ba52-250c-4fd5-b105-a38d6c30df96"
+        }
+      ]
+    },
+    "emptyConnections": {
+      "schemaVersion": 1,
+      "ok": true,
+      "resourceUrl": null,
+      "connections": [],
+      "recentAccess": []
+    },
+    "revoked": {
+      "schemaVersion": 1,
+      "ok": true,
+      "revoked": true
+    },
+    "drafts": {
+      "schemaVersion": 1,
+      "ok": true,
+      "drafts": [
+        {
+          "id": "4452ba52-250c-4fd5-b105-a38d6c30df96",
+          "revision": 1,
+          "contentHash": "6095e79d20c2ffc62c7a68e0ee7bba1e088934ba498979a4687d110d4899e3d1",
+          "clientName": "Example",
+          "createdAtMs": 1795000000000,
+          "expiresAtMs": 1797592000000,
+          "status": "pending",
+          "draft": {
+            "schemaVersion": 1,
+            "name": "Upper A",
+            "warmup": "AUTO",
+            "cooldown": "NONE",
+            "entries": [
+              {
+                "exerciseKey": "bench press",
+                "sets": 3,
+                "reps": 8,
+                "loadKg": 40
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "emptyDrafts": {
+      "schemaVersion": 1,
+      "ok": true,
+      "drafts": []
+    },
+    "pending": {
+      "schemaVersion": 1,
+      "ok": true,
+      "draft": {
+        "id": "4452ba52-250c-4fd5-b105-a38d6c30df96",
+        "revision": 1,
+        "contentHash": "6095e79d20c2ffc62c7a68e0ee7bba1e088934ba498979a4687d110d4899e3d1",
+        "clientName": "Example",
+        "createdAtMs": 1795000000000,
+        "expiresAtMs": 1797592000000,
+        "status": "pending",
+        "draft": {
+          "schemaVersion": 1,
+          "name": "Upper A",
+          "warmup": "AUTO",
+          "cooldown": "NONE",
+          "entries": [
+            {
+              "exerciseKey": "bench press",
+              "sets": 3,
+              "reps": 8,
+              "loadKg": 40
+            }
+          ]
+        }
+      }
+    },
+    "approved": {
+      "schemaVersion": 1,
+      "ok": true,
+      "draft": {
+        "id": "4452ba52-250c-4fd5-b105-a38d6c30df96",
+        "revision": 1,
+        "contentHash": "6095e79d20c2ffc62c7a68e0ee7bba1e088934ba498979a4687d110d4899e3d1",
+        "clientName": "Example",
+        "createdAtMs": 1795000000000,
+        "expiresAtMs": 1797592000000,
+        "status": "approved",
+        "draft": {
+          "schemaVersion": 1,
+          "name": "Upper A",
+          "warmup": "AUTO",
+          "cooldown": "NONE",
+          "entries": [
+            {
+              "exerciseKey": "bench press",
+              "sets": 3,
+              "reps": 8,
+              "loadKg": 40
+            }
+          ]
+        }
+      }
+    },
+    "accepted": {
+      "schemaVersion": 1,
+      "ok": true,
+      "draft": {
+        "id": "4452ba52-250c-4fd5-b105-a38d6c30df96",
+        "revision": 1,
+        "contentHash": "6095e79d20c2ffc62c7a68e0ee7bba1e088934ba498979a4687d110d4899e3d1",
+        "clientName": "Example",
+        "createdAtMs": 1795000000000,
+        "expiresAtMs": 1797592000000,
+        "status": "accepted",
+        "draft": {
+          "schemaVersion": 1,
+          "name": "Upper A",
+          "warmup": "AUTO",
+          "cooldown": "NONE",
+          "entries": [
+            {
+              "exerciseKey": "bench press",
+              "sets": 3,
+              "reps": 8,
+              "loadKg": 40
+            }
+          ]
+        }
+      }
+    },
+    "rejected": {
+      "schemaVersion": 1,
+      "ok": true,
+      "draft": {
+        "id": "4452ba52-250c-4fd5-b105-a38d6c30df96",
+        "revision": 1,
+        "contentHash": "6095e79d20c2ffc62c7a68e0ee7bba1e088934ba498979a4687d110d4899e3d1",
+        "clientName": "Example",
+        "createdAtMs": 1795000000000,
+        "expiresAtMs": 1797592000000,
+        "status": "rejected",
+        "draft": {
+          "schemaVersion": 1,
+          "name": "Upper A",
+          "warmup": "AUTO",
+          "cooldown": "NONE",
+          "entries": [
+            {
+              "exerciseKey": "bench press",
+              "sets": 3,
+              "reps": 8,
+              "loadKg": 40
+            }
+          ]
+        }
+      }
+    },
+    "expired": {
+      "schemaVersion": 1,
+      "ok": true,
+      "draft": {
+        "id": "4452ba52-250c-4fd5-b105-a38d6c30df96",
+        "revision": 1,
+        "contentHash": "6095e79d20c2ffc62c7a68e0ee7bba1e088934ba498979a4687d110d4899e3d1",
+        "clientName": "Example",
+        "createdAtMs": 1795000000000,
+        "expiresAtMs": 1797592000000,
+        "status": "expired",
+        "draft": {
+          "schemaVersion": 1,
+          "name": "Upper A",
+          "warmup": "AUTO",
+          "cooldown": "NONE",
+          "entries": [
+            {
+              "exerciseKey": "bench press",
+              "sets": 3,
+              "reps": 8,
+              "loadKg": 40
+            }
+          ]
+        }
+      }
+    },
+    "consentApproved": {
+      "schemaVersion": 1,
+      "ok": true,
+      "approved": true
+    },
+    "consentDenied": {
+      "schemaVersion": 1,
+      "ok": true,
+      "approved": false
+    },
+    "conflict": {
+      "schemaVersion": 1,
+      "ok": false,
+      "error": "conflict"
+    },
+    "notFound": {
+      "schemaVersion": 1,
+      "ok": false,
+      "error": "not_found"
+    }
+  },
+  "tools": {
+    "list_workouts": {
+      "args": {
+        "limit": 20
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "workouts": [
+          {
+            "id": "synced:70308249-1118-424c-9cd3-25b4af2c1681",
+            "label": "Training",
+            "startedAtMs": 1794996400000,
+            "completedAtMs": 1795000000000
+          }
+        ],
+        "nextCursor": null
+      }
+    },
+    "get_workout": {
+      "args": {
+        "id": "synced:70308249-1118-424c-9cd3-25b4af2c1681"
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "workout": {
+          "id": "synced:70308249-1118-424c-9cd3-25b4af2c1681",
+          "label": "Training",
+          "startedAtMs": 1794996400000,
+          "completedAtMs": 1795000000000
+        },
+        "sets": [
+          {
+            "exerciseName": "Bench Press",
+            "setIndex": 0,
+            "reps": 8,
+            "loadKg": 40,
+            "durationSec": null,
+            "distanceM": null,
+            "done": true
+          }
+        ],
+        "truncated": false
+      }
+    },
+    "get_progress": {
+      "args": {},
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "snapshotVersion": 1,
+        "syncedAtMs": 1795000000000,
+        "builtAtMs": 1795000000000,
+        "zone": "Australia/Sydney",
+        "freshness": "fresh",
+        "week": {
+          "workouts": 2,
+          "hardSets": 4,
+          "volumeKg": 100,
+          "prevVolumeKg": null,
+          "startDay": null,
+          "endDay": null
+        },
+        "lifts": [
+          {
+            "name": "Bench Press",
+            "metric": "reps",
+            "variations": [
+              {
+                "label": "Standard",
+                "sessions": 4,
+                "sets": 12,
+                "lastMs": 1795000000000,
+                "peak": {
+                  "reps": 8,
+                  "weightKg": 40,
+                  "durationSec": null,
+                  "atMs": 1795000000000
+                }
+              }
+            ],
+            "variationsTruncated": false
+          }
+        ],
+        "liftsTruncated": false,
+        "trends": {
+          "weeks": [
+            {
+              "start": "2026-11-16",
+              "hardSets": 4,
+              "workouts": 2,
+              "volumeKg": 100
+            }
+          ],
+          "weeksTruncated": false,
+          "daysPerWeek": 2,
+          "records30d": 1
+        }
+      }
+    },
+    "list_saved_workouts": {
+      "args": {},
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "snapshotVersion": 1,
+        "syncedAtMs": 1795000000000,
+        "builtAtMs": 1795000000000,
+        "zone": "Australia/Sydney",
+        "freshness": "fresh",
+        "presets": [
+          {
+            "id": 1,
+            "name": "Upper A",
+            "entries": [
+              {
+                "name": "Bench Press",
+                "sets": 3,
+                "reps": 8,
+                "loadKg": 40,
+                "scheme": "8 / 6 / 4",
+                "modifiers": "paused",
+                "supersetGroup": 1,
+                "warmup": false
+              }
+            ],
+            "entriesTruncated": false
+          }
+        ],
+        "truncated": false
+      }
+    },
+    "search_movements": {
+      "args": {
+        "query": "bench",
+        "limit": 20
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "movements": [
+          {
+            "key": "bench press",
+            "name": "Bench Press",
+            "metric": "REPS"
+          }
+        ]
+      }
+    },
+    "create_workout_draft": {
+      "args": {
+        "idempotencyKey": "upper-a-v1",
+        "draft": {
+          "schemaVersion": 1,
+          "name": "Upper A",
+          "warmup": "AUTO",
+          "cooldown": "NONE",
+          "entries": [
+            {
+              "exerciseKey": "bench press",
+              "sets": 3,
+              "reps": 8,
+              "loadKg": 40
+            }
+          ]
+        }
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "draft": {
+          "id": "4452ba52-250c-4fd5-b105-a38d6c30df96",
+          "revision": 1,
+          "contentHash": "6095e79d20c2ffc62c7a68e0ee7bba1e088934ba498979a4687d110d4899e3d1",
+          "clientName": "Example",
+          "createdAtMs": 1795000000000,
+          "expiresAtMs": 1797592000000,
+          "status": "pending",
+          "draft": {
+            "schemaVersion": 1,
+            "name": "Upper A",
+            "warmup": "AUTO",
+            "cooldown": "NONE",
+            "entries": [
+              {
+                "exerciseKey": "bench press",
+                "sets": 3,
+                "reps": 8,
+                "loadKg": 40
+              }
+            ]
+          }
+        }
+      }
+    },
+    "get_workout_draft": {
+      "args": {
+        "id": "4452ba52-250c-4fd5-b105-a38d6c30df96"
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "draft": {
+          "id": "4452ba52-250c-4fd5-b105-a38d6c30df96",
+          "revision": 1,
+          "contentHash": "6095e79d20c2ffc62c7a68e0ee7bba1e088934ba498979a4687d110d4899e3d1",
+          "clientName": "Example",
+          "createdAtMs": 1795000000000,
+          "expiresAtMs": 1797592000000,
+          "status": "pending",
+          "draft": {
+            "schemaVersion": 1,
+            "name": "Upper A",
+            "warmup": "AUTO",
+            "cooldown": "NONE",
+            "entries": [
+              {
+                "exerciseKey": "bench press",
+                "sets": 3,
+                "reps": 8,
+                "loadKg": 40
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "snapshotStates": {
+    "absent": {
+      "schemaVersion": 1,
+      "ok": true,
+      "freshness": "absent"
+    },
+    "stale": {
+      "schemaVersion": 1,
+      "ok": true,
+      "snapshotVersion": 1,
+      "syncedAtMs": 1795000000000,
+      "builtAtMs": 1795000000000,
+      "zone": "Australia/Sydney",
+      "freshness": "stale",
+      "week": {
+        "workouts": 2,
+        "hardSets": 4,
+        "volumeKg": 100,
+        "prevVolumeKg": null,
+        "startDay": null,
+        "endDay": null
+      },
+      "lifts": [
+        {
+          "name": "Bench Press",
+          "metric": "reps",
+          "variations": [
+            {
+              "label": "Standard",
+              "sessions": 4,
+              "sets": 12,
+              "lastMs": 1795000000000,
+              "peak": {
+                "reps": 8,
+                "weightKg": 40,
+                "durationSec": null,
+                "atMs": 1795000000000
+              }
+            }
+          ],
+          "variationsTruncated": false
+        }
+      ],
+      "liftsTruncated": false,
+      "trends": {
+        "weeks": [
+          {
+            "start": "2026-11-16",
+            "hardSets": 4,
+            "workouts": 2,
+            "volumeKg": 100
+          }
+        ],
+        "weeksTruncated": false,
+        "daysPerWeek": 2,
+        "records30d": 1
+      }
+    },
+    "unsupported": {
+      "schemaVersion": 1,
+      "ok": true,
+      "freshness": "unsupported_version",
+      "snapshotVersion": 2,
+      "syncedAtMs": 1795000000000
+    }
+  },
+  "gateway": {
+    "configuration.get": {
+      "args": {},
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "resourceUrl": "https://ironvellum.example/mcp",
+        "catalogueCount": 1,
+        "catalogueHash": "1f739c69e5483c3a109478cbba3aebcfc942d1d1ec82b049f488f471fe466b61"
+      }
+    },
+    "configuration.configure": {
+      "args": {
+        "resourceUrl": "https://ironvellum.example/mcp"
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "resourceUrl": "https://ironvellum.example/mcp"
+      }
+    },
+    "client.get": {
+      "args": {
+        "clientId": "reader-desktop"
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "clientId": "reader-desktop",
+        "clientName": "Example",
+        "metadataCiphertext": "encrypted-test-fixture",
+        "redirectUris": [
+          "https://client.example/callback"
+        ]
+      }
+    },
+    "client.register": {
+      "args": {
+        "clientId": "reader-desktop",
+        "clientName": "Example",
+        "metadataCiphertext": "encrypted-test-fixture",
+        "redirectUris": [
+          "https://client.example/callback"
+        ]
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "clientId": "reader-desktop"
+      }
+    },
+    "authorization.create": {
+      "args": {
+        "clientId": "reader-desktop",
+        "resourceUrl": "https://ironvellum.example/mcp",
+        "redirectUri": "https://client.example/callback",
+        "redirectUriExplicit": true,
+        "scopes": [
+          "training:read",
+          "progress:read",
+          "savedworkouts:read",
+          "workoutdrafts:create"
+        ],
+        "codeChallenge": "w1TpKUdYE9hUAcNSeeSRFioHDxfUxuHho_JHAfZ_vDM",
+        "state": "client state"
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "requestId": "70592f01-c3e7-4f51-88fd-0db194d1a137",
+        "expiresAtMs": 1795000600000
+      }
+    },
+    "authorization.get": {
+      "args": {
+        "requestId": "70592f01-c3e7-4f51-88fd-0db194d1a137"
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "clientId": "reader-desktop",
+        "resourceUrl": "https://ironvellum.example/mcp",
+        "redirectUri": "https://client.example/callback",
+        "redirectUriExplicit": true,
+        "scopes": [
+          "training:read",
+          "progress:read",
+          "savedworkouts:read",
+          "workoutdrafts:create"
+        ],
+        "codeChallenge": "w1TpKUdYE9hUAcNSeeSRFioHDxfUxuHho_JHAfZ_vDM",
+        "state": "client state",
+        "requestId": "70592f01-c3e7-4f51-88fd-0db194d1a137",
+        "clientName": "Example",
+        "expiresAtMs": 1795000600000
+      }
+    },
+    "code.load": {
+      "args": {
+        "clientId": "reader-desktop",
+        "codeHash": "bb959c1cc13961f438d8c17b3a609dd3e2d60470349dc39c8f27fcad00019617"
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "grantId": "8a87c86b-f636-43a1-b000-b4cb865524a3",
+        "clientId": "reader-desktop",
+        "resourceUrl": "https://ironvellum.example/mcp",
+        "scopes": [
+          "training:read",
+          "progress:read",
+          "savedworkouts:read",
+          "workoutdrafts:create"
+        ],
+        "expiresAtMs": 1795000120000,
+        "redirectUri": "https://client.example/callback",
+        "redirectUriExplicit": true,
+        "codeChallenge": "w1TpKUdYE9hUAcNSeeSRFioHDxfUxuHho_JHAfZ_vDM"
+      }
+    },
+    "code.exchange": {
+      "args": {
+        "clientId": "reader-desktop",
+        "resourceUrl": "https://ironvellum.example/mcp",
+        "redirectUri": "https://client.example/callback",
+        "codeChallenge": "w1TpKUdYE9hUAcNSeeSRFioHDxfUxuHho_JHAfZ_vDM",
+        "codeHash": "bb959c1cc13961f438d8c17b3a609dd3e2d60470349dc39c8f27fcad00019617",
+        "accessHash": "7dd71b55ab8c497f118089ab98132c7d9834735c7f88ff9f440687e0fcba0c3a",
+        "refreshHash": "f2d4c91139af345f91bfa6c5ffee3db28a6be08930c95180f46bf77ff5d78cc7"
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "grantId": "8a87c86b-f636-43a1-b000-b4cb865524a3",
+        "clientId": "reader-desktop",
+        "resourceUrl": "https://ironvellum.example/mcp",
+        "scopes": [
+          "training:read",
+          "progress:read",
+          "savedworkouts:read",
+          "workoutdrafts:create"
+        ],
+        "accessExpiresAtMs": 1795000600000,
+        "refreshExpiresAtMs": 1797592000000
+      }
+    },
+    "access.load": {
+      "args": {
+        "accessHash": "7dd71b55ab8c497f118089ab98132c7d9834735c7f88ff9f440687e0fcba0c3a"
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "grantId": "8a87c86b-f636-43a1-b000-b4cb865524a3",
+        "clientId": "reader-desktop",
+        "resourceUrl": "https://ironvellum.example/mcp",
+        "scopes": [
+          "training:read",
+          "progress:read",
+          "savedworkouts:read",
+          "workoutdrafts:create"
+        ],
+        "expiresAtMs": 1795000600000
+      }
+    },
+    "refresh.load": {
+      "args": {
+        "clientId": "reader-desktop",
+        "refreshHash": "f2d4c91139af345f91bfa6c5ffee3db28a6be08930c95180f46bf77ff5d78cc7"
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "grantId": "8a87c86b-f636-43a1-b000-b4cb865524a3",
+        "clientId": "reader-desktop",
+        "resourceUrl": "https://ironvellum.example/mcp",
+        "scopes": [
+          "training:read",
+          "progress:read",
+          "savedworkouts:read",
+          "workoutdrafts:create"
+        ],
+        "expiresAtMs": 1797592000000
+      }
+    },
+    "refresh.exchange": {
+      "args": {
+        "clientId": "reader-desktop",
+        "resourceUrl": "https://ironvellum.example/mcp",
+        "refreshHash": "f2d4c91139af345f91bfa6c5ffee3db28a6be08930c95180f46bf77ff5d78cc7",
+        "newRefreshHash": "42e0b80e32d33df89ac702a27543f13acbbe1ffe7a19d063d04e60c8a3f3c7c5",
+        "accessHash": "7ef0c669439cf4296f855f949ab06e432fd46e0e7d528a3f222810210a9dd820",
+        "scopes": [
+          "training:read",
+          "progress:read",
+          "savedworkouts:read",
+          "workoutdrafts:create"
+        ]
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "grantId": "8a87c86b-f636-43a1-b000-b4cb865524a3",
+        "clientId": "reader-desktop",
+        "resourceUrl": "https://ironvellum.example/mcp",
+        "scopes": [
+          "training:read",
+          "progress:read",
+          "savedworkouts:read",
+          "workoutdrafts:create"
+        ],
+        "accessExpiresAtMs": 1795000600000,
+        "refreshExpiresAtMs": 1797592000000
+      }
+    },
+    "token.revoke": {
+      "args": {
+        "clientId": "reader-desktop",
+        "tokenHash": "f2d4c91139af345f91bfa6c5ffee3db28a6be08930c95180f46bf77ff5d78cc7"
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true
+      }
+    },
+    "tool.call": {
+      "args": {
+        "accessHash": "7dd71b55ab8c497f118089ab98132c7d9834735c7f88ff9f440687e0fcba0c3a",
+        "tool": "get_progress",
+        "args": {}
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "snapshotVersion": 1,
+        "syncedAtMs": 1795000000000,
+        "builtAtMs": 1795000000000,
+        "zone": "Australia/Sydney",
+        "freshness": "fresh",
+        "week": {
+          "workouts": 2,
+          "hardSets": 4,
+          "volumeKg": 100,
+          "prevVolumeKg": null,
+          "startDay": null,
+          "endDay": null
+        },
+        "lifts": [
+          {
+            "name": "Bench Press",
+            "metric": "reps",
+            "variations": [
+              {
+                "label": "Standard",
+                "sessions": 4,
+                "sets": 12,
+                "lastMs": 1795000000000,
+                "peak": {
+                  "reps": 8,
+                  "weightKg": 40,
+                  "durationSec": null,
+                  "atMs": 1795000000000
+                }
+              }
+            ],
+            "variationsTruncated": false
+          }
+        ],
+        "liftsTruncated": false,
+        "trends": {
+          "weeks": [
+            {
+              "start": "2026-11-16",
+              "hardSets": 4,
+              "workouts": 2,
+              "volumeKg": 100
+            }
+          ],
+          "weeksTruncated": false,
+          "daysPerWeek": 2,
+          "records30d": 1
+        }
+      }
+    },
+    "catalogue.put": {
+      "args": {
+        "schemaVersion": 1,
+        "movements": [
+          {
+            "key": "bench press",
+            "name": "Bench Press",
+            "metric": "REPS"
+          }
+        ]
+      },
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "count": 1
+      }
+    },
+    "prune": {
+      "args": {},
+      "result": {
+        "schemaVersion": 1,
+        "ok": true,
+        "affected": 0
+      }
+    }
+  },
+  "appArgs": {
+    "ironvellum_mcp_connections": {},
+    "ironvellum_mcp_revoke_connection": {
+      "p_grant_id": "8a87c86b-f636-43a1-b000-b4cb865524a3"
+    },
+    "ironvellum_mcp_drafts": {
+      "p_limit": 50
+    },
+    "ironvellum_mcp_draft": {
+      "p_draft_id": "4452ba52-250c-4fd5-b105-a38d6c30df96"
+    },
+    "ironvellum_mcp_review_draft": {
+      "p_draft_id": "4452ba52-250c-4fd5-b105-a38d6c30df96",
+      "p_hash": "6095e79d20c2ffc62c7a68e0ee7bba1e088934ba498979a4687d110d4899e3d1",
+      "p_action": "approve"
+    },
+    "ironvellum_mcp_consent": {
+      "p_request_id": "70592f01-c3e7-4f51-88fd-0db194d1a137",
+      "p_approved": true,
+      "p_scopes": [
+        "training:read",
+        "progress:read",
+        "savedworkouts:read",
+        "workoutdrafts:create"
+      ],
+      "p_code_hash": "bb959c1cc13961f438d8c17b3a609dd3e2d60470349dc39c8f27fcad00019617"
+    }
+  },
+  "historyPagination": {
+    "firstPage": {
+      "schemaVersion": 1,
+      "ok": true,
+      "workouts": [
+        {
+          "id": "synced:70308249-1118-424c-9cd3-25b4af2c1681",
+          "label": "Training",
+          "startedAtMs": 1794996400000,
+          "completedAtMs": 1795000000000
+        }
+      ],
+      "nextCursor": "synced:70308249-1118-424c-9cd3-25b4af2c1681@00030389c6275000"
+    },
+    "nextPageArgs": {
+      "limit": 1,
+      "cursor": "synced:70308249-1118-424c-9cd3-25b4af2c1681@00030389c6275000"
+    }
+  }
+}

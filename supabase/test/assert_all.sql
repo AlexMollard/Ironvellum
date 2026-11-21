@@ -287,6 +287,20 @@ begin
       and not t.rowsecurity;
     perform assert_true(n = 0, format('%s public table(s) have RLS disabled', n));
 
+    perform assert_true(
+        has_function_privilege('service_role','public.ironvellum_mcp_gateway(text,jsonb)','execute')
+        and not has_function_privilege('anon','public.ironvellum_mcp_gateway(text,jsonb)','execute')
+        and not has_function_privilege('authenticated','public.ironvellum_mcp_gateway(text,jsonb)','execute')
+        and not has_schema_privilege('anon','ironvellum_mcp','usage')
+        and not has_schema_privilege('authenticated','ironvellum_mcp','usage'),
+        'MCP gateway must be private to its service role');
+    perform assert_true(not exists (
+        select from pg_class c
+        where c.relnamespace='ironvellum_mcp'::regnamespace and c.relkind='r' and
+          (not c.relrowsecurity or has_table_privilege('anon',c.oid,'select,insert,update,delete')
+                                or has_table_privilege('authenticated',c.oid,'select,insert,update,delete'))
+    ), 'MCP tables require RLS and no direct user privileges');
+
     -- 0004/0007/0008: a view without security_invoker bypasses the RLS of the
     -- tables beneath it.
     select string_agg(c.relname, ', ') into leaky
@@ -1356,12 +1370,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 35,
-        format('schema_version() reports %s, not 35 — the rolling lift patch is not advertised', public.schema_version())
+        (select public.schema_version()) = 36,
+        format('schema_version() reports %s, not 36 — the MCP patch is not advertised', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 35,
+        (select public.schema_version()) = 36,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;
