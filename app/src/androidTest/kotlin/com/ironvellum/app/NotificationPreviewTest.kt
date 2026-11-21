@@ -24,6 +24,10 @@ import org.junit.runner.RunWith
 class NotificationPreviewTest {
     private fun clearPreviews(context: Context, receiver: NotificationPreviewReceiver) {
         receiver.onReceive(context, Intent(NotificationPreviewReceiver.ACTION_CLEAR))
+        assertPreviewsCleared(context)
+    }
+
+    private fun assertPreviewsCleared(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)
         val until = android.os.SystemClock.elapsedRealtime() + 5_000
         while (manager.activeNotifications.any { it.tag == NotificationPreviewReceiver.TAG } &&
@@ -50,6 +54,55 @@ class NotificationPreviewTest {
             }, android.os.Handler(android.os.Looper.getMainLooper()))
             assertTrue(finished.await(5, TimeUnit.SECONDS))
             assertEquals(sessionId, sent.get().getLongExtra(Notifications.EXTRA_SESSION_ID, -2L))
+        } finally {
+            clearPreviews(context, receiver)
+        }
+    }
+
+    @Test fun selectedAcceptedPreviewPostsOnlyIdFiveAndRejectsInvalidRequests() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        instrumentation.uiAutomation.grantRuntimePermission(context.packageName, Manifest.permission.POST_NOTIFICATIONS)
+        val manager = context.getSystemService(NotificationManager::class.java)
+        val receiver = NotificationPreviewReceiver()
+        val component = ComponentName(context, NotificationPreviewReceiver::class.java)
+        val requestId = "0123456789abcdef0123456789abcdef"
+        fun request(action: String, scenario: String, id: String = requestId) = developmentReply(
+            context, Intent(action).setComponent(component).putExtra("scenario", scenario).putExtra("request_id", id),
+        )
+        fun activeIds() = manager.activeNotifications.filter { it.tag == NotificationPreviewReceiver.TAG }.map { it.id }.toSet()
+        try {
+            clearPreviews(context, receiver)
+            val show = request(NotificationPreviewReceiver.ACTION_SHOW, "accepted")
+            assertTrue(show.getBoolean("ok"))
+            assertEquals(requestId, show.getString("requestId"))
+            assertEquals("notification_preview", show.getString("operation"))
+            assertEquals("show", show.getString("action"))
+            assertEquals("accepted", show.getString("scenario"))
+            assertEquals("[5]", show.getJSONArray("requestedIds").toString())
+            assertEquals("[5]", show.getJSONArray("submittedIds").toString())
+            assertEquals(0, show.getJSONArray("blocked").length())
+            val until = android.os.SystemClock.elapsedRealtime() + 5_000
+            while (activeIds().isEmpty() && android.os.SystemClock.elapsedRealtime() < until) Thread.sleep(20)
+            assertEquals(setOf(5), activeIds())
+
+            val invalidId = request(NotificationPreviewReceiver.ACTION_CLEAR, "all", id = "invalid")
+            assertEquals("invalid_request", invalidId.getJSONObject("error").getString("code"))
+            val invalidClear = request(NotificationPreviewReceiver.ACTION_CLEAR, "accepted")
+            assertEquals("unknown_scenario", invalidClear.getJSONObject("error").getString("code"))
+            val invalidShow = request(NotificationPreviewReceiver.ACTION_SHOW, "missing")
+            assertEquals("unknown_scenario", invalidShow.getJSONObject("error").getString("code"))
+            val invalidAction = request("com.ironvellum.app.debug.NOT_PREVIEW", "all")
+            assertEquals("unsupported_action", invalidAction.getJSONObject("error").getString("code"))
+            assertEquals(setOf(5), activeIds())
+
+            val clear = request(NotificationPreviewReceiver.ACTION_CLEAR, "all")
+            assertTrue(clear.getBoolean("ok"))
+            assertEquals("clear", clear.getString("action"))
+            assertEquals("[0,1,2,3,4,5]", clear.getJSONArray("requestedIds").toString())
+            assertEquals(0, clear.getJSONArray("submittedIds").length())
+            assertEquals(0, clear.getJSONArray("blocked").length())
+            assertPreviewsCleared(context)
         } finally {
             clearPreviews(context, receiver)
         }
