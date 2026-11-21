@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools==84.1.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ironvellum-production-mcp"
+version = "0.1.0"
+description = "Scoped Ironvellum training reads and workout drafts over MCP"
+requires-python = ">=3.11"
+dependencies = [
+  "mcp==2.3.0", "cryptography==50.0.2", "httpx2==2.16.2",
+  "starlette==1.10.0", "pydantic==2.14.4", "uvicorn==0.54.0"
+]
+
+[project.scripts]
+ironvellum-production-mcp = "ironvellum_production_mcp.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
