@@ -75,7 +75,9 @@ not the permission/draft contracts. Do not pause between implementation tasks.
   and the entire operation dictionary before commit; it is the later tasks' API.
 - Gateway operations: configuration.get/configure; client.get/register;
   authorization.create/get; code.load/exchange; access.load; refresh.load/exchange;
-  token.revoke; tool.call; catalogue.put; prune. Explicitly document each input
+  token.revoke; tool.call; prune. Configuration atomically binds the resource,
+  key verifier and validated catalogue, with an explicit previous-hash compare
+  and swap for catalogue upgrades. Explicitly document each input
   and safe success/failure JSON; errors from replay must preserve revocation.
 - App envelope camelCase: draft id/revision/contentHash/clientName/createdAtMs/
   expiresAtMs/status/draft, connections resourceUrl/connections/recentAccess.
