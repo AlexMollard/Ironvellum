@@ -65,6 +65,110 @@ class InboxDeliveryTest {
 
     private fun awaitPosted() = NotificationTray.awaitPosted(realContext, Notifications.ID_ALLIES)
 
+    @Test fun eachSocialEventNamesWhatHappenedInBothWordingModes() {
+        data class Case(val item: InboxItem, val plain: String, val themed: String, val body: String, val themedBody: String = body)
+        val cases = listOf(
+            Case(InboxItem.RequestAccepted(200, "ally", "Test Ally"), "Friend request accepted", "Ally request accepted", "Test Ally accepted your request"),
+            Case(InboxItem.FriendRequest(200, "ally", "Test Ally"), "Friend request", "Ally request", "Test Ally wants to be friends with you", "Test Ally wants to ally with you"),
+            Case(InboxItem.NewComment(200, "ally", "Test Ally", "workout", "Training", "comment", "Nice work"), "New comment", "New remark", "Test Ally left a comment: Nice work", "Test Ally left a remark: Nice work"),
+            Case(InboxItem.NewReply(200, "ally", "Test Ally", "workout", "Training", "reply", "Nice work"), "New reply", "New reply", "Test Ally replied on Training: Nice work"),
+            Case(InboxItem.NewReaction(200, "ally", "Test Ally", "workout", "Training", com.ironvellum.app.data.cloud.Reaction.FLAME), "New kudos", "New tribute", "Test Ally paid Flame kudos to Training", "Test Ally paid Flame tribute to Training"),
+            Case(InboxItem.NewCircleMember(200, "ally", "Test Ally", "Test Group"), "Group member joined", "Circle member joined", "Test Ally joined your group Test Group", "Test Ally joined your circle Test Group"),
+            Case(InboxItem.CircleGoalMet(200, "ally", "Test Ally", "Test Group"), "Group goal reached", "Circle goal reached", "Your group Test Group met its weekly goal", "Your circle Test Group met its weekly goal"),
+            Case(InboxItem.CircleNotice(200, "ally", "Test Ally", "Test Group", com.ironvellum.app.data.cloud.CircleChange.LEFT), "Group member left", "Circle member left", "Test Ally left your group Test Group", "Test Ally left your circle Test Group"),
+            Case(InboxItem.CircleNotice(200, "ally", "Test Ally", "Test Group", com.ironvellum.app.data.cloud.CircleChange.KEEPER), "Group leadership changed", "Circle keeper changed", "You now keep the group Test Group", "You now keep the circle Test Group"),
+            Case(InboxItem.CircleNotice(200, "ally", "Test Ally", "Test Group", com.ironvellum.app.data.cloud.CircleChange.REMOVED), "Removed from group", "Removed from circle", "You were removed from the group Test Group", "You were removed from the circle Test Group"),
+        )
+        val old = Words.themed
+        try {
+            for (themed in listOf(false, true)) {
+                Words.setThemed(realContext, themed)
+                for (case in cases) {
+                    preferences.edit().clear().commit()
+                    NotificationTray.clear(realContext, Notifications.ID_ALLIES)
+                    deliver(Inbox(emptyList(), null))
+                    deliver(Inbox(listOf(case.item), null))
+                    val notification = checkNotNull(awaitPosted()).notification
+                    assertEquals(case.item.toString(), if (themed) case.themed else case.plain, notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+                    assertEquals(if (themed) case.themedBody else case.body, notification.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+                    assertEquals(notification.extras.getCharSequence(Notification.EXTRA_TEXT), notification.extras.getCharSequence(Notification.EXTRA_BIG_TEXT))
+                    assertEquals(Notification.VISIBILITY_PRIVATE, notification.visibility)
+                    val public = checkNotNull(notification.publicVersion)
+                    assertEquals(if (themed) "New ally activity" else "New friend activity", public.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+                    assertEquals(if (themed) "New activity from an ally" else "New activity from a friend", public.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+                    assertFalse(public.extras.toString().contains("Test Ally"))
+                    assertFalse(public.extras.toString().contains("Test Group"))
+                    assertEquals(Notifications.CHANNEL_ALLIES, notification.channelId)
+                    assertNotNull(notification.contentIntent)
+                }
+            }
+        } finally {
+            Words.setThemed(realContext, old)
+        }
+    }
+
+    @Test fun mixedSocialEventsAreUpdatesRatherThanMessages() {
+        val old = Words.themed
+        try {
+            for (themed in listOf(false, true)) {
+                Words.setThemed(realContext, themed)
+                preferences.edit().clear().commit()
+                NotificationTray.clear(realContext, Notifications.ID_ALLIES)
+                deliver(Inbox(emptyList(), null))
+                deliver(Inbox(listOf(InboxItem.RequestAccepted(200, "ally", "Test Ally"), InboxItem.FriendRequest(300, "other", "Other Friend")), null))
+                val notification = checkNotNull(awaitPosted()).notification
+                assertEquals(if (themed) "2 new ally updates" else "2 new social updates", notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+                assertEquals(if (themed) "Other Friend wants to ally with you" else "Other Friend wants to be friends with you", notification.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+                val public = checkNotNull(notification.publicVersion)
+                assertEquals(if (themed) "New ally activity" else "New friend activity", public.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+                assertEquals(if (themed) "New activity from your allies" else "New activity from your friends", public.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+            }
+        } finally {
+            Words.setThemed(realContext, old)
+        }
+    }
+
+    @Test fun translatedTitlesDoNotRetainTheOldMessageOverrides() {
+        val cases = listOf(
+            listOf("es", "Solicitud de amistad aceptada", "Solicitud de alianza aceptada", "Nueva actividad de amigos", "Nueva actividad de aliados", "2 nuevas actualizaciones sociales", "2 nuevas actualizaciones de aliados"),
+            listOf("de", "Freundschaftsanfrage angenommen", "Bündnisanfrage angenommen", "Neue Aktivität von Freunden", "Neue Aktivität von Verbündeten", "2 neue soziale Aktualisierungen", "2 neue Aktualisierungen von Verbündeten"),
+            listOf("fr", "Demande d’amitié acceptée", "Demande d’alliance acceptée", "Nouvelle activité d’amis", "Nouvelle activité d’alliés", "2 nouvelles actualités sociales", "2 nouvelles actualités d’alliés"),
+            listOf("pt-BR", "Pedido de amizade aceito", "Pedido de aliança aceito", "Nova atividade de amigos", "Nova atividade de aliados", "2 novas atualizações sociais", "2 novas atualizações de aliados"),
+            listOf("ja", "フレンド申請が承認されました", "盟約申請が承認されました", "フレンドの新しい動き", "盟友の新たな動き", "交流の新着情報2件", "盟友の新着情報2件"),
+            listOf("ko", "친구 요청이 수락되었어요", "동맹 요청이 수락되었어요", "친구의 새 활동", "동맹의 새 활동", "새 소셜 소식 2개", "새 동맹 소식 2개"),
+            listOf("zh-Hans", "好友申请已接受", "结盟申请已接受", "好友新动态", "盟友新动态", "2条社交新动态", "2条盟友新动态"),
+        )
+        val originalContext = context
+        val oldThemed = Words.themed
+        try {
+            for (case in cases) {
+                val configuration = android.content.res.Configuration(realContext.resources.configuration).apply {
+                    setLocale(java.util.Locale.forLanguageTag(case[0]))
+                }
+                val localized = realContext.createConfigurationContext(configuration).resources
+                context = object : ContextWrapper(originalContext) {
+                    override fun getResources() = localized
+                }
+                for (themed in listOf(false, true)) {
+                    Words.setThemed(realContext, themed)
+                    preferences.edit().clear().commit()
+                    NotificationTray.clear(realContext, Notifications.ID_ALLIES)
+                    deliver(Inbox(emptyList(), null))
+                    deliver(Inbox(listOf(InboxItem.RequestAccepted(200, "ally", "Test Ally")), null))
+                    val notification = checkNotNull(awaitPosted()).notification
+                    assertEquals(case[0], case[if (themed) 2 else 1], notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+                    assertEquals(case[if (themed) 4 else 3], notification.publicVersion.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+                    NotificationTray.clear(realContext, Notifications.ID_ALLIES)
+                    deliver(Inbox(listOf(InboxItem.RequestAccepted(300, "ally", "Test Ally"), InboxItem.FriendRequest(400, "other", "Other Friend")), null))
+                    assertEquals(case[0], case[if (themed) 6 else 5], checkNotNull(awaitPosted()).notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+                }
+            }
+        } finally {
+            context = originalContext
+            Words.setThemed(realContext, oldThemed)
+        }
+    }
+
     @Test fun existingBacklogIsSilentButLaterActivityPostsOnlyOnce() {
         deliver(inbox(100))
         assertNull(posted())

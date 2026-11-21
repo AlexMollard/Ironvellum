@@ -57,6 +57,56 @@ class WorkoutSessionService : Service() {
                 .putExtra(EXTRA_SESSION_ID, sessionId)
             ContextCompat.startForegroundService(context, intent)
         }
+
+        /** "Set 3 · 8 reps · 60kg" for the next set to do, or null when every set is done. */
+        private fun nextLine(next: SessionSet?, sets: List<SessionSet>): UiText? = next?.let {
+            val number = it.workingNumber(sets)
+            val load = it.weightKg?.takeIf { kg -> kg > 0.0 }?.let(::formatLoad)
+            // A HOLD set carries its figure in seconds; REPS sets count.
+            val seconds = it.durationSec
+            if (seconds != null && it.reps == 0) {
+                if (load == null) UiText.res(R.string.notification_trial_set_hold, number, seconds)
+                else UiText.res(R.string.notification_trial_set_hold_load, number, seconds, load)
+            } else {
+                if (load == null) UiText.plural(R.plurals.notification_trial_set_reps, it.reps, number, it.reps)
+                else UiText.plural(R.plurals.notification_trial_set_reps_load, it.reps, number, it.reps, load)
+            }
+        }
+
+        internal fun restOverNotification(context: Context, sessionId: Long, sets: List<SessionSet>): Notification {
+            val next = Supersets.nextSet(sets)
+            val prefs = TrialPrefs(context)
+            val channel = Notifications.restChannel(context, prefs.restAlert)
+            val pending = LiveWorkoutNotification.trialIntent(context, sessionId, seal = false, requestCode = Notifications.REQUEST_REST_OVER)
+            val public = NotificationCompat.Builder(context, channel)
+                .setSmallIcon(R.drawable.ic_reminder)
+                .setColor(Notifications.accent(context))
+                .setContentTitle(context.getString(R.string.notification_rest_over_title))
+                .setContentText(context.getString(R.string.live_private_text))
+                .setContentIntent(pending)
+                .build()
+            // The alert mode picks the channel: vibrate, sound and vibrate, or a silent notice.
+            return NotificationCompat.Builder(context, channel)
+                .setSmallIcon(R.drawable.ic_reminder)
+                .setColor(Notifications.accent(context))
+                .setContentTitle(context.getString(R.string.notification_rest_over_title))
+                .setContentText(
+                    next?.let { UiText.res(R.string.notification_rest_over_text, it.exerciseName, nextLine(it, sets)!!).asString(context) }
+                        ?: context.getString(R.string.notification_rest_over_next),
+                )
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(pending)
+                .setVisibility(if (prefs.showLiftsOnLock) NotificationCompat.VISIBILITY_PUBLIC else NotificationCompat.VISIBILITY_PRIVATE)
+                .setPublicVersion(public)
+                .setAutoCancel(true)
+                // A buzz, not a fixture: gone by the time the next rest could end.
+                .setTimeoutAfter(60_000)
+                .build()
+        }
+
+        private fun formatLoad(kg: Double): String =
+            Units.format(kg) + Units.name
+
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -178,7 +228,7 @@ class WorkoutSessionService : Service() {
             while (!rest.isOver(SystemClock.elapsedRealtime())) {
                 delay(rest.remainingMs(SystemClock.elapsedRealtime()))
             }
-            post(Notifications.ID_REST_OVER, restOverNotification(sessionId, sets))
+            post(Notifications.ID_REST_OVER, restOverNotification(this@WorkoutSessionService, sessionId, sets))
             // Back to the trial's own notification; a countdown left in place
             // would run on into negative time.
             RestClock.finish(rest)
@@ -205,43 +255,6 @@ class WorkoutSessionService : Service() {
         @Suppress("MissingPermission") // guarded directly above
         manager.notify(id, notification)
     }
-
-    /** "Set 3 · 8 reps · 60kg" for the next set to do, or null when every set is done. */
-    private fun nextLine(next: SessionSet?, sets: List<SessionSet>): UiText? = next?.let {
-        val number = it.workingNumber(sets)
-        val load = it.weightKg?.takeIf { kg -> kg > 0.0 }?.let(::formatLoad)
-        // A HOLD set carries its figure in seconds; REPS sets count.
-        val seconds = it.durationSec
-        if (seconds != null && it.reps == 0) {
-            if (load == null) UiText.res(R.string.notification_trial_set_hold, number, seconds)
-            else UiText.res(R.string.notification_trial_set_hold_load, number, seconds, load)
-        } else {
-            if (load == null) UiText.plural(R.plurals.notification_trial_set_reps, it.reps, number, it.reps)
-            else UiText.plural(R.plurals.notification_trial_set_reps_load, it.reps, number, it.reps, load)
-        }
-    }
-
-    private fun restOverNotification(sessionId: Long, sets: List<SessionSet>): Notification {
-        val next = Supersets.nextSet(sets)
-        // The alert mode picks the channel: vibrate, sound and vibrate, or a silent notice.
-        return NotificationCompat.Builder(this, Notifications.restChannel(this, TrialPrefs(this).restAlert))
-            .setSmallIcon(R.drawable.ic_reminder)
-            .setColor(Notifications.accent(this))
-            .setContentTitle(getString(R.string.notification_rest_over_title))
-            .setContentText(
-                next?.let { UiText.res(R.string.notification_rest_over_text, it.exerciseName, nextLine(it, sets)!!).asString(this) }
-                    ?: getString(R.string.notification_rest_over_next),
-            )
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(LiveWorkoutNotification.trialIntent(this, sessionId, seal = false, requestCode = Notifications.REQUEST_REST_OVER))
-            .setAutoCancel(true)
-            // A buzz, not a fixture: gone by the time the next rest could end.
-            .setTimeoutAfter(60_000)
-            .build()
-    }
-
-    private fun formatLoad(kg: Double): String =
-        Units.format(kg) + Units.name
 
     override fun onDestroy() {
         releaseWake()

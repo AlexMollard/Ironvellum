@@ -158,7 +158,7 @@ object InboxNotifier {
 
         val latest = line(fresh.first()).asString(context)
         val title = if (fresh.size == 1) {
-            UiText.themed(R.string.notification_inbox_title_one, R.string.notification_inbox_title_one__t)
+            title(fresh.first())
         } else {
             UiText.themedPlural(R.plurals.notification_inbox_title_many, R.plurals.notification_inbox_title_many__t, fresh.size)
         }.asString(context)
@@ -174,7 +174,7 @@ object InboxNotifier {
         val public = NotificationCompat.Builder(context, Notifications.CHANNEL_ALLIES)
             .setSmallIcon(R.drawable.ic_reminder)
             .setColor(Notifications.accent(context))
-            .setContentTitle(title)
+            .setContentTitle(UiText.themed(R.string.notification_inbox_title_one, R.string.notification_inbox_title_one__t).asString(context))
             .setContentText(
                 if (fresh.size == 1) {
                     UiText.themed(R.string.notification_inbox_public_one, R.string.notification_inbox_public_one__t)
@@ -226,6 +226,21 @@ object InboxNotifier {
             .takeLast(TRIBUTE_MEMORY)
 
     private fun tributeKey(item: InboxItem.NewReaction) = "${item.sessionId}:${item.actorId}"
+
+    private fun title(item: InboxItem): UiText = when (item) {
+        is InboxItem.FriendRequest -> UiText.themed(R.string.notification_inbox_title_request, R.string.notification_inbox_title_request__t)
+        is InboxItem.RequestAccepted -> UiText.themed(R.string.notification_inbox_title_accepted, R.string.notification_inbox_title_accepted__t)
+        is InboxItem.NewComment -> UiText.themed(R.string.notification_inbox_title_comment, R.string.notification_inbox_title_comment__t)
+        is InboxItem.NewReply -> UiText.res(R.string.notification_inbox_title_reply)
+        is InboxItem.NewReaction -> UiText.themed(R.string.notification_inbox_title_reaction, R.string.notification_inbox_title_reaction__t)
+        is InboxItem.NewCircleMember -> UiText.themed(R.string.notification_inbox_title_joined, R.string.notification_inbox_title_joined__t)
+        is InboxItem.CircleGoalMet -> UiText.themed(R.string.notification_inbox_title_goal, R.string.notification_inbox_title_goal__t)
+        is InboxItem.CircleNotice -> when (item.change) {
+            CircleChange.LEFT -> UiText.themed(R.string.notification_inbox_title_left, R.string.notification_inbox_title_left__t)
+            CircleChange.KEEPER -> UiText.themed(R.string.notification_inbox_title_keeper, R.string.notification_inbox_title_keeper__t)
+            CircleChange.REMOVED -> UiText.themed(R.string.notification_inbox_title_removed, R.string.notification_inbox_title_removed__t)
+        }
+    }
 
     private fun line(item: InboxItem): UiText = when (item) {
         is InboxItem.NewComment ->

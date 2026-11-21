@@ -565,15 +565,34 @@
     <string name="notification_channel_rest_silent_description">A quiet notice when the rest between sets is over: no sound, no buzz.</string>
 
     <!-- Notification: new activity from friends (one notification, replaced). -->
-    <string name="notification_inbox_title_one">A message</string>
-    <string name="notification_inbox_title_one__t">A missive</string>
-    <plurals name="notification_inbox_title_many"><item quantity="one">%1$d new message</item><item quantity="other">%1$d new messages</item></plurals>
-    <plurals name="notification_inbox_title_many__t"><item quantity="one">%1$d new missive</item><item quantity="other">%1$d new missives</item></plurals>
+    <string name="notification_inbox_title_request">Friend request</string>
+    <string name="notification_inbox_title_request__t">Ally request</string>
+    <string name="notification_inbox_title_accepted">Friend request accepted</string>
+    <string name="notification_inbox_title_accepted__t">Ally request accepted</string>
+    <string name="notification_inbox_title_comment">New comment</string>
+    <string name="notification_inbox_title_comment__t">New remark</string>
+    <string name="notification_inbox_title_reply">New reply</string>
+    <string name="notification_inbox_title_reaction">New kudos</string>
+    <string name="notification_inbox_title_reaction__t">New tribute</string>
+    <string name="notification_inbox_title_joined">Group member joined</string>
+    <string name="notification_inbox_title_joined__t">Circle member joined</string>
+    <string name="notification_inbox_title_goal">Group goal reached</string>
+    <string name="notification_inbox_title_goal__t">Circle goal reached</string>
+    <string name="notification_inbox_title_left">Group member left</string>
+    <string name="notification_inbox_title_left__t">Circle member left</string>
+    <string name="notification_inbox_title_keeper">Group leadership changed</string>
+    <string name="notification_inbox_title_keeper__t">Circle keeper changed</string>
+    <string name="notification_inbox_title_removed">Removed from group</string>
+    <string name="notification_inbox_title_removed__t">Removed from circle</string>
+    <plurals name="notification_inbox_title_many"><item quantity="one">%1$d new social update</item><item quantity="other">%1$d new social updates</item></plurals>
+    <plurals name="notification_inbox_title_many__t"><item quantity="one">%1$d new ally update</item><item quantity="other">%1$d new ally updates</item></plurals>
     <!-- The lock-screen version: says only that something arrived. -->
-    <string name="notification_inbox_public_one">New message from a friend</string>
-    <string name="notification_inbox_public_one__t">New missive from an ally</string>
-    <string name="notification_inbox_public_many">New messages from your friends</string>
-    <string name="notification_inbox_public_many__t">New missives from your allies</string>
+    <string name="notification_inbox_title_one">New friend activity</string>
+    <string name="notification_inbox_title_one__t">New ally activity</string>
+    <string name="notification_inbox_public_one">New activity from a friend</string>
+    <string name="notification_inbox_public_one__t">New activity from an ally</string>
+    <string name="notification_inbox_public_many">New activity from your friends</string>
+    <string name="notification_inbox_public_many__t">New activity from your allies</string>
     <!-- %1$s is a friend's display name, %2$s what they wrote, %3$s a workout's title, %4$s a reaction's name, %5$s a group's name; see each line. -->
     <string name="notification_inbox_line_comment">%1$s left a comment: %2$s</string>
     <!-- Themed wording of notification_inbox_line_comment. %1$s is a friend's display name, %2$s what they wrote, %3$s a workout's title, %4$s a reaction's name, %5$s a group's name; see each line. -->

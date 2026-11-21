@@ -5,6 +5,7 @@ store listing; this is the whole list.
 
 ## Unreleased
 
+- Give social notifications descriptive event headings in every language, and respect hidden lock-screen lifts when rest finishes.
 - Update Android build and Compose dependencies and compile against SDK 37.1.
 - Load the Social feed in smaller pages and show its cached cards while refreshing when you return.
 - Show the estimated finish time in a running workout, using your phone’s clock format.
