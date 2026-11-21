@@ -42,6 +42,7 @@ object TestProfile {
         app.appearanceStore.setMode(com.ironvellum.app.ui.theme.ThemeMode.DARK)
         FirstRunPrefs.setWelcomeSeen(app)
         FirstRunPrefs.setVeilIntroSeen(app)
+        FirstRunPrefs.setVeilTermsSeen(app)
         FirstRunPrefs.setNotificationsAsked(app)
         // Skipping setup (OnboardingBackTest) leaves the sex marked unset in prefs and in a process-wide flow, which
         // relabels Today's rank chip "Add sex in Profile" for every test that runs after it in the same process.

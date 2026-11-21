@@ -43,7 +43,11 @@ val signingComplete = !keystorePassword.isNullOrBlank() &&
 
 android {
     namespace = "com.ironvellum.app"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 1
+        }
+    }
 
     androidResources {
         // Builds res/xml/_generated_res_locales.xml from the values-xx folders (plus the

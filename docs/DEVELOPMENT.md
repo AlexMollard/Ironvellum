@@ -2,7 +2,7 @@
 
 Kotlin 2.4.21, Jetpack Compose with Material 3, Room 2.8.5, WorkManager,
 Health Connect 1.1.0, and Supabase 3.9.0 over Ktor 3.6.1. AGP
-9.5.1, minSdk 29, compileSdk 37, targetSdk 36. The domain layer is pure Kotlin, which is why
+9.5.2, minSdk 29, compileSdk 37.1, targetSdk 36. The domain layer is pure Kotlin, which is why
 most of it is covered by fast unit tests. Room is the source of truth; the
 cloud is a backup, never an authority.
 
@@ -18,6 +18,14 @@ python3 tools/gate.py --no-device  # compile instrumented tests without running 
 The gate must finish strictly under ten minutes; passing tests after the
 deadline still produce a red verdict. `--no-device` is not instrumented-test
 acceptance. The web phase also needs Node 22.12+ and npm.
+
+Validation on 2026-11-21: the full FOSS gate passed in **8m41s** with warm
+Gradle caches and a running API 35 emulator (`Ironvellum_Art_API35`, swangle,
+8 cores / 8 GB). All 2,912 unit tests, 869 instrumented tests, 380 web tests
+and four generated-art checks passed; lint reported no issues. The local
+runner selected that installed AVD in place of `IronvellumEmu`; it used the
+unchanged gate, emulator lock and ten-minute budget. This is a warm-run
+measurement, not a cold-cache build guarantee.
 
 > [!WARNING]
 > The instrumented suite calls `pm clear`, deletes rows from the app's own
@@ -51,7 +59,7 @@ More in `docs/`:
 
 ## Build from source
 
-Install JDK 17 and Android SDK platform 37; the Gradle 9.7.1 wrapper is included.
+Install JDK 17 and Android SDK platform 37.1; the Gradle 9.7.1 wrapper is included.
 Set `ANDROID_HOME` or `sdk.dir` in your gitignored `local.properties`.
 
 ```bash
