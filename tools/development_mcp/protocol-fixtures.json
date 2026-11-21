@@ -1,0 +1,106 @@
+{
+  "status": {
+    "schemaVersion": 1,
+    "requestId": "0123456789abcdef0123456789abcdef",
+    "ok": true,
+    "app": {
+      "package": "com.ironvellum.app",
+      "versionName": "1.0.0",
+      "versionCode": 1,
+      "debuggable": true
+    },
+    "activeWorkout": {
+      "id": 42,
+      "label": "Fixture workout",
+      "startedAtMs": 1760000000000,
+      "totalSets": 4,
+      "completedSets": 2
+    }
+  },
+  "status_no_workout": {
+    "schemaVersion": 1,
+    "requestId": "0123456789abcdef0123456789abcdef",
+    "ok": true,
+    "app": {
+      "package": "com.ironvellum.app",
+      "versionName": "1.0.0",
+      "versionCode": 1,
+      "debuggable": true
+    },
+    "activeWorkout": null
+  },
+  "show": {
+    "schemaVersion": 1,
+    "requestId": "0123456789abcdef0123456789abcdef",
+    "ok": true,
+    "operation": "notification_preview",
+    "action": "show",
+    "scenario": "accepted",
+    "requestedIds": [
+      5
+    ],
+    "submittedIds": [
+      5
+    ],
+    "blocked": []
+  },
+  "blocked": {
+    "schemaVersion": 1,
+    "requestId": "0123456789abcdef0123456789abcdef",
+    "ok": true,
+    "operation": "notification_preview",
+    "action": "show",
+    "scenario": "accepted",
+    "requestedIds": [
+      5
+    ],
+    "submittedIds": [],
+    "blocked": [
+      {
+        "id": 5,
+        "channelId": "allies",
+        "reason": "permission_denied"
+      }
+    ]
+  },
+  "clear": {
+    "schemaVersion": 1,
+    "requestId": "0123456789abcdef0123456789abcdef",
+    "ok": true,
+    "operation": "notification_preview",
+    "action": "clear",
+    "scenario": "all",
+    "requestedIds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "submittedIds": [],
+    "blocked": []
+  },
+  "error": {
+    "schemaVersion": 1,
+    "requestId": "0123456789abcdef0123456789abcdef",
+    "ok": false,
+    "operation": "notification_preview",
+    "action": "show",
+    "scenario": null,
+    "requestedIds": [],
+    "submittedIds": [],
+    "blocked": [],
+    "error": {
+      "code": "unknown_scenario"
+    }
+  },
+  "status_error": {
+    "schemaVersion": 1,
+    "requestId": "0123456789abcdef0123456789abcdef",
+    "ok": false,
+    "error": {
+      "code": "status_unavailable"
+    }
+  }
+}

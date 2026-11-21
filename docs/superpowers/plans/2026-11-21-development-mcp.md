@@ -66,6 +66,8 @@ implementer's choice. Production functions are synchronous and callable by SDK.
   and ensure it releases on error. Add optional timeout_s/log parameters to
   lock_acquire, lock_take_over and emulator_lock as needed, preserving existing
   defaults. Test timeout leaves the live holder intact and stdout unpolluted.
+  A failed/timed-out PID probe must not classify a live holder as dead; bound
+  Windows tasklist probes and conservatively retain an unverified holder.
 - [ ] Use Python setuptools src layout, package name ironvellum-development-mcp,
   requires-python >=3.11 and dependency mcp==2.3.0. Root may create the isolated
   .venv. Ignore only this tool's .venv and build/install metadata.
