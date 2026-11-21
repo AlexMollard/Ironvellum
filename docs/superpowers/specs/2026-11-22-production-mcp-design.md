@@ -149,7 +149,13 @@ custom/timed/distance/climbing entries are rejected clearly.
 Publish a versioned movement manifest from actual Seed.exercises with canonical
 name and metric. Key is the exact lowercase/trimmed canonical name, not Room ID,
 leaderboard lift wire or drawing ID. Reject collisions. The phone revalidates
-every key against its current built-in REPS catalogue before acceptance.
+every key against its current built-in REPS catalogue before acceptance. To keep
+identity-blocking validation bounded, v1 inspects at most 5,000 local movement
+rows plus one overflow sentinel. If the complete local catalogue exceeds that
+budget, reject the whole draft before approval and again during transactional
+revalidation. Never infer uniqueness from a truncated scan. Existing manual
+workouts and movements remain usable; this limit applies to AI draft import.
+
 
 Envelope adds immutable id/revision/content hash, owner/client/grant, timestamps,
 status and expiry. Pending draft expires after 30 days. Creation idempotency key is 1..80

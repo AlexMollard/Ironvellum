@@ -186,30 +186,42 @@ object Cloud {
      *
      * Order matters. The old session is meaningless against the new project,
      * and signing out AFTER swapping would attempt it there, so:
-     * 1. sign out THIS device's session against the OLD project (LOCAL scope:
+     * 1. fence account-scoped work and forget the published identity, then
+     *    sign out THIS device's session against the OLD project (LOCAL scope:
      *    the lifter's other phones stay signed in there) — best effort, then
      *    always [Auth.clearSession] so the local session goes even when the
      *    old server is unreachable;
-     * 2. [beforeSwap] — the caller clears AccountRepository's published identity
-     *    and resets the push watermark (`CloudSync.forgetPushedState`), so the
-     *    old account cannot appear signed in and sessions re-upload to the new backend;
+     * 2. [beforeSwap] resets the push watermark so sessions re-upload to the new backend;
      * 3. under the client lock, drop the cached client and persist the new
      *    override;
      * 4. emit the new [config], redrawing every screen that collects it.
      */
-    suspend fun reconfigure(next: CloudConfig?, beforeSwap: suspend () -> Unit = {}) {
-        val old = instance ?: synchronized(this) { instance }
-        if (old != null) {
-            runCatching { old.auth.signOut(SignOutScope.LOCAL) }
-            runCatching { old.auth.clearSession() }
+    suspend fun reconfigure(next: CloudConfig?, accounts: AccountRepository, beforeSwap: suspend () -> Unit) {
+        reconfigure(accounts, oldClient = { instance ?: synchronized(this) { instance } }, beforeSwap = beforeSwap) {
+            synchronized(this) {
+                instance = null
+                override = next
+                writeOverride(next)
+            }
+            _config.value = resolve(next)
         }
-        beforeSwap()
-        synchronized(this) {
-            instance = null
-            override = next
-            writeOverride(next)
+    }
+
+    internal suspend fun reconfigure(
+        accounts: AccountRepository,
+        oldClient: () -> SupabaseClient?,
+        beforeSwap: suspend () -> Unit,
+        swap: () -> Unit,
+    ) {
+        accounts.withBackendSwitch {
+            val old = oldClient()
+            if (old != null) {
+                runCatching { old.auth.signOut(SignOutScope.LOCAL) }
+                runCatching { old.auth.clearSession() }
+            }
+            beforeSwap()
+            swap()
         }
-        _config.value = resolve(next)
     }
 
     /**

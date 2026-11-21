@@ -8,9 +8,9 @@ POST `/rest/v1/rpc/ironvellum_mcp_gateway` with `{"p_operation":"...","p_args":{
 
 | Operation | Exact input keys | Additional success fields |
 | --- | --- | --- |
-| configuration.get | none | resourceUrl (null before initialization), catalogueCount, catalogueHash |
-| configuration.configure | resourceUrl | resourceUrl |
-| client.register | clientId, clientName, metadataCiphertext, redirectUris | clientId |
+| configuration.get | none | resourceUrl, keyVerification (both null before initialization), catalogueCount, catalogueHash |
+| configuration.configure | resourceUrl, keyVerification, catalogue, previousCatalogueHash | resourceUrl, keyVerification, catalogueCount, catalogueHash |
+| client.register | clientId, clientName, metadataCiphertext, redirectUris, keyVerification | clientId |
 | client.get | clientId | clientId, clientName, metadataCiphertext, redirectUris |
 | authorization.create | clientId, resourceUrl, redirectUri, redirectUriExplicit, scopes, codeChallenge, state | requestId, expiresAtMs |
 | authorization.get | requestId | requestId, clientId, clientName, resourceUrl, redirectUri, redirectUriExplicit, scopes, codeChallenge, state, expiresAtMs |
@@ -21,10 +21,13 @@ POST `/rest/v1/rpc/ironvellum_mcp_gateway` with `{"p_operation":"...","p_args":{
 | refresh.exchange | clientId, resourceUrl, refreshHash, newRefreshHash, accessHash, scopes | grantId, clientId, resourceUrl, scopes, accessExpiresAtMs, refreshExpiresAtMs |
 | token.revoke | clientId, tokenHash | none |
 | tool.call | accessHash, tool, args | tool-specific fields below |
-| catalogue.put | schemaVersion, movements | count |
 | prune | none | affected |
 
-Initialization pins exactly one canonical resource ending in /mcp. Sending the same resource again is idempotent. A different value is a conflict. The HTTPS deployment and explicit developer loopback checks are also enforced by the service. Registration accepts 1-16 exact HTTPS or HTTP loopback redirect URIs, a 1-128 character ASCII identifier from `A-Za-z0-9._~-`, a 1-100 character unverified name, and 1-32,768 characters of encrypted SDK metadata. Authenticate and encrypt metadata before calling. The database cannot verify the encryption key or attest that a string is ciphertext. Registration is insert-only. SQL enforces 20 registrations per rolling minute and 1,000 per rolling 24 hours across the service.
+The operator's configuration call validates the resource, key marker and entire catalogue in one serialized transaction. It pins the resource and key marker and installs the catalogue together. The catalogue object contains exactly `schemaVersion` and `movements`. Send JSON null for `previousCatalogueHash` on initialization or an idempotent retry. To replace different existing contents, supply the exact installed `catalogueHash` observed before the operator's intended update. A stale expected hash, different resource or different key marker returns `conflict` and preserves the installed configuration. A retry that already matches the desired configuration succeeds.
+
+The service derives `keyVerification` as lowercase hexadecimal HMAC-SHA256. The HMAC key is the 32 raw bytes obtained by base64url-decoding the persistent Fernet key. Its message is UTF-8 `ironvellum-mcp-key-verification-v1`, a NUL byte, and the exact canonical resource URL in UTF-8. The private database stores this verification value. It has no OAuth, encryption or RPC authorization capability. Startup, readiness and registration each check the marker. Unbound legacy registrations cause setup to return `conflict` pending explicit recovery.
+
+Registration accepts 1–16 exact HTTPS or HTTP loopback redirect URIs, a 1–128 character ASCII identifier from `A-Za-z0-9._~-`, a 1–100 character unverified name and 1–32,768 characters of encrypted SDK metadata. The service authenticates the encrypted metadata on read. Registration is insert-only. SQL enforces 20 registrations per rolling minute and 1,000 per rolling 24 hours service-wide.
 
 Scopes are a nonempty array of distinct strings from `training:read`, `progress:read`, `savedworkouts:read`, `workoutdrafts:create`. Explicit redirect is a boolean. State is a string up to 2,048 characters or JSON null. Only S256 is supported. The challenge is 43 base64url characters. The service verifies PKCE and passes the challenge it computed from the supplied verifier at exchange. An omitted protocol redirect resolves to the original effective redirect under SDK checks, while redirectUriExplicit preserves its origin. SQL admits up to 20 new authorization requests per client and 120 service-wide per rolling minute. Decided requests still count until the minute passes. A full window returns rate_limited. Authorization records expire after 10 minutes and disappear from lookup once decided.
 

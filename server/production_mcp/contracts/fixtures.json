@@ -536,17 +536,33 @@
         "ok": true,
         "resourceUrl": "https://ironvellum.example/mcp",
         "catalogueCount": 1,
-        "catalogueHash": "1f739c69e5483c3a109478cbba3aebcfc942d1d1ec82b049f488f471fe466b61"
+        "catalogueHash": "1f739c69e5483c3a109478cbba3aebcfc942d1d1ec82b049f488f471fe466b61",
+        "keyVerification": "c6db5da19605e5596f54db72b428423ecf53e9050c9b299a2efbe3dc93e56f2e"
       }
     },
     "configuration.configure": {
       "args": {
-        "resourceUrl": "https://ironvellum.example/mcp"
+        "resourceUrl": "https://ironvellum.example/mcp",
+        "keyVerification": "c6db5da19605e5596f54db72b428423ecf53e9050c9b299a2efbe3dc93e56f2e",
+        "previousCatalogueHash": null,
+        "catalogue": {
+          "schemaVersion": 1,
+          "movements": [
+            {
+              "key": "bench press",
+              "name": "Bench Press",
+              "metric": "REPS"
+            }
+          ]
+        }
       },
       "result": {
         "schemaVersion": 1,
         "ok": true,
-        "resourceUrl": "https://ironvellum.example/mcp"
+        "resourceUrl": "https://ironvellum.example/mcp",
+        "catalogueCount": 1,
+        "catalogueHash": "1f739c69e5483c3a109478cbba3aebcfc942d1d1ec82b049f488f471fe466b61",
+        "keyVerification": "c6db5da19605e5596f54db72b428423ecf53e9050c9b299a2efbe3dc93e56f2e"
       }
     },
     "client.get": {
@@ -571,7 +587,8 @@
         "metadataCiphertext": "encrypted-test-fixture",
         "redirectUris": [
           "https://client.example/callback"
-        ]
+        ],
+        "keyVerification": "c6db5da19605e5596f54db72b428423ecf53e9050c9b299a2efbe3dc93e56f2e"
       },
       "result": {
         "schemaVersion": 1,
@@ -810,23 +827,6 @@
           "daysPerWeek": 2,
           "records30d": 1
         }
-      }
-    },
-    "catalogue.put": {
-      "args": {
-        "schemaVersion": 1,
-        "movements": [
-          {
-            "key": "bench press",
-            "name": "Bench Press",
-            "metric": "REPS"
-          }
-        ]
-      },
-      "result": {
-        "schemaVersion": 1,
-        "ok": true,
-        "count": 1
       }
     },
     "prune": {

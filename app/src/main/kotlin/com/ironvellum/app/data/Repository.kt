@@ -308,6 +308,7 @@ class Repository(
     private val trialPrefs: TrialPrefs? = null,
 ) {
 
+    internal val draftStore = DraftStore(db)
     val preparations: PreparationRepository = PreparationRepository(db, warmupStore)
     private val exerciseDao = db.exerciseDao()
     private val presetDao = db.presetDao()

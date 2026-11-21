@@ -75,7 +75,9 @@ not the permission/draft contracts. Do not pause between implementation tasks.
   and the entire operation dictionary before commit; it is the later tasks' API.
 - Gateway operations: configuration.get/configure; client.get/register;
   authorization.create/get; code.load/exchange; access.load; refresh.load/exchange;
-  token.revoke; tool.call; catalogue.put; prune. Explicitly document each input
+  token.revoke; tool.call; prune. Configuration atomically binds the resource,
+  key verifier and validated catalogue, with an explicit previous-hash compare
+  and swap for catalogue upgrades. Explicitly document each input
   and safe success/failure JSON; errors from replay must preserve revocation.
 - App envelope camelCase: draft id/revision/contentHash/clientName/createdAtMs/
   expiresAtMs/status/draft, connections resourceUrl/connections/recentAccess.
@@ -146,11 +148,11 @@ not the permission/draft contracts. Do not pause between implementation tasks.
 
 **Files:**
 - Create: domain/WorkoutDraft.kt, data/cloud/McpRepository.kt, DTOs and focused tests.
-- Modify: actual data entities/DAO/AppDatabase/Repository migration files discovered
-  from graph; AccountRepository only where needed for current-account boundaries.
+- Modify: data/IronvellumDatabase.kt (currently schema 49), data/db DAO/entity
+  files and Repository; AccountRepository only for current-account boundaries.
 - Create: room schema export and transaction/migration/receipt tests under
   app/src/androidTest (never overwrite an existing test).
-- Create: generated server/production_mcp/contracts/movements.json and a golden
+- Create: generated server/production_mcp/contracts/movements-v1.json and a golden
   exporter test from Seed.exercises using existing generated-web-asset patterns.
 
 **Interfaces:**

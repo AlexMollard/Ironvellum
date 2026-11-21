@@ -30,6 +30,7 @@ class ReconfigureResetsWatermarkTest {
         try {
             Cloud.reconfigure(
                 CloudConfig("https://byo-test.example.supabase.co", "test-anon-key", isDefault = false),
+                app.accountRepository,
             ) {
                 cloudSync.forgetPushedState()
             }
@@ -46,7 +47,7 @@ class ReconfigureResetsWatermarkTest {
         } finally {
             // Put the app back on its build default so the rest of the suite
             // is not pointed at a fake project.
-            Cloud.reconfigure(null) {
+            Cloud.reconfigure(null, app.accountRepository) {
                 cloudSync.forgetPushedState()
             }
         }

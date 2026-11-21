@@ -863,7 +863,7 @@ class AccountRestoreTest {
             accounts.restore().getOrThrow()
             assertEquals(USER, accounts.account.value?.userId)
 
-            accounts.clearForBackendSwitch()
+            Cloud.reconfigure(accounts, oldClient = { client }, beforeSwap = {}, swap = {})
 
             assertNull("The previous backend's account must not remain signed in", accounts.account.value)
             accounts.restore().getOrThrow()

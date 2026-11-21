@@ -35,10 +35,24 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import java.net.URI
+import java.net.URISyntaxException
 import kotlin.time.Clock
 import com.ironvellum.app.data.MessageException
+
+/** Stable receipt namespace for the configured HTTP endpoint. Never persist URL credentials. */
+internal fun draftBackendIdentity(endpoint: String): String? {
+    val uri = try { URI(endpoint) } catch (_: URISyntaxException) { return null }
+    val scheme = uri.scheme?.lowercase() ?: return null
+    val host = uri.host?.lowercase() ?: return null
+    if (scheme !in setOf("http", "https") || uri.rawUserInfo != null || uri.rawQuery != null || uri.rawFragment != null) return null
+    val defaultPort = if (scheme == "https") 443 else 80
+    val port = if (uri.port == -1 || uri.port == defaultPort) "" else ":${uri.port}"
+    return "$scheme://$host$port${uri.rawPath.orEmpty().trimEnd('/')}"
+}
 
 /** How an email sign-up ended: signed in now, or waiting on the confirmation link. */
 sealed interface SignUpOutcome {
@@ -74,7 +88,65 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
     private var setupClient: SupabaseClient? = null
     private var setupObservation: Deferred<Unit>? = null
 
-    private fun newTransition(): Long = synchronized(_account) { ++transition }
+    /** A capture is issued only for a settled identity and pins the exact SDK client. */
+    internal sealed interface Scope {
+        val backend: String
+        val userId: String
+    }
+
+    private class PinnedScope(
+        val owner: AccountRepository, val client: SupabaseClient, override val userId: String,
+        override val backend: String, val generation: Long, val transition: Long,
+    ) : Scope
+
+    private var pendingIdentityChanges = 0
+    private val scopeRevision = MutableStateFlow(0L)
+    internal val scopeChanges: StateFlow<Long> = scopeRevision.asStateFlow()
+    private fun scopeChanged() = scopeRevision.update { it + 1 }
+
+    internal fun captureScope(): Scope? = synchronized(_account) {
+        val client = identityClient ?: return null
+        val user = _account.value?.userId ?: return null
+        if (pendingIdentityChanges != 0 || requireClient().getOrNull() !== client || client.auth.currentUserOrNull()?.id != user) return null
+        val backend = draftBackendIdentity(client.supabaseHttpUrl) ?: return null
+        PinnedScope(this, client, user, backend, identityGeneration, transition)
+    }
+
+    internal fun isCurrent(scope: Scope): Boolean = synchronized(_account) {
+        scope is PinnedScope && scope.owner === this && pendingIdentityChanges == 0 && transition == scope.transition &&
+            identityGeneration == scope.generation && identityClient === scope.client && requireClient().getOrNull() === scope.client &&
+            _account.value?.userId == scope.userId && scope.client.auth.currentUserOrNull()?.id == scope.userId
+    }
+
+    internal fun requireCurrent(scope: Scope) {
+        if (!isCurrent(scope)) throw CancellationException("Account scope changed")
+    }
+
+    /** Only a preopened, synchronous local transaction may run here; its COMMIT precedes any identity change. */
+    internal fun <T> commitIfCurrent(scope: Scope, job: Job, commit: () -> T): T = synchronized(_account) {
+        job.ensureActive()
+        requireCurrent(scope)
+        commit()
+    }
+
+    internal suspend fun <T> withScope(scope: Scope, block: suspend (SupabaseClient) -> T): T {
+        requireCurrent(scope)
+        val client = (scope as PinnedScope).client
+        val job = checkNotNull(currentCoroutineContext()[Job])
+        sessionLock.withLock {
+            requireCurrent(scope)
+            ensureAccountSession(client, scope.userId)
+            requireCurrent(scope)
+            synchronized(activeQueries) { activeQueries.add(job) }
+        }
+        try {
+            return block(client)
+        } finally {
+            synchronized(activeQueries) { activeQueries.remove(job) }
+            job.ensureActive()
+            requireCurrent(scope)
+        }
+    }
 
     /** SDK loadSessionOrNull also hides I/O failures and cancellation; only absence means signed out. */
     private suspend fun storedSession(client: SupabaseClient): UserSession? = try {
@@ -174,9 +246,9 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
         }
     }
 
-    private suspend fun cancelQueries() {
-        val current = currentCoroutineContext()[Job]
-        val jobs = synchronized(activeQueries) { activeQueries.filter { it !== current } }
+    private suspend fun cancelQueries(except: Job? = null) {
+        val caller = except ?: currentCoroutineContext()[Job]
+        val jobs = synchronized(activeQueries) { activeQueries.filter { it !== caller } }
         jobs.forEach { it.cancel() }
         jobs.forEach { it.cancelAndJoin() }
     }
@@ -207,9 +279,24 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
         var imported = false
     }
 
-    private suspend fun <T> authenticate(client: SupabaseClient, block: suspend (AuthAttempt) -> T): T {
-        val token = newTransition()
-        return sessionLock.withLock {
+    /** Increment before waiting on the SDK mutex. Each waiter owns its count through cleanup,
+     * so cancelling a queued attempt never exposes the preceding attempt's mutable SDK state. */
+    private suspend fun <T> withIdentityTransition(block: suspend (Long) -> T): T {
+        val token = synchronized(_account) {
+            pendingIdentityChanges++
+            ++transition
+        }
+        scopeChanged()
+        try {
+            return sessionLock.withLock { block(token) }
+        } finally {
+            synchronized(_account) { pendingIdentityChanges-- }
+            scopeChanged()
+        }
+    }
+
+    private suspend fun <T> authenticate(client: SupabaseClient, block: suspend (AuthAttempt) -> T): T =
+        withIdentityTransition { token ->
             synchronized(_account) {
                 if (transition != token || requireClient().getOrNull() !== client) throw CancellationException("Account transition superseded")
             }
@@ -245,7 +332,6 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
                 throw error
             }
         }
-    }
 
     private fun explainAuthFailure(error: Throwable): Nothing {
         if (error is CancellationException) throw error
@@ -298,6 +384,7 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
                         ++identityGeneration
                     }
                 }
+                scopeChanged()
                 val profile = loadAccount(client, user.id, email)
                 if (generation != null && profile != null) {
                     synchronized(_account) {
@@ -476,27 +563,28 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
      */
     suspend fun deleteCloudData(): Result<Unit> {
         val client = requireClient().getOrElse { return failure(it) }
-        _account.value?.userId
+        val (account, generation) = accountSnapshot()
             ?: return Result.failure(MessageException(UiText.res(R.string.cloud_account_delete_signed_out)))
-        return runCatching {
-            client.postgrest.rpc("delete_my_account")
-            // The deleted user's credentials must go even if revocation fails or this screen is cancelled.
-            withContext(NonCancellable) {
-                try {
-                    runCatching { client.auth.signOut() }
-                } finally {
-                    runCatching { client.auth.clearSession() }
-                    synchronized(_account) {
-                        _account.value = null
-                        identityClient = null
-                        identityGeneration++
+        return attempt {
+            withIdentityTransition { token ->
+                cancelQueries()
+                currentProfile(client, account.userId, generation)
+                synchronized(_account) {
+                    if (transition != token) throw CancellationException("Account transition superseded")
+                }
+                client.postgrest.rpc("delete_my_account")
+                // The deleted user's credentials must go even if revocation fails or this screen is cancelled.
+                withContext(NonCancellable) {
+                    forgetPublishedIdentity()
+                    try {
+                        runCatching { client.auth.signOut() }
+                    } finally {
+                        runCatching { client.auth.clearSession() }
                     }
+                    Unit
                 }
             }
-            Unit
-        }.recoverCatching { error ->
-            throw MessageException(Cloud.explain(error))
-        }
+        }.recoverCatching { error -> explainAuthFailure(error) }
     }
 
     /** One retry of the profiles row for a session that restored offline. */
@@ -516,17 +604,25 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
         }
     }
 
-    /** Invalidate old-project work before Cloud swaps clients, without a second network sign-out. */
-    internal suspend fun clearForBackendSwitch() {
+    private fun forgetPublishedIdentity() {
         synchronized(_account) {
             automaticRestoreAllowed = false
             _account.value = null
             identityClient = null
             identityGeneration++
-            ++transition
         }
+        scopeChanged()
+    }
+
+    /** Keep SDK sign-out, watermark reset and client swap serialized with other SDK identity changes. */
+    internal suspend fun withBackendSwitch(switch: suspend () -> Unit) = withIdentityTransition {
+        val caller = currentCoroutineContext()[Job]
+        // Once the app forgets this identity, finish draining reads and clearing the old SDK/session store
+        // even if the Settings screen closes. The transition stays pending through the actual swap.
         withContext(NonCancellable) {
-            sessionLock.withLock { cancelQueries() }
+            forgetPublishedIdentity()
+            cancelQueries(except = caller)
+            switch()
         }
     }
 
@@ -541,6 +637,7 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
             identityGeneration++
             ++transition
         }
+        scopeChanged()
         // A restore already importing a token must finish before logout clears the SDK's stored session.
         withContext(NonCancellable) { sessionLock.withLock {
             if (synchronized(_account) { completedAuthentication <= token }) {

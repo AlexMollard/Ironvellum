@@ -1,5 +1,64 @@
 # Ironvellum production MCP
 
+The standalone Python service provides seven tools for synced training reads and proposed saved workouts. User consent selects from `training:read`, `progress:read`, `savedworkouts:read` and `workoutdrafts:create`. The [wire contract](contracts/README.md) defines each tool, scope, error, quota and result.
+
+## Install and run
+
+Use CPython 3.11 or later and a separate virtual environment. From `server/production_mcp`, activate that environment and install the pinned runtime and package.
+
+```sh
+python -m pip install -r requirements.lock
+python -m pip install --no-deps .
+```
+
+Set the [example environment variables](.env.example) through your process environment or host secret manager. The command reads process variables only.
+
+| Variable | Value |
+| --- | --- |
+| `IRONVELLUM_MCP_ISSUER` | Canonical public HTTPS origin, without a trailing slash or path |
+| `IRONVELLUM_MCP_BACKEND_URL` | Single configured Supabase HTTPS origin |
+| `IRONVELLUM_MCP_PUBLIC_KEY` | Browser-safe Supabase publishable key or legacy anon-role JWT |
+| `IRONVELLUM_MCP_GATEWAY_KEY` | Private gateway-role credential. The default schema grant uses service_role. |
+| `IRONVELLUM_MCP_ENCRYPTION_KEY` | Persistent Fernet key, generated from 32 random bytes, base64url encoded. Store in the host secret manager and retain across restarts and replicas. |
+| `IRONVELLUM_MCP_MANIFEST` | Path to the generated, version-1 Seed movement manifest with schemaVersion and movements |
+| `IRONVELLUM_MCP_LOOPBACK` | Set to `1` explicitly to permit HTTP origins on localhost, 127.0.0.1 or [::1] during development |
+
+After applying schema 36 to an approved backend, use explicit setup to pin the canonical resource and encryption-key marker and install the manifest in one database transaction. Repeating the same configuration is safe. Startup and readiness compare the installed resource, key marker, catalogue count and catalogue fingerprint with the local settings.
+
+```sh
+ironvellum-production-mcp configure-backend
+ironvellum-production-mcp serve --host 127.0.0.1 --port 8000
+```
+
+For a container, bind to its internal interface and terminate HTTPS at a trusted proxy. Preserve the canonical Host. The service rejects trailing-slash aliases for its endpoints. Keep query strings, headers and bodies out of proxy and application telemetry. The CLI disables HTTP access logging and SDK diagnostics. Starting the server performs read-only checks. A missing manifest or mismatch in the resource, key or catalogue prevents startup.
+
+To change the catalogue deliberately, read `catalogueHash` from the private `configuration.get` response, verify the intended changes, point the manifest setting to the replacement, then run `ironvellum-production-mcp configure-backend --previous-catalogue-hash <observed-sha256>`. A concurrent change causes a conflict. Update serving replicas to the matching manifest.
+
+Back up the Fernet key in a secret manager. If a replica has a different key, restore the established key. Both setup and readiness refuse a replacement key. For a database with legacy encrypted registrations and an unset verification marker, stop admission and drain old replicas. A reviewed recovery must authenticate every existing client record with the backed-up key and verify its client identity before binding that key. Rotation requires a coordinated offline re-encryption and marker update across all replicas. If the key is lost, old client secrets are unrecoverable. A separate operator-approved recovery must revoke affected grants, preserve user data, and have clients register and users reconnect. The configuration command cannot perform a destructive reset.
+
+## Protocol and browser integration
+
+- The resource is `<issuer>/mcp`. Unauthorized requests receive the protected-resource metadata challenge. Discovery lives at `/.well-known/oauth-protected-resource/mcp` and `/.well-known/oauth-authorization-server`.
+- The official MCP 2.3.0 clients use the same streamable HTTP endpoint for the 2026-07-28 protocol and 2025-11-25 legacy handshake. The service also tests the SDK's OAuth client discovery, dynamic registration, S256 authorization and authenticated tool call.
+- `POST /register` accepts public (`none`), `client_secret_basic` and `client_secret_post` clients. Omitted authentication method defaults to Post. Register 1–16 distinct canonical HTTPS or HTTP loopback callback URLs. Use a path such as `/callback`; the comparison covers the exact URL, including the port and query. Reserved OAuth response parameters, userinfo and fragments are rejected. Registration accepts optional name, software ID/version, native/web application type, scope, code response type and authorization_code/refresh_token grant types. URL, contact, key and logo metadata are rejected. Client names are unverified text.
+- Use `GET` or form `POST /authorize` with `response_type=code`, explicit `resource=<issuer>/mcp`, S256 challenge and the exact redirect. A single registered redirect can be omitted. Authorization with omitted scopes requests the registered scopes, which default to the four supported scopes. The person chooses a subset before any grant is issued. `POST /token` checks PKCE; an explicit resource must match the bound resource exactly. Refresh can narrow the scope. `POST /revoke` authenticates the registered client and revokes its grant family. Token and revocation accept Basic with or without a matching form client ID.
+- Authorization redirects the human browser to `/consent/{requestId}` and sets a 10-minute, HttpOnly, SameSite=Lax binding cookie. HTTPS uses a Secure, host-only cookie. Keep consent in the same browser and complete one outstanding consent at a time.
+- The consent page reads `GET /consent/api/{requestId}` with same-origin cookies. Its response contains `requestId`, `clientName`, `scopes`, `expiresAtMs`, `backendUrl`, `publicKey` and `csrf`. Render client names as untrusted text. The browser signs in directly with the configured Supabase public key. The UI asset and route are supplied by the web consent implementation.
+- On the person's decision, POST JSON to that same API path with exact Origin, the cookie, and `Authorization: Bearer <human session JWT>`. The body has exactly `approved` (boolean), `scopes` (a distinct requested subset, empty on denial) and `csrf`. On success, navigate the top-level browser to the returned `redirectUrl`. Treat it as sensitive. The callback contains the one-use code or access_denied and the original state. The human bearer goes only to the fixed consent RPC.
+- `GET /healthz` returns 200 and `{"ready":true}` when the backend matches. Error responses contain stable classifications. Admission quota failures return HTTP 429. Tool errors return a structured MCP result with `isError`, `ok:false` and a safe classification. External bodies are capped at 64 KiB, backend calls at 10 seconds, and rendered tool results at 1 MiB.
+
+## Local HTTP verification
+
+Install Node's locked SQL test dependencies as below and use the isolated service environment.
+
+```sh
+python -m pip install pytest==9.0.2
+python -m pytest -q tests
+python -m pip check
+```
+
+Transport tests exercise the actual SDK using ASGI and a deterministic gateway double. The separate network suite launches Uvicorn, the official SDK clients and a disposable native PostgreSQL cluster. A loopback HTTP bridge maps fixed PostgREST requests and synthetic human identities to the real SQL functions. It verifies two-owner isolation, durable restart, grants, rotation, quotas at the HTTP adapter, draft creation and revocation. Hosted Supabase Auth, hosted PostgREST, a public TLS deployment and third-party AI products require separate deployment verification.
+
 ## Local SQL verification
 
 From the repository root, install the locked test dependencies, then run the disposable SQL suites.

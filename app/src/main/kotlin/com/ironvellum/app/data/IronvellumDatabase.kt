@@ -1,6 +1,8 @@
 package com.ironvellum.app.data
 
 import android.content.Context
+import com.ironvellum.app.data.db.DraftReceipt
+import com.ironvellum.app.data.db.DraftReceiptDao
 import com.ironvellum.app.data.db.PreparationDao
 import com.ironvellum.app.data.db.PreparationRoutineEntity
 import com.ironvellum.app.data.db.PresetPreparationEntity
@@ -50,6 +52,7 @@ import com.ironvellum.app.data.db.ProgressPhotoEntity
 
 @Database(
     entities = [
+        DraftReceipt::class,
         PreparationRoutineEntity::class,
         PresetPreparationEntity::class,
         SessionPreparationEntity::class,
@@ -77,6 +80,7 @@ import com.ironvellum.app.data.db.ProgressPhotoEntity
     exportSchema = true,
 )
 abstract class IronvellumDatabase : RoomDatabase() {
+    internal abstract fun draftReceiptDao(): DraftReceiptDao
     abstract fun preparationDao(): PreparationDao
     abstract fun exerciseDao(): ExerciseDao
     abstract fun presetDao(): PresetDao
@@ -95,7 +99,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 49
+        const val VERSION = 50
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -721,6 +725,15 @@ abstract class IronvellumDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_49_50 = object : Migration(49, 50) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""CREATE TABLE mcp_draft_receipts (
+                    backend TEXT NOT NULL, userId TEXT NOT NULL, draftId TEXT NOT NULL,
+                    contentHash TEXT NOT NULL, localPresetId INTEGER NOT NULL, savedAtMs INTEGER NOT NULL,
+                    ackPending INTEGER NOT NULL, PRIMARY KEY(backend, userId, draftId))""")
+            }
+        }
+
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -760,6 +773,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_46_47,
             MIGRATION_47_48,
             MIGRATION_48_49,
+            MIGRATION_49_50,
         )
 
         const val NAME = "ironvellum.db"

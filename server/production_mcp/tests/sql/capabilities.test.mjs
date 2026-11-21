@@ -2,53 +2,12 @@ import { PGlite } from '@electric-sql/pglite'
 import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto'
 import assert from 'node:assert/strict'
 import { before, after, test } from 'node:test'
-import { createHash, randomBytes, randomUUID } from 'node:crypto'
-import { mkdtemp, readFile, realpath, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { basename, dirname, join } from 'node:path'
-import { createServer } from 'node:net'
+import { createHash, randomUUID } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
+import { disposableNative } from './disposable-native.mjs'
 
 const native = process.argv.includes('--native')
-let db, cluster
-async function disposableNative() {
-  const { default: Postgres } = await import('embedded-postgres')
-  const parent = await realpath(tmpdir())
-  const directory = await mkdtemp(join(parent, 'ironvellum-mcp-test-'))
-  const socket = createServer()
-  await new Promise((resolve) => socket.listen(0, '127.0.0.1', resolve))
-  const port = socket.address().port
-  await new Promise((resolve) => socket.close(resolve))
-  cluster = new Postgres({
-    databaseDir: directory,
-    port,
-    user: 'postgres',
-    password: randomBytes(32).toString('hex'),
-    persistent: true,
-    createPostgresUser: false,
-    authMethod: 'scram-sha-256',
-    initdbFlags: ['--encoding=UTF8', '--locale=C'],
-    postgresFlags: ['-c', 'listen_addresses=127.0.0.1'],
-    onLog: () => {},
-    onError: () => {},
-  })
-  await cluster.initialise()
-  await cluster.start()
-  const connection = cluster.getPgClient('postgres', '127.0.0.1')
-  await connection.connect()
-  const query = connection.query.bind(connection)
-  return {
-    query,
-    exec: query,
-    close: async () => {
-      await connection.end()
-      await cluster.stop()
-      const resolved = await realpath(directory)
-      assert.equal(dirname(resolved), parent)
-      assert.ok(basename(resolved).startsWith('ironvellum-mcp-test-'))
-      await rm(resolved, { recursive: true, force: true, maxRetries: 3 })
-    },
-  }
-}
+let db
 const file = (path) => readFile(new URL('../../../../' + path, import.meta.url), 'utf8')
 const upgrade = 'supabase/hosted/2026-11-22-production-mcp.sql'
 const baseline = await file('supabase/migrations/0001_baseline.sql')
@@ -94,6 +53,7 @@ async function register() {
   ok(
     await gateway('client.register', {
       clientId,
+      keyVerification,
       clientName: 'Example',
       metadataCiphertext: 'encrypted-test-fixture',
       redirectUris: [redirectUri],
@@ -154,6 +114,39 @@ before(async () => {
 })
 after(() => db?.close())
 
+const keyVerification = '1'.repeat(64)
+const configure = {resourceUrl, keyVerification, previousCatalogueHash: null, catalogue: {schemaVersion: 1, movements}}
+
+if (native)
+  test('competing initial configurations retain the winning catalogue, resource and key', async () => {
+    const otherSetup = {...configure, resourceUrl: 'https://other.example/mcp', keyVerification: '2'.repeat(64),
+      catalogue: {schemaVersion: 1, movements: [{key:'row',name:'Row',metric:'REPS'}]}}
+    const loser = await race('service_role', 'select public.ironvellum_mcp_gateway($1,$2) v',
+      ['configuration.configure',configure], ['configuration.configure',otherSetup])
+    err(loser,'conflict')
+    const installed = ok(await gateway('configuration.get'))
+    assert.equal(installed.keyVerification, keyVerification)
+    assert.equal(installed.resourceUrl,resourceUrl)
+    assert.equal(installed.catalogueHash,'1f739c69e5483c3a109478cbba3aebcfc942d1d1ec82b049f488f471fe466b61')
+    err(await gateway('configuration.configure',{...configure,catalogue:otherSetup.catalogue}),'conflict')
+    assert.deepEqual(await gateway('configuration.get'),installed)
+  })
+
+test('atomic setup never adopts an unbound legacy client', async () => {
+  await admin('begin')
+  try {
+    // Simulate a DB upgraded from a schema-36 service which already registered a client.
+    await admin("insert into ironvellum_mcp.config(resource_url) values($1) on conflict(singleton) do update set key_verification=null", [resourceUrl])
+    await admin("insert into ironvellum_mcp.clients(id,name,ciphertext,redirects) values('legacy','Existing','opaque','{}')")
+    const before = ok(await gateway('configuration.get'))
+    err(await gateway('configuration.configure',configure),'conflict')
+    assert.deepEqual(await gateway('configuration.get'),before)
+    assert.equal(ok(await gateway('client.get',{clientId:'legacy'})).metadataCiphertext,'opaque')
+  } finally {
+    await admin('rollback')
+  }
+})
+
 test('gateway privilege and direct app claims', async () => {
   for (const role of ['anon', 'authenticated']) {
     await as(role, other)
@@ -163,8 +156,7 @@ test('gateway privilege and direct app claims', async () => {
   }
   await as('authenticated', user, 'delegated-client')
   await assert.rejects(sql('select public.ironvellum_mcp_connections() v'), { code: '42501' })
-  ok(await gateway('configuration.configure', { resourceUrl }))
-  ok(await gateway('catalogue.put', { schemaVersion: 1, movements }))
+  ok(await gateway('configuration.configure', configure))
   const installed = ok(await gateway('configuration.get'))
   assert.equal(installed.catalogueCount, 1)
   assert.equal(installed.catalogueHash, createHash('sha256')
@@ -172,6 +164,24 @@ test('gateway privilege and direct app claims', async () => {
   await as('authenticated', user)
   assert.equal(ok(await sql('select public.ironvellum_mcp_connections() v')).resourceUrl, resourceUrl)
 })
+test('setup and registration honor key binding and catalogue compare-and-swap', async () => {
+  const original = ok(await gateway('configuration.get'))
+  const updated = {...configure, catalogue:{schemaVersion:1, movements:[...movements,{key:'row',name:'Row',metric:'REPS'}]}}
+  const wrongKey = '2'.repeat(64)
+  err(await gateway('configuration.configure',{...updated,keyVerification:wrongKey,previousCatalogueHash:original.catalogueHash}),'conflict')
+  err(await gateway('configuration.configure',{...updated,previousCatalogueHash:'0'.repeat(64)}),'conflict')
+  assert.deepEqual(await gateway('configuration.get'),original)
+  const reg = {clientId:randomUUID(),clientName:'Wrong key',redirectUris:[redirectUri],metadataCiphertext:'fixture',keyVerification:wrongKey}
+  err(await gateway('client.register',reg),'conflict')
+  err(await gateway('client.get',{clientId:reg.clientId}),'not_found')
+  const next = ok(await gateway('configuration.configure',{...updated,previousCatalogueHash:original.catalogueHash}))
+  assert.equal(next.catalogueCount,2)
+  assert.notEqual(next.catalogueHash,original.catalogueHash)
+  assert.deepEqual(ok(await gateway('configuration.configure',{...updated,previousCatalogueHash:original.catalogueHash})),next)
+  err(await gateway('configuration.configure',{...configure,previousCatalogueHash:original.catalogueHash}),'conflict')
+  assert.deepEqual(ok(await gateway('configuration.configure',{...configure,previousCatalogueHash:next.catalogueHash})),original)
+})
+
 test('consent, binding and committed code replay revocation', async () => {
   const clientId = await register(),
     requestId = await request(clientId, ['training:read'])
@@ -457,7 +467,7 @@ test('credential expiry, denied requests, private tables and safe error classes'
   const a = await issue()
   const c = ok(await gateway('client.get', { clientId: a.clientId }))
   assert.equal(c.metadataCiphertext, 'encrypted-test-fixture')
-  err(await gateway('configuration.configure', { resourceUrl: 'https://another.example/mcp' }), 'conflict')
+  err(await gateway('configuration.configure', { ...configure, resourceUrl: 'https://another.example/mcp' }), 'conflict')
   const r = await request(a.clientId)
   assert.deepEqual(ok(await gateway('authorization.get', { requestId: r })).scopes, scopes)
   ok(await consent(r, false, [], null))
@@ -543,7 +553,7 @@ test('fixed fixtures, actionable app list, pruning and draft validation', async 
     'unsupported_movement',
   )
   err(
-    await gateway('catalogue.put', { schemaVersion: 1, movements: [...movements, ...movements] }),
+    await gateway('configuration.configure', { ...configure, catalogue:{schemaVersion: 1, movements: [...movements, ...movements]}}),
     'conflict',
   )
   assert.deepEqual(ok(await call(a, 'search_movements', { query: 'Bench' })).movements, movements)
@@ -580,6 +590,7 @@ test('service-wide rolling registration limits and authorization binding', async
   const reg = () =>
     gateway('client.register', {
       clientId: randomUUID(),
+      keyVerification,
       clientName: 'Bounded',
       metadataCiphertext: 'encrypted-fixture',
       redirectUris: [redirectUri],
@@ -640,8 +651,8 @@ test('grant cleanup preserves approved and terminal drafts, account erasure remo
   err(await gateway('access.load', { accessHash: active.accessHash }), 'invalid_token')
 })
 async function race(role, statement, firstArgs, secondArgs, beforeCommit = async () => {}) {
-  const first = cluster.getPgClient('postgres', '127.0.0.1'),
-    second = cluster.getPgClient('postgres', '127.0.0.1')
+  const first = db.cluster.getPgClient('postgres', '127.0.0.1'),
+    second = db.cluster.getPgClient('postgres', '127.0.0.1')
   try {
     await Promise.all([first.connect(), second.connect()])
     for (const connection of [first, second]) {
@@ -769,6 +780,7 @@ if (native)
         registration
           ? {
               clientId: id,
+              keyVerification,
               clientName: 'Timed',
               metadataCiphertext: 'encrypted',
               redirectUris: [redirectUri],

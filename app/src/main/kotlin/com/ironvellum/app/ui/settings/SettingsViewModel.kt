@@ -665,9 +665,8 @@ class SettingsViewModel(
         if (trimmedUrl.isBlank() || trimmedKey.isBlank() || _cloud.value.switching) return
         viewModelScope.launch {
             _cloud.value = CloudUi(switching = true)
-            Cloud.reconfigure(CloudConfig(trimmedUrl, trimmedKey, isDefault = false)) {
+            Cloud.reconfigure(CloudConfig(trimmedUrl, trimmedKey, isDefault = false), accountRepo) {
                 cloudSync.forgetPushedState()
-                accountRepo.clearForBackendSwitch()
             }
             _cloud.value = CloudUi()
         }
@@ -678,9 +677,8 @@ class SettingsViewModel(
         if (_cloud.value.switching) return
         viewModelScope.launch {
             _cloud.value = CloudUi(switching = true)
-            Cloud.reconfigure(null) {
+            Cloud.reconfigure(null, accountRepo) {
                 cloudSync.forgetPushedState()
-                accountRepo.clearForBackendSwitch()
             }
             _cloud.value = CloudUi()
         }
