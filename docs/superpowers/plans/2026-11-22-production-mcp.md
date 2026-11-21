@@ -28,6 +28,7 @@ SQL tests; production remains Supabase/Postgres. No new paid service assumed.
 - Max request 64 KiB/result 1 MiB/backend deadline 10 sec/history page 50/search 20.
 - Persisted quotas: 120 tool calls per user/client/min; 20 new drafts per
   user/client/day; registration 20/min and 1,000/day service-wide.
+- Authorization creation: 20 per client/min and 120 service-wide/min, persisted.
 - Additive schema 36; existing normal app/social access unchanged. App global
   minimum schema stays 31. No development MCP imports or arbitrary SQL/URL tools.
 - Show actual-app-style mockups before UI source. Copy in string resources,
@@ -153,8 +154,11 @@ not the permission/draft contracts. Do not pause between implementation tasks.
   exporter test from Seed.exercises using existing generated-web-asset patterns.
 
 **Interfaces:**
-- Strict shared DraftV1 parser/validator and canonical content hash agree with
-  server fixtures. Built-in normalized-name keys must be unique and REPS.
+- Strict shared DraftV1 parser/validator agrees with server fixtures. Treat the
+  SQL-issued content hash as opaque; do not reproduce PostgreSQL JSONB formatting
+  in Kotlin. Keep the reviewed typed payload and compare the approval envelope
+  structurally as well as checking its immutable revision/hash before import.
+  Built-in normalized-name keys must be unique and REPS.
 - `McpRepository` exposes account/backend-scoped connection/draft/read/revoke/
   review operations over app RPCs and suppresses stale generation results.
 - Repository acceptance takes reviewed immutable envelope + backend/user scope,
@@ -172,8 +176,9 @@ not the permission/draft contracts. Do not pause between implementation tasks.
 - [ ] Implement add-only Room migration/receipt, strict resolver/transaction and
   scoped cloud adapter. AUTO/NONE choices remain exact, no fallback coercion.
   Existing unsupported backend/schema shows unavailable, not success/empty data.
-- [ ] Generate full manifest from actual Seed, compare fixture hash/normalization
-  across Python/Kotlin. No hand-maintained 580-name second catalogue.
+- [ ] Generate full manifest from actual Seed, compare fixture payloads and key
+  normalization across Python/Kotlin; echo the server-issued review hash exactly.
+  No hand-maintained 580-name second catalogue.
 - [ ] Run focused unit tests and scoped instrumented tests on emulator-5554 via
   lock, no other build in parallel. Commit and report source contracts/counts.
 

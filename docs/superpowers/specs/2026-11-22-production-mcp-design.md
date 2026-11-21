@@ -118,7 +118,10 @@ Requests max 64 KiB, tool results max 1 MiB, backend call deadline 10 seconds,
 bounded page/result counts. Quotas are persisted and atomic: 120 tool calls per
 user/client per minute, 20 new drafts per user/client per day, 20 registrations
 per minute and 1,000 per day service-wide. Retry/idempotent draft reads do not
-consume new-draft quota. Do not trust arbitrary forwarded IP headers. Audit only
+consume new-draft quota. Authorization request creation is additionally capped at
+20 per client per rolling minute and 120 service-wide per rolling minute, so a
+registered public client cannot fill storage with pending requests. Do not trust
+arbitrary forwarded IP headers. Audit only
 owner/client/tool/time/request/draft ID and safe result classification; no payload
 or token. Show the latest 50 audit entries; retain 30 days and bound pruning.
 
