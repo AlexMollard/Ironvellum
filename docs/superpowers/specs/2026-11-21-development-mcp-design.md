@@ -77,7 +77,8 @@ lowercase hex characters. An ordered broadcast returns `IVMCP1:` followed by
 Base64 UTF-8 JSON. Use `goAsync`, IO work and a five-second timeout.
 
 Envelope: `schemaVersion: 1`, echoed `requestId`, `ok: true`, `app` containing
-`package`, `versionName`, `versionCode`, `debuggable`, and `activeWorkout`.
+only `package`, `versionName`, `versionCode`, `debuggable`, and a separate
+top-level `activeWorkout` field.
 Active workout is null or exactly `id`, `label`, `startedAtMs`, `totalSets`,
 `completedSets`. Read through `Repository.observeLiveSession().first()` and
 `observeSessionSets(id).first()`; do not seed, mark read or sync. Failures return
