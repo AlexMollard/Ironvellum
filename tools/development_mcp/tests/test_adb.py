@@ -1,4 +1,6 @@
 from pathlib import Path
+from contextlib import redirect_stderr
+from io import StringIO
 import os
 import subprocess
 import sys
@@ -7,7 +9,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from ironvellum_mcp.adb import AdbClient, DevelopmentError, _run_bounded
+from ironvellum_mcp.adb import AdbClient, DevelopmentError, _lock_module, _run_bounded
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -87,6 +89,24 @@ class AdbTest(unittest.TestCase):
             with self.adb.device(SERIAL):
                 self.fail("Expected ambiguity")
         self.assertEqual(error.exception.code, "device_ambiguous")
+
+    def test_busy_shared_lock_prevents_device_commands_for_tcp_serial(self):
+        lock = _lock_module(ROOT)
+        real_lease = lock.emulator_lock
+        self.runner.expect(("devices", "-l"), DEVICES)
+
+        def short_lease(label, *, timeout_s, log):
+            self.assertEqual(timeout_s, 30)
+            return real_lease(label, timeout_s=0.02, log=log)
+
+        with tempfile.TemporaryDirectory() as directory, patch.object(
+            lock, "LOCK", str(Path(directory) / "emulator.lock")
+        ), real_lease("local gate"), patch.object(lock, "emulator_lock", short_lease):
+            with redirect_stderr(StringIO()), self.assertRaises(DevelopmentError) as error:
+                with self.adb.device(SERIAL):
+                    self.fail("A TCP serial entered the busy emulator lease")
+            self.assertEqual(lock.lock_owner(lock.LOCK)["label"], "local gate")
+        self.assertEqual(error.exception.code, "emulator_lock_timeout")
 
     def test_adb_timeout_and_nonzero_exit_are_safe(self):
         for code, kwargs in (

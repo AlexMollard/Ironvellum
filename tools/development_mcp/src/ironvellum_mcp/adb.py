@@ -1,7 +1,7 @@
 """Checked, narrowly scoped commands for the Ironvellum development tools."""
 
 from collections.abc import Callable, Iterator
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import lru_cache
 import importlib.util
@@ -32,7 +32,7 @@ _FOREGROUND_RECORD = re.compile(
     re.ASCII,
 )
 _DISPLAY_HEADER = re.compile(r"^Display #([0-9]+) \(activities from top to bottom\):")
-_RESUMED_LINE = re.compile(r"^\s*(topResumedActivity|Resumed|mResumedActivity)\s*[:=]\s*(.*)$")
+_RESUMED_LINE = re.compile(r"^\s*(?:topResumedActivity|Resumed|mResumedActivity)\s*[:=]\s*(.*)$")
 
 
 class DevelopmentError(Exception):
@@ -222,15 +222,11 @@ class AdbClient:
             reason = state if state in {"offline", "unauthorized", "no permissions"} else "unavailable"
             raise DevelopmentError(code, f"The selected ADB device is {reason}")
 
-        lease = nullcontext()
-        if serial.startswith("emulator-"):
-            try:
-                lock = _lock_module(self._repo_root)
-            except OSError:
-                raise DevelopmentError("emulator_lock_unavailable", "The shared emulator lock is unavailable") from None
-            lease = lock.emulator_lock("Ironvellum development MCP", timeout_s=30, log=_stderr)
+        # A TCP or wireless serial can identify an emulator. Take the shared
+        # lease for every selected device before making a device-specific call.
         try:
-            with lease:
+            lock = _lock_module(self._repo_root)
+            with lock.emulator_lock("Ironvellum development MCP", timeout_s=30, log=_stderr):
                 raw = self._run("-s", serial, "shell", "am", "get-current-user").strip()
                 if not re.fullmatch(rb"[0-9]{1,5}", raw):
                     raise DevelopmentError("android_user_unavailable", "ADB could not identify the current Android user")
@@ -318,26 +314,19 @@ class _Device:
 
     def foreground_activity(self) -> str | None:
         output = self._text("shell", "dumpsys", "activity", "activities")
-        records_by_field = {}
+        activities = set()
         display = None
         for line in output.splitlines():
             if header := _DISPLAY_HEADER.match(line):
                 display = header[1]
             elif resumed := _RESUMED_LINE.match(line):
-                records_by_field.setdefault(resumed[1], []).append((display, resumed[2]))
-        for field in ("topResumedActivity", "Resumed", "mResumedActivity"):
-            records = records_by_field.get(field, [])
-            if records:
-                # Android 15 uses "Resumed:" summaries under display headings.
-                # Only the default display is eligible for a display capture.
-                display, record = records[0]
-                if len(records) != 1 or display not in {None, "0"}:
+                # Android can report both per-task and focused-area records.
+                # Require agreement across all records on the default display.
+                match = _FOREGROUND_RECORD.match(resumed[1])
+                if display not in {None, "0"} or not match or (match[1], match[2]) != (str(self.user), PACKAGE):
                     return None
-                match = _FOREGROUND_RECORD.match(record)
-                if match and (match[1], match[2]) == (str(self.user), PACKAGE):
-                    return match[3]
-                return None
-        return None
+                activities.add(match[3])
+        return activities.pop() if len(activities) == 1 else None
 
     def read_status(self, request: UUID) -> bytes:
         return self._run(

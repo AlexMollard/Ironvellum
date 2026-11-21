@@ -12,7 +12,7 @@ import unittest
 from unittest.mock import patch
 from uuid import UUID
 
-from ironvellum_mcp.adb import AdbClient, DevelopmentError
+from ironvellum_mcp.adb import AdbClient, DevelopmentError, _lock_module
 from ironvellum_mcp.operations import DevelopmentTools
 from test_adb import DEVICES, FakeRunner, ROOT, SERIAL
 
@@ -32,6 +32,9 @@ def bridge(value):
 
 class OperationTest(unittest.TestCase):
     def setUp(self):
+        self.lock = _lock_module(ROOT)
+        directory = self.enterContext(tempfile.TemporaryDirectory())
+        self.enterContext(patch.object(self.lock, "LOCK", str(Path(directory) / "emulator.lock")))
         self.runner = FakeRunner(self)
         self.adb = AdbClient(ROOT, sys.executable, runner=self.runner)
         self.tools = DevelopmentTools(self.adb)
@@ -157,6 +160,52 @@ class OperationTest(unittest.TestCase):
         self.foreground(foreground)
         self.assertEqual(self.tools.capture_screen(SERIAL), PNG)
 
+    def test_agreeing_foreground_fields_allow_default_display_capture(self):
+        foreground = (
+            b"Display #0 (activities from top to bottom):\n"
+            + ACTIVITY + ACTIVITY.replace(b"topResumedActivity=", b"Resumed: ")
+            + ACTIVITY.replace(b"topResumedActivity=", b"mResumedActivity: ")
+        )
+        self.begin()
+        self.foreground(foreground)
+        self.cmd("exec-out", "screencap", "-p", stdout=PNG)
+        self.foreground(foreground)
+        self.assertEqual(self.tools.capture_screen(SERIAL), PNG)
+
+    def test_conflicting_foreground_fields_prevent_capture(self):
+        default = b"Display #0 (activities from top to bottom):\n" + ACTIVITY
+        summary = ACTIVITY.replace(b"topResumedActivity=", b"Resumed: ")
+        for conflict in (
+            default + summary.replace(PKG.encode(), b"vendor.other"),
+            default + summary.replace(b" u10 ", b" u11 "),
+            default + b"Display #1 (activities from top to bottom):\n" + summary,
+        ):
+            for capture in (self.tools.capture_screen, self.tools.inspect_screen):
+                with self.subTest(conflict=conflict, capture=capture.__name__):
+                    self.begin()
+                    self.foreground(conflict)
+                    with self.assertRaises(DevelopmentError) as error:
+                        capture(SERIAL)
+                    self.assertEqual(error.exception.code, "app_not_foreground")
+
+    def test_conflicting_foreground_fields_discard_captures_and_clean_up(self):
+        conflict = ACTIVITY + ACTIVITY.replace(
+            b"topResumedActivity=", b"Resumed: "
+        ).replace(PKG.encode(), b"vendor.other")
+        self.begin()
+        self.foreground()
+        self.cmd("exec-out", "screencap", "-p", stdout=PNG)
+        self.foreground(conflict)
+        with self.assertRaises(DevelopmentError) as error:
+            self.tools.capture_screen(SERIAL)
+        self.assertEqual(error.exception.code, "app_not_foreground")
+
+        xml = f'<hierarchy><node package="{PKG}" text="private capture"/></hierarchy>'.encode()
+        self.dump(xml, after=conflict)
+        with self.assertRaises(DevelopmentError) as error:
+            self.tools.inspect_screen(SERIAL)
+        self.assertEqual(error.exception.code, "app_not_foreground")
+
     def test_screenshot_discards_another_apps_pixels_after_a_race(self):
         self.begin()
         self.foreground()
@@ -249,7 +298,8 @@ class OperationTest(unittest.TestCase):
     def test_preview_does_not_accept_observation_after_the_deadline(self):
         self.preview("show", "accepted", FIXTURES["show"])
         self.keys(f"10|{PKG}|5|notification-preview|1010234\n".encode())
-        with patch("ironvellum_mcp.operations.time.monotonic", side_effect=[10, 10.1, 13.1]):
+        with patch("ironvellum_mcp.operations.time", wraps=time) as clock:
+            clock.monotonic.side_effect = [10, 10.1, 13.1]
             with self.assertRaises(DevelopmentError) as error:
                 self.tools.preview_notifications(SERIAL, scenario="accepted")
         self.assertEqual(error.exception.code, "preview_delivery_timeout")
@@ -271,7 +321,8 @@ class OperationTest(unittest.TestCase):
             with self.subTest(action=action):
                 self.preview(action, scenario, FIXTURES[fixture])
                 self.keys(stdout)
-                with patch("ironvellum_mcp.operations.time.monotonic", side_effect=[10, 10.1, 12.99, 13, 13]):
+                with patch("ironvellum_mcp.operations.time", wraps=time) as clock:
+                    clock.monotonic.side_effect = [10, 10.1, 12.99, 13]
                     with self.assertRaises(DevelopmentError) as error:
                         self.tools.preview_notifications(SERIAL, action, scenario)
                 self.assertEqual(error.exception.code, "preview_delivery_timeout")
@@ -285,27 +336,55 @@ class OperationTest(unittest.TestCase):
             self.tools.preview_notifications(SERIAL, action="clear")
         self.assertEqual(error.exception.code, "notification_observation_unavailable")
 
-    def test_diagnostics_scopes_pid_and_redacts_before_bounding(self):
+    def test_diagnostics_redacts_retained_tokens_and_multiline_credentials(self):
+        def compact(header, *segments):
+            return b".".join((base64.urlsafe_b64encode(header).rstrip(b"="), *segments))
+
+        formatted_jwt = compact(
+            b'{ \n  "typ": "JWT", "alg": "HS256" }', b"eyJzdWIiOiIxMjMifQ", b"signature",
+        )
+        encrypted_jwt = compact(
+            b' { "alg":"dir","enc":"A256GCM" }', b"", b"iv", b"ciphertext", b"tag",
+        )
+        self.begin()
+        self.package()
+        self.process()
+        self.cmd("logcat", "--pid=142", "--uid=1010234", "-d", "-t", "100", "-v", "brief", stdout=(
+            b"I/Tag(  43): profile secret\n"
+            b'I/Tag( 142): sending Bearer bearer-token now\n'
+            b'I/Tag( 142): {"refresh_token":"first half\n'
+            b'I/Tag( 142): second half"}\n'
+            b'I/Tag( 142): password=some secret\n'
+            b'I/Tag( 142): signed ' + formatted_jwt + b' inspected\n'
+            b'I/Tag( 142): encrypted ' + encrypted_jwt + b' inspected\n'
+            b'I/Tag( 142): com.ironvellum.app startup complete\n'
+        ))
+        self.process()
+        result = self.tools.get_diagnostics(SERIAL)
+        self.assertEqual(result["pid"], 142)
+        self.assertFalse(result["truncated"])
+        logs = "\n".join(result["lines"])
+        for secret in ("profile secret", "bearer-token", "first half", "second half",
+                       "some secret", formatted_jwt.decode(), encrypted_jwt.decode()):
+            self.assertNotIn(secret, logs)
+        self.assertIn("sending Bearer [REDACTED] now", result["lines"])
+        self.assertIn("signed [REDACTED] inspected", result["lines"])
+        self.assertIn("encrypted [REDACTED] inspected", result["lines"])
+        self.assertIn("com.ironvellum.app startup complete", result["lines"])
+
+    def test_diagnostics_clamps_line_limit_and_truncates_utf8_tail(self):
         self.begin()
         self.package()
         self.process()
         self.cmd("logcat", "--pid=142", "--uid=1010234", "-d", "-t", "200", "-v", "brief", stdout=(
-            b"I/Tag(  43): profile secret\n"
-            b'I/Tag( 142): Authorization: Bearer bearer-token\n'
-            b'I/Tag( 142): {"refresh_token":"first half\n'
-            b'I/Tag( 142): second half"}\n'
-            b'I/Tag( 142): password=some secret\n'
-            b'I/Tag( 142): jwt eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature\n'
-            + b"I/Tag( 142): " + "é".encode() * 20000
+            b"I/Tag( 142): " + "é".encode() * 20000 + b" retained\n"
         ))
         self.process()
         result = self.tools.get_diagnostics(SERIAL, limit=500)
-        self.assertEqual(result["pid"], 142)
         self.assertTrue(result["truncated"])
         logs = "\n".join(result["lines"])
         self.assertLessEqual(len(logs.encode()), 32 * 1024)
-        for secret in ("profile secret", "bearer-token", "first half", "second half", "some secret", "eyJhbGci"):
-            self.assertNotIn(secret, logs)
+        self.assertTrue(logs.endswith("é retained"))
 
     def test_diagnostics_absence_pid_ambiguity_rotation_and_logcat_failure(self):
         for process, logcat, after, expected in (
@@ -331,15 +410,11 @@ class OperationTest(unittest.TestCase):
                     self.assertNotIn("private", str(error.exception))
 
     def test_emulator_failure_releases_one_shared_lease_and_uses_stderr_logger(self):
-        from ironvellum_mcp.adb import _lock_module
-
-        lock = _lock_module(ROOT)
+        lock = self.lock
         self.runner.expect(("devices", "-l"), DEVICES)
         self.runner.expect(("-s", "emulator-5554", "shell", "am", "get-current-user"), code=1)
         stdout, stderr = StringIO(), StringIO()
-        with tempfile.TemporaryDirectory() as directory, patch.object(
-            lock, "LOCK", str(Path(directory) / "emulator.lock")
-        ), patch.object(lock, "emulator_lock", wraps=lock.emulator_lock) as lease:
+        with patch.object(lock, "emulator_lock", wraps=lock.emulator_lock) as lease:
             Path(lock.LOCK).mkdir()
             stale = time.time() - lock.BARE_STALE - 10
             os.utime(lock.LOCK, (stale, stale))

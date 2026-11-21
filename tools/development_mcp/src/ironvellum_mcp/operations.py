@@ -32,7 +32,13 @@ _CREDENTIAL = re.compile(
     """,
 )
 _BEARER = re.compile(r"(?i)\bbearer\s+[a-z0-9._~+/=-]+")
-_JWT = re.compile(r"(?<![\w-])eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+")
+# Compact signed and encrypted tokens have three and five base64url segments,
+# respectively. An unsecured signature or a direct encryption key can be empty.
+_JWT = re.compile(
+    r"(?<![A-Za-z0-9_-])([A-Za-z0-9_-]+)\."
+    r"(?:[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+"
+    r"|[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*)(?![A-Za-z0-9_-])"
+)
 
 
 def _invalid_reply() -> DevelopmentError:
@@ -184,6 +190,18 @@ def _ui_nodes(xml: bytes) -> dict:
     return {"nodes": nodes, "truncated": False}
 
 
+def _redact_jwt(match: re.Match[str]) -> str:
+    header = match[1]
+    try:
+        decoded = base64.urlsafe_b64decode(header + "=" * (-len(header) % 4))
+        fields = json.loads(decoded.decode("utf-8"))
+    except (ValueError, RecursionError):
+        return match[0]
+    if isinstance(fields, dict) and isinstance(fields.get("alg"), str):
+        return "[REDACTED]"
+    return match[0]
+
+
 def _diagnostic_lines(raw: str, pid: int, limit: int) -> tuple[list[str], bool]:
     # Separate trusted logcat framing from the payload so a quoted credential
     # spanning log records can be removed before handing anything to a client.
@@ -200,7 +218,7 @@ def _diagnostic_lines(raw: str, pid: int, limit: int) -> tuple[list[str], bool]:
         else:
             current = None
     clean = _CREDENTIAL.sub("[REDACTED]", "\n".join(messages))
-    clean = _JWT.sub("[REDACTED]", _BEARER.sub("Bearer [REDACTED]", clean))
+    clean = _JWT.sub(_redact_jwt, _BEARER.sub("Bearer [REDACTED]", clean))
     lines = clean.splitlines()
     tail = "\n".join(lines[-limit:]).encode("utf-8")
     truncated = len(lines) > limit or len(tail) > _LOG_BYTES

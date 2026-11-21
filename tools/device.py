@@ -329,19 +329,22 @@ def lock_acquire(
             os.mkdir(LOCK)
             break
         except FileExistsError:
-            reason = lock_stale(LOCK, timeout_s=min(2, remaining()))
-            if reason and remaining() > 0 and lock_take_over(reason, timeout_s=min(2, remaining()), log=log):
-                continue
-            if remaining() <= 0:
+            budget = remaining()
+            if budget <= 0:
                 raise TimeoutError("Timed out waiting for the shared emulator lock")
+            reason = lock_stale(LOCK, timeout_s=min(2, budget))
+            budget = remaining()
+            if budget <= 0:
+                continue  # Try mkdir once more without waiting or probing.
+            if reason and lock_take_over(reason, timeout_s=min(2, budget), log=log):
+                continue
             if not waited:
                 owner = lock_owner(LOCK) or {}
                 log(f"-- {LOCK} is held by {owner.get('label', 'another session')}"
                     f" (pid {owner.get('pid', '?')}); waiting")
                 waited = True
-            time.sleep(min(WAIT_POLL, remaining()))
-            if remaining() <= 0:
-                raise TimeoutError("Timed out waiting for the shared emulator lock")
+            if (pause := min(WAIT_POLL, remaining())) > 0:
+                time.sleep(pause)
     record = {"pid": os.getpid(), "host": socket.gethostname(), "label": label, "started": time.time(),
               "lease": uuid4().hex}
     try:

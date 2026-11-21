@@ -125,6 +125,27 @@ class LockTest(unittest.TestCase):
         self.assertEqual(stdout.getvalue(), "")
         self.assertIn("stale", logs[0])
 
+    def test_can_acquire_when_holder_releases_during_final_poll_interval(self):
+        self.plant(os.getpid())
+        clock = 10.0
+
+        def release_during_interval(delay):
+            nonlocal clock
+            clock += delay
+            os.remove(os.path.join(device.LOCK, device.OWNER))
+            os.rmdir(device.LOCK)
+
+        with (
+            patch.object(device.time, "monotonic", side_effect=lambda: clock),
+            patch.object(device.time, "sleep", side_effect=release_during_interval) as sleep,
+            patch.object(device, "pid_alive", return_value=True) as probe,
+        ):
+            with device.emulator_lock("replacement", timeout_s=0.05, log=lambda _: None):
+                self.assertEqual(device.lock_owner(device.LOCK)["label"], "replacement")
+            self.assertAlmostEqual(sleep.call_args.args[0], 0.05)
+            self.assertEqual(sleep.call_count, 1)
+            self.assertEqual(probe.call_count, 1)
+
 
 class LockedEnvTest(unittest.TestCase):
     """A locked run never reaches a phone: Gradle's connected tasks use every attached device otherwise."""
