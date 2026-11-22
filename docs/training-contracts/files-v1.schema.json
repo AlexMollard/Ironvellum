@@ -1,0 +1,497 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "time": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 253402300799999
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "pattern": "^(?! )[^\u0000-\u001f\u007f-\u009f]*(?<! )(?![\\s\\S])"
+    },
+    "exerciseKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "load": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "prep": {
+      "enum": [
+        "AUTO",
+        "NONE"
+      ]
+    },
+    "opaqueId": {
+      "type": "string",
+      "pattern": "^local:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])"
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "exerciseKey": {
+          "$ref": "#/$defs/exerciseKey"
+        },
+        "sets": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "reps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "loadKg": {
+          "$ref": "#/$defs/load"
+        }
+      },
+      "required": [
+        "exerciseKey",
+        "sets",
+        "reps",
+        "loadKg"
+      ]
+    },
+    "draft": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "name": {
+          "$ref": "#/$defs/label"
+        },
+        "warmup": {
+          "$ref": "#/$defs/prep"
+        },
+        "cooldown": {
+          "$ref": "#/$defs/prep"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entry"
+          },
+          "minItems": 1,
+          "maxItems": 20
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "name",
+        "warmup",
+        "cooldown",
+        "entries"
+      ]
+    },
+    "set": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "order": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 199
+        },
+        "exerciseKey": {
+          "$ref": "#/$defs/exerciseKey"
+        },
+        "reps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "loadKg": {
+          "$ref": "#/$defs/load"
+        }
+      },
+      "required": [
+        "order",
+        "exerciseKey",
+        "reps",
+        "loadKg"
+      ]
+    },
+    "workout": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/opaqueId"
+        },
+        "startedAtMs": {
+          "$ref": "#/$defs/time"
+        },
+        "completedAtMs": {
+          "$ref": "#/$defs/time"
+        },
+        "sets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/set"
+          },
+          "minItems": 0,
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "id",
+        "startedAtMs",
+        "completedAtMs",
+        "sets"
+      ]
+    },
+    "savedWorkout": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/opaqueId"
+        },
+        "name": {
+          "$ref": "#/$defs/label"
+        },
+        "warmup": {
+          "$ref": "#/$defs/prep"
+        },
+        "cooldown": {
+          "$ref": "#/$defs/prep"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entry"
+          },
+          "minItems": 1,
+          "maxItems": 20
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "warmup",
+        "cooldown",
+        "entries"
+      ]
+    },
+    "catalogue": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "count": {
+          "const": 584
+        },
+        "sha256": {
+          "const": "6b8bea45f8781884088d99fe8fc76c0df4c5755a8c2d1e9914629710bfa18a66"
+        }
+      },
+      "required": [
+        "version",
+        "count",
+        "sha256"
+      ]
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "workoutsIncluded": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "workoutsTruncated": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "setsIncluded": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20000
+        },
+        "setsTruncated": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "setsUnsupported": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "savedWorkoutsIncluded": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 50
+        },
+        "savedWorkoutsTruncated": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "savedWorkoutsUnsupported": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "workoutsIncluded",
+        "workoutsTruncated",
+        "setsIncluded",
+        "setsTruncated",
+        "setsUnsupported",
+        "savedWorkoutsIncluded",
+        "savedWorkoutsTruncated",
+        "savedWorkoutsUnsupported"
+      ]
+    },
+    "lift": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "exerciseKey": {
+          "$ref": "#/$defs/exerciseKey"
+        },
+        "completedSets": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20000
+        },
+        "maxLoadKg": {
+          "$ref": "#/$defs/load"
+        },
+        "maxReps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        }
+      },
+      "required": [
+        "exerciseKey",
+        "completedSets",
+        "maxLoadKg",
+        "maxReps"
+      ]
+    },
+    "progress": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "scope": {
+          "const": "included-workouts"
+        },
+        "completedWorkouts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "completedSets": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20000
+        },
+        "completedReps": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20000000
+        },
+        "externalVolumeKg": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 20000000000
+        },
+        "firstCompletedAtMs": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lastCompletedAtMs": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lifts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/lift"
+          },
+          "minItems": 0,
+          "maxItems": 20
+        },
+        "liftsTruncated": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 584
+        }
+      },
+      "required": [
+        "version",
+        "scope",
+        "completedWorkouts",
+        "completedSets",
+        "completedReps",
+        "externalVolumeKg",
+        "firstCompletedAtMs",
+        "lastCompletedAtMs",
+        "lifts",
+        "liftsTruncated"
+      ]
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "ironvellum.training-context"
+        },
+        "schemaVersion": {
+          "const": 1
+        },
+        "datasetId": {
+          "$ref": "#/$defs/uuid"
+        },
+        "snapshotId": {
+          "$ref": "#/$defs/uuid"
+        },
+        "exportedAtMs": {
+          "$ref": "#/$defs/time"
+        },
+        "catalogue": {
+          "$ref": "#/$defs/catalogue"
+        },
+        "coverage": {
+          "$ref": "#/$defs/coverage"
+        },
+        "workouts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/workout"
+          },
+          "minItems": 0,
+          "maxItems": 100
+        },
+        "savedWorkouts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/savedWorkout"
+          },
+          "minItems": 0,
+          "maxItems": 50
+        },
+        "progress": {
+          "$ref": "#/$defs/progress"
+        }
+      },
+      "required": [
+        "type",
+        "schemaVersion",
+        "datasetId",
+        "snapshotId",
+        "exportedAtMs",
+        "catalogue",
+        "coverage",
+        "workouts",
+        "savedWorkouts",
+        "progress"
+      ]
+    },
+    "proposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "ironvellum.workout-draft"
+        },
+        "schemaVersion": {
+          "const": 1
+        },
+        "datasetId": {
+          "$ref": "#/$defs/uuid"
+        },
+        "snapshotId": {
+          "$ref": "#/$defs/uuid"
+        },
+        "contextSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "draftId": {
+          "$ref": "#/$defs/uuid"
+        },
+        "sender": {
+          "$ref": "#/$defs/label"
+        },
+        "createdAtMs": {
+          "$ref": "#/$defs/time"
+        },
+        "expiresAtMs": {
+          "$ref": "#/$defs/time"
+        },
+        "draft": {
+          "$ref": "#/$defs/draft"
+        }
+      },
+      "required": [
+        "type",
+        "schemaVersion",
+        "datasetId",
+        "snapshotId",
+        "contextSha256",
+        "draftId",
+        "sender",
+        "createdAtMs",
+        "expiresAtMs",
+        "draft"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/context"
+    },
+    {
+      "$ref": "#/$defs/proposal"
+    }
+  ]
+}

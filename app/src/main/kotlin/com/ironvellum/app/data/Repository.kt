@@ -309,6 +309,7 @@ class Repository(
 ) {
 
     internal val draftStore = DraftStore(db)
+    internal val localConnector = com.ironvellum.app.data.localconnector.LocalConnectorRepository(db)
     val preparations: PreparationRepository = PreparationRepository(db, warmupStore)
     private val exerciseDao = db.exerciseDao()
     private val presetDao = db.presetDao()
@@ -3959,6 +3960,12 @@ class Repository(
                 } else emptyMap()
                 val sessionIdByStart = mutableMapOf<Long, Long>()
                 // User data goes; the seeded exercise catalogue stays.
+                db.localConnectorDao().apply {
+                    clearReceipts()
+                    clearSnapshots()
+                    clearObjects()
+                    clearIdentity()
+                }
                 presetDao.clearAll()
                 sessionDao.clearAll()
                 db.preparationDao().clearRoutines()

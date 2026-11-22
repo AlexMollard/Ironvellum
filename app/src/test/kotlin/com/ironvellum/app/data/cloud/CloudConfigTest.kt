@@ -40,18 +40,9 @@ class CloudConfigTest {
     }
 
     @Test
-    fun `a blank override half is ignored, not half-applied`() {
-        // A half-typed override must fall through to the default, never
-        // combine the custom URL with the default key — that mismatch would
-        // 401 every call and read as "the cloud is broken".
-        assertEquals(
-            CloudConfig(DEFAULT_URL, DEFAULT_KEY, isDefault = true),
-            resolveCloudConfig("", "mine-key", DEFAULT_URL, DEFAULT_KEY),
-        )
-        assertEquals(
-            CloudConfig(DEFAULT_URL, DEFAULT_KEY, isDefault = true),
-            resolveCloudConfig("https://mine.supabase.co", "  ", DEFAULT_URL, DEFAULT_KEY),
-        )
+    fun `a partial override leaves cloud unavailable`() {
+        assertNull(resolveCloudConfig("", "mine-key", DEFAULT_URL, DEFAULT_KEY))
+        assertNull(resolveCloudConfig("https://mine.invalid", null, DEFAULT_URL, DEFAULT_KEY))
     }
 
     @Test

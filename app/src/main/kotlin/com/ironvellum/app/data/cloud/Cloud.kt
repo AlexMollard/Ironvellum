@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.core.content.edit
+import com.russhwolf.settings.SharedPreferencesSettings
 import com.ironvellum.app.BuildConfig
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
@@ -50,7 +51,7 @@ const val NEEDED_SCHEMA_VERSION = 31
  * exists on the default, because the OAuth web client id belongs to the
  * maintainer's Google project and Supabase config.
  */
-data class CloudConfig(val url: String, val key: String, val isDefault: Boolean)
+data class CloudConfig(val url: String, val key: String, val isDefault: Boolean, internal val authNamespace: String? = null)
 
 /** Outcome of probing a candidate backend's [NEEDED_SCHEMA_VERSION] beacon. */
 sealed interface ProbeResult {
@@ -81,6 +82,7 @@ internal fun resolveCloudConfig(
     val url = overrideUrl?.trim().orEmpty()
     val key = overrideKey?.trim().orEmpty()
     if (url.isNotBlank() && key.isNotBlank()) return CloudConfig(url, key, isDefault = false)
+    if (overrideUrl != null || overrideKey != null) return null
     val dUrl = defaultUrl.trim()
     val dKey = defaultKey.trim()
     if (dUrl.isNotBlank() && dKey.isNotBlank()) return CloudConfig(dUrl, dKey, isDefault = true)
@@ -115,7 +117,7 @@ internal fun probeResultFor(status: Int?, code: String?, versionText: String?): 
  * Only initialization and backend switches can construct SDKs. Reading an old
  * generation has no side effects, even if the reader resumes after a switch.
  */
-internal class CloudClientSelection(private val fallback: CloudConfig, private val build: (CloudConfig) -> SupabaseClient) {
+internal class CloudClientSelection(private val build: (CloudConfig) -> SupabaseClient) {
     private data class Generation(val effective: CloudConfig?, val client: Result<SupabaseClient>?, val available: Boolean = true)
     private val selected = MutableStateFlow<Generation?>(null)
     private val writer = Mutex()
@@ -131,8 +133,9 @@ internal class CloudClientSelection(private val fallback: CloudConfig, private v
     private fun create(config: CloudConfig?): Generation {
         // The legacy client() API exposes construction errors only when used.
         // A local-only build must still start even with blank BuildConfig fields.
+        if (config == null) return Generation(null, null)
         val client = try {
-            Result.success(build(config ?: fallback))
+            Result.success(build(config))
         } catch (error: Exception) {
             Result.failure(error)
         }
@@ -205,16 +208,14 @@ object Cloud {
     private const val RPC_SCHEMA_VERSION = "schema_version"
 
     private const val PREFS_FILE = "cloud_config"
-    private const val PREF_URL = "url"
-    private const val PREF_KEY = "key"
     private const val PREF_TOMBSTONE_OWNER = "tombstone_owner"
     private const val KEEPER_ONLY = "Only the Keeper"
 
     private var prefs: SharedPreferences? = null
 
-    private val clients = CloudClientSelection(
-        CloudConfig(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, isDefault = true), ::buildClient,
-    )
+    private val clients = CloudClientSelection(::buildClient)
+    private lateinit var choices: BackendChoice
+    private lateinit var authSettings: SharedPreferencesSettings
     val config: StateFlow<CloudConfig?> get() = clients.config
 
     val configured: Boolean get() = config.value != null
@@ -224,19 +225,17 @@ object Cloud {
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE)
         this.prefs = prefs
-        clients.initialize(resolve(readOverride(prefs)))
+        choices = BackendChoice(prefs, CloudConfig(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, true))
+        authSettings = SharedPreferencesSettings(context.getSharedPreferences("cloud_auth_choices", Context.MODE_PRIVATE))
+        clients.initialize(choices.read())
     }
-
-    private fun resolve(ov: CloudConfig?): CloudConfig? = resolveCloudConfig(
-        overrideUrl = ov?.url,
-        overrideKey = ov?.key,
-        defaultUrl = BuildConfig.SUPABASE_URL,
-        defaultKey = BuildConfig.SUPABASE_KEY,
-    )
 
     fun client(): SupabaseClient = clients.client()
 
-    private fun buildClient(cfg: CloudConfig) = buildCloudClient(cfg, ProcessLifecycleOwner.get().lifecycle)
+    private fun buildClient(cfg: CloudConfig): SupabaseClient {
+        val stores = cfg.authStores(authSettings)
+        return buildCloudClient(cfg, ProcessLifecycleOwner.get().lifecycle, sessions = stores?.first, verifiers = stores?.second)
+    }
 
     val requireConfigured: Result<SupabaseClient>
         get() = clients.requireConfigured
@@ -254,8 +253,10 @@ object Cloud {
      * 2. [beforeSwap] resets the push watermark so sessions re-upload to the new backend;
      * 3. persist the override and publish a fresh configuration/SDK generation.
      */
-    suspend fun reconfigure(next: CloudConfig?, accounts: AccountRepository, beforeSwap: suspend () -> Unit) =
-        reconfigure(clients, resolve(next), accounts, beforeSwap) { writeOverride(next) }
+    suspend fun reconfigure(next: CloudConfig?, accounts: AccountRepository, beforeSwap: suspend () -> Unit) {
+        val choice = choices.fresh(next)
+        reconfigure(clients, choice, accounts, beforeSwap) { choices.persist(next, choice) }
+    }
 
     internal suspend fun reconfigure(
         selection: CloudClientSelection,
@@ -279,7 +280,8 @@ object Cloud {
     var tombstoneOwner: String?
         get() = prefs?.getString(PREF_TOMBSTONE_OWNER, null)
         set(value) {
-            prefs?.edit { putString(PREF_TOMBSTONE_OWNER, value) }
+            val store = prefs ?: return
+            synchronized(store) { store.edit { putString(PREF_TOMBSTONE_OWNER, value) } }
         }
 
     private fun webCatchUpKey(prefix: String, userId: String): String? =
@@ -295,9 +297,8 @@ object Cloud {
     @SuppressLint("UseKtx")
     internal fun markWebCatchUpStarted(userId: String): Boolean {
         val key = webCatchUpKey("web_catch_up_started", userId) ?: return false
-        val editor = prefs?.edit() ?: return false
-        editor.putBoolean(key, true)
-        return editor.commit()
+        val store = prefs ?: return false
+        return synchronized(store) { store.edit().putBoolean(key, true).commit() }
     }
 
     // Preserve the commit result while clearing the started marker in the same edit.
@@ -305,10 +306,8 @@ object Cloud {
     internal fun markWebCaughtUp(userId: String): Boolean {
         val caughtUp = webCatchUpKey("web_caught_up", userId) ?: return false
         val started = webCatchUpKey("web_catch_up_started", userId) ?: return false
-        val editor = prefs?.edit() ?: return false
-        editor.putBoolean(caughtUp, true)
-        editor.remove(started)
-        return editor.commit()
+        val store = prefs ?: return false
+        return synchronized(store) { store.edit().putBoolean(caughtUp, true).remove(started).commit() }
     }
 
     /** Query the same schema beacon as [probe], returning null when it cannot be read. */
@@ -322,24 +321,6 @@ object Cloud {
         null
     } catch (e: IOException) {
         null
-    }
-
-    private fun readOverride(prefs: SharedPreferences): CloudConfig? {
-        val url = prefs.getString(PREF_URL, null)
-        val key = prefs.getString(PREF_KEY, null)
-        return if (url.isNullOrBlank() || key.isNullOrBlank()) null else CloudConfig(url, key, isDefault = false)
-    }
-
-    private fun writeOverride(next: CloudConfig?) {
-        prefs?.edit()?.apply {
-            if (next == null) {
-                remove(PREF_URL)
-                remove(PREF_KEY)
-            } else {
-                putString(PREF_URL, next.url)
-                putString(PREF_KEY, next.key)
-            }
-        }?.apply()
     }
 
     /**

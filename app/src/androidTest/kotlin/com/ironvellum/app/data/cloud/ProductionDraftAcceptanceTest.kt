@@ -112,7 +112,7 @@ class ProductionDraftAcceptanceTest {
                 respond(body, HttpStatusCode.OK, headers)
             }
         }
-        private val selection = CloudClientSelection(config, ::buildClient).also { it.initialize(config) }
+        private val selection = CloudClientSelection(::buildClient).also { it.initialize(config) }
         val client get() = selection.client()
         val accounts = AccountRepository { selection.requireConfigured }
         val service = McpRepository(accounts, Repository(db))

@@ -24,7 +24,7 @@ class CloudClientSelectionTest {
     @Test fun replacedSdkHasFinishedItsAuthWorkBeforeTheNextSessionIsAvailable() = runBlocking {
         val old = CloudConfig("https://retired.invalid", "test-first", false)
         val next = CloudConfig("https://current.invalid", "test-next", false)
-        val selection = CloudClientSelection(old) { config ->
+        val selection = CloudClientSelection { config ->
             createSupabaseClient(config.url, config.key) {
                 install(Auth) {
                     sessionManager = MemorySessionManager()
@@ -55,7 +55,7 @@ class CloudClientSelectionTest {
             val proceed = CountDownLatch(1)
             val built = CopyOnWriteArrayList<SupabaseClient>()
             val destinations = CopyOnWriteArrayList<Pair<String, String?>>()
-            val selection = CloudClientSelection(a) { cfg ->
+            val selection = CloudClientSelection { cfg ->
                 createSupabaseClient(cfg.url, cfg.key) {
                     install(Auth) {
                         sessionManager = MemorySessionManager()

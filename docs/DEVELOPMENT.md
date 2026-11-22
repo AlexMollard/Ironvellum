@@ -75,6 +75,25 @@ Web development and rebuilding exercise art do: run
 
 Two flavours share one application id. `foss` is the F-Droid and GitHub build and shows support links. `play` adds Google sign-in and shows none; build it with `assemblePlayDebug`. The app needs Android 10 (API 29) or newer.
 
+## Build without a default backend
+
+`./gradlew -PlocalOnly=true :app:assembleFossRelease` builds the FOSS app with empty Supabase URL, public key and Google web client ID, including when release signing or custom cloud credentials are configured. Use `gradlew.bat` on Windows. The APK appears under `app/build/outputs/apk/foss/release/`. Standard release signing still applies. An unsigned build needs signing before installation. The app retains its application ID, so an in-place update requires the same signing key.
+
+Fresh installs can train, export, review and save offline. An existing complete custom backend choice is retained. Returning to the build default in this release disconnects the custom backend. Ordinary FOSS releases use the public defaults unless local.properties supplies the custom URL/key pair. Ordinary Play releases also require the Google web client ID. A single custom backend field leaves the cloud unavailable and fails ordinary release validation.
+
+For the build configuration matrix, set `ANDROID_HOME` and run `python tools/test_release_backend.py`. The script invokes Gradle in a temporary project using synthetic settings.
+
+### Verify AI training and draft flows
+
+The Android gate covers offline training export, workout import, explicit draft
+review and saving against isolated Room databases. Shared wire contracts and
+byte fixtures live in [training-contracts](training-contracts/README.md).
+
+Hosted MCP tests and deployment requirements are documented in the
+[production service](../server/production_mcp/README.md). Run those separately
+from the Android gate. The personal PC connector and its integration runner are
+archived on [archive-personal-connector](https://github.com/AlexMollard/Ironvellum/tree/archive-personal-connector).
+
 ## Local development MCP
 
 The [development MCP setup](../tools/development_mcp/README.md) covers device

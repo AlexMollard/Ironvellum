@@ -11,8 +11,7 @@ Documentation reviewed against the codebase on 2026-11-17. AI connections sectio
 - **Everything lives on your device first.** All training data is stored in a
   local Room database (`ironvellum.db`, see
   `app/src/main/kotlin/com/ironvellum/app/data/IronvellumDatabase.kt`).
-- **Cloud sync is optional.** Without signing in, no data ever leaves the
-  device. The cloud features are disabled entirely unless Supabase credentials
+- **Cloud sync is optional.** Training sync starts after sign-in. You can separately choose to share a training file or export an archive. Cloud features are disabled entirely unless Supabase credentials
   are configured (`Cloud.configured`, `data/cloud/Cloud.kt`).
 - **AI connections are optional.** A compatible AI provider can access the synced data you allow and suggest workouts for your review. You can disconnect it in Account.
 - **Raw body measurements stay on the device.** The owner-only web snapshot
@@ -99,7 +98,7 @@ Health Connect; nothing about it goes to the cloud. Turning the switch off
 stops new writes and leaves the entries already in Health Connect; you can
 remove them, or the permission, in Health Connect itself.
 
-## What leaves the device (signed-in users only)
+## What signed-in users sync
 
 Sign-in is either Google Sign-In via Android Credential Manager
 (`data/cloud/AccountRepository.kt`, androidx.credentials + googleid) or email
@@ -153,6 +152,12 @@ data. The owner-only snapshot includes the selected body figure and estimates
 derived from body weight, but not the underlying readings. Session local IDs
 are uploaded to match synced workouts; other local-only row IDs are not. The
 cloud backup leaves out device-only readings, sex and private notes.
+
+## Training files you choose to share
+
+Train → AI tools lets you share a dated file containing up to 100 completed workouts, 200 supported completed sets per workout, up to 50 supported saved workouts, and progress calculated from the included workouts. Saved-workout display names are included. Private notes, custom movement names, unfinished sessions, body measurements, photos and account identities are excluded. The file contains random local identifiers that associate a proposed draft with this dataset and export.
+
+The personal connector on your computer reads the selected file. Your AI client can send tool results to the model provider under that provider's policies. The connector keeps proposed files and a local retry journal in the chosen outbox. On the phone, opening a proposed file shows a review. Pressing Save adds one unscheduled saved workout and a local receipt. The receipt survives deletion of the workout so importing the same proposal again leaves it deleted. You control copies on the phone, computer and any service you use for file transfer. [Personal connector guide](https://github.com/AlexMollard/Ironvellum/tree/archive-personal-connector/tools/local_connector/README.md).
 
 ## Optional AI connections
 

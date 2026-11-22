@@ -108,7 +108,7 @@ class FontScaleSweepTest {
         screen("train") {
             driver.tab("Train")
             // The week's routines load after the page opens; the New and Share chips come with them.
-            driver.awaitText("Share")
+            driver.awaitAnyText { it == "Share" }
             whole("Empty workout")
             whole("New")
             whole("Share")

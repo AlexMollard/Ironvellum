@@ -16,7 +16,7 @@ seven-day workout-XP rankings.
 for personal use, but may pause after a week of inactivity and has no automatic
 database backups. Keep an independent file backup.
 
-**Docker:** follow Supabase's
+**Docker on your PC:** the [pinned private setup](../tools/self_host/README.md) prepares a fresh stack, generates private credentials, and provides lifecycle, schema and backup commands. For a separately managed Docker deployment, follow Supabase's
 [self-hosting guide](https://supabase.com/docs/guides/self-hosting/docker).
 Ironvellum needs Supabase Auth, PostgREST and Postgres, not just a bare Postgres
 database. Follow the upstream instructions for generating secrets, securing

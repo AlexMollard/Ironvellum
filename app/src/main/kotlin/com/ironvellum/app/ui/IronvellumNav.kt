@@ -158,6 +158,7 @@ object Routes {
     const val ACCOUNT = "account"
     const val AI_CONNECTIONS = "account/ai-connections"
     const val WORKOUT_DRAFTS = "train/drafts"
+    const val LOCAL_AI_TOOLS = "train/ai-tools"
     const val SIGN_IN = "sign_in"
     const val WORKOUT_LOG = "workout_log"
     const val RECAP = "recap/{week}"
@@ -474,7 +475,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 }
                 composable(Routes.PRESETS) {
                     TrainScreen(
-                        draftEntry = { com.ironvellum.app.ui.ai.DraftEntry(ironvellumApp.mcpRepository) { navController.navigate(Routes.WORKOUT_DRAFTS) } },
+                        draftEntry = { com.ironvellum.app.ui.ai.DraftEntry { navController.navigate(Routes.LOCAL_AI_TOOLS) } },
                         onOpenRite = { id -> navController.navigate(Routes.riteDetail(id)) },
                         onNew = { navController.navigate(Routes.presetEditor()) },
                         onGenerate = { mode, presetId ->
@@ -837,6 +838,14 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 composable(Routes.ACCOUNT) {
                     AccountSettingsScreen(onBack = { navController.popBackStack() },
                         onOpenConnections = { navController.navigate(Routes.AI_CONNECTIONS) })
+                }
+                composable(Routes.LOCAL_AI_TOOLS) {
+                    com.ironvellum.app.ui.ai.LocalConnectorScreen(
+                        ironvellumApp.repository.localConnector,
+                        onBack = { navController.popBackStack() },
+                        onConnections = { navController.navigate(Routes.AI_CONNECTIONS) },
+                        onCloudDrafts = { navController.navigate(Routes.WORKOUT_DRAFTS) },
+                    )
                 }
                 listOf(Routes.AI_CONNECTIONS, Routes.WORKOUT_DRAFTS).forEach { route ->
                     composable(route) {

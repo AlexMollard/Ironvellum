@@ -11,13 +11,20 @@ plugins {
 // Supabase URL and publishable key — both are already inside every shipped APK
 // and row-level security is what protects the data, so committing them keeps
 // F-Droid's build server (which has no local.properties) able to build.
-// local.properties overrides any key, so a fork or a private backend just sets
-// its own values there. google.webClientId stays local.properties-only: only
-// the play flavour uses it.
-val backend = Properties().apply {
-    rootProject.file("cloud-defaults.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+val localOnly = providers.gradleProperty("localOnly").orNull?.let {
+    requireNotNull(it.toBooleanStrictOrNull()) { "localOnly must be true or false" }
+} ?: false
+val local = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
+// Providing either private-backend field selects that pair as a unit.
+val backend = Properties().apply {
+    if (!local.containsKey("supabase.url") && !local.containsKey("supabase.key")) {
+        rootProject.file("cloud-defaults.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+    }
+    putAll(local)
+}
+fun cloudField(key: String) = if (localOnly) "" else backend.getProperty(key, "")
 
 // Release signing: credentials come from environment variables first, then
 // local.properties. For a signed release set (never commit them):
@@ -79,12 +86,12 @@ android {
         buildConfigField(
             "String",
             "SUPABASE_URL",
-            "\"${backend.getProperty("supabase.url", "")}\"",
+            "\"${cloudField("supabase.url")}\"",
         )
         buildConfigField(
             "String",
             "SUPABASE_KEY",
-            "\"${backend.getProperty("supabase.key", "")}\"",
+            "\"${cloudField("supabase.key")}\"",
         )
         // Google sign-in needs the OAuth *Web* client id (not the Android one):
         // Credential Manager sends it as the audience, and Supabase validates
@@ -92,7 +99,7 @@ android {
         buildConfigField(
             "String",
             "GOOGLE_WEB_CLIENT_ID",
-            "\"${backend.getProperty("google.webClientId", "")}\"",
+            "\"${cloudField("google.webClientId")}\"",
         )
     }
 
@@ -204,6 +211,7 @@ val validatePlayReleaseBackend by tasks.registering {
 }
 
 fun validateBackend(needsWebClientId: Boolean) {
+    check(!localOnly || !needsWebClientId) { "Local-only release builds use the FOSS flavour." }
     val missing = buildList {
         if (backend.getProperty("supabase.url", "").isBlank()) add("supabase.url")
         if (backend.getProperty("supabase.key", "").isBlank()) add("supabase.key")
@@ -211,7 +219,7 @@ fun validateBackend(needsWebClientId: Boolean) {
             add("google.webClientId")
         }
     }
-    check(missing.isEmpty()) {
+    check(localOnly || missing.isEmpty()) {
         "Release build requires backend credentials. " +
             "Missing property keys: ${missing.joinToString(", ")}. " +
             "(Debug builds do not need them.)"

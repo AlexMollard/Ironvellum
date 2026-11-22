@@ -1,0 +1,29 @@
+{
+  "revision": "189adda99d1b56da55fc5a6ee3f849354aaea92a",
+  "tag": "self-hosted/v0.8.4",
+  "sha256": {
+    ".env.example": "bc2763a3676fd9f9b27fd8b166f54110c49773c2bedb09888c665b4be8025933",
+    "docker-compose.yml": "91d706ea68ae8bc194aa278680a91c486f642f1e7ee89a1ebc096d4f72c9c157",
+    "utils/add-new-auth-keys.sh": "afeddcb0c4e2f6a4ee5775a357d90ae7e804a6ff3e5160725468ce7ac0daad0f",
+    "utils/generate-keys.sh": "6299efc24ce94d771ca4abb8ac96b67624cc4ac9a4b13ee0c2a8f0071aa3d619",
+    "volumes/api/envoy/cds.yaml": "9f2df9e1355cbeda3ecca809bffca9ed439bb18a66b82ca07caf97e27c34c291",
+    "volumes/api/envoy/docker-entrypoint.sh": "8a0c9503764de32ba39e0d81e73629457b13ec42ef19897e30e4918c996d0508",
+    "volumes/api/envoy/envoy.yaml": "3697f23b0be9ec5b829f937c600eb9b878f1f778ab510b42ad5e4f14742447e9",
+    "volumes/api/envoy/lds.template.yaml": "51496623f48fe6178634fdd71efa72ec88ee46692a963cf8ec137ff667d9c52a",
+    "volumes/db/_supabase.sql": "9dce462adc04137d6afabcf28efa60a6c355270a4b32d7af58891ac4eb964c5f",
+    "volumes/db/init/data.sql": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "volumes/db/jwt.sql": "c1d3f5c01e44646c2e533c5a1c111821cc49cb5a4c2534e08cddad61d8fb0339",
+    "volumes/db/logs.sql": "f0463ce5030907acef49326d2bffd36002df0718035071be7c99bd7fc897c63d",
+    "volumes/db/pooler.sql": "df97ebe148d94cfb92a5e37ebf972dfd496be195f0915ecf14396b2cf50efecb",
+    "volumes/db/realtime.sql": "7e9e442e7fc4dae05544c07b67bede37a00d84644304dfce4d937134cb4c8f88",
+    "volumes/db/roles.sql": "3ad717b225daa38aa982da26750f35641eb404e1eb5e69a763c22236ab96c1b2",
+    "volumes/db/webhooks.sql": "05a61316b899374253891cbba66ce073d9273f33983c3f47961eda3aa26c2823",
+    "volumes/functions/deno.jsonc": "a9a29da36c2576f755dd868b9f553a02afdf7d7bccf52e97e65c7f68cf36bfef",
+    "volumes/functions/hello/index.ts": "65e7d7ce5d898dd285e660cbab54521fca4bf990c41370f51fad5b4d4cae5f42",
+    "volumes/functions/main/index.ts": "239b2dac871ec05baa2648196240ad3027ae0f6b5da71f4b45ff17df0f360fa2",
+    "volumes/functions/main/memory-pressure.ts": "d4b193f43f81abc006a5aca1abc5a41f850800ad6b95370ddac39abef840c269",
+    "volumes/pooler/pooler.exs": "d844e49f8915021ccbf6af6b769fef7909a723346bfc8f94ddb0433a328e49b1",
+    "volumes/snippets/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "volumes/storage/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

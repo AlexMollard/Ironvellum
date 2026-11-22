@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "datasetId": {
+          "$ref": "files-v1.schema.json#/$defs/uuid"
+        },
+        "snapshotId": {
+          "$ref": "files-v1.schema.json#/$defs/uuid"
+        },
+        "exportedAtMs": {
+          "$ref": "files-v1.schema.json#/$defs/time"
+        },
+        "ageMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 253402300799999
+        },
+        "coverage": {
+          "$ref": "files-v1.schema.json#/$defs/coverage"
+        }
+      },
+      "required": [
+        "datasetId",
+        "snapshotId",
+        "exportedAtMs",
+        "ageMs",
+        "coverage"
+      ]
+    },
+    "proposedFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot": {
+          "$ref": "tool-types-v1.schema.json#/$defs/snapshot"
+        },
+        "status": {
+          "const": "proposed"
+        },
+        "filename": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\.json(?![\\s\\S])"
+        },
+        "proposal": {
+          "$ref": "files-v1.schema.json#/$defs/proposal"
+        }
+      },
+      "required": [
+        "snapshot",
+        "status",
+        "filename",
+        "proposal"
+      ]
+    }
+  }
+}

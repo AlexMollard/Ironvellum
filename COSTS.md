@@ -4,6 +4,8 @@ Updated monthly. All amounts USD. Invoices: Supabase dashboard → Billing.
 
 ## Current state
 
+Personal training and the personal file connector incur no Ironvellum hosting charge. The connector runs on the lifter's computer. Initial dependency downloads need internet access, and the chosen AI provider sets any separate pricing. Running the optional backend on a personal computer uses that computer's storage, power and network. [Local setup](tools/self_host/README.md).
+
 No donations, invoices or monthly totals have been recorded in this repository.
 The last recorded hosting plan was the Supabase free tier; this document is not
 evidence of the project's current billing dashboard or donation balances.

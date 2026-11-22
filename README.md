@@ -48,6 +48,16 @@ Most trackers add up kilograms, which rewards being heavy. Ironvellum scores a s
 
 Plain gym words by default; turn on **Themed names** for the fantasy version. The full list is in [Features](docs/FEATURES.md).
 
+## AI training tools
+
+Open **Train → AI tools** to share training with an AI app or import and review a workout before saving. Phone file sharing and imports work without an Ironvellum account or backend.
+
+The optional [hosted MCP server](server/production_mcp/README.md) provides scoped training reads and workout drafts through an authenticated connection. Its [deployment guide](server/production_mcp/DEPLOYMENT.md) covers self-hosting; a public service is not deployed by this change.
+
+The personal PC connector is archived on [archive-personal-connector](https://github.com/AlexMollard/Ironvellum/tree/archive-personal-connector). It is not part of main. Shared [training and workout contracts](docs/training-contracts/README.md) remain available for interoperability.
+
+For optional sync and social features, choose your own managed backend or [run Supabase on your PC](tools/self_host/README.md). A [backend-free FOSS release](docs/DEVELOPMENT.md#build-without-a-default-backend) starts with no shared service configured.
+
 ## Web dashboard
 
 <p align="center">

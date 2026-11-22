@@ -1,0 +1,2925 @@
+{
+    "schemaVersion": 1,
+    "movements": [
+        {
+            "key": "90-degree push-up",
+            "name": "90-Degree Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "ab wheel rollout",
+            "name": "Ab Wheel Rollout",
+            "metric": "REPS"
+        },
+        {
+            "key": "abdominal draw-in",
+            "name": "Abdominal Draw-In",
+            "metric": "HOLD"
+        },
+        {
+            "key": "active bar hang",
+            "name": "Active Bar Hang",
+            "metric": "HOLD"
+        },
+        {
+            "key": "advanced shrimp squat",
+            "name": "Advanced Shrimp Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "advanced tuck back lever",
+            "name": "Advanced Tuck Back Lever",
+            "metric": "HOLD"
+        },
+        {
+            "key": "advanced tuck front lever",
+            "name": "Advanced Tuck Front Lever",
+            "metric": "HOLD"
+        },
+        {
+            "key": "advanced tuck planche",
+            "name": "Advanced Tuck Planche",
+            "metric": "HOLD"
+        },
+        {
+            "key": "airborne squat",
+            "name": "Airborne Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "alternating dumbbell curl",
+            "name": "Alternating Dumbbell Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "alternating hammer curl",
+            "name": "Alternating Hammer Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "ankle circles",
+            "name": "Ankle Circles",
+            "metric": "DURATION"
+        },
+        {
+            "key": "archer pull-up",
+            "name": "Archer Pull-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "archer push-up",
+            "name": "Archer Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "arm circles",
+            "name": "Arm Circles",
+            "metric": "DURATION"
+        },
+        {
+            "key": "arnold press",
+            "name": "Arnold Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "assault bike",
+            "name": "Assault Bike",
+            "metric": "DURATION"
+        },
+        {
+            "key": "assisted chin-up",
+            "name": "Assisted Chin-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "assisted dip",
+            "name": "Assisted Dip",
+            "metric": "REPS"
+        },
+        {
+            "key": "assisted pull-up",
+            "name": "Assisted Pull-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "australian pull-up",
+            "name": "Australian Pull-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "back extension",
+            "name": "Back Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "back lever",
+            "name": "Back Lever",
+            "metric": "HOLD"
+        },
+        {
+            "key": "back squat",
+            "name": "Back Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "badminton",
+            "name": "Badminton",
+            "metric": "DURATION"
+        },
+        {
+            "key": "ball wall circles",
+            "name": "Ball Wall Circles",
+            "metric": "DURATION"
+        },
+        {
+            "key": "band pull-apart",
+            "name": "Band Pull-Apart",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded alternating curl",
+            "name": "Banded Alternating Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded calf raise",
+            "name": "Banded Calf Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded clamshell",
+            "name": "Banded Clamshell",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded crossover",
+            "name": "Banded Crossover",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded dead bug",
+            "name": "Banded Dead Bug",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded donkey kick",
+            "name": "Banded Donkey Kick",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded face pull",
+            "name": "Banded Face Pull",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded fire hydrant",
+            "name": "Banded Fire Hydrant",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded frog pump",
+            "name": "Banded Frog Pump",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded glute bridge",
+            "name": "Banded Glute Bridge",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded hip thrust",
+            "name": "Banded Hip Thrust",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded incline bench press",
+            "name": "Banded Incline Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded iron cross",
+            "name": "Banded Iron Cross",
+            "metric": "HOLD"
+        },
+        {
+            "key": "banded kickback",
+            "name": "Banded Kickback",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded lat pulldown",
+            "name": "Banded Lat Pulldown",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded lateral walk",
+            "name": "Banded Lateral Walk",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded monster walk",
+            "name": "Banded Monster Walk",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded pallof press",
+            "name": "Banded Pallof Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded reverse fly",
+            "name": "Banded Reverse Fly",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded row",
+            "name": "Banded Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded seated hip abduction",
+            "name": "Banded Seated Hip Abduction",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded squat",
+            "name": "Banded Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded standing hip abduction",
+            "name": "Banded Standing Hip Abduction",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded upright row",
+            "name": "Banded Upright Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "banded woodchop",
+            "name": "Banded Woodchop",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell curl",
+            "name": "Barbell Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell deadlift to curl",
+            "name": "Barbell Deadlift to Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell front raise and pullover",
+            "name": "Barbell Front Raise and Pullover",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell glute bridge",
+            "name": "Barbell Glute Bridge",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell hack squat",
+            "name": "Barbell Hack Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell lunge",
+            "name": "Barbell Lunge",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell neck press",
+            "name": "Barbell Neck Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell preacher curl",
+            "name": "Barbell Preacher Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell rear delt row",
+            "name": "Barbell Rear Delt Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell reverse lunge",
+            "name": "Barbell Reverse Lunge",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell row",
+            "name": "Barbell Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell seated calf raise",
+            "name": "Barbell Seated Calf Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell shrug",
+            "name": "Barbell Shrug",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell side squat",
+            "name": "Barbell Side Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell single-leg squat",
+            "name": "Barbell Single-Leg Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell squat to bench",
+            "name": "Barbell Squat to Bench",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell standing calf raise",
+            "name": "Barbell Standing Calf Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell step-up",
+            "name": "Barbell Step-Up",
+            "metric": "REPS"
+        },
+        {
+            "key": "barbell upright row",
+            "name": "Barbell Upright Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "basketball",
+            "name": "Basketball",
+            "metric": "DURATION"
+        },
+        {
+            "key": "battle ropes",
+            "name": "Battle Ropes",
+            "metric": "DURATION"
+        },
+        {
+            "key": "bear crawl",
+            "name": "Bear Crawl",
+            "metric": "HOLD"
+        },
+        {
+            "key": "bear plank",
+            "name": "Bear Plank",
+            "metric": "HOLD"
+        },
+        {
+            "key": "belt squat",
+            "name": "Belt Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "bench dip",
+            "name": "Bench Dip",
+            "metric": "REPS"
+        },
+        {
+            "key": "bench press",
+            "name": "Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "bent-arm pullover",
+            "name": "Bent-Arm Pullover",
+            "metric": "REPS"
+        },
+        {
+            "key": "bent-over cable lateral raise",
+            "name": "Bent-Over Cable Lateral Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "bent-over rear delt raise",
+            "name": "Bent-Over Rear Delt Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "bicep curl",
+            "name": "Bicep Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "bicycle crunch",
+            "name": "Bicycle Crunch",
+            "metric": "REPS"
+        },
+        {
+            "key": "bird dog",
+            "name": "Bird Dog",
+            "metric": "REPS"
+        },
+        {
+            "key": "body leg lift",
+            "name": "Body Leg Lift",
+            "metric": "REPS"
+        },
+        {
+            "key": "bodyweight overhead press",
+            "name": "Bodyweight Overhead Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "bodyweight squat",
+            "name": "Bodyweight Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "bosu ball push-up",
+            "name": "Bosu Ball Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "bouldering",
+            "name": "Bouldering",
+            "metric": "ATTEMPTS_GRADE"
+        },
+        {
+            "key": "box pistol squat",
+            "name": "Box Pistol Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "boxing",
+            "name": "Boxing",
+            "metric": "DURATION"
+        },
+        {
+            "key": "brazilian jiu-jitsu",
+            "name": "Brazilian Jiu-Jitsu",
+            "metric": "DURATION"
+        },
+        {
+            "key": "bridge",
+            "name": "Bridge",
+            "metric": "HOLD"
+        },
+        {
+            "key": "bulgarian split squat",
+            "name": "Bulgarian Split Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "burpee",
+            "name": "Burpee",
+            "metric": "REPS"
+        },
+        {
+            "key": "butterfly stretch",
+            "name": "Butterfly Stretch",
+            "metric": "DURATION"
+        },
+        {
+            "key": "cable crunch",
+            "name": "Cable Crunch",
+            "metric": "REPS"
+        },
+        {
+            "key": "cable curl",
+            "name": "Cable Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "cable fly",
+            "name": "Cable Fly",
+            "metric": "REPS"
+        },
+        {
+            "key": "cable front raise",
+            "name": "Cable Front Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "cable internal rotation",
+            "name": "Cable Internal Rotation",
+            "metric": "REPS"
+        },
+        {
+            "key": "cable kickback",
+            "name": "Cable Kickback",
+            "metric": "REPS"
+        },
+        {
+            "key": "cable lateral raise",
+            "name": "Cable Lateral Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "cable pallof hold",
+            "name": "Cable Pallof Hold",
+            "metric": "HOLD"
+        },
+        {
+            "key": "cable preacher curl",
+            "name": "Cable Preacher Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "cable pull-through",
+            "name": "Cable Pull-Through",
+            "metric": "REPS"
+        },
+        {
+            "key": "cable rear delt fly",
+            "name": "Cable Rear Delt Fly",
+            "metric": "REPS"
+        },
+        {
+            "key": "cable shrug",
+            "name": "Cable Shrug",
+            "metric": "REPS"
+        },
+        {
+            "key": "cable standing hip abduction",
+            "name": "Cable Standing Hip Abduction",
+            "metric": "REPS"
+        },
+        {
+            "key": "cable standing hip adduction",
+            "name": "Cable Standing Hip Adduction",
+            "metric": "REPS"
+        },
+        {
+            "key": "cable upright row",
+            "name": "Cable Upright Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "calf raise",
+            "name": "Calf Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "captain's chair knee raise",
+            "name": "Captain's Chair Knee Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "cat-cow stretch",
+            "name": "Cat-Cow Stretch",
+            "metric": "DURATION"
+        },
+        {
+            "key": "chest dip",
+            "name": "Chest Dip",
+            "metric": "REPS"
+        },
+        {
+            "key": "chest-supported row",
+            "name": "Chest-Supported Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "child's pose",
+            "name": "Child's Pose",
+            "metric": "DURATION"
+        },
+        {
+            "key": "chin-up",
+            "name": "Chin-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "clamshell",
+            "name": "Clamshell",
+            "metric": "REPS"
+        },
+        {
+            "key": "close-grip barbell curl",
+            "name": "Close-Grip Barbell Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "close-grip bench press",
+            "name": "Close-Grip Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "close-grip ez-bar curl",
+            "name": "Close-Grip EZ-Bar Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "close-grip lat pulldown",
+            "name": "Close-Grip Lat Pulldown",
+            "metric": "REPS"
+        },
+        {
+            "key": "cobra squat",
+            "name": "Cobra Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "commando pull-up",
+            "name": "Commando Pull-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "concentration curl",
+            "name": "Concentration Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "copenhagen plank",
+            "name": "Copenhagen Plank",
+            "metric": "HOLD"
+        },
+        {
+            "key": "cossack squat",
+            "name": "Cossack Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "crab walk",
+            "name": "Crab Walk",
+            "metric": "HOLD"
+        },
+        {
+            "key": "cricket",
+            "name": "Cricket",
+            "metric": "DURATION"
+        },
+        {
+            "key": "cross-body crunch",
+            "name": "Cross-Body Crunch",
+            "metric": "REPS"
+        },
+        {
+            "key": "cross-body shoulder stretch",
+            "name": "Cross-Body Shoulder Stretch",
+            "metric": "DURATION"
+        },
+        {
+            "key": "crow pose",
+            "name": "Crow Pose",
+            "metric": "HOLD"
+        },
+        {
+            "key": "crow → handstand",
+            "name": "Crow → Handstand",
+            "metric": "REPS"
+        },
+        {
+            "key": "crunch",
+            "name": "Crunch",
+            "metric": "REPS"
+        },
+        {
+            "key": "curtsy lunge",
+            "name": "Curtsy Lunge",
+            "metric": "REPS"
+        },
+        {
+            "key": "cycling",
+            "name": "Cycling",
+            "metric": "DISTANCE_TIME"
+        },
+        {
+            "key": "dancing",
+            "name": "Dancing",
+            "metric": "DURATION"
+        },
+        {
+            "key": "dead bug",
+            "name": "Dead Bug",
+            "metric": "REPS"
+        },
+        {
+            "key": "dead hang",
+            "name": "Dead Hang",
+            "metric": "HOLD"
+        },
+        {
+            "key": "deadlift",
+            "name": "Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "decline bench press",
+            "name": "Decline Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "decline chest press",
+            "name": "Decline Chest Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "decline close-grip bench to skull crusher",
+            "name": "Decline Close-Grip Bench to Skull Crusher",
+            "metric": "REPS"
+        },
+        {
+            "key": "decline crunch",
+            "name": "Decline Crunch",
+            "metric": "REPS"
+        },
+        {
+            "key": "decline dumbbell fly",
+            "name": "Decline Dumbbell Fly",
+            "metric": "REPS"
+        },
+        {
+            "key": "decline dumbbell press",
+            "name": "Decline Dumbbell Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "decline dumbbell triceps extension",
+            "name": "Decline Dumbbell Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "decline ez-bar triceps extension",
+            "name": "Decline EZ-Bar Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "decline oblique crunch",
+            "name": "Decline Oblique Crunch",
+            "metric": "REPS"
+        },
+        {
+            "key": "decline push-up",
+            "name": "Decline Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "decline sit-up",
+            "name": "Decline Sit-Up",
+            "metric": "REPS"
+        },
+        {
+            "key": "deep squat hold",
+            "name": "Deep Squat Hold",
+            "metric": "HOLD"
+        },
+        {
+            "key": "deficit advanced shrimp squat",
+            "name": "Deficit Advanced Shrimp Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "deficit reverse lunge",
+            "name": "Deficit Reverse Lunge",
+            "metric": "REPS"
+        },
+        {
+            "key": "diamond push-up",
+            "name": "Diamond Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "dip",
+            "name": "Dip",
+            "metric": "REPS"
+        },
+        {
+            "key": "donkey calf raise",
+            "name": "Donkey Calf Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "donkey kick",
+            "name": "Donkey Kick",
+            "metric": "REPS"
+        },
+        {
+            "key": "door sheet row",
+            "name": "Door Sheet Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "doorway chest stretch",
+            "name": "Doorway Chest Stretch",
+            "metric": "DURATION"
+        },
+        {
+            "key": "double-bodyweight bench press",
+            "name": "Double-Bodyweight Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "double-bodyweight deadlift",
+            "name": "Double-Bodyweight Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "double-bodyweight squat",
+            "name": "Double-Bodyweight Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "drag curl",
+            "name": "Drag Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "dragon flag",
+            "name": "Dragon Flag",
+            "metric": "REPS"
+        },
+        {
+            "key": "dragon squat",
+            "name": "Dragon Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell bench press",
+            "name": "Dumbbell Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell bent-arm pullover",
+            "name": "Dumbbell Bent-Arm Pullover",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell bent-over row",
+            "name": "Dumbbell Bent-Over Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell curtsy lunge",
+            "name": "Dumbbell Curtsy Lunge",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell deadlift",
+            "name": "Dumbbell Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell external rotation",
+            "name": "Dumbbell External Rotation",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell fly",
+            "name": "Dumbbell Fly",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell glute bridge",
+            "name": "Dumbbell Glute Bridge",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell hip thrust",
+            "name": "Dumbbell Hip Thrust",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell iron cross",
+            "name": "Dumbbell Iron Cross",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell lateral lunge",
+            "name": "Dumbbell Lateral Lunge",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell lunge",
+            "name": "Dumbbell Lunge",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell overhead triceps extension",
+            "name": "Dumbbell Overhead Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell pullover",
+            "name": "Dumbbell Pullover",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell rear delt row",
+            "name": "Dumbbell Rear Delt Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell romanian deadlift",
+            "name": "Dumbbell Romanian Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell row",
+            "name": "Dumbbell Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell shoulder press",
+            "name": "Dumbbell Shoulder Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell shrug",
+            "name": "Dumbbell Shrug",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell side bend",
+            "name": "Dumbbell Side Bend",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell squat",
+            "name": "Dumbbell Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell squat to bench",
+            "name": "Dumbbell Squat to Bench",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell squat to curl",
+            "name": "Dumbbell Squat to Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell step-up",
+            "name": "Dumbbell Step-Up",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell sumo deadlift",
+            "name": "Dumbbell Sumo Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell sumo squat",
+            "name": "Dumbbell Sumo Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "dumbbell upright row",
+            "name": "Dumbbell Upright Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "elbow lever",
+            "name": "Elbow Lever",
+            "metric": "HOLD"
+        },
+        {
+            "key": "elevated pike push-up",
+            "name": "Elevated Pike Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "elevated pistol squat",
+            "name": "Elevated Pistol Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "elliptical",
+            "name": "Elliptical",
+            "metric": "DURATION"
+        },
+        {
+            "key": "exercise ball pull-in",
+            "name": "Exercise Ball Pull-In",
+            "metric": "REPS"
+        },
+        {
+            "key": "exercise ball push-up",
+            "name": "Exercise Ball Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "explosive push-up",
+            "name": "Explosive Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "ez-bar curl",
+            "name": "EZ-Bar Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "face pull",
+            "name": "Face Pull",
+            "metric": "REPS"
+        },
+        {
+            "key": "feet-elevated pike push-up",
+            "name": "Feet-Elevated Pike Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "fire hydrant",
+            "name": "Fire Hydrant",
+            "metric": "REPS"
+        },
+        {
+            "key": "flat bench cable fly",
+            "name": "Flat Bench Cable Fly",
+            "metric": "REPS"
+        },
+        {
+            "key": "flat bench leg raise",
+            "name": "Flat Bench Leg Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "flexor incline dumbbell curl",
+            "name": "Flexor Incline Dumbbell Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "flutter kick",
+            "name": "Flutter Kick",
+            "metric": "HOLD"
+        },
+        {
+            "key": "football (soccer)",
+            "name": "Football (Soccer)",
+            "metric": "DURATION"
+        },
+        {
+            "key": "forward lunge",
+            "name": "Forward Lunge",
+            "metric": "REPS"
+        },
+        {
+            "key": "forward lunge to curl",
+            "name": "Forward Lunge to Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "freestanding handstand",
+            "name": "Freestanding Handstand",
+            "metric": "HOLD"
+        },
+        {
+            "key": "frog pump",
+            "name": "Frog Pump",
+            "metric": "REPS"
+        },
+        {
+            "key": "frog stand",
+            "name": "Frog Stand",
+            "metric": "HOLD"
+        },
+        {
+            "key": "front lever",
+            "name": "Front Lever",
+            "metric": "HOLD"
+        },
+        {
+            "key": "front lever row",
+            "name": "Front Lever Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "front raise",
+            "name": "Front Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "front row hold",
+            "name": "Front Row Hold",
+            "metric": "HOLD"
+        },
+        {
+            "key": "front split",
+            "name": "Front Split",
+            "metric": "HOLD"
+        },
+        {
+            "key": "front squat",
+            "name": "Front Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "front squat to bench",
+            "name": "Front Squat to Bench",
+            "metric": "REPS"
+        },
+        {
+            "key": "front-foot elevated split squat",
+            "name": "Front-Foot Elevated Split Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "full planche",
+            "name": "Full Planche",
+            "metric": "HOLD"
+        },
+        {
+            "key": "german hang",
+            "name": "German Hang",
+            "metric": "HOLD"
+        },
+        {
+            "key": "glute bridge",
+            "name": "Glute Bridge",
+            "metric": "REPS"
+        },
+        {
+            "key": "glute bridge march",
+            "name": "Glute Bridge March",
+            "metric": "REPS"
+        },
+        {
+            "key": "glute-focused back extension",
+            "name": "Glute-Focused Back Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "goblet squat",
+            "name": "Goblet Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "golf",
+            "name": "Golf",
+            "metric": "DURATION"
+        },
+        {
+            "key": "good morning",
+            "name": "Good Morning",
+            "metric": "REPS"
+        },
+        {
+            "key": "hack squat",
+            "name": "Hack Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "half split",
+            "name": "Half Split",
+            "metric": "HOLD"
+        },
+        {
+            "key": "half-again overhead press",
+            "name": "Half-Again Overhead Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "half-kneeling pallof press",
+            "name": "Half-Kneeling Pallof Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "hammer curl",
+            "name": "Hammer Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "hammer curl across body",
+            "name": "Hammer Curl Across Body",
+            "metric": "REPS"
+        },
+        {
+            "key": "hammer preacher curl",
+            "name": "Hammer Preacher Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "hamstring bridge",
+            "name": "Hamstring Bridge",
+            "metric": "REPS"
+        },
+        {
+            "key": "hamstring stretch",
+            "name": "Hamstring Stretch",
+            "metric": "DURATION"
+        },
+        {
+            "key": "handstand push-up",
+            "name": "Handstand Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "handstand walk",
+            "name": "Handstand Walk",
+            "metric": "REPS"
+        },
+        {
+            "key": "handstand-to-bridge",
+            "name": "Handstand-to-Bridge",
+            "metric": "REPS"
+        },
+        {
+            "key": "hanging knee raise",
+            "name": "Hanging Knee Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "hanging leg raise",
+            "name": "Hanging Leg Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "hanging oblique knee raise",
+            "name": "Hanging Oblique Knee Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "head-supported rear delt raise",
+            "name": "Head-Supported Rear Delt Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "heavy bench press",
+            "name": "Heavy Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "heavy deadlift",
+            "name": "Heavy Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "heavy overhead press",
+            "name": "Heavy Overhead Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "heavy squat",
+            "name": "Heavy Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "heel-elevated goblet squat",
+            "name": "Heel-Elevated Goblet Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "high cable curl",
+            "name": "High Cable Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "high knees",
+            "name": "High Knees",
+            "metric": "REPS"
+        },
+        {
+            "key": "hiking",
+            "name": "Hiking",
+            "metric": "DISTANCE_TIME"
+        },
+        {
+            "key": "hindu push-up",
+            "name": "Hindu Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "hip abduction",
+            "name": "Hip Abduction",
+            "metric": "REPS"
+        },
+        {
+            "key": "hip adduction",
+            "name": "Hip Adduction",
+            "metric": "REPS"
+        },
+        {
+            "key": "hip airplane",
+            "name": "Hip Airplane",
+            "metric": "DURATION"
+        },
+        {
+            "key": "hip thrust",
+            "name": "Hip Thrust",
+            "metric": "REPS"
+        },
+        {
+            "key": "hollow hold",
+            "name": "Hollow Hold",
+            "metric": "HOLD"
+        },
+        {
+            "key": "hollow rock",
+            "name": "Hollow Rock",
+            "metric": "REPS"
+        },
+        {
+            "key": "human flag",
+            "name": "Human Flag",
+            "metric": "HOLD"
+        },
+        {
+            "key": "inchworm",
+            "name": "Inchworm",
+            "metric": "REPS"
+        },
+        {
+            "key": "incline barbell triceps extension",
+            "name": "Incline Barbell Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "incline bench one-arm dumbbell curl",
+            "name": "Incline Bench One-Arm Dumbbell Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "incline bench press",
+            "name": "Incline Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "incline cable fly",
+            "name": "Incline Cable Fly",
+            "metric": "REPS"
+        },
+        {
+            "key": "incline cable pushdown",
+            "name": "Incline Cable Pushdown",
+            "metric": "REPS"
+        },
+        {
+            "key": "incline cable triceps extension",
+            "name": "Incline Cable Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "incline dumbbell curl",
+            "name": "Incline Dumbbell Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "incline dumbbell fly",
+            "name": "Incline Dumbbell Fly",
+            "metric": "REPS"
+        },
+        {
+            "key": "incline dumbbell fly with twist",
+            "name": "Incline Dumbbell Fly with Twist",
+            "metric": "REPS"
+        },
+        {
+            "key": "incline dumbbell press",
+            "name": "Incline Dumbbell Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "incline dumbbell shoulder press",
+            "name": "Incline Dumbbell Shoulder Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "incline dumbbell triceps extension",
+            "name": "Incline Dumbbell Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "incline hammer-grip dumbbell press",
+            "name": "Incline Hammer-Grip Dumbbell Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "incline push-up",
+            "name": "Incline Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "indoor cycling",
+            "name": "Indoor Cycling",
+            "metric": "DISTANCE_TIME"
+        },
+        {
+            "key": "inverted muscle-up",
+            "name": "Inverted Muscle-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "inverted row",
+            "name": "Inverted Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "iron cross",
+            "name": "Iron Cross",
+            "metric": "HOLD"
+        },
+        {
+            "key": "jefferson squat",
+            "name": "Jefferson Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "jm press",
+            "name": "JM Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "judo",
+            "name": "Judo",
+            "metric": "DURATION"
+        },
+        {
+            "key": "jump rope intervals",
+            "name": "Jump Rope Intervals",
+            "metric": "DURATION"
+        },
+        {
+            "key": "jump squat",
+            "name": "Jump Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "jumping jack",
+            "name": "Jumping Jack",
+            "metric": "REPS"
+        },
+        {
+            "key": "karate",
+            "name": "Karate",
+            "metric": "DURATION"
+        },
+        {
+            "key": "kettlebell romanian deadlift",
+            "name": "Kettlebell Romanian Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "kettlebell swing",
+            "name": "Kettlebell Swing",
+            "metric": "REPS"
+        },
+        {
+            "key": "kickboxing",
+            "name": "Kickboxing",
+            "metric": "DURATION"
+        },
+        {
+            "key": "kip-up",
+            "name": "Kip-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "knee circles",
+            "name": "Knee Circles",
+            "metric": "DURATION"
+        },
+        {
+            "key": "knee push-up",
+            "name": "Knee Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "knee-to-wall dorsiflexion",
+            "name": "Knee-to-Wall Dorsiflexion",
+            "metric": "REPS"
+        },
+        {
+            "key": "kneeling barbell rollout",
+            "name": "Kneeling Barbell Rollout",
+            "metric": "REPS"
+        },
+        {
+            "key": "kneeling cable triceps extension",
+            "name": "Kneeling Cable Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "kneeling hip flexor stretch",
+            "name": "Kneeling Hip Flexor Stretch",
+            "metric": "DURATION"
+        },
+        {
+            "key": "l-sit",
+            "name": "L-sit",
+            "metric": "HOLD"
+        },
+        {
+            "key": "l-sit pull-up",
+            "name": "L-sit Pull-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "landmine press",
+            "name": "Landmine Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "landmine romanian deadlift",
+            "name": "Landmine Romanian Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "landmine squat",
+            "name": "Landmine Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "lat pulldown",
+            "name": "Lat Pulldown",
+            "metric": "REPS"
+        },
+        {
+            "key": "lateral lunge",
+            "name": "Lateral Lunge",
+            "metric": "REPS"
+        },
+        {
+            "key": "lateral lunge to curl",
+            "name": "Lateral Lunge to Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "lateral raise",
+            "name": "Lateral Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "lateral shuffle",
+            "name": "Lateral Shuffle",
+            "metric": "REPS"
+        },
+        {
+            "key": "leg extension",
+            "name": "Leg Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "leg press",
+            "name": "Leg Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "leg press calf raise",
+            "name": "Leg Press Calf Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "leg swing stretch",
+            "name": "Leg Swing Stretch",
+            "metric": "DURATION"
+        },
+        {
+            "key": "legs-on-ball crunch",
+            "name": "Legs-on-Ball Crunch",
+            "metric": "REPS"
+        },
+        {
+            "key": "low cable triceps extension",
+            "name": "Low Cable Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "lying barbell triceps extension behind the head",
+            "name": "Lying Barbell Triceps Extension Behind the Head",
+            "metric": "REPS"
+        },
+        {
+            "key": "lying cable curl",
+            "name": "Lying Cable Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "lying cable triceps extension",
+            "name": "Lying Cable Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "lying dumbbell triceps extension across face",
+            "name": "Lying Dumbbell Triceps Extension Across Face",
+            "metric": "REPS"
+        },
+        {
+            "key": "lying hamstring walkout",
+            "name": "Lying Hamstring Walkout",
+            "metric": "REPS"
+        },
+        {
+            "key": "lying incline barbell curl",
+            "name": "Lying Incline Barbell Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "lying leg curl",
+            "name": "Lying Leg Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "lying leg raise",
+            "name": "Lying Leg Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "lying one-arm rear lateral raise",
+            "name": "Lying One-Arm Rear Lateral Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "lying rear lateral raise",
+            "name": "Lying Rear Lateral Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "lying squat",
+            "name": "Lying Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "machine bicep curl",
+            "name": "Machine Bicep Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "machine chest press",
+            "name": "Machine Chest Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "machine glute kickback",
+            "name": "Machine Glute Kickback",
+            "metric": "REPS"
+        },
+        {
+            "key": "machine lateral raise",
+            "name": "Machine Lateral Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "machine row",
+            "name": "Machine Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "machine shoulder press",
+            "name": "Machine Shoulder Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "machine triceps extension",
+            "name": "Machine Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "manna",
+            "name": "Manna",
+            "metric": "HOLD"
+        },
+        {
+            "key": "martial arts class",
+            "name": "Martial Arts Class",
+            "metric": "DURATION"
+        },
+        {
+            "key": "meadows row",
+            "name": "Meadows Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "mobility flow",
+            "name": "Mobility Flow",
+            "metric": "DURATION"
+        },
+        {
+            "key": "mountain climber",
+            "name": "Mountain Climber",
+            "metric": "HOLD"
+        },
+        {
+            "key": "muscle-up",
+            "name": "Muscle-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "narrow-stance barbell squat",
+            "name": "Narrow-Stance Barbell Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "narrow-stance hack squat",
+            "name": "Narrow-Stance Hack Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "narrow-stance leg press",
+            "name": "Narrow-Stance Leg Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "negative pull-up",
+            "name": "Negative Pull-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "neutral-grip pull-up",
+            "name": "Neutral-Grip Pull-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "nordic curl",
+            "name": "Nordic Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "nordic negative",
+            "name": "Nordic Negative",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm barbell curl",
+            "name": "One-Arm Barbell Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm barbell floor press",
+            "name": "One-Arm Barbell Floor Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm barbell snatch",
+            "name": "One-Arm Barbell Snatch",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm biased push-up",
+            "name": "One-Arm Biased Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm cable curl",
+            "name": "One-Arm Cable Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm cable triceps extension",
+            "name": "One-Arm Cable Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm dumbbell bench press",
+            "name": "One-Arm Dumbbell Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm dumbbell preacher curl",
+            "name": "One-Arm Dumbbell Preacher Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm dumbbell shoulder press",
+            "name": "One-Arm Dumbbell Shoulder Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm dumbbell skull crusher",
+            "name": "One-Arm Dumbbell Skull Crusher",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm dumbbell triceps extension",
+            "name": "One-Arm Dumbbell Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm dumbbell upright row",
+            "name": "One-Arm Dumbbell Upright Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm flat bench fly",
+            "name": "One-Arm Flat Bench Fly",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm front lever",
+            "name": "One-Arm Front Lever",
+            "metric": "HOLD"
+        },
+        {
+            "key": "one-arm handstand",
+            "name": "One-Arm Handstand",
+            "metric": "HOLD"
+        },
+        {
+            "key": "one-arm hang",
+            "name": "One-Arm Hang",
+            "metric": "HOLD"
+        },
+        {
+            "key": "one-arm negative",
+            "name": "One-Arm Negative",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm negative push-up",
+            "name": "One-Arm Negative Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm pull-up",
+            "name": "One-Arm Pull-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm push-up",
+            "name": "One-Arm Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-arm side deadlift",
+            "name": "One-Arm Side Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "one-leg back lever",
+            "name": "One-Leg Back Lever",
+            "metric": "HOLD"
+        },
+        {
+            "key": "one-leg front lever",
+            "name": "One-Leg Front Lever",
+            "metric": "HOLD"
+        },
+        {
+            "key": "one-leg planche",
+            "name": "One-Leg Planche",
+            "metric": "HOLD"
+        },
+        {
+            "key": "overhead cable curl",
+            "name": "Overhead Cable Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "overhead cable extension",
+            "name": "Overhead Cable Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "overhead press",
+            "name": "Overhead Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "overhead squat",
+            "name": "Overhead Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "pallof press",
+            "name": "Pallof Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "pancake",
+            "name": "Pancake",
+            "metric": "HOLD"
+        },
+        {
+            "key": "parallel bar dip",
+            "name": "Parallel Bar Dip",
+            "metric": "REPS"
+        },
+        {
+            "key": "parallel bar support hold",
+            "name": "Parallel Bar Support Hold",
+            "metric": "HOLD"
+        },
+        {
+            "key": "pause squat",
+            "name": "Pause Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "paused bench press",
+            "name": "Paused Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "pec deck",
+            "name": "Pec Deck",
+            "metric": "REPS"
+        },
+        {
+            "key": "pendlay row",
+            "name": "Pendlay Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "pike press",
+            "name": "Pike Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "pike push-up",
+            "name": "Pike Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "pilates",
+            "name": "Pilates",
+            "metric": "DURATION"
+        },
+        {
+            "key": "pistol squat",
+            "name": "Pistol Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "planche lean",
+            "name": "Planche Lean",
+            "metric": "HOLD"
+        },
+        {
+            "key": "planche push-up",
+            "name": "Planche Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "plank",
+            "name": "Plank",
+            "metric": "HOLD"
+        },
+        {
+            "key": "plank jack",
+            "name": "Plank Jack",
+            "metric": "HOLD"
+        },
+        {
+            "key": "plank shoulder tap",
+            "name": "Plank Shoulder Tap",
+            "metric": "REPS"
+        },
+        {
+            "key": "plate front raise",
+            "name": "Plate Front Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "preacher curl",
+            "name": "Preacher Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "pronated one-arm dumbbell triceps extension",
+            "name": "Pronated One-Arm Dumbbell Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "prone incline dumbbell curl",
+            "name": "Prone Incline Dumbbell Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "prone t raise",
+            "name": "Prone T Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "prone y raise",
+            "name": "Prone Y Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "pull-up",
+            "name": "Pull-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "push press",
+            "name": "Push Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "push-up",
+            "name": "Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "push-up shoulder tap",
+            "name": "Push-up Shoulder Tap",
+            "metric": "REPS"
+        },
+        {
+            "key": "rack pull",
+            "name": "Rack Pull",
+            "metric": "REPS"
+        },
+        {
+            "key": "reverse crunch",
+            "name": "Reverse Crunch",
+            "metric": "REPS"
+        },
+        {
+            "key": "reverse curl",
+            "name": "Reverse Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "reverse fly",
+            "name": "Reverse Fly",
+            "metric": "REPS"
+        },
+        {
+            "key": "reverse hyperextension",
+            "name": "Reverse Hyperextension",
+            "metric": "REPS"
+        },
+        {
+            "key": "reverse lunge",
+            "name": "Reverse Lunge",
+            "metric": "REPS"
+        },
+        {
+            "key": "reverse pec deck",
+            "name": "Reverse Pec Deck",
+            "metric": "REPS"
+        },
+        {
+            "key": "reverse plate curl",
+            "name": "Reverse Plate Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "reverse snow angel",
+            "name": "Reverse Snow Angel",
+            "metric": "REPS"
+        },
+        {
+            "key": "reverse-grip triceps bench press",
+            "name": "Reverse-Grip Triceps Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "reverse-grip triceps pushdown",
+            "name": "Reverse-Grip Triceps Pushdown",
+            "metric": "REPS"
+        },
+        {
+            "key": "ring dip",
+            "name": "Ring Dip",
+            "metric": "REPS"
+        },
+        {
+            "key": "ring muscle-up",
+            "name": "Ring Muscle-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "ring row",
+            "name": "Ring Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "ring support hold",
+            "name": "Ring Support Hold",
+            "metric": "HOLD"
+        },
+        {
+            "key": "rocking barbell calf raise",
+            "name": "Rocking Barbell Calf Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "romanian deadlift",
+            "name": "Romanian Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "rope hammer curl",
+            "name": "Rope Hammer Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "rope triceps pushdown",
+            "name": "Rope Triceps Pushdown",
+            "metric": "REPS"
+        },
+        {
+            "key": "rowing",
+            "name": "Rowing",
+            "metric": "DISTANCE_TIME"
+        },
+        {
+            "key": "rto support hold",
+            "name": "RTO Support Hold",
+            "metric": "HOLD"
+        },
+        {
+            "key": "rugby",
+            "name": "Rugby",
+            "metric": "DURATION"
+        },
+        {
+            "key": "running",
+            "name": "Running",
+            "metric": "DISTANCE_TIME"
+        },
+        {
+            "key": "russian twist",
+            "name": "Russian Twist",
+            "metric": "REPS"
+        },
+        {
+            "key": "scapular pull",
+            "name": "Scapular Pull",
+            "metric": "REPS"
+        },
+        {
+            "key": "scapular push-up",
+            "name": "Scapular Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "seated cable rear lateral raise",
+            "name": "Seated Cable Rear Lateral Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "seated cable row",
+            "name": "Seated Cable Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "seated calf raise",
+            "name": "Seated Calf Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "seated dumbbell curl",
+            "name": "Seated Dumbbell Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "seated forward fold",
+            "name": "Seated Forward Fold",
+            "metric": "DURATION"
+        },
+        {
+            "key": "seated knee tuck",
+            "name": "Seated Knee Tuck",
+            "metric": "REPS"
+        },
+        {
+            "key": "seated leg curl",
+            "name": "Seated Leg Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "seated military press",
+            "name": "Seated Military Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "seated overhead barbell triceps extension",
+            "name": "Seated Overhead Barbell Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "seated single-leg calf raise",
+            "name": "Seated Single-Leg Calf Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "shrimp squat",
+            "name": "Shrimp Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "side plank",
+            "name": "Side Plank",
+            "metric": "HOLD"
+        },
+        {
+            "key": "side plank hip dip",
+            "name": "Side Plank Hip Dip",
+            "metric": "REPS"
+        },
+        {
+            "key": "side-lying hip abduction",
+            "name": "Side-Lying Hip Abduction",
+            "metric": "REPS"
+        },
+        {
+            "key": "side-lying leg raise",
+            "name": "Side-Lying Leg Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "single-arm cable row",
+            "name": "Single-Arm Cable Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "single-leg box squat",
+            "name": "Single-Leg Box Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "single-leg calf raise",
+            "name": "Single-Leg Calf Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "single-leg glute bridge",
+            "name": "Single-Leg Glute Bridge",
+            "metric": "REPS"
+        },
+        {
+            "key": "single-leg romanian deadlift",
+            "name": "Single-Leg Romanian Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "sissy squat",
+            "name": "Sissy Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "skateboarding",
+            "name": "Skateboarding",
+            "metric": "DURATION"
+        },
+        {
+            "key": "skater squat",
+            "name": "Skater Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "ski erg",
+            "name": "Ski Erg",
+            "metric": "DISTANCE_TIME"
+        },
+        {
+            "key": "skiing",
+            "name": "Skiing",
+            "metric": "DURATION"
+        },
+        {
+            "key": "skin the cat",
+            "name": "Skin the Cat",
+            "metric": "REPS"
+        },
+        {
+            "key": "skipping",
+            "name": "Skipping",
+            "metric": "DURATION"
+        },
+        {
+            "key": "skull crusher",
+            "name": "Skull Crusher",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine bench press",
+            "name": "Smith Machine Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine bulgarian split squat",
+            "name": "Smith Machine Bulgarian Split Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine close-grip bench press",
+            "name": "Smith Machine Close-Grip Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine deadlift",
+            "name": "Smith Machine Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine good morning",
+            "name": "Smith Machine Good Morning",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine hack squat",
+            "name": "Smith Machine Hack Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine hip thrust",
+            "name": "Smith Machine Hip Thrust",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine incline bench press",
+            "name": "Smith Machine Incline Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine overhead press",
+            "name": "Smith Machine Overhead Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine rear delt row",
+            "name": "Smith Machine Rear Delt Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine reverse calf raise",
+            "name": "Smith Machine Reverse Calf Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine reverse lunge",
+            "name": "Smith Machine Reverse Lunge",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine romanian deadlift",
+            "name": "Smith Machine Romanian Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine row",
+            "name": "Smith Machine Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine shrug",
+            "name": "Smith Machine Shrug",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine split squat",
+            "name": "Smith Machine Split Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine squat",
+            "name": "Smith Machine Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "smith machine upright row",
+            "name": "Smith Machine Upright Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "snowboarding",
+            "name": "Snowboarding",
+            "metric": "DURATION"
+        },
+        {
+            "key": "speed squat",
+            "name": "Speed Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "spider curl",
+            "name": "Spider Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "split squat",
+            "name": "Split Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "sport climbing",
+            "name": "Sport Climbing",
+            "metric": "ATTEMPTS_GRADE"
+        },
+        {
+            "key": "sprawl",
+            "name": "Sprawl",
+            "metric": "REPS"
+        },
+        {
+            "key": "squash",
+            "name": "Squash",
+            "metric": "DURATION"
+        },
+        {
+            "key": "stability ball back extension",
+            "name": "Stability Ball Back Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "stability ball crunch",
+            "name": "Stability Ball Crunch",
+            "metric": "REPS"
+        },
+        {
+            "key": "stability ball hamstring curl",
+            "name": "Stability Ball Hamstring Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "stability ball pullover",
+            "name": "Stability Ball Pullover",
+            "metric": "REPS"
+        },
+        {
+            "key": "stair climbing",
+            "name": "Stair Climbing",
+            "metric": "DURATION"
+        },
+        {
+            "key": "stand-to-stand bridge",
+            "name": "Stand-to-Stand Bridge",
+            "metric": "REPS"
+        },
+        {
+            "key": "standing calf raise",
+            "name": "Standing Calf Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "standing dumbbell press",
+            "name": "Standing Dumbbell Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "standing leg curl",
+            "name": "Standing Leg Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "standing overhead barbell triceps extension",
+            "name": "Standing Overhead Barbell Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "standing quad stretch",
+            "name": "Standing Quad Stretch",
+            "metric": "DURATION"
+        },
+        {
+            "key": "standing towel triceps extension",
+            "name": "Standing Towel Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "static neck flexion and extension",
+            "name": "Static Neck Flexion and Extension",
+            "metric": "HOLD"
+        },
+        {
+            "key": "static neck side flexion",
+            "name": "Static Neck Side Flexion",
+            "metric": "HOLD"
+        },
+        {
+            "key": "step-down",
+            "name": "Step-Down",
+            "metric": "REPS"
+        },
+        {
+            "key": "step-up to curl",
+            "name": "Step-Up to Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "stork stance curl",
+            "name": "Stork Stance Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "straddle back lever",
+            "name": "Straddle Back Lever",
+            "metric": "HOLD"
+        },
+        {
+            "key": "straddle front lever",
+            "name": "Straddle Front Lever",
+            "metric": "HOLD"
+        },
+        {
+            "key": "straddle l-sit",
+            "name": "Straddle L-sit",
+            "metric": "HOLD"
+        },
+        {
+            "key": "straddle planche",
+            "name": "Straddle Planche",
+            "metric": "HOLD"
+        },
+        {
+            "key": "straddle press to handstand",
+            "name": "Straddle Press to Handstand",
+            "metric": "REPS"
+        },
+        {
+            "key": "straight-arm pulldown",
+            "name": "Straight-Arm Pulldown",
+            "metric": "REPS"
+        },
+        {
+            "key": "stretching",
+            "name": "Stretching",
+            "metric": "DURATION"
+        },
+        {
+            "key": "strict muscle-up",
+            "name": "Strict Muscle-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "sumo deadlift",
+            "name": "Sumo Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "superman",
+            "name": "Superman",
+            "metric": "REPS"
+        },
+        {
+            "key": "supinated one-arm dumbbell triceps extension",
+            "name": "Supinated One-Arm Dumbbell Triceps Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "supported pistol squat",
+            "name": "Supported Pistol Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "surfing",
+            "name": "Surfing",
+            "metric": "DURATION"
+        },
+        {
+            "key": "swimming",
+            "name": "Swimming",
+            "metric": "DISTANCE_TIME"
+        },
+        {
+            "key": "t-bar row",
+            "name": "T-Bar Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "table tennis",
+            "name": "Table Tennis",
+            "metric": "DURATION"
+        },
+        {
+            "key": "tate press",
+            "name": "Tate Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "tennis",
+            "name": "Tennis",
+            "metric": "DURATION"
+        },
+        {
+            "key": "tib raise",
+            "name": "Tib Raise",
+            "metric": "REPS"
+        },
+        {
+            "key": "toe touch",
+            "name": "Toe Touch",
+            "metric": "REPS"
+        },
+        {
+            "key": "toes-to-bar",
+            "name": "Toes-to-Bar",
+            "metric": "REPS"
+        },
+        {
+            "key": "top rope",
+            "name": "Top Rope",
+            "metric": "ATTEMPTS_GRADE"
+        },
+        {
+            "key": "torso twist stretch",
+            "name": "Torso Twist Stretch",
+            "metric": "DURATION"
+        },
+        {
+            "key": "towel hamstring curl",
+            "name": "Towel Hamstring Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "towel pull-up",
+            "name": "Towel Pull-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "towel row",
+            "name": "Towel Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "trail running",
+            "name": "Trail Running",
+            "metric": "DISTANCE_TIME"
+        },
+        {
+            "key": "trap bar deadlift",
+            "name": "Trap Bar Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "treadmill",
+            "name": "Treadmill",
+            "metric": "DISTANCE_TIME"
+        },
+        {
+            "key": "treadmill incline walk",
+            "name": "Treadmill Incline Walk",
+            "metric": "DISTANCE_TIME"
+        },
+        {
+            "key": "triceps kickback",
+            "name": "Triceps Kickback",
+            "metric": "REPS"
+        },
+        {
+            "key": "triceps pushdown",
+            "name": "Triceps Pushdown",
+            "metric": "REPS"
+        },
+        {
+            "key": "triple-bodyweight deadlift",
+            "name": "Triple-Bodyweight Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "triple-bodyweight squat",
+            "name": "Triple-Bodyweight Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "tuck back lever",
+            "name": "Tuck Back Lever",
+            "metric": "HOLD"
+        },
+        {
+            "key": "tuck front lever",
+            "name": "Tuck Front Lever",
+            "metric": "HOLD"
+        },
+        {
+            "key": "tuck front lever row",
+            "name": "Tuck Front Lever Row",
+            "metric": "REPS"
+        },
+        {
+            "key": "tuck human flag",
+            "name": "Tuck Human Flag",
+            "metric": "HOLD"
+        },
+        {
+            "key": "tuck l-sit",
+            "name": "Tuck L-sit",
+            "metric": "HOLD"
+        },
+        {
+            "key": "tuck planche",
+            "name": "Tuck Planche",
+            "metric": "HOLD"
+        },
+        {
+            "key": "two dumbbell skullcrusher",
+            "name": "Two Dumbbell Skullcrusher",
+            "metric": "REPS"
+        },
+        {
+            "key": "typewriter push-up",
+            "name": "Typewriter Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "v-bar triceps pushdown",
+            "name": "V-Bar Triceps Pushdown",
+            "metric": "REPS"
+        },
+        {
+            "key": "v-sit",
+            "name": "V-Sit",
+            "metric": "HOLD"
+        },
+        {
+            "key": "v-up",
+            "name": "V-Up",
+            "metric": "REPS"
+        },
+        {
+            "key": "versaclimber",
+            "name": "Versaclimber",
+            "metric": "DURATION"
+        },
+        {
+            "key": "volleyball",
+            "name": "Volleyball",
+            "metric": "DURATION"
+        },
+        {
+            "key": "volume bench press",
+            "name": "Volume Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "volume deadlift",
+            "name": "Volume Deadlift",
+            "metric": "REPS"
+        },
+        {
+            "key": "volume overhead press",
+            "name": "Volume Overhead Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "walking",
+            "name": "Walking",
+            "metric": "DISTANCE_TIME"
+        },
+        {
+            "key": "walking lunge",
+            "name": "Walking Lunge",
+            "metric": "REPS"
+        },
+        {
+            "key": "wall calf stretch",
+            "name": "Wall Calf Stretch",
+            "metric": "DURATION"
+        },
+        {
+            "key": "wall handstand",
+            "name": "Wall Handstand",
+            "metric": "HOLD"
+        },
+        {
+            "key": "wall hspu",
+            "name": "Wall HSPU",
+            "metric": "REPS"
+        },
+        {
+            "key": "wall hspu negative",
+            "name": "Wall HSPU Negative",
+            "metric": "REPS"
+        },
+        {
+            "key": "wall push-up",
+            "name": "Wall Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "wall sit",
+            "name": "Wall Sit",
+            "metric": "HOLD"
+        },
+        {
+            "key": "wall walk",
+            "name": "Wall Walk",
+            "metric": "REPS"
+        },
+        {
+            "key": "water polo",
+            "name": "Water Polo",
+            "metric": "DURATION"
+        },
+        {
+            "key": "weighted ball side bend",
+            "name": "Weighted Ball Side Bend",
+            "metric": "REPS"
+        },
+        {
+            "key": "weighted chin-up",
+            "name": "Weighted Chin-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "weighted crunch",
+            "name": "Weighted Crunch",
+            "metric": "REPS"
+        },
+        {
+            "key": "weighted dip",
+            "name": "Weighted Dip",
+            "metric": "REPS"
+        },
+        {
+            "key": "weighted plank",
+            "name": "Weighted Plank",
+            "metric": "HOLD"
+        },
+        {
+            "key": "weighted pull-up",
+            "name": "Weighted Pull-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "weighted push-up",
+            "name": "Weighted Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "weighted russian twist",
+            "name": "Weighted Russian Twist",
+            "metric": "REPS"
+        },
+        {
+            "key": "weighted sissy squat",
+            "name": "Weighted Sissy Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "weighted skipping",
+            "name": "Weighted Skipping",
+            "metric": "DURATION"
+        },
+        {
+            "key": "wide push-up",
+            "name": "Wide Push-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "wide-grip barbell curl",
+            "name": "Wide-Grip Barbell Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "wide-grip bench press",
+            "name": "Wide-Grip Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "wide-grip chin-up",
+            "name": "Wide-Grip Chin-up",
+            "metric": "REPS"
+        },
+        {
+            "key": "wide-grip decline barbell pullover",
+            "name": "Wide-Grip Decline Barbell Pullover",
+            "metric": "REPS"
+        },
+        {
+            "key": "wide-grip decline bench press",
+            "name": "Wide-Grip Decline Bench Press",
+            "metric": "REPS"
+        },
+        {
+            "key": "wide-grip lat pulldown",
+            "name": "Wide-Grip Lat Pulldown",
+            "metric": "REPS"
+        },
+        {
+            "key": "wide-stance barbell squat",
+            "name": "Wide-Stance Barbell Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "woodchop",
+            "name": "Woodchop",
+            "metric": "REPS"
+        },
+        {
+            "key": "world's greatest stretch",
+            "name": "World's Greatest Stretch",
+            "metric": "DURATION"
+        },
+        {
+            "key": "wrestling",
+            "name": "Wrestling",
+            "metric": "DURATION"
+        },
+        {
+            "key": "wrist curl",
+            "name": "Wrist Curl",
+            "metric": "REPS"
+        },
+        {
+            "key": "wrist extension",
+            "name": "Wrist Extension",
+            "metric": "REPS"
+        },
+        {
+            "key": "wrist prep",
+            "name": "Wrist Prep",
+            "metric": "HOLD"
+        },
+        {
+            "key": "yoga",
+            "name": "Yoga",
+            "metric": "DURATION"
+        },
+        {
+            "key": "zercher squat",
+            "name": "Zercher Squat",
+            "metric": "REPS"
+        },
+        {
+            "key": "zottman curl",
+            "name": "Zottman Curl",
+            "metric": "REPS"
+        }
+    ]
+}
