@@ -45,3 +45,13 @@ Namespace idempotency by dataset UUID, snapshot UUID and the case-sensitive key.
 ## Shared byte vectors
 
 [fixtures](fixtures/) contains a context from the real Kotlin encoder, an intentionally space-prefixed CRLF-terminated proposal, and SHA256SUMS over both files. They use synthetic dated data, a Unicode saved name, a high-precision numeric target and null load. Their historical timestamps make a fixed test clock necessary when exercising new save. The regular JVM test compares the files byte for byte and checks all reviewed Seed records. Maintainers can regenerate the vectors by setting `IRONVELLUM_EXPORT_LOCAL_VECTORS=1` and executing LocalConnectorVectorTest.
+
+## Portable workout import
+
+Use the [portable workout schema](portable-workout-v1.schema.json) and [example](portable-workout-v1.example.json) to provide a workout for local review from a file or pasted text. The six required root fields are `type`, `schemaVersion`, `name`, `warmup`, `cooldown` and `entries`. Set `type` to `ironvellum.workout` and `schemaVersion` to `1`. The closed object carries workout targets only.
+
+Provide a single UTF-8 JSON object or wrap it in a single fenced block with an opening ` ```json ` line and a closing ` ``` ` line. Surrounding JSON whitespace is allowed. The 64 KiB limit includes the fences and whitespace. The same strict JSON depth, numeric token, member uniqueness and Unicode checks described above apply. Names contain 1–80 Unicode scalars with no control characters or leading/trailing ASCII spaces. Movement keys contain 1–128 Unicode scalars and must already be lowercase and trimmed. The parser preserves unknown keys for explicit resolution during review.
+
+Use 1–20 entries in the desired order, with 1–50 sets and 1–1000 reps per set. Use `loadKg` for external load in kilograms from 0 through 1000, with `null` for an unspecified load. Preparation values are `AUTO` and `NONE`. Use the draft movement policy above when choosing built-in fixed-rep movements. The lifter reviews the movements and targets before choosing Save to create an unscheduled workout.
+
+The phone fingerprints the validated workout with SHA-256 over compact UTF-8 JSON. The root member order is `type`, `schemaVersion`, `name`, `warmup`, `cooldown`, `entries`. Entry members are ordered `exerciseKey`, `sets`, `reps`, `loadKg`. Canonical serialization preserves string values and entry order, emits integer counts and uses `BigDecimal.stripTrailingZeros().toString()` for numeric loads. Numeric spellings such as `40`, `40.0` and `4e1` all serialize as `4E+1` and give the same fingerprint. The numeric reader rejects nonzero values that would underflow to zero when stored.

@@ -14,7 +14,32 @@ internal data class WorkoutDraft private constructor(
     enum class Preparation { AUTO, NONE }
     data class Entry(val exerciseKey: String, val sets: Int, val reps: Int, val loadKg: BigDecimal?)
 
+    fun toJson(): JsonObject = buildJsonObject {
+        put("schemaVersion", 1)
+        put("name", name)
+        put("warmup", warmup.name)
+        put("cooldown", cooldown.name)
+        put("entries", buildJsonArray {
+            for (entry in entries) {
+                add(buildJsonObject {
+                    put("exerciseKey", entry.exerciseKey)
+                    put("sets", entry.sets)
+                    put("reps", entry.reps)
+                    put("loadKg", JsonPrimitive(entry.loadKg?.stripTrailingZeros()))
+                })
+            }
+        })
+    }
+
+    class EditSizeLimit : IllegalArgumentException()
+
     companion object {
+        fun parseEdited(body: JsonObject): WorkoutDraft {
+            val json = body.toString()
+            if (json.length > MAX_PROPOSAL_BYTES || json.encodeToByteArray().size > MAX_PROPOSAL_BYTES) throw EditSizeLimit()
+            return parse(LocalJsonReader(json).document() as JsonObject)
+        }
+
         fun parse(body: JsonObject): WorkoutDraft {
             require(body.keys == setOf("schemaVersion", "name", "warmup", "cooldown", "entries"))
             body.integer("schemaVersion", 1..1)

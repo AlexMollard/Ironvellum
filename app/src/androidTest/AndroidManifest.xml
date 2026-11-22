@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <permission android:name="com.ironvellum.app.test.PAYLOAD_READ" android:protectionLevel="signature" />
+    <application>
+        <activity android:name="com.ironvellum.app.data.AiShareTestRecipient" android:exported="true" />
+        <provider
+            android:name="com.ironvellum.app.data.IncomingAiTestSender"
+            android:authorities="${applicationId}.ai-sender"
+            android:exported="true"
+            android:grantUriPermissions="true">
+            <path-permission android:pathPrefix="/workout"
+                android:readPermission="com.ironvellum.app.test.PAYLOAD_READ" />
+        </provider>
+    </application>
+</manifest>

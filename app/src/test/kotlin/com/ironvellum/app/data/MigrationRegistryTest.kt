@@ -21,6 +21,12 @@ class MigrationRegistryTest {
     private val shippedBaseline = 11
 
     @Test
+    fun retainsThePortableWorkoutReceiptMigration() {
+        assertTrue("Portable receipts require schema 52 or newer", version >= 52)
+        assertEquals(1, migrations.count { it.startVersion == 51 && it.endVersion == 52 })
+    }
+
+    @Test
     fun chainIsUnbrokenFromShippedBaselineToCurrentVersion() {
         val byStart = migrations.groupBy { it.startVersion }
         var v = shippedBaseline

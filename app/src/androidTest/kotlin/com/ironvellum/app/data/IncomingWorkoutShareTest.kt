@@ -1,7 +1,5 @@
 package com.ironvellum.app.data
 
-import android.content.ClipData
-import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -25,18 +23,12 @@ class IncomingWorkoutShareTest {
     }
     @After fun clean() { file.delete() }
 
-    @Test fun streamAndClipDataAcceptOnlySupportedContentShares() {
-        val uri = uri()
-        val sent = Intent(Intent.ACTION_SEND).setType("text/csv").putExtra(Intent.EXTRA_STREAM, uri)
-        assertEquals(uri.toString(), IncomingWorkoutShare.csvUri(sent))
-        val clipped = Intent(Intent.ACTION_SEND).setType("application/octet-stream").apply {
-            clipData = ClipData.newRawUri("workout", uri)
-        }
-        assertEquals(uri.toString(), IncomingWorkoutShare.csvUri(clipped))
-        assertNull(IncomingWorkoutShare.csvUri(Intent(sent).setType("image/png")))
-        assertNull(IncomingWorkoutShare.csvUri(Intent(sent).setAction(Intent.ACTION_VIEW)))
-        assertEquals("", IncomingWorkoutShare.csvUri(Intent(sent).putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file))))
-        assertEquals("", IncomingWorkoutShare.csvUri(Intent(Intent.ACTION_SEND).setType("text/csv")))
+    @Test fun csvSniffingRecognisesTheThreeExistingExportHeaders() {
+        assertTrue(IncomingWorkoutShare.isCsvHeader("\"Date\",\"Workout Name\",\"Set Order\"\n"))
+        assertTrue(IncomingWorkoutShare.isCsvHeader("\"title\",\"exercise_title\"\r\n"))
+        assertTrue(IncomingWorkoutShare.isCsvHeader("Date,Exercise,Category,Weight (kg)\n"))
+        assertFalse(IncomingWorkoutShare.isCsvHeader("name,sets,reps\n"))
+        assertFalse(IncomingWorkoutShare.isCsvHeader("{\"type\":\"ironvellum.workout\"}"))
     }
 
     @Test fun sharedTextIsReadWithoutLosingUnicodeOrQuotedRows() = runBlocking {

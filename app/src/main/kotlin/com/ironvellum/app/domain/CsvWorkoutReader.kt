@@ -181,19 +181,11 @@ object CsvWorkoutReader {
         }
         val header = rows.firstOrNull()?.map { it.trim() }
             ?: return ParsedImport(Source.STRONG, emptyList(), null, listOf(unrelated("The file is empty.")))
-        return when {
-            header.firstOrNull()?.equals("Date", true) == true &&
-                header.any { it.equals("Set Order", true) } ->
-                readStrong(rows, strongWeightIsLbs)
-            header.firstOrNull()?.equals("title", true) == true &&
-                header.any { it.equals("exercise_title", true) } ->
-                readHevy(rows)
-            header.firstOrNull()?.equals("Date", true) == true &&
-                header.any { it.equals("Exercise", true) } &&
-                header.any { it.equals("Category", true) } &&
-                header.any { it.startsWith("Weight", true) } ->
-                readFitNotes(rows)
-            else -> ParsedImport(
+        return when (sourceForHeader(header)) {
+            Source.STRONG -> readStrong(rows, strongWeightIsLbs)
+            Source.HEVY -> readHevy(rows)
+            Source.FITNOTES -> readFitNotes(rows)
+            null -> ParsedImport(
                 Source.STRONG,
                 emptyList(),
                 null,
@@ -206,6 +198,18 @@ object CsvWorkoutReader {
                 ),
             )
         }
+    }
+
+    internal fun sourceForHeader(header: List<String>): Source? = when {
+        header.firstOrNull()?.equals("Date", true) == true &&
+            header.any { it.equals("Set Order", true) } -> Source.STRONG
+        header.firstOrNull()?.equals("title", true) == true &&
+            header.any { it.equals("exercise_title", true) } -> Source.HEVY
+        header.firstOrNull()?.equals("Date", true) == true &&
+            header.any { it.equals("Exercise", true) } &&
+            header.any { it.equals("Category", true) } &&
+            header.any { it.startsWith("Weight", true) } -> Source.FITNOTES
+        else -> null
     }
 
     private fun unrelated(message: String) = Problem(message)

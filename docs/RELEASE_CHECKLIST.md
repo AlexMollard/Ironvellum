@@ -71,6 +71,90 @@ The native AI card design, local and connected Save → View → actual workout 
 
 The complete-read connector keeps v1 draft admission and exact-byte receipts while exporting v2 completed history, richer set records, saved prescriptions and preparations. Installed-wheel Windows checks passed 107 cases, with two native POSIX filesystem checks skipped on Windows. Official SDK checks reached the final rows of bounded collection pages in a 6.9 MB file. The private workstation runtime is updated to 1.1.0. Physical delivery is now verified: a fresh private app-data/APK backup preceded a matching-certificate in-place update to source `4eb72d03`; all eight training-table fingerprints and schema 51 stayed unchanged. The actual app-generated v2 file was transferred byte-for-byte into the selected private PC context. The installed connector's five read tools returned every completed workout, recorded set and saved prescription; independent field, preparation-state and progress checks matched the private database clone. Both Claude and ChatGPT appeared in the phone's native JSON share chooser; the operator can choose either directly from Share file without saving a separate document. Private training files, database copies and verification reports remain outside the repository. No phone instrumentation or data clearing was performed for this work. Exhaustive native-speaker and screen-reader evaluation is not claimed.
 
+### Phone AI round trip: full local verification (2026-11-22 UTC)
+
+Verified Android source `57112106`, including portable workout import, direct
+Share/Open, paste, editable review, repeat-import receipts, and AI-ready sharing.
+The complete local gate ran alone and returned **GATE GREEN in 578.53 seconds
+(9m38s)**. Raw evidence: `.tmp/ai-phone-roundtrip-final-gate-2/`.
+
+- JVM: 2,948 tests, zero failures/errors; one existing `CatalogueExport`
+  assumption skip because `IRONVELLUM_EXPORT` was unset.
+- API 35 emulator: 987 tests, zero failures/errors/skips. No owner phone tests.
+- Foss release lint: zero issues. Play debug and instrumented APKs compiled;
+  the instrumented runtime suite was Foss.
+- Web: 380 tests across 35 files, generated assets and production build passed.
+- Personal connector: 107 tests passed; two native POSIX cases skipped on
+  Windows. Existing context/proposal contracts remain unchanged.
+- Room 51 to 52 migration, canonical portable receipts, deletion tombstones,
+  edited source-bound provenance, explicit movement IDs, incoming URI grants,
+  CSV coexistence, malformed Unicode/number correction, fresh-model recovery,
+  and genuine cross-UID attachment reads were exercised. The Android chooser
+  was dismissed and retried; selection ordering used synthetic eligible apps.
+- Plain/themed phone, short/wide and 200% text captures were inspected with
+  synthetic data. Actual Claude/ChatGPT attachment ingestion and API 29–34
+  runtime behavior were not tested. No provider upload or owner-phone change.
+
+The first full run caught the new preference classification and 16 lint errors;
+those were fixed and independently reviewed before the green complete rerun.
+This phone-only gate predates the desktop PC-guide changes. Final integration
+evidence, including those changes, is recorded below.
+
+### AI round trip: final integration verification (2026-11-22 UTC)
+
+Source `c3de5ee0` completed the entire local Android/web gate in **591.81
+seconds**, below the unchanged 600-second limit. The run was isolated from other
+builds. Evidence: `.tmp/ai-roundtrip-final-integration-gate-2/`.
+
+- JVM: 2,948 tests, zero failures/errors; one existing optional CatalogueExport
+  assumption skip with IRONVELLUM_EXPORT unset.
+- API 35 emulator: 989 tests, zero failures/errors/skips; no owner phone tests.
+- Release lint: zero issues. Both Android flavour builds completed; the
+  instrumented runtime was Foss and Play instrumented APKs compiled.
+- Web: 380 tests in 35 files, generated assets and production build passed.
+- Connector integration: installed Windows suite 162 passed and four subtests,
+  three POSIX-only skips; final exact-source focused checks 34 Windows passes
+  with two skips and 29 native Linux passes with four Windows-only skips.
+- All phone and desktop task reviews and whole-change reviews are approved.
+  Final desktop fixes cover damaged archive/worker recovery, current folder
+  inventory versus retained session training, pending-action controls,
+  read-only archive locking, stable focus identity and coverage counters.
+
+The first integration run passed all the same tests but was **GATE RED at
+11m32s** for exceeding the timing budget. Its cold boot took 34s and per-test
+logs showed broad slowdown across existing cases; the two added guide cases
+took 1.920s together. This second complete run used the same source, all tests
+and budget with the emulator already running. The earlier red result is kept
+at `.tmp/ai-roundtrip-final-integration-gate/`; timing comparison is
+`.tmp/ai-roundtrip-gate-timing-comparison.json`. This does not establish a
+sub-ten-minute cold-start guarantee. Existing dependency engine, Compose
+deprecation and web chunk-size advisories remain in the raw logs.
+
+Computer control stopped on the owner's instruction. Remaining native desktop
+settings/recovery/source-choice visuals, keyboard/resize/large-text and
+macOS/Linux GUI checks are unverified. The prior Windows running capture
+predates final type sizing/copy. No actual Claude/ChatGPT ingestion, provider
+upload, owner-phone installation or owner connector configuration/runtime
+change was performed. File transfer and explicit workout review/Save remain
+user actions. This is source verification, not a release or deployment.
+
+### Watched desktop handoff verification (2026-11-22 UTC)
+
+The installed Windows connector and official SDK adopted the 4,515-byte
+Android export with SHA-256
+`5a67285b35db67ee53e6a5862b826be34f732309c678ffd89a5e243b126c2299`.
+The SDK read the original 533-byte draft resource again after a newer synthetic
+snapshot from the same dataset was loaded. The backend-free API 35 receipt
+fixture imported those unchanged bytes and committed one Room receipt with
+SHA-256 `acc117d51e2954d2ec5f283e346493261f68f2c06c40637c785c2f37ab5e8ce2`.
+The same driver passed in immutable mode. [Reproduce both file exchanges](DEVELOPMENT.md#verify-the-personal-file-exchange).
+
+The optional window displayed a real verified Windows SDK session, its loaded
+training and a ready draft. After the native preview exited normally, that
+same SDK session read a workout and created a second draft. Settings and recovery
+screens, native keyboard/resize and large text, and macOS/Linux GUI behavior
+remain visually unverified. The local Android gate is tracked separately.
+
 ### Final personal connector source verification (2026-11-22 UTC)
 
 Source `4c3dc9a5ec7fe8c011ef5881ca2178d16e77a60b`: the unchanged full Android/web gate passed in **9m12s** (553.032 seconds including its evidence wrapper). It ran 2,936 unit cases with zero failures and one existing optional export skip, 946 device cases with zero failures or skips, and 380 web tests in 35 files. Both Android flavour builds completed. Release lint reported no issues; the web build passed with its existing large-chunk advisory. Raw evidence: `.tmp/personal-local-connector-final-gate-2`.

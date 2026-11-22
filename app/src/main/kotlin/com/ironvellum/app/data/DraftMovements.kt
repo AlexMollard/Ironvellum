@@ -22,16 +22,20 @@ internal object DraftMovements {
         return result
     }
 
-    fun resolve(draft: WorkoutDraft, rows: Sequence<DraftMovementCandidate>): List<Long> {
+    fun resolve(draft: WorkoutDraft, rows: Sequence<DraftMovementCandidate>): List<Long> =
+        resolveAvailable(draft, rows).map { it ?: throw DraftMovementUnavailable() }
+
+    fun resolveAvailable(draft: WorkoutDraft, rows: Sequence<DraftMovementCandidate>): List<Long?> {
         val wanted = draft.entries.mapTo(mutableSetOf()) { it.exerciseKey }
-        val matches = mutableMapOf<String, Long>()
+        val matches = mutableMapOf<String, Long?>()
         for (row in rows) {
             val key = Titles.normaliseName(row.name)
             if (key !in wanted) continue
-            if (row.custom || row.metric != ExerciseMetric.REPS.name ||
-                builtIns[key]?.metric != ExerciseMetric.REPS.name || key in matches) throw DraftMovementUnavailable()
-            matches[key] = row.id
+            matches[key] = row.id.takeIf {
+                key !in matches && !row.custom && row.metric == ExerciseMetric.REPS.name &&
+                    builtIns[key]?.metric == ExerciseMetric.REPS.name
+            }
         }
-        return draft.entries.map { matches[it.exerciseKey] ?: throw DraftMovementUnavailable() }
+        return draft.entries.map { matches[it.exerciseKey] }
     }
 }

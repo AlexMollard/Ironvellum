@@ -21,12 +21,11 @@ Social permissions still follow server-side profile, workout and relationship ru
 | Component | How it runs | Data source |
 |---|---|---|
 | Android training app | Android device or emulator | Local Room database |
-| Personal AI connector | Python and a desktop MCP client | Training file explicitly shared from the phone |
 | Web viewer | Local Node development server or static web host | Signed-in user's chosen Supabase backend |
 | Optional cloud and social backend | Local Docker Compose stack or your managed project | Your backend's database and Auth |
 | Optional hosted production MCP | Separate HTTPS deployment for compatible online AI clients | Permissions granted for synced data |
 
-The personal connector and Android file workflow work offline after installation. The signed-in viewer uses the backend selected on its sign-in page. [File connector setup](https://github.com/AlexMollard/Ironvellum/tree/archive-personal-connector/tools/local_connector/README.md) · [Private backend setup](../tools/self_host/README.md) · [Hosted production MCP](../server/production_mcp/README.md).
+Android file sharing and workout import work offline after installation. The signed-in viewer uses the backend selected on its sign-in page. [Private backend setup](../tools/self_host/README.md) · [Hosted production MCP](../server/production_mcp/README.md). The former personal PC connector is preserved on [archive-personal-connector](https://github.com/AlexMollard/Ironvellum/tree/archive-personal-connector).
 
 ## Local development
 

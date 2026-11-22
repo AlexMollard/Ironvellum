@@ -1,31 +1,26 @@
 package com.ironvellum.app.data
 
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
-import androidx.core.content.IntentCompat
+import com.ironvellum.app.domain.CsvWorkoutReader
 import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Receives file grants only; parsing and the import review still decide whether this is workout data. */
+/** The existing CSV import reads the whole file only after its header identifies a supported export. */
 internal object IncomingWorkoutShare {
-    private val mimeTypes = setOf(
-        "text/csv", "text/comma-separated-values", "application/csv",
-        "application/vnd.ms-excel", "text/plain", "application/octet-stream",
-    )
     internal const val MAX_BYTES = 32 * 1024 * 1024
 
-    /** Null is not a CSV share; blank routes a malformed share to the ordinary unreadable-file feedback. */
-    fun csvUri(intent: Intent?): String? {
-        if (intent?.action != Intent.ACTION_SEND || intent.type?.substringBefore(';')?.lowercase(Locale.ROOT) !in mimeTypes) return null
-        val uri = runCatching {
-            IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
-                ?: intent.clipData?.takeIf { it.itemCount == 1 }?.getItemAt(0)?.uri
-        }.getOrNull()
-        return uri?.takeIf { it.scheme == "content" }?.toString().orEmpty()
+    fun isCsvHeader(text: String): Boolean {
+        val firstLine = text.lineSequence().firstOrNull() ?: return false
+        val columns = runCatching { CsvWorkoutReader.parseCsv(firstLine) }.getOrNull()?.firstOrNull() ?: return false
+        return CsvWorkoutReader.sourceForHeader(columns.map(String::trim)) != null
+    }
+
+    suspend fun readSharedText(context: Context, uri: Uri): String = withContext(Dispatchers.IO) {
+        if (!IncomingAiWorkout.hasReadGrant(context, uri)) throw IOException()
+        readText(context, uri)
     }
 
     suspend fun readText(context: Context, uri: Uri): String = withContext(Dispatchers.IO) {

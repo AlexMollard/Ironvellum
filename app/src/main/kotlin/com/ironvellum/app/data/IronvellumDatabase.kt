@@ -5,6 +5,7 @@ import com.ironvellum.app.data.db.DraftReceipt
 import com.ironvellum.app.data.db.DraftReceiptDao
 import com.ironvellum.app.data.db.LocalConnectorDao
 import com.ironvellum.app.data.db.LocalIdentity
+import com.ironvellum.app.data.db.PortableWorkoutReceipt
 import com.ironvellum.app.data.db.LocalObject
 import com.ironvellum.app.data.db.LocalSnapshot
 import com.ironvellum.app.data.db.LocalReceipt
@@ -59,6 +60,7 @@ import com.ironvellum.app.data.db.ProgressPhotoEntity
     entities = [
         DraftReceipt::class,
         LocalIdentity::class,
+        PortableWorkoutReceipt::class,
         LocalObject::class,
         LocalSnapshot::class,
         LocalReceipt::class,
@@ -109,7 +111,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 51
+        const val VERSION = 52
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -757,6 +759,13 @@ abstract class IronvellumDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_51_52 = object : Migration(51, 52) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""CREATE TABLE portable_workout_receipts (datasetId TEXT NOT NULL, fingerprint TEXT NOT NULL,
+                    localPresetId INTEGER NOT NULL, savedAtMs INTEGER NOT NULL, PRIMARY KEY(datasetId,fingerprint))""")
+            }
+        }
+
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -798,6 +807,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_48_49,
             MIGRATION_49_50,
             MIGRATION_50_51,
+            MIGRATION_51_52,
         )
 
         const val NAME = "ironvellum.db"
