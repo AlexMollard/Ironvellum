@@ -298,7 +298,14 @@ pub fn update_settings(
     path: &Selected,
     change: impl FnOnce(Settings) -> Result<Settings>,
 ) -> Result<Settings> {
-    update(path, None, change)
+    update(path, None, LocklessOpen::CreateLeaf, change)
+}
+
+pub(crate) fn update_existing_settings(
+    path: &Selected,
+    change: impl FnOnce(Settings) -> Result<Settings>,
+) -> Result<Settings> {
+    update(path, None, LocklessOpen::Existing, change)
 }
 
 /// Apply a preference change only while the configured paths still identify
@@ -309,7 +316,12 @@ pub fn update_bound_settings(
     expected_identities: [Identity; 3],
     change: impl FnOnce(Settings) -> Result<Settings>,
 ) -> Result<Settings> {
-    update(path, Some((expected_paths, expected_identities)), change)
+    update(
+        path,
+        Some((expected_paths, expected_identities)),
+        LocklessOpen::Existing,
+        change,
+    )
 }
 
 fn same_paths(a: [&Selected; 3], b: [&Selected; 3]) -> bool {
@@ -321,6 +333,7 @@ fn same_paths(a: [&Selected; 3], b: [&Selected; 3]) -> bool {
 fn update(
     path: &Selected,
     binding: Option<([&Selected; 3], [Identity; 3])>,
+    mode: LocklessOpen,
     change: impl FnOnce(Settings) -> Result<Settings>,
 ) -> Result<Settings> {
     let (parent, n) = location(path)?;
@@ -347,7 +360,7 @@ fn update(
         }
         pins
     } else {
-        open_endpoints(value.endpoints(), LocklessOpen::CreateLeaf)?
+        open_endpoints(value.endpoints(), mode)?
     };
     for endpoint in &pinned[..2] {
         check_location(folder.dir(), endpoint)?;

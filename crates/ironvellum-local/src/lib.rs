@@ -1,3 +1,5 @@
+#[cfg(any(windows, target_os = "linux", target_os = "macos"))]
+pub mod desktop_model;
 mod error;
 mod files;
 #[cfg(any(windows, target_os = "linux", target_os = "macos"))]
@@ -8,6 +10,13 @@ pub use journal::{ArchiveItem, Journal, ReadyArchive, ReadyPage};
 pub mod posix;
 #[cfg(any(windows, target_os = "linux", target_os = "macos"))]
 mod scan;
+#[cfg(any(windows, target_os = "linux", target_os = "macos"))]
+mod watched_source;
+#[cfg(any(windows, target_os = "linux", target_os = "macos"))]
+pub use watched_source::{
+    DetachedInventory, EndpointBinding, InventoryStatus, RefreshStatus, SourceSummary,
+    WatchedSource,
+};
 #[cfg(any(windows, target_os = "linux", target_os = "macos"))]
 mod settings;
 #[cfg(any(windows, target_os = "linux", target_os = "macos"))]
@@ -31,3 +40,7 @@ pub use storage::{
     Directory, Entries, Install, LocalFiles, LockMode, LockedFolder, LocklessOpen, PrivateFolder,
     endpoint_identities, open_endpoints,
 };
+#[cfg(any(windows, target_os = "linux", target_os = "macos"))]
+pub mod status;
+#[cfg(any(windows, target_os = "linux", target_os = "macos"))]
+pub use status::{endpoint_digest, rendezvous_name};

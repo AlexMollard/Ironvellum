@@ -1,0 +1,107 @@
+[
+  {
+    "platform": "windows",
+    "rawSettingsPath": "C:/Training Data/İRON/設定.JSON",
+    "rawPaths": [
+      "C:/Training Data/Inbox",
+      "D:/Iron/Out",
+      "C:/Training Data/State"
+    ],
+    "settingsPath": "C:\\Training Data\\İRON\\設定.JSON",
+    "normalizedSettingsPath": "c:\\training data\\İron\\設定.json",
+    "rendezvousName": ".ironvellum-sessions-f38b51f6dacee750a56db189",
+    "paths": [
+      "C:\\Training Data\\Inbox",
+      "D:\\Iron\\Out",
+      "C:\\Training Data\\State"
+    ],
+    "identities": [
+      [
+        173,
+        0,
+        19
+      ],
+      [
+        173,
+        4294967295,
+        4294967294
+      ],
+      [
+        431,
+        305419896,
+        2596069104
+      ]
+    ],
+    "endpointDigestInput": "[[\"C:\\\\Training Data\\\\Inbox\",[173,0,19]],[\"D:\\\\Iron\\\\Out\",[173,4294967295,4294967294]],[\"C:\\\\Training Data\\\\State\",[431,305419896,2596069104]]]",
+    "endpointDigest": "abb66007cef8668e732ae4aa5d277b9e9b91640338165eca8b419784beada80a"
+  },
+  {
+    "platform": "windows",
+    "rawSettingsPath": "C:\\Mixed CASE\\Σς\\Connect.json",
+    "rawPaths": [
+      "C:\\Mixed CASE\\Inbox",
+      "C:\\Mixed CASE\\Out",
+      "C:\\Mixed CASE\\State"
+    ],
+    "settingsPath": "C:\\Mixed CASE\\Σς\\Connect.json",
+    "normalizedSettingsPath": "c:\\mixed case\\σς\\connect.json",
+    "rendezvousName": ".ironvellum-sessions-1c2cd883c9c512d206556024",
+    "paths": [
+      "C:\\Mixed CASE\\Inbox",
+      "C:\\Mixed CASE\\Out",
+      "C:\\Mixed CASE\\State"
+    ],
+    "identities": [
+      [
+        1,
+        2,
+        3
+      ],
+      [
+        4,
+        5,
+        6
+      ],
+      [
+        7,
+        8,
+        9
+      ]
+    ],
+    "endpointDigestInput": "[[\"C:\\\\Mixed CASE\\\\Inbox\",[1,2,3]],[\"C:\\\\Mixed CASE\\\\Out\",[4,5,6]],[\"C:\\\\Mixed CASE\\\\State\",[7,8,9]]]",
+    "endpointDigest": "9f044ca4264129cb70fa936b77ef023e9044d3eec728cf704bacfd389c860c74"
+  },
+  {
+    "platform": "posix",
+    "rawSettingsPath": "/home/synthetic/訓練/Connect.json",
+    "rawPaths": [
+      "/home/synthetic/訓練/in",
+      "/home/synthetic/訓練/out",
+      "/home/synthetic/訓練/state"
+    ],
+    "settingsPath": "/home/synthetic/訓練/Connect.json",
+    "normalizedSettingsPath": "/home/synthetic/訓練/Connect.json",
+    "rendezvousName": ".ironvellum-sessions-4a84c3b22204cd4938b6ea70",
+    "paths": [
+      "/home/synthetic/訓練/in",
+      "/home/synthetic/訓練/out",
+      "/home/synthetic/訓練/state"
+    ],
+    "identities": [
+      [
+        1049,
+        1100
+      ],
+      [
+        1049,
+        1101
+      ],
+      [
+        1049,
+        1102
+      ]
+    ],
+    "endpointDigestInput": "[[\"/home/synthetic/訓練/in\",[1049,1100]],[\"/home/synthetic/訓練/out\",[1049,1101]],[\"/home/synthetic/訓練/state\",[1049,1102]]]",
+    "endpointDigest": "66bde15f07ba42aa9b740ee1106530e009ac976dcb5d79c80a32b003de15c69f"
+  }
+]

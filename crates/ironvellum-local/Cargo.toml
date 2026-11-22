@@ -6,6 +6,7 @@ rust-version.workspace = true
 publish = false
 
 [dependencies]
+sha2 = "=0.10.9"
 getrandom = "=0.3.4"
 ironvellum-contracts = { path = "../ironvellum-contracts" }
 rusqlite = { version = "=0.37.0", features = ["bundled", "serialize", "limits"] }
@@ -15,4 +16,4 @@ serde_json = { version = "=1.0.145", features = ["preserve_order", "arbitrary_pr
 libc = "=0.2.191"
 
 [target."cfg(windows)".dependencies]
-windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_Threading", "Win32_System_IO"] }
+windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_Globalization", "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_Threading", "Win32_System_IO"] }
