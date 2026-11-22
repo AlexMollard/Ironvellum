@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "requiredMetric": "REPS",
+  "excludedKeys": [
+    "assisted chin-up",
+    "assisted dip",
+    "assisted pull-up"
+  ]
+}

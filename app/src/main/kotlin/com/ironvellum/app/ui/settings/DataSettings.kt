@@ -289,14 +289,21 @@ internal suspend fun shareFile(
     fileName: String,
     bytes: ByteArray,
     mimeType: String,
+) = sharePreparedFile(context, title, fileName, mimeType) {
+    val dir = File(context.cacheDir, "exports").apply { mkdirs() }
+    // Fixed-name exports replace the previous file.
+    File(dir, fileName).apply { writeBytes(bytes) }
+}
+
+internal suspend fun sharePreparedFile(
+    context: Context,
+    title: String,
+    fileName: String,
+    mimeType: String,
+    prepare: () -> File,
 ) {
     val uri = withContext(Dispatchers.IO) {
-        val dir = File(context.cacheDir, "exports").apply { mkdirs() }
-        // One name, overwritten: the cache is not an archive, and a stale
-        // export left behind is a copy of everything the lifter has done.
-        val file = File(dir, fileName)
-        file.writeBytes(bytes)
-        FileProvider.getUriForFile(context, "${context.packageName}.exports", file)
+        FileProvider.getUriForFile(context, "${context.packageName}.exports", prepare())
     }
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = mimeType

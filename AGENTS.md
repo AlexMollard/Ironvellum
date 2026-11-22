@@ -1,5 +1,23 @@
 # Ironvellum — standing rules
 
+## Local first; hosted services are optional
+
+The owner requires every Ironvellum component to be runnable or self-hostable on
+the user's own computer (2026-11-22). Personal training, data export/import and
+the personal AI connector must work without an account, an Ironvellum-operated
+server, paid hosting, developer mode or ADB. A chosen AI provider may have its own
+account requirements; the connector must not impose an Ironvellum account.
+
+Cloud sync, social features and the hosted production MCP remain opt-in. Users
+must be able to choose their own backend. Do not make maintainer credentials,
+services or availability prerequisites for local features. Provide an explicit
+backend-free release build; local-only choices must never silently fall back to
+the shared backend. Preserve existing users' local data and optional connections.
+
+The personal connector uses explicitly shared training files and manually
+imported workout-draft files. Never distribute private server credentials or
+turn developer device-control tools into a consumer dependency.
+
 ## Git: commit and push as you go
 
 The owner has authorised agents to `git commit` and `git push` to `main` as work

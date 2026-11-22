@@ -16,6 +16,18 @@ Schema 31 supplies owner-only phone snapshots; 32 supplies friend-safe feed card
 and 33 supplies rolling workout-XP standings. Core phone sync requires at least 31.
 Social permissions still follow server-side profile, workout and relationship rules.
 
+## Components on your computer
+
+| Component | How it runs | Data source |
+|---|---|---|
+| Android training app | Android device or emulator | Local Room database |
+| Personal AI connector | Python and a desktop MCP client | Training file explicitly shared from the phone |
+| Web viewer | Local Node development server or static web host | Signed-in user's chosen Supabase backend |
+| Optional cloud and social backend | Local Docker Compose stack or your managed project | Your backend's database and Auth |
+| Optional hosted production MCP | Separate HTTPS deployment for compatible online AI clients | Permissions granted for synced data |
+
+The personal connector and Android file workflow work offline after installation. The signed-in viewer uses the backend selected on its sign-in page. [File connector setup](../tools/local_connector/README.md) · [Private backend setup](../tools/self_host/README.md) · [Hosted production MCP](../server/production_mcp/README.md).
+
 ## Local development
 
 From the repository root, initialize the pinned art source and enter the viewer:

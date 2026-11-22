@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling==1.33.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ironvellum-local-connector"
+version = "1.0.0"
+description = "Personal offline Ironvellum training file connector"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["mcp==2.3.0", "pydantic==2.14.4", "simplejson==4.3.0", "jsonschema==4.26.0", "pywin32>=311; sys_platform == 'win32'"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ironvellum_local_connector"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"contracts/movements-v1.json" = "ironvellum_local_connector/contracts/movements-v1.json"
+"contracts/draft-movement-policy-v1.json" = "ironvellum_local_connector/contracts/draft-movement-policy-v1.json"
+"contracts/tools-v1.json" = "ironvellum_local_connector/contracts/tools-v1.json"
+"contracts/tool-types-v1.schema.json" = "ironvellum_local_connector/contracts/tool-types-v1.schema.json"
+"contracts/files-v1.schema.json" = "ironvellum_local_connector/contracts/files-v1.schema.json"
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "contracts", "tests", "README.md", "requirements.lock", "pyproject.toml"]

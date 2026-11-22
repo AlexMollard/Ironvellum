@@ -1,0 +1,297 @@
+{
+  "list_workouts": {
+    "inputSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "cursor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        }
+      },
+      "required": []
+    },
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot": {
+          "$ref": "tool-types-v1.schema.json#/$defs/snapshot"
+        },
+        "workouts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "files-v1.schema.json#/$defs/opaqueId"
+              },
+              "startedAtMs": {
+                "$ref": "files-v1.schema.json#/$defs/time"
+              },
+              "completedAtMs": {
+                "$ref": "files-v1.schema.json#/$defs/time"
+              },
+              "setCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 200
+              }
+            },
+            "required": [
+              "id",
+              "startedAtMs",
+              "completedAtMs",
+              "setCount"
+            ]
+          },
+          "minItems": 0,
+          "maxItems": 50
+        },
+        "nextCursor": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "snapshot",
+        "workouts",
+        "nextCursor"
+      ]
+    }
+  },
+  "get_workout": {
+    "inputSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "files-v1.schema.json#/$defs/opaqueId"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot": {
+          "$ref": "tool-types-v1.schema.json#/$defs/snapshot"
+        },
+        "workout": {
+          "$ref": "files-v1.schema.json#/$defs/workout"
+        }
+      },
+      "required": [
+        "snapshot",
+        "workout"
+      ]
+    }
+  },
+  "get_progress": {
+    "inputSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {},
+      "required": []
+    },
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot": {
+          "$ref": "tool-types-v1.schema.json#/$defs/snapshot"
+        },
+        "progress": {
+          "$ref": "files-v1.schema.json#/$defs/progress"
+        }
+      },
+      "required": [
+        "snapshot",
+        "progress"
+      ]
+    }
+  },
+  "list_saved_workouts": {
+    "inputSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "cursor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        }
+      },
+      "required": []
+    },
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot": {
+          "$ref": "tool-types-v1.schema.json#/$defs/snapshot"
+        },
+        "savedWorkouts": {
+          "type": "array",
+          "items": {
+            "$ref": "files-v1.schema.json#/$defs/savedWorkout"
+          },
+          "minItems": 0,
+          "maxItems": 50
+        },
+        "nextCursor": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "snapshot",
+        "savedWorkouts",
+        "nextCursor"
+      ]
+    }
+  },
+  "search_movements": {
+    "inputSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        }
+      },
+      "required": [
+        "query"
+      ]
+    },
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot": {
+          "$ref": "tool-types-v1.schema.json#/$defs/snapshot"
+        },
+        "movements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "key": {
+                "$ref": "files-v1.schema.json#/$defs/exerciseKey"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "metric": {
+                "enum": [
+                  "REPS",
+                  "HOLD",
+                  "DURATION",
+                  "DISTANCE_TIME",
+                  "ATTEMPTS_GRADE"
+                ]
+              },
+              "draftable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "key",
+              "name",
+              "metric",
+              "draftable"
+            ]
+          },
+          "minItems": 0,
+          "maxItems": 20
+        }
+      },
+      "required": [
+        "snapshot",
+        "movements"
+      ]
+    }
+  },
+  "create_workout_draft": {
+    "inputSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "idempotencyKey": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9._-]+(?![\\s\\S])"
+        },
+        "draft": {
+          "$ref": "files-v1.schema.json#/$defs/draft"
+        }
+      },
+      "required": [
+        "idempotencyKey",
+        "draft"
+      ]
+    },
+    "outputSchema": {
+      "$ref": "tool-types-v1.schema.json#/$defs/proposedFile"
+    }
+  },
+  "get_workout_draft": {
+    "inputSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "draftId": {
+          "$ref": "files-v1.schema.json#/$defs/uuid"
+        }
+      },
+      "required": [
+        "draftId"
+      ]
+    },
+    "outputSchema": {
+      "$ref": "tool-types-v1.schema.json#/$defs/proposedFile"
+    }
+  }
+}

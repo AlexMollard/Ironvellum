@@ -54,7 +54,7 @@ class CloudAuthRetirementTest {
         val finishConstruction = CountDownLatch(1)
         val readerHasSnapshot = CountDownLatch(1)
         val finishRead = CountDownLatch(1)
-        val selection = CloudClientSelection(a) { cfg ->
+        val selection = CloudClientSelection { cfg ->
             if (pauseConstruction && cfg == a) {
                 constructing.countDown()
                 check(finishConstruction.await(10, TimeUnit.SECONDS))

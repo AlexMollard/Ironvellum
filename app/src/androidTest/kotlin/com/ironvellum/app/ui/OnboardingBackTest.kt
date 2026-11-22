@@ -81,7 +81,7 @@ class OnboardingBackTest {
         @BeforeClass
         @JvmStatic
         fun standTheGateUp() = runBlocking {
-            app.repository.ensureSeeded()
+            app.awaitRepositoryReady()
             app.database.profileDao().setHeight(null)
             // The skip is persisted now, and the suite shares the real app
             // prefs: a skipped manual session on this emulator would keep the

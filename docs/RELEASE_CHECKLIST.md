@@ -1,7 +1,7 @@
 # Ironvellum release checklist
 
 Ordered release steps for `com.ironvellum.app`, including F-Droid and Google Play.
-Current instructions reviewed 2026-11-17. Dated 1.11 evidence is retained below
+Current instructions reviewed 2026-11-22. Dated 1.11 evidence is retained below
 as a release record, not fresh verification of subsequent changes.
 Commands run from the repo root on Windows with `.\gradlew.bat <task>`.
 
@@ -24,7 +24,7 @@ Commands run from the repo root on Windows with `.\gradlew.bat <task>`.
    ```
 3. Confirm the release backend configuration. The public URL and publishable key
    come from committed `cloud-defaults.properties`; `local.properties` may override
-   `supabase.url` and `supabase.key`. The release validation task rejects blank
+   `supabase.url` and `supabase.key`. The ordinary release validation task rejects blank
    values. Never embed a service-role or server secret key in an APK.
    The `play` flavour also requires `google.webClientId`; `foss` does not use it.
 4. For Google Play, build `:app:bundlePlayRelease` with the owner's signing
@@ -56,6 +56,24 @@ python tools/gate.py --backend       # full Android/web gate plus disposable SQL
 Use the non-cached release invocation above: the backend-validation task actions
 capture Gradle script objects and are not configuration-cache compatible.
 R8 minification and resource shrinking remain enabled.
+
+### Personal file connector and local-only release checks (2026-11-22)
+
+- Built the unsigned, minified FOSS release using `-PlocalOnly=true`. Its three cloud/Google fields were empty, and neither committed backend default appeared in its 753 decompressed APK entries. The 20,433,739-byte APK had SHA-256 `2c7ff137fb07429d5700abce1bceea1e211f9b0d0938f4da3ee2ec4c7522ab61`. Release lint reported no issues. A separate ordinary release compile retained its public URL and key. Eight disposable Gradle cases exercised the local-only option, partial overrides and ordinary release validation.
+- On the API 35 emulator a fresh isolated Room database logged and completed a workout, reopened and exported a 1,205-byte training file with SHA-256 `aa6779d3203c91b30b9b431ebecca2a471e119cfc3306c55b486a22bfeb7c2d6`. The installed Windows connector and official SDK read the workout and returned a 533-byte proposal with SHA-256 `cf7adff5f8bc6733b6c56a111b6ca6d94015cc4512c451b4e27acce3e636ee38`. The same database verified the source and committed one unscheduled preset with the matching receipt after explicit Save. A separate dataset rejected the original file, conflicting bytes were rejected, and repeat import after deletion left the preset deleted. [Reproduce the file exchange](DEVELOPMENT.md#verify-the-personal-file-exchange).
+- Optional private Supabase preparation verified 23 pinned upstream downloads, generated private keys and passed Compose configuration checks for 11 services with three loopback-only published ports. Seven helper tests passed. Disposable native PostgreSQL accepted the fresh baseline at schema 36 and refused six existing-state cases. Container startup, TLS, SMTP and backup recovery still need verification on an operator's running Docker engine. [Private setup and backup](../tools/self_host/README.md).
+
+### Final personal connector source verification (2026-11-22 UTC)
+
+Source `4c3dc9a5ec7fe8c011ef5881ca2178d16e77a60b`: the unchanged full Android/web gate passed in **9m12s** (553.032 seconds including its evidence wrapper). It ran 2,936 unit cases with zero failures and one existing optional export skip, 946 device cases with zero failures or skips, and 380 web tests in 35 files. Both Android flavour builds completed. Release lint reported no issues; the web build passed with its existing large-chunk advisory. Raw evidence: `.tmp/personal-local-connector-final-gate-2`.
+
+All four task reviews and the complete-change review are approved. The final fix checks passed 6 JVM, 11 emulator, 11 stdio, four disposable native PostgreSQL and 11 WSL bootstrap cases. The native SQL cases cover ten refusal attempts and a clean installation, preserving private rows, an existing signup trigger/function, and platform/extension objects. Repeat Share preserves an earlier FileProvider reader; publication failures leave no partial final file. Connector-owned staging copies are pruned on a subsequent share after 24 hours, retaining the current preview and recent copies. User-saved documents and receipts are independent.
+
+The first full gate was red at 20m15s after its built-in retry. An early Train readiness check matched the new subtitle before the plan buttons existed. The one-line correction waits for the exact Share button; all 200% visibility assertions, workload sizes, counts, the 1,500ms read limit and 600-second gate budget remain unchanged. The five-year test passed on retry and in the focused control; production ledger code was unchanged. A planned saved-AVD adjustment was cancelled before any write because a live probe already showed the intended launcher profile. No emulator configuration or owner phone was changed.
+
+The latest separately recorded installed-SDK exchange used a 1,205-byte Room export (`e51bff073f3c26cc854b5a3d3efe2036e631c15f21f7e6aee3873c186ef13d04`) and a 533-byte proposal (`be2e1d145330b7c25cb6b36de353197d900f21af2512a803aef5d0f575a4b252`), committed once to the originating isolated database. The intermediate unsigned APK/hash above predates post-review fixes; rebuild final source for installation.
+
+This is local source and package evidence, not a release or public deployment. Native macOS, live containers/Auth/PostgREST/TLS/SMTP/backup recovery, actual third-party AI setup/provider policies, and exhaustive native-language/device accessibility audits remain unverified. [Personal connector setup](../tools/local_connector/README.md) and [optional private stack](../tools/self_host/README.md) state their separate requirements.
 
 ### Production MCP package checks (2026-11-22)
 

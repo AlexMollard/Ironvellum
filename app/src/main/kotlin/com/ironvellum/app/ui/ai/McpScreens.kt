@@ -35,30 +35,6 @@ import java.util.Date
 @Composable
 internal fun draftTitle() = UiText.themed(R.string.ai_drafts, R.string.ai_drafts__t).asString()
 
-/** The quiet Train entry stays useful when offline or signed out. Only show a confirmed count. */
-@Composable
-internal fun DraftEntry(repository: McpRepository, onOpen: () -> Unit) {
-    val revision by repository.scopeChanges.collectAsStateWithLifecycle()
-    key(revision) {
-        val scope = remember { repository.captureScope() }
-        var count by remember { mutableStateOf<Int?>(null) }
-        LaunchedEffect(scope) {
-            if (scope == null) return@LaunchedEffect
-            try {
-                val found = repository.drafts(scope).size
-                if (repository.isCurrent(scope)) count = found
-            } catch (e: CancellationException) { throw e } catch (_: Exception) {
-                // The destination gives a full error and retry. This optional entry never blocks Train.
-            }
-        }
-        SettingsGroup(null, rows = true, topSpace = 12.dp) {
-            val confirmed = count?.takeIf { scope != null && repository.isCurrent(scope) }
-            SettingsValueRow(draftTitle(), confirmed?.let { readyCount(it).asString() }
-                ?: stringResource(R.string.ai_available), onOpen)
-        }
-    }
-}
-
 private sealed interface Page {
     data object Loading : Page
     data class Error(val message: Int) : Page
@@ -77,8 +53,8 @@ internal fun McpScreen(
     key(revision, configured) {
         val scope = remember { repository.captureScope() }
         if (scope == null || !repository.isCurrent(scope)) {
-            Frame(if (connections) stringResource(R.string.ai_connections) else draftTitle(), onBack) {
-                Status(if (configured) R.string.ai_signed_out else R.string.ai_unconfigured)
+            AiFrame(if (connections) stringResource(R.string.ai_connections) else draftTitle(), onBack) {
+                AiStatus(if (configured) R.string.ai_signed_out else R.string.ai_unconfigured)
                 if (configured) IronvellumButton(stringResource(R.string.ai_sign_in), onSignIn)
             }
         } else {
@@ -143,10 +119,10 @@ private fun ScopedPage(repository: McpRepository, scope: AccountRepository.Scope
             reviewId != null -> UiText.themed(R.string.ai_review, R.string.ai_review__t).asString()
             else -> draftTitle()
         }
-        Frame(title, back) {
+        AiFrame(title, back) {
             when (val current = page) {
-                Page.Loading -> Status(R.string.ai_loading)
-                is Page.Error -> Status(current.message)
+                Page.Loading -> AiStatus(R.string.ai_loading)
+                is Page.Error -> AiStatus(current.message)
                 is Page.Connections -> Connections(current.data, current.disconnected, busy) { grant ->
                     act {
                         repository.revoke(scope, grant.id)
@@ -155,17 +131,17 @@ private fun ScopedPage(repository: McpRepository, scope: AccountRepository.Scope
                 }
                 is Page.Drafts -> {
                     SettingsCaption(stringResource(R.string.ai_draft_hint))
-                    if (current.rows.isEmpty()) Status(R.string.ai_empty_drafts)
+                    if (current.rows.isEmpty()) AiStatus(R.string.ai_empty_drafts)
                     else SettingsGroup(stringResource(R.string.ai_ready), rows = true) {
                         current.rows.forEach { item ->
                             val draft = item.envelope
                             SettingsValueRow(draft.draft.name, draft.clientName) { reviewId = draft.id }
-                            SettingsCaption(stringResource(R.string.ai_suggested, date(draft.createdAtMs)))
+                            SettingsCaption(stringResource(R.string.ai_suggested, aiDate(draft.createdAtMs)))
                             if (draft.status == DraftStatus.APPROVED) SettingsCaption(stringResource(R.string.ai_approved))
                             InkDivider()
                         }
                     }
-                    if (current.error != null) Status(current.error)
+                    if (current.error != null) AiStatus(current.error)
                     current.nextCursor?.let { cursor ->
                         IronvellumButton(stringResource(R.string.ai_load_older), {
                             act {
@@ -183,14 +159,14 @@ private fun ScopedPage(repository: McpRepository, scope: AccountRepository.Scope
                         onReject = { act { repository.reject(handle); Page.Rejected } })
                 }
                 is Page.Saved -> {
-                    Status(R.string.ai_saved)
-                    Title(current.name)
+                    AiStatus(R.string.ai_saved)
+                    AiTitle(current.name)
                     SettingsCaption(UiText.themed(R.string.ai_saved_info, R.string.ai_saved_info__t).asString())
-                    if (current.acknowledgementPending) Status(R.string.ai_ack_pending)
+                    if (current.acknowledgementPending) AiStatus(R.string.ai_ack_pending)
                 }
-                Page.Rejected -> Status(R.string.ai_rejected)
+                Page.Rejected -> AiStatus(R.string.ai_rejected)
             }
-            if (busy) Status(R.string.ai_working)
+            if (busy) AiStatus(R.string.ai_working)
             Spacer(Modifier.height(12.dp))
             if (page is Page.Saved || page == Page.Rejected) {
                 IronvellumButton(stringResource(R.string.ai_back_drafts), back)
@@ -202,24 +178,24 @@ private fun ScopedPage(repository: McpRepository, scope: AccountRepository.Scope
 }
 
 @Composable
-private fun Frame(title: String, back: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+internal fun AiFrame(title: String, back: () -> Unit, titleMaxLines: Int = 1, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(16.dp))
-        PushedHeader(title, back)
+        PushedHeader(title, back, titleMaxLines = titleMaxLines)
         content()
         Spacer(Modifier.height(32.dp))
     }
 }
 
 @Composable
-private fun Title(text: String) = Text(text, style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
+internal fun AiTitle(text: String) = Text(text, style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
 
 @Composable
-private fun Status(res: Int) = Text(stringResource(res),
+internal fun AiStatus(res: Int) = Text(stringResource(res),
     Modifier.padding(vertical = 8.dp).semantics { liveRegion = LiveRegionMode.Polite },
     style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
 
-private fun date(ms: Long) = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(ms))
+internal fun aiDate(ms: Long) = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(ms))
 
 @Composable
 private fun permission(scope: String) = when (scope) {
@@ -236,21 +212,21 @@ private fun Connections(data: McpConnections, disconnected: String?, busy: Boole
     val address = data.resourceUrl ?: return
     SettingsGroup(stringResource(R.string.ai_server)) {
         SettingsCaption(stringResource(R.string.ai_server_hint))
-        Title(address)
+        AiTitle(address)
         IronvellumButton(stringResource(R.string.ai_copy), { clipboard.setText(AnnotatedString(address)) }, quiet = true)
     }
     if (disconnected != null) Text(stringResource(R.string.ai_revoked, disconnected), color = IronvellumColors.Ink)
     SettingsGroup(stringResource(R.string.ai_apps)) {
         if (data.connections.isEmpty()) SettingsCaption(stringResource(R.string.ai_no_apps))
         data.connections.forEach { grant ->
-            Title(grant.clientName)
+            AiTitle(grant.clientName)
             SettingsCaption(stringResource(R.string.ai_unverified))
             grant.scopes.forEach { SettingsCaption(permission(it)) }
             when {
-                grant.revokedAtMs != null -> Status(R.string.ai_disconnected)
-                grant.expiresAtMs <= System.currentTimeMillis() -> Status(R.string.ai_expired)
+                grant.revokedAtMs != null -> AiStatus(R.string.ai_disconnected)
+                grant.expiresAtMs <= System.currentTimeMillis() -> AiStatus(R.string.ai_expired)
                 else -> {
-                    SettingsCaption(stringResource(R.string.ai_expires, date(grant.expiresAtMs)))
+                    SettingsCaption(stringResource(R.string.ai_expires, aiDate(grant.expiresAtMs)))
                     IronvellumButton(stringResource(R.string.ai_disconnect, grant.clientName), { revoke(grant) }, danger = true, enabled = !busy)
                 }
             }
@@ -261,7 +237,7 @@ private fun Connections(data: McpConnections, disconnected: String?, busy: Boole
     SettingsGroup(stringResource(R.string.ai_audit)) {
         if (data.recentAccess.isEmpty()) SettingsCaption(stringResource(R.string.ai_no_access))
         data.recentAccess.forEach {
-            Title(it.clientName)
+            AiTitle(it.clientName)
             val action = when (it.tool) {
                 "list_workouts" -> R.string.ai_audit_workouts
                 "get_workout" -> R.string.ai_audit_workout
@@ -273,7 +249,7 @@ private fun Connections(data: McpConnections, disconnected: String?, busy: Boole
                 else -> R.string.ai_audit_unknown
             }
             SettingsCaption(stringResource(R.string.ai_audit_line, stringResource(action),
-                stringResource(if (it.result == "ok") R.string.ai_allowed else R.string.ai_unsuccessful), date(it.atMs)))
+                stringResource(if (it.result == "ok") R.string.ai_allowed else R.string.ai_unsuccessful), aiDate(it.atMs)))
         }
     }
 }
@@ -282,33 +258,50 @@ private fun Connections(data: McpConnections, disconnected: String?, busy: Boole
 private fun ReviewBody(envelope: DraftEnvelope, error: Int?, busy: Boolean, onSave: () -> Unit, onReject: () -> Unit) {
     val draft = envelope.draft
     SettingsCaption(stringResource(R.string.ai_source, envelope.clientName))
-    Title(draft.name)
-    SettingsCaption(stringResource(R.string.ai_suggested, date(envelope.createdAtMs)))
+    AiTitle(draft.name)
+    SettingsCaption(stringResource(R.string.ai_suggested, aiDate(envelope.createdAtMs)))
     val state = envelope.status
     when (state) {
-        DraftStatus.PENDING -> SettingsCaption(stringResource(R.string.ai_expiry, date(envelope.expiresAtMs)))
-        DraftStatus.APPROVED -> Status(R.string.ai_approved)
-        DraftStatus.ACCEPTED -> Status(R.string.ai_accepted)
-        DraftStatus.REJECTED -> Status(R.string.ai_rejected)
-        DraftStatus.EXPIRED -> Status(R.string.ai_expired_draft)
+        DraftStatus.PENDING -> SettingsCaption(stringResource(R.string.ai_expiry, aiDate(envelope.expiresAtMs)))
+        DraftStatus.APPROVED -> AiStatus(R.string.ai_approved)
+        DraftStatus.ACCEPTED -> AiStatus(R.string.ai_accepted)
+        DraftStatus.REJECTED -> AiStatus(R.string.ai_rejected)
+        DraftStatus.EXPIRED -> AiStatus(R.string.ai_expired_draft)
     }
+    DraftTargets(draft)
+    if (error != null) AiStatus(error)
+    if (state.canSave) {
+        SettingsCaption(UiText.themed(R.string.ai_save_info, R.string.ai_save_info__t).asString())
+        val label = if (state == DraftStatus.APPROVED) stringResource(R.string.ai_finish)
+            else UiText.themed(R.string.ai_save, R.string.ai_save__t).asString()
+        IronvellumButton(label, onSave, Modifier.fillMaxWidth(), enabled = !busy && error == null)
+    }
+    if (state.canReject) IronvellumButton(stringResource(R.string.ai_reject), onReject, danger = true, enabled = !busy && error != R.string.ai_stale)
+}
+
+@Composable
+internal fun DraftTargets(draft: WorkoutDraft, movementName: (String) -> String = { it.replaceFirstChar { c -> c.titlecase() } }) {
     SettingsGroup(stringResource(R.string.ai_movements)) {
         draft.entries.forEachIndexed { i, entry ->
             if (i > 0) InkDivider()
             Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1f)) {
-                    Title(entry.exerciseKey.replaceFirstChar { it.titlecase() })
+                    AiTitle(movementName(entry.exerciseKey))
                     SettingsCaption(stringResource(R.string.ai_targets,
                         pluralStringResource(R.plurals.common_sets_count, entry.sets, entry.sets),
                         pluralStringResource(R.plurals.common_reps_count, entry.reps, entry.reps)))
                 }
                 val kg = entry.loadKg
-                if (kg == null) SettingsCaption(stringResource(R.string.ai_no_load))
-                else Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
-                    val unit = Units.forExercise(entry.exerciseKey)
-                    if (unit != LoadUnit.KG) SettingsCaption(Loads.withUnit(kg.toDouble(), unit))
-                    // Keep the actual reviewed target visible even when the preferred unit rounds it.
-                    SettingsCaption(stringResource(R.string.ai_load, if (kg.scale() > 80) kg.toString() else kg.toPlainString()))
+                // An exact decimal can be long. Let it wrap without squeezing out the movement or rep targets.
+                Column(Modifier.widthIn(max = 132.dp), horizontalAlignment = androidx.compose.ui.Alignment.End) {
+                    if (kg == null) {
+                        SettingsCaption(stringResource(R.string.ai_no_load))
+                    } else {
+                        val unit = Units.forExercise(entry.exerciseKey)
+                        if (unit != LoadUnit.KG) SettingsCaption(Loads.withUnit(kg.toDouble(), unit))
+                        // Keep the actual reviewed target visible even when the preferred unit rounds it.
+                        SettingsCaption(stringResource(R.string.ai_load, if (kg.scale() > 80) kg.toString() else kg.toPlainString()))
+                    }
                 }
             }
         }
@@ -319,12 +312,4 @@ private fun ReviewBody(envelope: DraftEnvelope, error: Int?, busy: Boolean, onSa
                 stringResource(if (choice == WorkoutDraft.Preparation.AUTO) R.string.ai_auto else R.string.ai_none)), color = IronvellumColors.Ink)
         }
     }
-    if (error != null) Status(error)
-    if (state.canSave) {
-        SettingsCaption(UiText.themed(R.string.ai_save_info, R.string.ai_save_info__t).asString())
-        val label = if (state == DraftStatus.APPROVED) stringResource(R.string.ai_finish)
-            else UiText.themed(R.string.ai_save, R.string.ai_save__t).asString()
-        IronvellumButton(label, onSave, Modifier.fillMaxWidth(), enabled = !busy && error == null)
-    }
-    if (state.canReject) IronvellumButton(stringResource(R.string.ai_reject), onReject, danger = true, enabled = !busy && error != R.string.ai_stale)
 }

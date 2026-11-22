@@ -1,0 +1,4 @@
+# These files are byte-level interoperability vectors, including deliberate proposal whitespace.
+*.json -text
+proposal.json whitespace=cr-at-eol
+SHA256SUMS text eol=lf

@@ -91,6 +91,9 @@ interface PresetDao {
     @Query("SELECT * FROM presets WHERE id = :id")
     suspend fun presetWithEntries(id: Long): PresetWithEntries?
 
+    @Query("SELECT name FROM presets WHERE id = :id")
+    suspend fun presetName(id: Long): String?
+
     @Query("SELECT COUNT(*) FROM presets")
     suspend fun count(): Int
     @Query("SELECT COUNT(*) FROM presets WHERE importKey = :key")

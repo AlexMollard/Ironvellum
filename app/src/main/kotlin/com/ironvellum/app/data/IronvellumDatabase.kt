@@ -3,6 +3,11 @@ package com.ironvellum.app.data
 import android.content.Context
 import com.ironvellum.app.data.db.DraftReceipt
 import com.ironvellum.app.data.db.DraftReceiptDao
+import com.ironvellum.app.data.db.LocalConnectorDao
+import com.ironvellum.app.data.db.LocalIdentity
+import com.ironvellum.app.data.db.LocalObject
+import com.ironvellum.app.data.db.LocalSnapshot
+import com.ironvellum.app.data.db.LocalReceipt
 import com.ironvellum.app.data.db.PreparationDao
 import com.ironvellum.app.data.db.PreparationRoutineEntity
 import com.ironvellum.app.data.db.PresetPreparationEntity
@@ -53,6 +58,10 @@ import com.ironvellum.app.data.db.ProgressPhotoEntity
 @Database(
     entities = [
         DraftReceipt::class,
+        LocalIdentity::class,
+        LocalObject::class,
+        LocalSnapshot::class,
+        LocalReceipt::class,
         PreparationRoutineEntity::class,
         PresetPreparationEntity::class,
         SessionPreparationEntity::class,
@@ -81,6 +90,7 @@ import com.ironvellum.app.data.db.ProgressPhotoEntity
 )
 abstract class IronvellumDatabase : RoomDatabase() {
     internal abstract fun draftReceiptDao(): DraftReceiptDao
+    internal abstract fun localConnectorDao(): LocalConnectorDao
     abstract fun preparationDao(): PreparationDao
     abstract fun exerciseDao(): ExerciseDao
     abstract fun presetDao(): PresetDao
@@ -99,7 +109,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 50
+        const val VERSION = 51
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -734,6 +744,19 @@ abstract class IronvellumDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_50_51 = object : Migration(50, 51) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE local_connector_identity (slot INTEGER NOT NULL PRIMARY KEY, datasetId TEXT NOT NULL)")
+                db.execSQL("""CREATE TABLE local_connector_objects (kind TEXT NOT NULL, rowId INTEGER NOT NULL,
+                    opaqueId TEXT NOT NULL, PRIMARY KEY(kind,rowId))""")
+                db.execSQL("""CREATE TABLE local_connector_exports (datasetId TEXT NOT NULL, snapshotId TEXT NOT NULL,
+                    contextSha256 TEXT NOT NULL, exportedAtMs INTEGER NOT NULL, PRIMARY KEY(datasetId,snapshotId))""")
+                db.execSQL("""CREATE TABLE local_connector_receipts (datasetId TEXT NOT NULL, draftId TEXT NOT NULL,
+                    proposalSha256 TEXT NOT NULL, snapshotId TEXT NOT NULL, localPresetId INTEGER NOT NULL,
+                    savedAtMs INTEGER NOT NULL, PRIMARY KEY(datasetId,draftId))""")
+            }
+        }
+
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -774,6 +797,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_47_48,
             MIGRATION_48_49,
             MIGRATION_49_50,
+            MIGRATION_50_51,
         )
 
         const val NAME = "ironvellum.db"

@@ -75,6 +75,25 @@ Web development and rebuilding exercise art do: run
 
 Two flavours share one application id. `foss` is the F-Droid and GitHub build and shows support links. `play` adds Google sign-in and shows none; build it with `assemblePlayDebug`. The app needs Android 10 (API 29) or newer.
 
+## Build without a default backend
+
+`./gradlew -PlocalOnly=true :app:assembleFossRelease` builds the FOSS app with empty Supabase URL, public key and Google web client ID, including when release signing or custom cloud credentials are configured. Use `gradlew.bat` on Windows. The APK appears under `app/build/outputs/apk/foss/release/`. Standard release signing still applies. An unsigned build needs signing before installation. The app retains its application ID, so an in-place update requires the same signing key.
+
+Fresh installs can train, export, review and save offline. An existing complete custom backend choice is retained. Returning to the build default in this release disconnects the custom backend. Ordinary FOSS releases use the public defaults unless local.properties supplies the custom URL/key pair. Ordinary Play releases also require the Google web client ID. A single custom backend field leaves the cloud unavailable and fails ordinary release validation.
+
+For the build configuration matrix, set `ANDROID_HOME` and run `python tools/test_release_backend.py`. The script invokes Gradle in a temporary project using synthetic settings.
+
+### Verify the personal file exchange
+
+The Android gate exercises an offline workout and draft save against a separate Room database. The optional cross-platform file test runs the installed PC connector and an Android instrumentation target with a separate UID, a plain Application and no Internet permission. Install the [personal connector](../tools/local_connector/README.md) in a Python environment, boot the test emulator on serial `emulator-5554`, then run the following from the repository root. The Python runner takes the emulator lock and retains synthetic files under the new output directory.
+
+```sh
+./gradlew -PmcpReceiptHost=true -PlocalOnly=true :app:assembleReceiptFixtureDebug :app:assembleReceiptFixtureDebugAndroidTest
+tools/local_connector/.venv/bin/python -I tools/local_connector/tests/verify_android_roundtrip.py .tmp/local-file-proof
+```
+
+On Windows use the virtual environment's `Scripts/python.exe`. Only contributor verification uses the emulator and ADB. The consumer workflow uses files selected by the lifter.
+
 ## Local development MCP
 
 The [development MCP setup](../tools/development_mcp/README.md) covers device

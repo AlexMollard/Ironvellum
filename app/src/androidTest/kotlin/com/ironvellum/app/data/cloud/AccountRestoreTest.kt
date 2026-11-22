@@ -859,7 +859,7 @@ class AccountRestoreTest {
             respond(PROFILE, HttpStatusCode.OK, JSON_HEADERS)
         }
         val cfg = CloudConfig("https://account-test.invalid", "test-key", false)
-        val selection = CloudClientSelection(cfg) { client(storage, engine()) }.also { it.initialize(cfg) }
+        val selection = CloudClientSelection { client(storage, engine()) }.also { it.initialize(cfg) }
         try {
             val accounts = AccountRepository { selection.requireConfigured }
             accounts.restore().getOrThrow()

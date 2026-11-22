@@ -33,19 +33,21 @@ import kotlinx.serialization.json.*
 import org.junit.Assert.*
 import org.junit.Test
 
+internal fun assertStandaloneTarget(context: Context) {
+    assertEquals("com.ironvellum.app.receiptfixture", context.packageName)
+    assertEquals(Application::class.java, context.applicationContext.javaClass)
+    val flags = PackageManager.GET_ACTIVITIES or PackageManager.GET_SERVICES or
+        PackageManager.GET_PROVIDERS or PackageManager.GET_RECEIVERS
+    val target = context.packageManager.getPackageInfo(context.packageName, flags)
+    assertTrue(target.providers.isNullOrEmpty() && target.services.isNullOrEmpty() &&
+        target.activities.isNullOrEmpty() && target.receivers.isNullOrEmpty())
+    assertNull(target.sharedUserId)
+    assertEquals(android.os.Process.myUid(), context.applicationInfo.uid)
+    assertEquals(PackageManager.PERMISSION_DENIED, context.checkSelfPermission(Manifest.permission.INTERNET))
+}
+
 /** The ordinary gate replays a recorded SQL pair. The host runner supplies a fresh pair from its own database. */
 class SqlDraftReceiptTest {
-    private fun assertStandaloneTarget(context: Context) {
-        assertEquals("com.ironvellum.app.receiptfixture", context.packageName)
-        assertEquals(Application::class.java, context.applicationContext.javaClass)
-        val flags = PackageManager.GET_ACTIVITIES or PackageManager.GET_SERVICES or
-            PackageManager.GET_PROVIDERS or PackageManager.GET_RECEIVERS
-        val target = context.packageManager.getPackageInfo(context.packageName, flags)
-        assertTrue(target.providers.isNullOrEmpty() && target.services.isNullOrEmpty() &&
-            target.activities.isNullOrEmpty() && target.receivers.isNullOrEmpty())
-        assertEquals(PackageManager.PERMISSION_DENIED, context.checkSelfPermission(Manifest.permission.INTERNET))
-    }
-
     private fun scalar(db: IronvellumDatabase, query: String): String =
         db.openHelper.readableDatabase.query(query).use { cursor ->
             check(cursor.moveToFirst())

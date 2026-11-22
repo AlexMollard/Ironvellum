@@ -48,6 +48,12 @@ Most trackers add up kilograms, which rewards being heavy. Ironvellum scores a s
 
 Plain gym words by default; turn on **Themed names** for the fantasy version. The full list is in [Features](docs/FEATURES.md).
 
+## Personal AI on your computer
+
+Open **Train → AI tools** to share a dated training file. On your computer, a compatible desktop AI client can read that file and propose a workout. Transfer the proposed file back, review it on the phone and press **Save** to add an unscheduled workout. This path works without an Ironvellum account, backend, developer mode or ADB. Your chosen AI client may require an account or subscription. [Set up the personal file connector](tools/local_connector/README.md).
+
+For optional sync and social features, choose your own managed backend or [run Supabase on your PC](tools/self_host/README.md). A [backend-free FOSS release](docs/DEVELOPMENT.md#build-without-a-default-backend) starts with no shared service configured.
+
 ## Web dashboard
 
 <p align="center">
