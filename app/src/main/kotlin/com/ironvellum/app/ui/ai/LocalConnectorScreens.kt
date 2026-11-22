@@ -9,9 +9,17 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -46,7 +54,7 @@ internal sealed interface LocalPage {
         val fileName get() = "ironvellum-training-${export.summary.snapshotId}.json"
     }
     data class Review(val handle: LocalDraftReview) : LocalPage
-    data class Saved(val name: String?, val repeated: Boolean) : LocalPage
+    data class Saved(val name: String?, val presetId: Long?, val repeated: Boolean) : LocalPage
     data class FileError(val problem: Problem, val exporting: Boolean = false, val chooseAgain: Boolean = false,
         val review: Review? = null) : LocalPage
 }
@@ -147,7 +155,8 @@ internal class LocalConnectorViewModel(private val repo: LocalConnectorRepositor
         val storageError = LocalPage.FileError(draftProblem(LocalFailure.STORAGE), review = review)
         run(LocalWork.SAVE, storageError) {
             when (val result = withContext(Dispatchers.IO) { repo.saveDraft(review.handle) }) {
-                is LocalSave.Saved -> LocalPage.Saved(review.handle.proposal.draft.name, repeated = false)
+                // This transaction has already committed the workout and its receipt.
+                is LocalSave.Saved -> LocalPage.Saved(review.handle.proposal.draft.name, result.localPresetId, repeated = false)
                 is LocalSave.AlreadySaved -> alreadySaved(result.localPresetId)
                 is LocalSave.Rejected -> when (result.reason) {
                     LocalFailure.STORAGE -> storageError
@@ -160,7 +169,10 @@ internal class LocalConnectorViewModel(private val repo: LocalConnectorRepositor
 
     fun resume(review: LocalPage.Review) { page = review }
 
-    private suspend fun alreadySaved(id: Long): LocalPage.Saved = LocalPage.Saved(repo.savedPresetName(id), repeated = true)
+    private suspend fun alreadySaved(id: Long): LocalPage.Saved {
+        val name = repo.savedPresetName(id)
+        return LocalPage.Saved(name, id.takeIf { name != null }, repeated = true)
+    }
 
     private fun run(action: LocalWork, fallback: LocalPage, operation: suspend () -> LocalPage) {
         if (work != null) return
@@ -216,6 +228,7 @@ internal fun LocalConnectorScreen(
     onBack: () -> Unit,
     onConnections: () -> Unit,
     onCloudDrafts: () -> Unit,
+    onOpenWorkout: (Long) -> Unit,
 ) {
     val context = LocalContext.current
     val model: LocalConnectorViewModel = viewModel(factory = viewModelFactory {
@@ -236,27 +249,48 @@ internal fun LocalConnectorScreen(
     val back = if (inside) model::back else onBack
     BackHandler(inside, onBack = back)
     val title = when {
-        work == LocalWork.BUILD || page is LocalPage.Preview || page is LocalPage.FileError && page.exporting -> stringResource(R.string.local_ai_share)
+        work == LocalWork.BUILD || page is LocalPage.Preview || page is LocalPage.FileError && page.exporting -> stringResource(R.string.local_ai_preview)
         work == LocalWork.READ || page is LocalPage.FileError -> localText(R.string.local_ai_draft, R.string.local_ai_draft__t)
         page is LocalPage.Review -> localText(R.string.ai_review, R.string.ai_review__t)
-        page is LocalPage.Saved && page.repeated -> stringResource(R.string.local_ai_already_saved)
-        page is LocalPage.Saved -> localText(R.string.local_ai_saved, R.string.local_ai_saved__t)
+        page is LocalPage.Saved -> localText(R.string.local_ai_draft, R.string.local_ai_draft__t)
         else -> stringResource(R.string.local_ai_tools)
     }
     key(page::class, work == LocalWork.READ || work == LocalWork.BUILD) {
-        AiFrame(title, back, titleMaxLines = 3) {
-            if (work != null) AiStatus(work.status)
-            if (work?.cancellable == true) {
-                IronvellumButton(stringResource(R.string.common_cancel), back, Modifier.fillMaxWidth(), quiet = true)
-            } else when (page) {
+        val actions: (@Composable ColumnScope.() -> Unit)? = when {
+            work?.cancellable == true -> {
+                { IronvellumButton(stringResource(R.string.common_cancel), back, Modifier.fillMaxWidth(), quiet = true) }
+            }
+            page is LocalPage.Preview -> {
+                {
+                    page.status?.let { AiStatus(it) }
+                    Primary(stringResource(R.string.local_ai_share_file), { model.share(context, page) }, work == null)
+                    IronvellumButton(stringResource(R.string.local_ai_save_file),
+                        { model.chooseDestination(page) { create.launch(it) } },
+                        Modifier.fillMaxWidth(), enabled = work == null, quiet = true)
+                }
+            }
+            page is LocalPage.Review -> {
+                {
+                    AiDetail(localText(R.string.ai_save_info, R.string.ai_save_info__t))
+                    Primary(localText(R.string.ai_save, R.string.ai_save__t), { model.save(page) }, work == null)
+                    IronvellumButton(stringResource(R.string.local_ai_not_now), back,
+                        Modifier.fillMaxWidth(), enabled = work == null, quiet = true)
+                }
+            }
+            else -> null
+        }
+        AiFrame(title, back.takeUnless { work?.cancellable == false }, titleMaxLines = 3, actions = actions) {
+            if (work != null) AiStateCard(stringResource(work.status))
+            if (work?.cancellable != true) when (page) {
                 LocalPage.Tools -> LocalTools(model::preview, choose, onConnections, onCloudDrafts)
-                is LocalPage.Preview -> ExportPreview(page, work == null, { model.share(context, page) },
-                    { model.chooseDestination(page) { create.launch(it) } })
-                is LocalPage.Review -> ReviewDraft(page.handle, work == null, { model.save(page) }, back)
-                is LocalPage.Saved -> LocalSaved(page, back)
+                is LocalPage.Preview -> ExportPreview(page)
+                is LocalPage.Review -> ReviewDraft(page.handle)
+                is LocalPage.Saved -> LocalSaved(page, back) { id ->
+                    model.back()
+                    onOpenWorkout(id)
+                }
                 is LocalPage.FileError -> {
-                    AiTitle(stringResource(page.problem.title))
-                    AiStatus(page.problem.detail)
+                    AiStateCard(stringResource(page.problem.title), Icons.Filled.Info, stringResource(page.problem.detail))
                     when {
                         page.review != null -> Primary(stringResource(R.string.local_ai_review_again), { model.resume(page.review) })
                         page.chooseAgain -> Primary(stringResource(R.string.local_ai_choose), choose)
@@ -277,15 +311,11 @@ internal fun LocalAiRow(@StringRes title: Int, @StringRes subtitle: Int, @String
 
 @Composable
 private fun LocalTools(preview: () -> Unit, open: () -> Unit, connections: () -> Unit, cloudDrafts: () -> Unit) {
-    SettingsCaption(stringResource(R.string.local_ai_intro))
-    SettingsGroup(stringResource(R.string.local_ai_device), rows = true) {
-        LocalAiRow(R.string.local_ai_share, R.string.local_ai_share_hint, onClick = preview)
-        InkDivider()
-        val title = localText(R.string.local_ai_import, R.string.local_ai_import__t)
-        ListRow(title, subline = stringResource(R.string.local_ai_import_hint),
-            onClickLabel = stringResource(R.string.settings_row_open_label, title), onClick = open)
-    }
-    SettingsGroup(stringResource(R.string.local_ai_cloud), rows = true) {
+    AiActionCard(stringResource(R.string.local_ai_share_training), stringResource(R.string.local_ai_share_hint),
+        stringResource(R.string.local_ai_preview), Icons.Outlined.Share, preview)
+    AiActionCard(localText(R.string.local_ai_import, R.string.local_ai_import__t), stringResource(R.string.local_ai_import_hint),
+        stringResource(R.string.local_ai_choose_draft), Icons.Filled.Add, open, quiet = true)
+    AiDisclosure(stringResource(R.string.local_ai_cloud)) {
         LocalAiRow(R.string.local_ai_cloud_connections, R.string.local_ai_cloud_connections_hint, onClick = connections)
         InkDivider()
         val title = localText(R.string.local_ai_cloud_drafts, R.string.local_ai_cloud_drafts__t)
@@ -295,75 +325,108 @@ private fun LocalTools(preview: () -> Unit, open: () -> Unit, connections: () ->
 }
 
 @Composable
-private fun ExportPreview(page: LocalPage.Preview, enabled: Boolean, share: () -> Unit, saveFile: () -> Unit) {
+private fun ExportPreview(page: LocalPage.Preview) {
     val summary = page.export.summary
     val coverage = summary.coverage
-    SettingsCaption(stringResource(R.string.local_ai_snapshot, aiDate(summary.exportedAtMs)))
-    SettingsGroup(stringResource(R.string.local_ai_contents), rows = true) {
-        CoverageRow(localText(R.string.local_ai_completed, R.string.local_ai_completed__t),
-            stringResource(R.string.local_ai_recent), coverage.workoutsIncluded, coverage.workoutsTruncated)
+    val counts = listOf(
+        localText(R.string.local_ai_completed, R.string.local_ai_completed__t) to coverage.workoutsIncluded,
+        stringResource(R.string.local_ai_sets) to coverage.setsIncluded,
+        localText(R.string.local_ai_presets, R.string.local_ai_presets__t) to coverage.savedWorkoutsIncluded,
+    )
+    AiCard {
+        AiTitle(stringResource(R.string.local_ai_all_completed))
+        AiDetail(stringResource(R.string.local_ai_prepared, aiDate(summary.exportedAtMs)))
         InkDivider()
-        CoverageRow(stringResource(R.string.local_ai_sets), localText(R.string.local_ai_sets_hint, R.string.local_ai_sets_hint__t),
-            coverage.setsIncluded, coverage.setsTruncated + coverage.setsUnsupported)
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            if (maxWidth >= 300.dp && LocalDensity.current.fontScale <= 1.3f) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    counts.forEach { (label, count) ->
+                        Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
+                            AiTitle(stringResource(R.string.local_ai_number, count))
+                            AiDetail(label)
+                        }
+                    }
+                }
+            } else {
+                Column {
+                    counts.forEach { (label, count) ->
+                        ListRow(label, value = stringResource(R.string.local_ai_number, count), wrapValue = true)
+                    }
+                }
+            }
+        }
+    }
+    if (coverage.workoutsTruncated > 0 || coverage.setsTruncated > 0 || coverage.setsUnsupported > 0 ||
+        coverage.savedWorkoutsTruncated > 0 || coverage.savedWorkoutsUnsupported > 0) {
+        AiCard {
+            AiTitle(stringResource(R.string.local_ai_omitted))
+            if (coverage.workoutsTruncated > 0) ListRow(localText(R.string.local_ai_completed, R.string.local_ai_completed__t),
+                value = stringResource(R.string.local_ai_count, coverage.workoutsIncluded, coverage.workoutsTruncated), wrapValue = true)
+            if (coverage.setsTruncated > 0 || coverage.setsUnsupported > 0) {
+                AiDetail(stringResource(R.string.local_ai_set_omissions, coverage.setsTruncated, coverage.setsUnsupported))
+            }
+            if (coverage.savedWorkoutsTruncated > 0 || coverage.savedWorkoutsUnsupported > 0) {
+                AiDetail(localText(R.string.local_ai_preset_omissions, R.string.local_ai_preset_omissions__t,
+                    coverage.savedWorkoutsTruncated, coverage.savedWorkoutsUnsupported))
+            }
+        }
+    }
+    AiCard {
+        ListRow(stringResource(R.string.local_ai_included),
+            subline = localText(R.string.local_ai_included_short, R.string.local_ai_included_short__t))
         InkDivider()
-        CoverageRow(localText(R.string.local_ai_presets, R.string.local_ai_presets__t), localText(R.string.local_ai_names, R.string.local_ai_names__t),
-            coverage.savedWorkoutsIncluded, coverage.savedWorkoutsTruncated + coverage.savedWorkoutsUnsupported)
+        ListRow(stringResource(R.string.local_ai_private), subline = stringResource(R.string.local_ai_private_short))
+        InkDivider()
+        AiDetail(localText(R.string.local_ai_names_included, R.string.local_ai_names_included__t))
     }
-    Spacer(Modifier.height(8.dp))
-    if (coverage.setsTruncated > 0 || coverage.setsUnsupported > 0) {
-        SettingsCaption(stringResource(R.string.local_ai_set_omissions, coverage.setsTruncated, coverage.setsUnsupported))
+    AiDisclosure(stringResource(R.string.local_ai_sharing_details)) {
+        AiDetail(localText(R.string.local_ai_sets_hint, R.string.local_ai_sets_hint__t))
+        AiDetail(localText(R.string.local_ai_names, R.string.local_ai_names__t))
+        AiDetail(localText(R.string.local_ai_coverage, R.string.local_ai_coverage__t))
+        AiDetail(localText(R.string.local_ai_private_hint, R.string.local_ai_private_hint__t))
+        AiDetail(stringResource(R.string.local_ai_transfer))
     }
-    if (coverage.savedWorkoutsTruncated > 0 || coverage.savedWorkoutsUnsupported > 0) {
-        SettingsCaption(localText(R.string.local_ai_preset_omissions, R.string.local_ai_preset_omissions__t,
-            coverage.savedWorkoutsTruncated, coverage.savedWorkoutsUnsupported))
-    }
-    SettingsCaption(localText(R.string.local_ai_coverage, R.string.local_ai_coverage__t))
-    SectionHeader(stringResource(R.string.local_ai_private), topPadding = 16.dp)
-    SettingsCaption(localText(R.string.local_ai_private_hint, R.string.local_ai_private_hint__t))
-    Spacer(Modifier.height(12.dp))
-    SettingsCaption(stringResource(R.string.local_ai_transfer))
-    page.status?.let { AiStatus(it) }
-    Spacer(Modifier.height(8.dp))
-    Primary(stringResource(R.string.local_ai_share), share, enabled)
-    Spacer(Modifier.height(8.dp))
-    IronvellumButton(stringResource(R.string.local_ai_save_file), saveFile, enabled = enabled, quiet = true)
 }
 
 @Composable
-private fun CoverageRow(title: String, details: String, included: Int, omitted: Long) {
-    ListRow(title, subline = details, value = stringResource(R.string.local_ai_count, included, omitted), wrapValue = true)
-}
-
-@Composable
-private fun ReviewDraft(review: LocalDraftReview, enabled: Boolean, save: () -> Unit, discard: () -> Unit) {
+private fun ReviewDraft(review: LocalDraftReview) {
     val proposal = review.proposal
-    SettingsCaption(stringResource(R.string.local_ai_sender, proposal.sender))
-    AiTitle(proposal.draft.name)
-    SettingsCaption(stringResource(if (review.isLatestExport) R.string.local_ai_snapshot else R.string.local_ai_older,
-        aiDate(review.exportedAtMs)))
-    SettingsCaption(stringResource(R.string.local_ai_created, aiDate(proposal.createdAtMs)))
-    SettingsCaption(stringResource(R.string.ai_expiry, aiDate(proposal.expiresAtMs)))
-    DraftTargets(proposal.draft) { LocalCatalogue.movements[it]?.name ?: it }
-    SettingsCaption(localText(R.string.ai_save_info, R.string.ai_save_info__t))
-    Spacer(Modifier.height(8.dp))
-    Primary(localText(R.string.ai_save, R.string.ai_save__t), save, enabled)
-    IronvellumButton(stringResource(R.string.local_ai_discard), discard, enabled = enabled, danger = true)
+    val draft = proposal.draft
+    AiCard {
+        AiTitle(draft.name)
+        AiDraftCounts(draft)
+        AiDetail(stringResource(R.string.local_ai_sender, proposal.sender))
+    }
+    if (!review.isLatestExport) {
+        AiStateCard(stringResource(R.string.local_ai_older, aiDate(review.exportedAtMs)), Icons.Filled.Info)
+    }
+    DraftTargets(draft) { LocalCatalogue.movements[it]?.name ?: it }
+    AiDisclosure(stringResource(R.string.local_ai_draft_details)) {
+        AiDetail(stringResource(R.string.local_ai_prepared, aiDate(review.exportedAtMs)))
+        AiDetail(stringResource(R.string.local_ai_created, aiDate(proposal.createdAtMs)))
+        AiDetail(stringResource(R.string.ai_expiry, aiDate(proposal.expiresAtMs)))
+    }
 }
 
 @Composable
-private fun LocalSaved(page: LocalPage.Saved, back: () -> Unit) {
-    page.name?.let { AiTitle(it) }
+private fun LocalSaved(page: LocalPage.Saved, back: () -> Unit, viewWorkout: (Long) -> Unit) {
+    val title = when {
+        page.presetId == null -> stringResource(R.string.local_ai_imported_before)
+        page.repeated -> stringResource(R.string.local_ai_already_saved)
+        else -> localText(R.string.local_ai_saved, R.string.local_ai_saved__t)
+    }
     val detail = when {
         !page.repeated -> localText(R.string.local_ai_saved_hint, R.string.local_ai_saved_hint__t)
         page.name == null -> localText(R.string.local_ai_deleted, R.string.local_ai_deleted__t)
         else -> stringResource(R.string.local_ai_repeated)
     }
-    Spacer(Modifier.height(8.dp))
-    SettingsCaption(detail)
-    Spacer(Modifier.height(8.dp))
-    SettingsCaption(stringResource(R.string.local_ai_receipt_hint))
-    Spacer(Modifier.height(8.dp))
-    Primary(stringResource(R.string.common_done), back)
+    AiStateCard(title, if (page.presetId == null) Icons.Filled.Info else Icons.Filled.Check, detail, page.name,
+        accent = page.presetId != null)
+    AiDetail(stringResource(R.string.local_ai_receipt_hint))
+    if (page.presetId != null) {
+        Primary(localText(R.string.ai_view_workout, R.string.ai_view_workout__t), { viewWorkout(page.presetId) })
+    }
+    IronvellumButton(stringResource(R.string.common_done), back, Modifier.fillMaxWidth(), quiet = page.presetId != null)
 }
 
 @Composable

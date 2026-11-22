@@ -39,20 +39,26 @@ class LocalConnectorNavigationTest {
         compose.mainClock.advanceTimeBy(1_200)
         shot("train_dark_plain")
         compose.onNodeWithText("AI tools").performScrollTo().assertIsDisplayed().performClick()
-        shown("Share training file")
-        shown("Import workout draft")
+        shown("Share training")
+        shown("Import a workout draft")
         shot("tools_dark_plain")
-        shown("Cloud AI connections").performScrollTo().performClick()
+        compose.onNodeWithText("Optional cloud services").performScrollTo().performClick()
+        compose.mainClock.advanceTimeByFrame()
+        compose.waitUntil(8_000) {
+            compose.mainClock.advanceTimeByFrame()
+            compose.onAllNodesWithText("Cloud AI connections").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Cloud AI connections").performScrollTo().performClick()
         val status = if (Cloud.configured) R.string.ai_signed_out else R.string.ai_unconfigured
         shown(compose.activity.getString(status))
         compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
         compose.mainClock.advanceTimeBy(1_200)
-        shown("Share training file").performClick()
+        shown("Preview training file").performClick()
         compose.waitUntil(8_000) {
             compose.mainClock.advanceTimeByFrame()
-            compose.onAllNodesWithText("Save file on this device").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText("Save on this phone").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Save file on this device").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Save on this phone").assertIsDisplayed()
     }
 
     private fun shown(text: String) = compose.onNodeWithText(text).also { node ->
