@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.navigation.NavController
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,6 +40,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.cloud.McpRepository
+import com.ironvellum.app.ui.ai.McpScreen
 import com.ironvellum.app.ui.theme.InkPressIndication
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
@@ -845,15 +848,12 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onBack = { navController.popBackStack() },
                         onConnections = { navController.navigate(Routes.AI_CONNECTIONS) },
                         onCloudDrafts = { navController.navigate(Routes.WORKOUT_DRAFTS) },
+                        onOpenWorkout = { id -> navController.navigate(Routes.riteDetail(id)) { launchSingleTop = true } },
                     )
                 }
-                listOf(Routes.AI_CONNECTIONS, Routes.WORKOUT_DRAFTS).forEach { route ->
-                    composable(route) {
-                        val backend by com.ironvellum.app.data.cloud.Cloud.config.collectAsStateWithLifecycle()
-                        com.ironvellum.app.ui.ai.McpScreen(ironvellumApp.mcpRepository, route == Routes.AI_CONNECTIONS,
-                            backend != null, onBack = { navController.popBackStack() },
-                            onSignIn = { navController.navigate(Routes.SIGN_IN) })
-                    }
+                connectedAiDestinations(navController, ironvellumApp.mcpRepository) {
+                    val backend by com.ironvellum.app.data.cloud.Cloud.config.collectAsStateWithLifecycle()
+                    backend != null
                 }
                 composable(
                     Routes.RECAP,
@@ -979,6 +979,25 @@ private val DumbbellIcon: ImageVector = ImageVector.Builder(
     strokeLineWidth = 2f,
     strokeLineCap = StrokeCap.Round,
 ).build()
+
+internal fun NavGraphBuilder.connectedAiDestinations(
+    navController: NavController,
+    repository: McpRepository,
+    configured: @Composable () -> Boolean,
+) {
+    listOf(Routes.AI_CONNECTIONS, Routes.WORKOUT_DRAFTS).forEach { route ->
+        composable(route) {
+            McpScreen(
+                repository = repository,
+                connections = route == Routes.AI_CONNECTIONS,
+                configured = configured(),
+                onBack = { navController.popBackStack() },
+                onSignIn = { navController.navigate(Routes.SIGN_IN) },
+                onOpenWorkout = { id -> navController.navigate(Routes.riteDetail(id)) { launchSingleTop = true } },
+            )
+        }
+    }
+}
 
 /**
  * Five items spread evenly on a 64dp VaultHigh bar with a 1dp Rune rule. The
