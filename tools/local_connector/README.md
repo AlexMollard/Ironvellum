@@ -2,13 +2,25 @@
 
 Ask your desktop AI about workouts in one Ironvellum export, or ask it to propose a saved workout. The connector runs under your own operating-system account and communicates over standard input and output (stdio). It needs a local MCP-capable AI client, CPython 3.11 or later with SQLite serialization support, and a local filesystem. Your AI client or model provider may have its own account and data-sharing requirements. A cloud-only chat interface needs support for launching a local connector to use this workflow.
 
-## Choose the files
+## Share training with AI on your phone
 
-1. On the phone, open **Train → AI tools → Share training file**. Review the included counts. Saved-workout, movement and preparation names are included and may contain personal details.
-2. Save or share the file, then transfer it to a folder on your PC. Keep the original bytes, including whitespace.
+1. Open **Train → AI tools → Share training**. Review the training counts and privacy details. Saved-workout, movement and preparation names are included and may contain personal details.
+2. Enter an optional question and choose an available AI app or **Other apps**. Ironvellum opens the recipient with a Markdown attachment containing the question, workout-return instructions and original training JSON. Continue in that app. Its ability to read the attachment depends on the recipient.
+3. If you only need the workout format, use **Copy AI instructions** and paste it into your AI conversation. You can also use **Sharing details · Save a copy → Save a copy** to keep the original JSON and attach it separately.
+
+## Bring an AI workout back
+
+Use the AI app or Files to share or open the returned JSON workout with Ironvellum. You can also choose **AI tools → Open workout file**. If the AI supplied a JSON code block, copy it and use **AI tools → Paste workout code**. Review the workout, resolve any movements that need your input and edit the targets if needed. Choose **Save workout** to add it to your saved workouts, unscheduled. If the AI proposes several workouts, import one file or code block at a time.
+
+## Use training on your PC
+
+1. On the phone, open **Train → AI tools → Share training → Sharing details · Save a copy**.
+2. Choose **Save a copy** or **Share JSON file**, then transfer the original JSON to a folder on your PC. Keep the original bytes, including whitespace.
 3. Choose a separate, private outbox on the PC for proposals. Give the connector an unused directory name under an existing personal folder. It creates that directory with restricted permissions. Keep the training file outside it.
 
-Each time you share, Ironvellum keeps the current file and clears temporary training files last shared at least 24 hours ago, using the phone’s clock. Sharing the same preview restarts that period. If a recipient waits longer to open the file, you may need to share it again. Files you save yourself are yours to keep.
+Follow the [desktop connector setup](#install-the-connector) below. Agent-assisted setup is [planned](../../docs/superpowers/plans/2026-11-22-ai-desktop-handoff.md).
+
+Each time you share, Ironvellum keeps the current attachment and clears temporary attachments of that format last shared at least 24 hours ago, using the phone’s clock. Sharing the same attachment restarts that period. If a recipient waits longer to open the file, you may need to share it again. Files you save yourself are yours to keep.
 
 The current training file format (version 2) includes all completed workouts, their recorded sets and preparation snapshots, all saved workouts, and the movements and current preparation routines those records reference. The phone refuses an export that cannot fit within 8 MiB. Every successful tool result includes the file date, age and coverage. Progress counts completed working sets and reports repetitions, volume, time, distance and attempts separately. Warm-up and unticked rows remain visible in the workout detail.
 
@@ -83,7 +95,7 @@ For example, call `get_progress` with `{"view":"lifts","limit":100}`, then add `
 
 A cursor belongs to the exact bytes of the file, the tool, the parent, the view and the selected fields. To read a specific row directly, use a zero-based `offset` in place of the cursor. Object views accept a `fields` list, such as `{"view":"headers","fields":["id","entryCount"]}`. If one field exceeds the reply limit, select other fields from its row or set `offset` to the next row. A single large row that fits once appears in full in `structuredContent` with a short text pointer.
 
-Ask the AI to propose a workout. It receives a generated `<uuid>.json` basename in the configured outbox and the proposed contents. Transfer **that original file** to your phone. Use **Import workout draft** to inspect its source date, movement targets and preparation choices. Only **Save workout** adds it to your saved workouts, unscheduled. The proposal expires 30 days after creation. The PC cannot see whether you imported or saved it.
+Ask the AI to propose a workout. It receives a generated `<uuid>.json` basename in the configured outbox and the proposed contents. Transfer **that original file** to your phone. Use **Open workout file** to inspect its source date, movement targets and preparation choices. Only **Save workout** adds it to your saved workouts, unscheduled. The proposal expires 30 days after creation. The PC cannot see whether you imported or saved it.
 
 ## Retries and recovery
 

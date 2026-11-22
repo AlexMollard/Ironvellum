@@ -62,6 +62,19 @@ internal class LocalJsonReader(private val input: String) {
         return result
     }
 
+    /** Finds a decoded root property in a bounded prefix, even if the document ends after it. */
+    fun firstRootMember(name: String): JsonElement? {
+        if (!take('{') || take('}')) return null
+        do {
+            space()
+            val key = string()
+            require(take(':'))
+            val element = value(1)
+            if (key == name) return element
+        } while (take(','))
+        return null
+    }
+
     private fun value(depth: Int): JsonElement {
         space()
         return when (input.getOrNull(pos)) {

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Ironvellum portable workout v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "type": {"const": "ironvellum.workout"},
+    "schemaVersion": {"const": 1},
+    "name": {"$ref": "files-v1.schema.json#/$defs/label"},
+    "warmup": {"$ref": "files-v1.schema.json#/$defs/prep"},
+    "cooldown": {"$ref": "files-v1.schema.json#/$defs/prep"},
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "files-v1.schema.json#/$defs/entry",
+        "properties": {
+          "exerciseKey": {
+            "description": "Use the exact Ironvellum movement key. It must already equal its Unicode lowercase form with leading and trailing whitespace removed. Preserve internal spaces and punctuation."
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 20
+    }
+  },
+  "required": ["type", "schemaVersion", "name", "warmup", "cooldown", "entries"]
+}

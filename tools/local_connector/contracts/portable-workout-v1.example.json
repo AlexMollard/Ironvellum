@@ -1,0 +1,11 @@
+{
+  "type": "ironvellum.workout",
+  "schemaVersion": 1,
+  "name": "Upper body",
+  "warmup": "AUTO",
+  "cooldown": "NONE",
+  "entries": [
+    {"exerciseKey": "bench press", "sets": 3, "reps": 8, "loadKg": 40},
+    {"exerciseKey": "push-up", "sets": 2, "reps": 10, "loadKg": null}
+  ]
+}

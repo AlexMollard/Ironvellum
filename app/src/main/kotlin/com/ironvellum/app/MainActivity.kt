@@ -26,9 +26,12 @@ import com.ironvellum.app.ui.RouteRequest
 import com.ironvellum.app.ui.Routes
 import com.ironvellum.app.ui.TrialRequest
 import com.ironvellum.app.data.Words
-import com.ironvellum.app.data.IncomingWorkoutShare
+import com.ironvellum.app.data.IncomingAiWorkout
 import com.ironvellum.app.widget.loadWidgetState
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.ViewModel
+import androidx.activity.viewModels
+import java.util.UUID
 import kotlinx.coroutines.launch
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -38,6 +41,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
 
 class MainActivity : ComponentActivity() {
+    private val incoming by viewModels<IncomingWorkoutModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // The theme resolved before the first frame, so the window background and the bars wear it from the start.
@@ -79,7 +83,8 @@ class MainActivity : ComponentActivity() {
             }
             IronvellumTheme(light = light) {
                 CompositionLocalProvider(LocalBodySex provides bodySex) {
-                    IronvellumRoot(inboxRequest = inboxRequest, todayRequest = todayRequest, trialRequest = trialRequest, routeRequest = routeRequest)
+                    IronvellumRoot(inboxRequest = inboxRequest, todayRequest = todayRequest, trialRequest = trialRequest,
+                        routeRequest = routeRequest, takeIncomingWorkout = incoming::take)
                 }
             }
         }
@@ -109,13 +114,16 @@ class MainActivity : ComponentActivity() {
     /** The notification tap while the activity is alive arrives here, not in onCreate. */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        setIntent(intent)
+        if (!IncomingAiWorkout.isIncomingAction(intent)) setIntent(intent)
         noteOpenTab(intent)
     }
 
     private fun noteOpenTab(intent: Intent?) {
-        IncomingWorkoutShare.csvUri(intent)?.let { uri ->
-            goTo(Routes.sharedWorkoutImport(uri))
+        if (intent != null && IncomingAiWorkout.isIncomingAction(intent)) {
+            IncomingAiWorkout.source(intent)?.let { source ->
+                goTo(Routes.aiWorkoutImport(incoming.stage(source)))
+            }
+            if (this.intent === intent) setIntent(Intent(Intent.ACTION_MAIN))
             return
         }
         when (intent?.getStringExtra(Notifications.EXTRA_OPEN_TAB)) {
@@ -209,5 +217,22 @@ class MainActivity : ComponentActivity() {
         const val KEY_TRIAL_SEAL = "trial_seal"
         const val KEY_ROUTE_SERIAL = "route_serial"
         const val KEY_ROUTE = "route"
+    }
+}
+
+/** The navigation argument is a random reference. Workout data never goes into a saved bundle. */
+internal class IncomingWorkoutModel : ViewModel() {
+    private var pending: Pair<String, IncomingAiWorkout.Source>? = null
+
+    fun stage(source: IncomingAiWorkout.Source): String {
+        val key = UUID.randomUUID().toString()
+        pending = key to source
+        return key
+    }
+
+    fun take(key: String): IncomingAiWorkout.Source? {
+        val result = pending?.takeIf { it.first == key } ?: return null
+        pending = null
+        return result.second
     }
 }

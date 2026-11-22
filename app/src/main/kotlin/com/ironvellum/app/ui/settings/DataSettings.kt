@@ -66,7 +66,7 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit, shar
             (!sharedConsumed || (viewModel.importReview.value == null && viewModel.import.value.summary == null))
         ) {
             val csv = try {
-                IncomingWorkoutShare.readText(context, sharedCsvUri.toUri())
+                IncomingWorkoutShare.readSharedText(context, sharedCsvUri.toUri())
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {

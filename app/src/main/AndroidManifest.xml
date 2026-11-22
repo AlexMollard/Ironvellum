@@ -48,6 +48,8 @@
     -->
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
+        <package android:name="com.anthropic.claude" />
+        <package android:name="com.openai.chatgpt" />
         <intent>
             <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
         </intent>
@@ -85,6 +87,16 @@
                 <data android:mimeType="application/vnd.ms-excel" />
                 <data android:mimeType="text/plain" />
                 <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="application/json" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/json" />
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="text/csv" />
             </intent-filter>
             <intent-filter>
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
@@ -185,6 +197,8 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <receiver android:name=".ui.ai.AiShareSelectionReceiver" android:exported="false" />
 
         <!-- Android's notification player reads this provider; it serves only the bundled chime. -->
         <provider

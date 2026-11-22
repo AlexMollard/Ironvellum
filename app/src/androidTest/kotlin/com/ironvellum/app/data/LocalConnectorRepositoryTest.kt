@@ -395,6 +395,39 @@ class LocalConnectorRepositoryTest {
         assertEquals(LocalFailure.CONFLICT,(files.inspectDraft(original + 32.toByte()) as LocalInspection.Rejected).reason)
         assertEquals(0,count("presets"))
     }
+    @Test fun editedReviewKeepsOriginalBytesAndRechecksSourceAndExpiry() = runBlocking {
+        val bytes = proposal()
+        val review = (files.inspectDraft(bytes) as LocalInspection.Ready).review
+        val edit = review.draft.copy(name = "Edited workout")
+        val edited = (files.reviewEdits(review, edit) as LocalInspection.Ready).review
+        assertEquals(review.proposal.sha256, edited.proposal.sha256)
+        assertEquals("Edited workout", edited.draft.name)
+        assertEquals(0, count("presets"))
+        now = review.proposal.expiresAtMs
+        assertEquals(LocalSave.Rejected(LocalFailure.EXPIRED), files.saveDraft(edited))
+        now -= 1
+        sql.execSQL("UPDATE local_connector_exports SET contextSha256='changed'")
+        assertEquals(LocalSave.Rejected(LocalFailure.UNKNOWN_EXPORT), files.saveDraft(edited))
+        sql.execSQL("UPDATE local_connector_exports SET contextSha256=?", arrayOf(review.proposal.contextSha256))
+        val saved = files.saveDraft(edited) as LocalSave.Saved
+        assertEquals("Edited workout", files.savedPresetName(saved.localPresetId))
+        assertEquals(LocalInspection.AlreadySaved(saved.localPresetId), files.inspectDraft(bytes))
+        assertEquals(LocalInspection.Rejected(LocalFailure.CONFLICT), files.inspectDraft(bytes + 32.toByte()))
+        assertEquals(1, count("presets"))
+    }
+
+    @Test fun sourceBoundMovementEditsRequireTheExactGallerySelection() = runBlocking {
+        val review = (files.inspectDraft(proposal()) as LocalInspection.Ready).review
+        val edit = review.draft.copy(entries = review.draft.entries.map { it.copy(exerciseKey = "push-up") })
+        val bench = db.exerciseDao().byName("Bench Press")!!.id
+        val pushUp = db.exerciseDao().byName("Push-up")!!.id
+        assertEquals(LocalInspection.Rejected(LocalFailure.MOVEMENT), files.reviewEdits(review, edit))
+        assertEquals(LocalInspection.Rejected(LocalFailure.MOVEMENT), files.reviewEdits(review, edit, mapOf(0 to bench)))
+        val matched = (files.reviewEdits(review, edit, mapOf(0 to pushUp)) as LocalInspection.Ready).review
+        assertEquals(0, count("presets"))
+        sql.execSQL("UPDATE exercises SET metric='HOLD' WHERE id=?", arrayOf(pushUp))
+        assertEquals(LocalSave.Rejected(LocalFailure.MOVEMENT), files.saveDraft(matched))
+    }
     @Test fun restoreExpiryAndMovementEditsFenceOpenReviews() = runBlocking {
         val bytes = proposal()
         val review = (files.inspectDraft(bytes) as LocalInspection.Ready).review
@@ -496,7 +529,7 @@ class LocalConnectorRepositoryTest {
         // Recreate the handle the previous admission policy produced. Keep this test-only construction
         // outside the repository so the app never exposes a way to skip inspection.
         val constructor = baseline.javaClass.declaredConstructors.single().apply { isAccessible = true }
-        val oldReview = constructor.newInstance(bytes,p,baseline.exportedAtMs,true,listOf(movement)) as LocalDraftReview
+        val oldReview = constructor.newInstance(bytes,p,baseline.exportedAtMs,true,listOf(movement),p.draft) as LocalDraftReview
         assertEquals(LocalSave.Rejected(LocalFailure.MOVEMENT),files.saveDraft(oldReview))
         assertEquals(0,count("presets")); assertEquals(0,count("local_connector_receipts"))
         db.withTransaction {

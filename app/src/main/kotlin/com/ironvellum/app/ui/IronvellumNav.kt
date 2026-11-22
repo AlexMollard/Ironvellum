@@ -226,6 +226,8 @@ object Routes {
     fun settingsSection(section: SettingsSection): String = "settings/${section.key}"
 
     fun sharedWorkoutImport(uri: String): String = "${settingsSection(SettingsSection.DATA)}?sharedCsvUri=${Uri.encode(uri)}"
+    const val AI_WORKOUT_IMPORT = "ai-workout-import/{token}"
+    fun aiWorkoutImport(uri: String): String = "ai-workout-import/${Uri.encode(uri)}"
 
     fun workoutDetail(sessionId: Long): String = "workout/$sessionId"
 
@@ -261,7 +263,13 @@ private data class BottomDestination(
 )
 
 @Composable
-fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: TrialRequest? = null, routeRequest: RouteRequest? = null) {
+internal fun IronvellumRoot(
+    inboxRequest: Int = 0,
+    todayRequest: Int = 0,
+    trialRequest: TrialRequest? = null,
+    routeRequest: RouteRequest? = null,
+    takeIncomingWorkout: (String) -> com.ironvellum.app.data.IncomingAiWorkout.Source? = { null },
+) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -845,6 +853,26 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 composable(Routes.LOCAL_AI_TOOLS) {
                     com.ironvellum.app.ui.ai.LocalConnectorScreen(
                         ironvellumApp.repository.localConnector,
+                        portableRepository = ironvellumApp.repository.portableWorkout,
+                        exercises = ironvellumApp.repository.observeExercises(),
+                        onBack = { navController.popBackStack() },
+                        onConnections = { navController.navigate(Routes.AI_CONNECTIONS) },
+                        onCloudDrafts = { navController.navigate(Routes.WORKOUT_DRAFTS) },
+                        onOpenWorkout = { id -> navController.navigate(Routes.riteDetail(id)) { launchSingleTop = true } },
+                    )
+                }
+                composable(Routes.AI_WORKOUT_IMPORT) { entry ->
+                    val token = entry.arguments?.getString("token").orEmpty()
+                    com.ironvellum.app.ui.ai.LocalConnectorScreen(
+                        ironvellumApp.repository.localConnector,
+                        portableRepository = ironvellumApp.repository.portableWorkout,
+                        exercises = ironvellumApp.repository.observeExercises(),
+                        receive = { takeIncomingWorkout(token) },
+                        onOpenCsv = { uri ->
+                            navController.navigate(Routes.sharedWorkoutImport(uri.toString())) {
+                                popUpTo(entry.destination.id) { inclusive = true }
+                            }
+                        },
                         onBack = { navController.popBackStack() },
                         onConnections = { navController.navigate(Routes.AI_CONNECTIONS) },
                         onCloudDrafts = { navController.navigate(Routes.WORKOUT_DRAFTS) },

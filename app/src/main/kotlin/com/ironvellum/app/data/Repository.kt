@@ -310,6 +310,7 @@ class Repository(
 
     internal val draftStore = DraftStore(db)
     internal val localConnector = com.ironvellum.app.data.localconnector.LocalConnectorRepository(db)
+    internal val portableWorkout = com.ironvellum.app.data.localconnector.PortableWorkoutRepository(db)
     val preparations: PreparationRepository = PreparationRepository(db, warmupStore)
     private val exerciseDao = db.exerciseDao()
     private val presetDao = db.presetDao()
@@ -3962,6 +3963,7 @@ class Repository(
                 // User data goes; the seeded exercise catalogue stays.
                 db.localConnectorDao().apply {
                     clearReceipts()
+                    clearPortableReceipts()
                     clearSnapshots()
                     clearObjects()
                     clearIdentity()

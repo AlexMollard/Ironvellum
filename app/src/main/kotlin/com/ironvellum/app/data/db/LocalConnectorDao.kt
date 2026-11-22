@@ -17,6 +17,12 @@ internal data class LocalSnapshot(val datasetId: String, val snapshotId: String,
 internal data class LocalReceipt(val datasetId: String, val draftId: String, val proposalSha256: String,
     val snapshotId: String, val localPresetId: Long, val savedAtMs: Long)
 
+/** The receipt still prevents re-import after its preset is deleted. */
+@Entity(tableName = "portable_workout_receipts", primaryKeys = ["datasetId", "fingerprint"])
+internal data class PortableWorkoutReceipt(
+    val datasetId: String, val fingerprint: String, val localPresetId: Long, val savedAtMs: Long,
+)
+
 internal data class WorkoutTimes(val id: Long, val startedAtMs: Long, val completedAtMs: Long)
 internal data class ReadPresetRow(val id: Long, val name: String)
 internal data class ReadMovementRow(val id: Long, val name: String, val custom: Boolean, val metric: String)
@@ -38,6 +44,10 @@ internal interface LocalConnectorDao {
     @Query("DELETE FROM local_connector_objects") fun clearObjects()
     @Query("DELETE FROM local_connector_exports") fun clearSnapshots()
     @Query("DELETE FROM local_connector_receipts") fun clearReceipts()
+    @Insert fun insert(receipt: PortableWorkoutReceipt)
+    @Query("SELECT * FROM portable_workout_receipts WHERE datasetId=:dataset AND fingerprint=:fingerprint")
+    fun portableReceipt(dataset: String, fingerprint: String): PortableWorkoutReceipt?
+    @Query("DELETE FROM portable_workout_receipts") fun clearPortableReceipts()
 
     /** Provable lower bound for output bytes before Room materializes any training pages.
      * Every serialized record has more than the fixed framing allowance. Text only grows when escaped. */
