@@ -19,6 +19,10 @@ pub type Entries = Box<dyn Iterator<Item = Result<Entry>> + Send>;
 pub struct Directory(Arc<native::Directory>);
 
 impl Directory {
+    pub(crate) fn open_parent(path: &Selected) -> Result<Self> {
+        Ok(Self(Arc::new(path.open_context_parent()?)))
+    }
+
     pub fn open(path: &Selected, mode: OpenDir) -> Result<Self> {
         match mode {
             OpenDir::InputExisting => native::validate_volume(path)?,
@@ -262,21 +266,24 @@ fn storage_io(_: io::Error) -> LocalError {
     LocalError::StorageUnavailable
 }
 
-fn temp_name() -> Result<Name> {
+pub(crate) fn uuid_v4() -> Result<String> {
     let mut bytes = [0; 16];
     getrandom::fill(&mut bytes).map_err(|_| LocalError::StorageUnavailable)?;
     bytes[6] = (bytes[6] & 0x0f) | 0x40;
     bytes[8] = (bytes[8] & 0x3f) | 0x80;
     let hex = format!("{:032x}", u128::from_be_bytes(bytes));
-    let filename = format!(
-        ".ironvellum-{}-{}-{}-{}-{}.tmp",
+    Ok(format!(
+        "{}-{}-{}-{}-{}",
         &hex[..8],
         &hex[8..12],
         &hex[12..16],
         &hex[16..20],
         &hex[20..],
-    );
-    name(filename.as_ref())
+    ))
+}
+
+fn temp_name() -> Result<Name> {
+    name(format!(".ironvellum-{}.tmp", uuid_v4()?).as_ref())
 }
 
 pub struct LocalFiles {
@@ -298,7 +305,7 @@ impl LocalFiles {
         if context.is_within(outbox) {
             return Err(LocalError::OverlappingPaths);
         }
-        let parent = Directory(Arc::new(context.open_context_parent()?));
+        let parent = Directory::open_parent(context)?;
         let basename = name(
             context
                 .as_path()
@@ -372,7 +379,7 @@ pub fn endpoint_identities(paths: [&Selected; 3], mode: LocklessOpen) -> Result<
         .map(Directory::identity))
 }
 
-fn below(path: &Directory, parent: &Directory) -> bool {
+pub(crate) fn below(path: &Directory, parent: &Directory) -> bool {
     path.identity() == parent.identity() || path.ancestors().contains(&parent.identity())
 }
 

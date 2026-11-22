@@ -140,6 +140,10 @@ impl Directory {
             Err(e) => Err(e),
         }
     }
+    pub(crate) fn is_regular_no_follow(&self, n: &Name) -> Result<bool> {
+        let st = stat_at(self.fd(), &component(n.as_os_str())?)?;
+        Ok(st.st_mode & libc::S_IFMT == libc::S_IFREG)
+    }
     pub fn open_file(&self, n: &Name, mode: OpenFile) -> Result<File> {
         let c = component(n.as_os_str())?;
         if mode != OpenFile::CreateNew {

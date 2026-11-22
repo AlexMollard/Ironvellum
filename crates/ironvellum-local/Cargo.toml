@@ -8,6 +8,8 @@ publish = false
 [dependencies]
 getrandom = "=0.3.4"
 ironvellum-contracts = { path = "../ironvellum-contracts" }
+rusqlite = { version = "=0.37.0", features = ["bundled", "serialize", "limits"] }
+serde_json = { version = "=1.0.145", features = ["preserve_order", "arbitrary_precision"] }
 
 [target."cfg(unix)".dependencies]
 libc = "=0.2.191"

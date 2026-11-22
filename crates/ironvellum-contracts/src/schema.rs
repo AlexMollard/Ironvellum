@@ -204,7 +204,7 @@ pub fn tool(version: u8, name: &str) -> Option<&'static Value> {
 pub fn exact(n: &serde_json::Number) -> Result<BigDecimal, Refusal> {
     BigDecimal::from_str(n.as_str()).map_err(|_| Refusal::InvalidData)
 }
-fn equal(a: &Value, b: &Value) -> bool {
+pub fn equal(a: &Value, b: &Value) -> bool {
     match (a, b) {
         (Value::Number(x), Value::Number(y)) => {
             exact(x).is_ok_and(|x| exact(y).is_ok_and(|y| x == y))

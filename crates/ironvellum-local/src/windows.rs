@@ -344,6 +344,12 @@ impl Directory {
             Err(e) => Err(e),
         }
     }
+    pub(crate) fn is_regular_no_follow(&self, n: &Name) -> Result<bool> {
+        let metadata = fs::symlink_metadata(self.path.join(n.as_os_str())).map_err(map_io)?;
+        Ok(metadata.is_file()
+            && metadata.file_attributes() & (FILE_ATTRIBUTE_REPARSE_POINT | FILE_ATTRIBUTE_DEVICE)
+                == 0)
+    }
     pub fn owned_entries(
         self: std::sync::Arc<Self>,
     ) -> Result<impl Iterator<Item = Result<Entry>> + Send + 'static> {
