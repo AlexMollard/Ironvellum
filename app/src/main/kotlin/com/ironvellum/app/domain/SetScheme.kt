@@ -171,17 +171,18 @@ data class SetScheme(
         /** What the column holds back as a scheme: null or anything unreadable is Straight, every figure clamped to its sane range. */
         fun decode(text: String?): SetScheme {
             if (text.isNullOrBlank()) return DEFAULT
-            val fields = text.split(';').mapNotNull { part ->
-                val at = part.indexOf('=')
-                if (at <= 0) null else part.substring(0, at).trim() to part.substring(at + 1).trim()
-            }.toMap()
+            val fields = SchemeFields(text)
             val type = SchemeType.fromWire(fields["t"])
             val base = SetScheme(type = type)
             fun int(key: String, default: Int, range: IntRange) = fields[key]?.toIntOrNull()?.coerceIn(range) ?: default
             fun range(key: String, default: IntRange, within: IntRange): IntRange {
-                val parts = fields[key]?.split('-') ?: return default
-                val low = (parts.getOrNull(0)?.toIntOrNull() ?: return default).coerceIn(within)
-                val high = (parts.getOrNull(1)?.toIntOrNull() ?: low).coerceIn(within)
+                val value = fields[key] ?: return default
+                val first = value.indexOf('-').let { if (it < 0) value.length else it }
+                val low = (value.substring(0, first).toIntOrNull() ?: return default).coerceIn(within)
+                val high = if (first == value.length) low else {
+                    val second = value.indexOf('-', first + 1).let { if (it < 0) value.length else it }
+                    value.substring(first + 1, second).toIntOrNull()?.coerceIn(within) ?: low
+                }
                 return low..maxOf(low, high)
             }
             return base.copy(
@@ -194,18 +195,88 @@ data class SetScheme(
                 dropSets = int("ds", base.dropSets, 1..MAX_CUSTOM_SETS),
                 dropCount = int("dc", base.dropCount, 1..MAX_DROPS),
                 dropPercent = int("dp", base.dropPercent, PERCENT_RANGE),
-                custom = fields["ck"]?.split(',')?.map { SetKind.fromWire(it) }?.filter { it != SetKind.WARMUP }
-                    ?.take(MAX_CUSTOM_SETS).orEmpty(),
+                custom = fields.customKinds(),
                 restAfterTopSec = int("rt", base.restAfterTopSec, REST_RANGE_SEC),
                 warmupRamp = fields["wr"] == "1",
-                workingReps = fields["rr"]?.let { range("rr", 1..1, 1..WORKING_REPS_MAX) }
-                    ?.takeIf { it.first < it.last && (type == SchemeType.STRAIGHT || type == SchemeType.DROPS) },
+                workingReps = range("rr", 1..1, 1..WORKING_REPS_MAX)
+                    .takeIf { it.first < it.last && (type == SchemeType.STRAIGHT || type == SchemeType.DROPS) },
             )
         }
 
         private fun rangeText(r: IntRange) = if (r.first == r.last) "${r.first}" else "${r.first}-${r.last}"
 
         private fun kgText(kg: Double) = if (kg == Math.floor(kg)) kg.toLong().toString() else kg.toString()
+    }
+}
+
+/** Retain only the final span of each known field, even in long, repeatedly edited legacy schemes. */
+private class SchemeFields(private val text: String) {
+    private val starts = IntArray(keys.size) { -1 }
+    private val ends = IntArray(keys.size)
+
+    init {
+        var start = 0
+        while (start < text.length) {
+            var end = start
+            var equals = -1
+            while (end < text.length && text[end] != ';') {
+                if (equals == -1 && text[end] == '=') equals = end
+                end++
+            }
+            if (equals > start) {
+                val left = trimStart(start, equals)
+                val right = trimEnd(left, equals)
+                for (i in keys.indices) {
+                    val key = keys[i]
+                    if (right - left == key.length && text.regionMatches(left, key, 0, key.length)) {
+                        starts[i] = trimStart(equals + 1, end)
+                        ends[i] = trimEnd(starts[i], end)
+                        break
+                    }
+                }
+            }
+            start = end + 1
+        }
+    }
+
+    private fun trimStart(start: Int, end: Int): Int {
+        var i = start
+        while (i < end && text[i].isWhitespace()) i++
+        return i
+    }
+
+    private fun trimEnd(start: Int, end: Int): Int {
+        var i = end
+        while (i > start && text[i - 1].isWhitespace()) i--
+        return i
+    }
+
+    operator fun get(key: String): String? {
+        val i = keys.indexOf(key)
+        return if (starts[i] < 0) null else text.substring(starts[i], ends[i])
+    }
+
+    fun customKinds(): List<SetKind> = buildList {
+        val i = keys.indexOf("ck")
+        var start = starts[i]
+        if (start < 0) return@buildList
+        val end = ends[i]
+        while (start <= end && size < SetScheme.MAX_CUSTOM_SETS) {
+            var comma = start
+            while (comma < end && text[comma] != ',') comma++
+            val left = trimStart(start, comma)
+            val right = trimEnd(left, comma)
+            // Warm-ups do not consume a slot. Avoid creating a String for every discarded warm-up.
+            val warmup = SetKind.WARMUP.wire
+            if (right - left != warmup.length || !text.regionMatches(left, warmup, 0, warmup.length, ignoreCase = true)) {
+                add(SetKind.fromWire(text.substring(left, right)))
+            }
+            start = comma + 1
+        }
+    }
+
+    companion object {
+        private val keys = arrayOf("t", "tr", "rir", "bo", "bf", "bp", "br", "ds", "dc", "dp", "ck", "rt", "wr", "rr")
     }
 }
 

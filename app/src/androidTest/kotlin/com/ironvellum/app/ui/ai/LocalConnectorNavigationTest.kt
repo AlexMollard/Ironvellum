@@ -38,7 +38,7 @@ class LocalConnectorNavigationTest {
         compose.onNodeWithContentDescription("Train").performClick()
         compose.mainClock.advanceTimeBy(1_200)
         shot("train_dark_plain")
-        shown("AI tools").performScrollTo().performClick()
+        compose.onNodeWithText("AI tools").performScrollTo().assertIsDisplayed().performClick()
         shown("Share training file")
         shown("Import workout draft")
         shot("tools_dark_plain")

@@ -1,0 +1,163 @@
+{
+  "list_workouts": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "snapshot": {
+        "$ref": "tool-types-v2.schema.json#/$defs/snapshot"
+      },
+      "workouts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "context-v2.schema.json#/$defs/opaqueId"
+            },
+            "startedAtMs": {
+              "$ref": "context-v2.schema.json#/$defs/time"
+            },
+            "completedAtMs": {
+              "$ref": "context-v2.schema.json#/$defs/time"
+            },
+            "setCount": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            }
+          },
+          "required": [
+            "id",
+            "startedAtMs",
+            "completedAtMs",
+            "setCount"
+          ]
+        },
+        "maxItems": 50
+      },
+      "nextCursor": {
+        "anyOf": [
+          {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "required": [
+      "snapshot",
+      "workouts",
+      "nextCursor"
+    ]
+  },
+  "get_workout": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "snapshot": {
+        "$ref": "tool-types-v2.schema.json#/$defs/snapshot"
+      },
+      "workout": {
+        "$ref": "context-v2.schema.json#/$defs/workout"
+      },
+      "routines": {
+        "type": "array",
+        "items": {
+          "$ref": "context-v2.schema.json#/$defs/routine"
+        }
+      }
+    },
+    "required": [
+      "snapshot",
+      "workout",
+      "routines"
+    ]
+  },
+  "get_progress": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "snapshot": {
+        "$ref": "tool-types-v2.schema.json#/$defs/snapshot"
+      },
+      "progress": {
+        "$ref": "context-v2.schema.json#/$defs/progress"
+      }
+    },
+    "required": [
+      "snapshot",
+      "progress"
+    ]
+  },
+  "list_saved_workouts": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "snapshot": {
+        "$ref": "tool-types-v2.schema.json#/$defs/snapshot"
+      },
+      "savedWorkouts": {
+        "type": "array",
+        "items": {
+          "$ref": "context-v2.schema.json#/$defs/preset"
+        },
+        "maxItems": 50
+      },
+      "routines": {
+        "type": "array",
+        "items": {
+          "$ref": "context-v2.schema.json#/$defs/routine"
+        }
+      },
+      "nextCursor": {
+        "anyOf": [
+          {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "required": [
+      "snapshot",
+      "savedWorkouts",
+      "routines",
+      "nextCursor"
+    ]
+  },
+  "search_movements": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "snapshot": {
+        "$ref": "tool-types-v2.schema.json#/$defs/snapshot"
+      },
+      "movements": {
+        "type": "array",
+        "items": {
+          "$ref": "tool-types-v2.schema.json#/$defs/movementResult"
+        },
+        "maxItems": 20
+      }
+    },
+    "required": [
+      "snapshot",
+      "movements"
+    ]
+  },
+  "create_workout_draft": {
+    "$ref": "tool-types-v2.schema.json#/$defs/proposedFile"
+  },
+  "get_workout_draft": {
+    "$ref": "tool-types-v2.schema.json#/$defs/proposedFile"
+  }
+}

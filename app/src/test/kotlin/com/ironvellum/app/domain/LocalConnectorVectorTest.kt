@@ -33,6 +33,27 @@ class LocalConnectorVectorTest {
         assertEquals(LocalFailure.FILE_LIMIT, error.reason)
     }
 
+    @Test fun completeV2FixtureMatchesEncoderDecoderAndIndependentMetricTotals() {
+        val bytes = File(contracts,"fixtures/v2/context.json").readBytes()
+        val context = Json.decodeFromString<ReadContext>(bytes.decodeToString())
+        assertArrayEquals(bytes, context.encode())
+        val actual = readProgress(context.workouts, context.movements.associateBy { it.key })
+        assertEquals(context.progress, actual)
+        assertEquals(12L, actual.completedReps)
+        assertEquals(20.0, actual.externalVolumeKg, 0.0)
+        assertEquals(18L, actual.holdSeconds)
+        assertEquals(105L, actual.activitySeconds)
+        assertEquals(103.5, actual.distanceM, 0.0)
+        assertEquals(3L, actual.attempts)
+        val assisted = actual.lifts.single { it.exerciseKey == "assisted dip" }
+        assertNull(assisted.maxExternalLoadKg)
+        assertEquals(12.5, assisted.maxAssistanceKg!!, 0.0)
+        val entry = context.savedWorkouts.single().entries.single()
+        assertEquals(entry.scheme, readScheme(entry.schemeRaw))
+        val invalid = Json.decodeFromString<ReadContext>(File(contracts,"fixtures/v2/invalid-progress.json").readText())
+        assertNotEquals(readProgress(invalid.workouts, invalid.movements.associateBy { it.key }), invalid.progress)
+    }
+
     @Test fun sharedWireVectorsMatchProductionSerializerProgressAndEntireCatalogue() {
         val dataset = "b7553464-9b0a-47ea-bd63-94f1f2c5d171"
         val snapshot = "14a23d60-061f-4cd1-bd5e-dae345f37231"

@@ -15,7 +15,7 @@ internal class LocalContextExport(bytes: ByteArray, val summary: LocalExportSumm
 
 internal enum class LocalFailure { INVALID_FILE, UNSUPPORTED_FORMAT, FILE_LIMIT, WRONG_DATASET, UNKNOWN_EXPORT,
     CONFLICT, EXPIRED, FUTURE, MOVEMENT, CATALOGUE_LIMIT, STORAGE, INVALID_HISTORY }
-internal class LocalExportException(val reason: LocalFailure) : IllegalStateException(reason.name)
+internal class LocalExportException(val reason: LocalFailure, cause: Throwable? = null) : IllegalStateException(reason.name, cause)
 private class Refused(val reason: LocalFailure) : RuntimeException()
 
 internal sealed interface LocalDraftReview {
@@ -75,38 +75,9 @@ internal class LocalConnectorRepository(private val db: IronvellumDatabase, priv
             val snapshot = uuid()
             val generated = clock()
             if (generated !in 0..MAX_LOCAL_TIME) throw Refused(LocalFailure.INVALID_HISTORY)
-            val supported = movementRows().groupBy { Titles.normaliseName(it.name) }.mapNotNull { (key, matches) ->
-                val row = matches.singleOrNull() ?: return@mapNotNull null
-                if (row.custom || row.metric != "REPS" || !LocalCatalogue.acceptsDraft(key)) null
-                else row.id to key
-            }.toMap()
-            val supportedIds = supported.keys.toList()
-            var unsupportedSets = 0L
-            var truncatedSets = 0L
-            val workouts = dao.completed().map { workout ->
-                if (workout.startedAtMs !in 0..MAX_LOCAL_TIME || workout.completedAtMs !in workout.startedAtMs..MAX_LOCAL_TIME)
-                    throw Refused(LocalFailure.INVALID_HISTORY)
-                val total = dao.doneCount(workout.id)
-                val eligible = dao.supportedSets(workout.id, supportedIds)
-                val sets = dao.sets(workout.id, supportedIds).mapIndexed { i, row ->
-                    LocalSet(i, supported.getValue(row.exerciseId), row.reps, row.weightKg)
-                }
-                unsupportedSets += total - eligible
-                truncatedSets += eligible - sets.size
-                LocalWorkout(opaque("workout", workout.id), workout.startedAtMs, workout.completedAtMs, sets)
-            }.sortedWith(compareByDescending<LocalWorkout> { it.completedAtMs }.thenBy { it.id })
-            val eligiblePresets = dao.supportedPresets(supportedIds)
-            val presets = dao.presets(supportedIds).map { preset ->
-                LocalPreset(opaque("preset", preset.id), preset.name, preset.warmup, preset.cooldown, dao.entries(preset.id).map {
-                    LocalEntry(supported.getValue(it.exerciseId), it.targetSets, it.targetReps, it.targetWeightKg)
-                })
-            }.sortedBy { it.id }
-            val progress = progress(workouts)
-            val coverage = LocalCoverage(workouts.size, dao.completedCount() - workouts.size, progress.completedSets,
-                truncatedSets, unsupportedSets, presets.size, eligiblePresets - presets.size, dao.presetCount() - eligiblePresets)
-            val context = LocalContext("ironvellum.training-context", 1, dataset, snapshot, generated,
-                LocalCatalogue.identity, coverage, workouts, presets, progress)
+            val context = ReadTrainingProjection(dao, ::opaque).context(dataset, snapshot, generated)
             val bytes = context.encode()
+            val coverage = context.coverage
             dao.insert(LocalSnapshot(dataset, snapshot, LocalConnectorFiles.sha256(bytes), generated))
             LocalContextExport(bytes, LocalExportSummary(dataset, snapshot, generated, coverage))
         }
