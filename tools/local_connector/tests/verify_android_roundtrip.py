@@ -15,6 +15,9 @@ import uuid
 from mcp import ClientSession, StdioServerParameters
 from mcp.client import stdio
 
+from ironvellum_local_connector.settings import ConnectorSettings, save_settings
+from ironvellum_local_connector.storage import FolderFiles
+
 REPO = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO / "tools"))
 import device
@@ -29,11 +32,24 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
-async def propose(work, context):
+def watched_settings(work, source, context):
+    settings = ConnectorSettings(work / "inbox", work / "outbox", work / "state",
+                                 source["datasetId"], watch_enabled=True)
+    settings.input_directory.mkdir()
+    path = work / "config" / "settings.json"
+    save_settings(path, settings)
+    (settings.input_directory / "android-export.json").write_bytes(context)
+    return path, settings.input_directory
+
+
+async def propose(work, context, *, watch=False):
     source = json.loads(context)
     outbox = work / "outbox"
     args = ["-I", "-m", "ironvellum_local_connector", "--context", str(work / "context.json"),
             "--outbox", str(outbox)]
+    if watch:
+        config, inbox = watched_settings(work, source, context)
+        args = ["-I", "-m", "ironvellum_local_connector", "serve-folder", "--settings", str(config)]
     params = StdioServerParameters(command=sys.executable, args=args, cwd=str(work))
     # SDK 2.3 owns the child. Retain its real process handle to check the observed exit after SDK cleanup.
     spawn = stdio._create_platform_compatible_process
@@ -48,12 +64,27 @@ async def propose(work, context):
         async with stdio.stdio_client(params) as streams, ClientSession(*streams) as client:
             await client.initialize()
 
+            token = digest(context)
+
             async def call(tool, arguments):
+                if watch and tool != "get_training_status":
+                    arguments = dict(arguments, sourceSha256=token)
                 response = await client.call_tool(tool, arguments)
                 assert not response.is_error, tool
                 return response.structured_content
 
-            assert len((await client.list_tools()).tools) == 7
+            async def loaded(expected):
+                async with asyncio.timeout(12):
+                    while True:
+                        status = await call("get_training_status", {})
+                        if status["status"] == "ready" and status["sourceSha256"] == expected:
+                            return status["snapshot"]
+                        await asyncio.sleep(.25)
+
+            assert len((await client.list_tools()).tools) == (9 if watch else 7)
+            if watch:
+                snapshot = await loaded(token)
+                assert snapshot["snapshotId"] == source["snapshotId"] and snapshot["datasetId"] == source["datasetId"]
             listed = (await call("list_workouts", {}))["workouts"]
             assert len(listed) == 1 and listed[0]["id"] == source["workouts"][0]["id"]
             workout = (await call("get_workout", {"id": listed[0]["id"]}))["workout"]
@@ -75,6 +106,25 @@ async def propose(work, context):
             assert created["filename"] == path.name
             raw = path.read_bytes()
             assert json.loads(raw) == proposal
+            if watch:
+                item, = (await call("list_ready_drafts", {}))["items"]
+                assert item["draftId"] == proposal["draftId"] and item["filename"] == path.name
+                assert item["uri"] == f"ironvellum-draft://{token}/{proposal['draftId']}"
+                resource, = (await client.read_resource(item["uri"])).contents
+                assert resource.text.encode() == raw
+
+                # Only B is derived. A remains the byte-for-byte Android export.
+                refreshed = dict(source, snapshotId=str(uuid.uuid4()), exportedAtMs=source["exportedAtMs"] + 1)
+                refresh_bytes = json.dumps(refreshed, ensure_ascii=False, separators=(",", ":")).encode()
+                (inbox / "next-export.json").write_bytes(refresh_bytes)
+                b_token = digest(refresh_bytes)
+                snapshot = await loaded(b_token)
+                assert snapshot["snapshotId"] == refreshed["snapshotId"] and snapshot["datasetId"] == source["datasetId"]
+                old, = (await call("list_ready_drafts", {}))["items"]
+                assert old == item and path.read_bytes() == raw
+                resource, = (await client.read_resource(item["uri"])).contents
+                assert resource.text.encode() == raw
+                print(f"Watched refresh SHA-256 {b_token}; original SDK artifact still matches {digest(raw)}")
             retry = await call("create_workout_draft", arguments)
             assert retry["proposal"] == proposal and retry["filename"] == path.name and raw == path.read_bytes()
             assert (await call("get_workout_draft", {"draftId": proposal["draftId"]}))["proposal"] == proposal
@@ -82,7 +132,7 @@ async def propose(work, context):
     return raw
 
 
-def verify(work):
+def verify(work, *, watch=False):
     sdk = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
     if not sdk and os.name == "nt":
         sdk = Path(os.environ["LOCALAPPDATA"]) / "Android/Sdk"
@@ -115,7 +165,13 @@ def verify(work):
     for apk, package in installs:
         info = subprocess.check_output([str(aapt), "dump", "badging", str(apk)]).decode("utf-8")
         assert re.search(r"^package: name='" + re.escape(package) + "'", info, re.M), apk
-    work.mkdir(mode=0o700, parents=False, exist_ok=False)
+    if watch:
+        if work.exists():
+            raise FileExistsError(work)
+        with FolderFiles(work):
+            pass
+    else:
+        work.mkdir(mode=0o700, parents=False, exist_ok=False)
     with device.emulator_lock("Personal file round trip"):
         assert device_call("shell", "getprop", "ro.kernel.qemu").strip() == b"1"
         for apk, _ in installs:
@@ -125,7 +181,7 @@ def verify(work):
             source = device_call("exec-out", "run-as", PACKAGE, "cat", f"files/local-roundtrip-{run_id}.json")
             assert digest(source) == exported
             (work / "context.json").write_bytes(source)
-            raw = asyncio.run(asyncio.wait_for(propose(work, source), timeout=60))
+            raw = asyncio.run(asyncio.wait_for(propose(work, source, watch=watch), timeout=60))
             saved = instrument("import", "proposalSha256", raw)
             assert saved == digest(raw)
         finally:
@@ -134,7 +190,8 @@ def verify(work):
             device_call("shell", "run-as", PACKAGE, "rm", "-f", "files/" + prefix + ".json",
                         *["databases/" + prefix + ".db" + suffix for suffix in ("", "-shm", "-wal", "-journal")])
     print(f"Context {len(source)} bytes SHA-256 {exported}\nProposal {len(raw)} bytes SHA-256 {saved}")
-    print("Two isolated Android phases, seven installed SDK tool calls and one committed Room receipt passed.")
+    mode = "Watched SDK (same-dataset refresh and exact resource bytes)" if watch else "Immutable SDK"
+    print(f"{mode}: two isolated Android phases and one committed Room receipt passed.")
 
 
 if __name__ == "__main__":
@@ -142,4 +199,6 @@ if __name__ == "__main__":
         raise SystemExit("Verification requires assertions")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path, help="New directory for synthetic files and both Android reports")
-    verify(parser.parse_args().output.resolve())
+    parser.add_argument("--watch", action="store_true", help="Verify watched adoption and original artifact after refresh")
+    args = parser.parse_args()
+    verify(args.output.resolve(), watch=args.watch)

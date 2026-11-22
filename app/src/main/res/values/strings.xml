@@ -7599,7 +7599,8 @@
     <string name="local_ai_private">Kept private</string>
     <string name="local_ai_private_hint">Notes, session labels, health and body data, profiles, photos, social activity, rewards, archives and unfinished workouts.</string>
     <string name="local_ai_private_hint__t">Notes, session labels, health and body data, profiles, photos, social activity, rewards, archives and unfinished trials.</string>
-    <string name="local_ai_transfer">Share the file, or save it to Downloads to copy by USB. To update your AI, transfer the new file to your computer and restart the connector.</string>
+    <string name="local_ai_transfer">Transfer the training file to your computer. With folder watching enabled, put new exports in the chosen folder. For a fixed file, replace it and restart the connector.</string>
+    <string name="local_ai_transfer__t">Transfer the training file to your computer. With folder watching enabled, put new exports in the chosen folder. For a fixed file, replace it and restart the connector.</string>
     <string name="local_ai_file_saved">Training file saved on this device.</string>
     <string name="local_ai_write_error">Couldn’t save the file. Choose an available location and try again.</string>
     <string name="local_ai_share_error">Couldn’t open sharing. Try again or save the file on this device.</string>
@@ -7746,6 +7747,12 @@
     <string name="local_ai_raw_save__t">Save a copy</string>
     <string name="local_ai_using_pc">Using AI on your PC</string>
     <string name="local_ai_using_pc__t">Using AI on your PC</string>
-    <string name="local_ai_pc_hint">Transfer a training file and follow the desktop connector guide.</string>
-    <string name="local_ai_pc_hint__t">Transfer a training file and follow the desktop connector guide.</string>
+    <string name="local_ai_pc_hint">Your agent can set up the connection on your computer.</string>
+    <string name="local_ai_pc_hint__t">Your agent can set up the connection on your computer.</string>
+    <string name="local_ai_pc_copy">Copy setup instructions</string>
+    <string name="local_ai_pc_copy__t">Copy setup instructions</string>
+    <string name="local_ai_pc_copied">Setup instructions copied</string>
+    <string name="local_ai_pc_copied__t">Setup instructions copied</string>
+    <string name="local_ai_pc_request">Set up my Ironvellum personal connector using %1$s. Install the verified source in an isolated Python environment. Ask which folders and AI client to use. Preserve my other settings. Verify MCP initialization, tool listing and read-only training status. Tell me if I need to reload the client or transfer a file.</string>
+    <string name="local_ai_pc_request__t">Set up my Ironvellum personal connector using %1$s. Install the verified source in an isolated Python environment. Ask which folders and AI client to use. Preserve my other settings. Verify MCP initialization, tool listing and read-only training status. Tell me if I need to reload the client or transfer a file.</string>
 </resources>

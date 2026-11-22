@@ -94,6 +94,12 @@ tools/local_connector/.venv/bin/python -I tools/local_connector/tests/verify_and
 
 On Windows use the virtual environment's `Scripts/python.exe`. Only contributor verification uses the emulator and ADB. The consumer workflow uses files selected by the lifter.
 
+Add `--watch` and use a new output directory to verify watched folder mode. The
+driver adopts the exact Android export, reads the draft through the SDK resource,
+loads a newer synthetic snapshot from the same dataset, and imports the original
+draft into the isolated Android database. Omitting `--watch` runs the immutable
+single-file exchange.
+
 ## Local development MCP
 
 The [development MCP setup](../tools/development_mcp/README.md) covers device

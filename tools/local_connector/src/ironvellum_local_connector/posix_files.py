@@ -83,7 +83,7 @@ def local_volume(fd):
 
 
 class Directory:
-    def __init__(self, path, stack, private=False):
+    def __init__(self, path, stack, private=False, *, create=True):
         flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
         fd = os.open("/", flags)
         stack.callback(os.close, fd)
@@ -92,7 +92,7 @@ class Directory:
             local_volume(fd)
             info = os.fstat(fd)
             self.ancestors.add((info.st_dev, info.st_ino))
-            if private and i == len(path.parts):
+            if create and private and i == len(path.parts):
                 try:
                     os.mkdir(name, 0o700, dir_fd=fd)
                     os.fsync(fd)
@@ -110,6 +110,8 @@ class Directory:
         self.identity = (os.fstat(fd).st_dev, os.fstat(fd).st_ino)
 
     def open(self, name, mode):
+        if mode == "existing_lock":
+            mode = "rb"
         flags = {"rb": os.O_RDONLY, "xb": os.O_WRONLY | os.O_CREAT | os.O_EXCL,
                  "lock": os.O_RDWR | os.O_CREAT}[mode]
         if mode != "xb":

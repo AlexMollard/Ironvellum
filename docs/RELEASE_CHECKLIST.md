@@ -97,8 +97,63 @@ The complete local gate ran alone and returned **GATE GREEN in 578.53 seconds
 
 The first full run caught the new preference classification and 16 lint errors;
 those were fixed and independently reviewed before the green complete rerun.
-Desktop watched-input setup and the optional window are a separate work item;
-this evidence does not claim those implementations are finished.
+This phone-only gate predates the desktop PC-guide changes. Final integration
+evidence, including those changes, is recorded below.
+
+### AI round trip: final integration verification (2026-11-22 UTC)
+
+Source `c3de5ee0` completed the entire local Android/web gate in **591.81
+seconds**, below the unchanged 600-second limit. The run was isolated from other
+builds. Evidence: `.tmp/ai-roundtrip-final-integration-gate-2/`.
+
+- JVM: 2,948 tests, zero failures/errors; one existing optional CatalogueExport
+  assumption skip with IRONVELLUM_EXPORT unset.
+- API 35 emulator: 989 tests, zero failures/errors/skips; no owner phone tests.
+- Release lint: zero issues. Both Android flavour builds completed; the
+  instrumented runtime was Foss and Play instrumented APKs compiled.
+- Web: 380 tests in 35 files, generated assets and production build passed.
+- Connector integration: installed Windows suite 162 passed and four subtests,
+  three POSIX-only skips; final exact-source focused checks 34 Windows passes
+  with two skips and 29 native Linux passes with four Windows-only skips.
+- All phone and desktop task reviews and whole-change reviews are approved.
+  Final desktop fixes cover damaged archive/worker recovery, current folder
+  inventory versus retained session training, pending-action controls,
+  read-only archive locking, stable focus identity and coverage counters.
+
+The first integration run passed all the same tests but was **GATE RED at
+11m32s** for exceeding the timing budget. Its cold boot took 34s and per-test
+logs showed broad slowdown across existing cases; the two added guide cases
+took 1.920s together. This second complete run used the same source, all tests
+and budget with the emulator already running. The earlier red result is kept
+at `.tmp/ai-roundtrip-final-integration-gate/`; timing comparison is
+`.tmp/ai-roundtrip-gate-timing-comparison.json`. This does not establish a
+sub-ten-minute cold-start guarantee. Existing dependency engine, Compose
+deprecation and web chunk-size advisories remain in the raw logs.
+
+Computer control stopped on the owner's instruction. Remaining native desktop
+settings/recovery/source-choice visuals, keyboard/resize/large-text and
+macOS/Linux GUI checks are unverified. The prior Windows running capture
+predates final type sizing/copy. No actual Claude/ChatGPT ingestion, provider
+upload, owner-phone installation or owner connector configuration/runtime
+change was performed. File transfer and explicit workout review/Save remain
+user actions. This is source verification, not a release or deployment.
+
+### Watched desktop handoff verification (2026-11-22 UTC)
+
+The installed Windows connector and official SDK adopted the 4,515-byte
+Android export with SHA-256
+`5a67285b35db67ee53e6a5862b826be34f732309c678ffd89a5e243b126c2299`.
+The SDK read the original 533-byte draft resource again after a newer synthetic
+snapshot from the same dataset was loaded. The backend-free API 35 receipt
+fixture imported those unchanged bytes and committed one Room receipt with
+SHA-256 `acc117d51e2954d2ec5f283e346493261f68f2c06c40637c785c2f37ab5e8ce2`.
+The same driver passed in immutable mode. [Reproduce both file exchanges](DEVELOPMENT.md#verify-the-personal-file-exchange).
+
+The optional window displayed a real verified Windows SDK session, its loaded
+training and a ready draft. After the native preview exited normally, that
+same SDK session read a workout and created a second draft. Settings and recovery
+screens, native keyboard/resize and large text, and macOS/Linux GUI behavior
+remain visually unverified. The local Android gate is tracked separately.
 
 ### Final personal connector source verification (2026-11-22 UTC)
 

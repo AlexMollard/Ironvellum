@@ -99,6 +99,30 @@ class LocalConnectorScreensTest {
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
     private val oldWords = Words.themed
 
+    @Test fun pcGuideCopiesStaticSetupRequestAndKeepsTrainingActionsAvailable() {
+        verifyPcGuide(false)
+    }
+
+    @Test fun themedPcGuideCopiesTheLocalizedSetupRequest() {
+        verifyPcGuide(true)
+    }
+
+    private fun verifyPcGuide(themed: Boolean) {
+        open(light = themed)
+        click("Using AI on your PC")
+        click("Copy setup instructions")
+        find("Setup instructions copied").assertIsDisplayed()
+        val clipboard = compose.activity.getSystemService(android.content.ClipboardManager::class.java)
+        val guide = "https://github.com/AlexMollard/Ironvellum/blob/main/tools/local_connector/AGENT_SETUP.md"
+        val key = if (themed) com.ironvellum.app.R.string.local_ai_pc_request__t else com.ironvellum.app.R.string.local_ai_pc_request
+        val expected = context.getString(key, guide)
+        compose.runOnIdle { assertEquals(expected, clipboard.primaryClip?.getItemAt(0)?.text?.toString()) }
+        if (!themed) {
+            click("Paste workout code")
+            find("Paste workout code here").assertIsDisplayed()
+        }
+    }
+
     @Test fun abandoningInvalidPasteClearsItAndColdRestoringPasteOffersRetry() {
         checkColdImportRestore(incoming = false) {
             click("Paste workout code")

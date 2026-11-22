@@ -6792,7 +6792,8 @@
     <string name="local_ai_private">Données gardées privées</string>
     <string name="local_ai_private_hint">Notes, libellés de séance, données de santé et mesures corporelles, profils, photos, activité sociale, récompenses, archives et séances en cours.</string>
     <string name="local_ai_private_hint__t">Notes, libellés de séance, données de santé et mesures corporelles, profils, photos, activité sociale, récompenses, archives et séances en cours.</string>
-    <string name="local_ai_transfer">Partage le fichier ou enregistre-le dans Téléchargements pour le copier par USB. Pour actualiser les données de ton IA, transfère le nouveau fichier sur ton ordinateur et redémarre le connecteur.</string>
+    <string name="local_ai_transfer">Transférez le fichier d’entraînement sur votre ordinateur. Si la surveillance est activée, placez les nouveaux exports dans le dossier choisi. Pour un fichier fixe, remplacez-le et redémarrez le connecteur.</string>
+    <string name="local_ai_transfer__t">Transférez le fichier d’entraînement sur votre ordinateur. Si la surveillance est activée, placez les nouveaux exports dans le dossier choisi. Pour un fichier fixe, remplacez-le et redémarrez le connecteur.</string>
     <string name="local_ai_file_saved">Fichier d’entraînement enregistré sur cet appareil.</string>
     <string name="local_ai_write_error">Impossible d’enregistrer le fichier. Choisis un emplacement disponible et réessaie.</string>
     <string name="local_ai_share_error">Impossible d’ouvrir le partage. Réessaie ou enregistre le fichier sur cet appareil.</string>
@@ -6934,6 +6935,12 @@
     <string name="local_ai_raw_save__t">Enregistrer une copie</string>
     <string name="local_ai_using_pc">Utiliser une IA sur votre ordinateur</string>
     <string name="local_ai_using_pc__t">Utiliser une IA sur votre ordinateur</string>
-    <string name="local_ai_pc_hint">Transférez un fichier d’entraînement et suivez le guide du connecteur de bureau.</string>
-    <string name="local_ai_pc_hint__t">Transférez un fichier d’entraînement et suivez le guide du connecteur de bureau.</string>
+    <string name="local_ai_pc_hint">Votre agent peut configurer la connexion sur votre ordinateur.</string>
+    <string name="local_ai_pc_hint__t">Votre agent peut configurer la connexion sur votre ordinateur.</string>
+    <string name="local_ai_pc_copy">Copier les instructions de configuration</string>
+    <string name="local_ai_pc_copy__t">Copier les instructions de configuration</string>
+    <string name="local_ai_pc_copied">Instructions de configuration copiées</string>
+    <string name="local_ai_pc_copied__t">Instructions de configuration copiées</string>
+    <string name="local_ai_pc_request">Configure mon connecteur personnel Ironvellum en suivant %1$s. Installe le code source vérifié dans un environnement Python isolé. Demande quels dossiers et quel client IA utiliser. Conserve mes autres réglages. Vérifie l’initialisation MCP, la liste des outils et l’état de l’entraînement en lecture seule. Indique si je dois recharger le client ou transférer un fichier.</string>
+    <string name="local_ai_pc_request__t">Configure mon connecteur personnel Ironvellum en suivant %1$s. Installe le code source vérifié dans un environnement Python isolé. Demande quels dossiers et quel client IA utiliser. Conserve mes autres réglages. Vérifie l’initialisation MCP, la liste des outils et l’état de l’entraînement en lecture seule. Indique si je dois recharger le client ou transférer un fichier.</string>
 </resources>

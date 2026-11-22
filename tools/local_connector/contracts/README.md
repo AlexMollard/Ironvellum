@@ -42,6 +42,14 @@ Optional limits default to 20. Pages admit 1–50 and search admits 1–20. Retu
 
 Namespace idempotency by dataset UUID, snapshot UUID and the case-sensitive key. Compare the validated draft body, preserving entry order, names and decimal value. Numerically equivalent target spellings identify the same payload. Return identical stored proposal bytes on retry, including across a restart. A changed body conflicts. At 1000 journaled proposals, existing retries remain available and new admission fails. Never overwrite an existing unrelated file.
 
+### Folder-mode tool contract
+
+[tools-watch-v1.json](tools-watch-v1.json) defines the two additional tools and identifies the seven source-scoped tools. The running server adds the required `sourceSha256` argument to each closed input alternative for those seven tools. It advertises their v1/v2 output schemas as alternatives, including v2 collection views. Each call resolves the exact token first, then applies that export version's original validation and result shape. A token that the process no longer retains returns `source_expired`. Cursors, metadata and proposal idempotency stay scoped to the resolved source.
+
+Call `get_training_status` with an empty object. It returns the current snapshot metadata and token, pending dataset summaries, and refresh diagnostics. Before adoption, the snapshot and token are null. Dataset choice is made locally in connector settings.
+
+`list_ready_drafts` returns up to 20 exact published proposals in draft UUID order. It accepts that source's token and optional zero-based `offset` and `limit`. Continue with `nextOffset` while it is non-null. The list can change if files are published or moved between calls. An MCP resource URI uses the exact form `ironvellum-draft://<sourceSha256>/<draftId>`. A read returns the original UTF-8 JSON at that URI. A moved or missing file is unavailable. A changed or unsafe file reports an outbox conflict. Resource reads and listing leave proposals and journal entries unchanged.
+
 ## Shared byte vectors
 
 [fixtures](fixtures/) contains a context from the real Kotlin encoder, an intentionally space-prefixed CRLF-terminated proposal, and SHA256SUMS over both files. They use synthetic dated data, a Unicode saved name, a high-precision numeric target and null load. Their historical timestamps make a fixed test clock necessary when exercising new save. The regular JVM test compares the files byte for byte and checks all reviewed Seed records. Maintainers can regenerate the vectors by setting `IRONVELLUM_EXPORT_LOCAL_VECTORS=1` and executing LocalConnectorVectorTest.

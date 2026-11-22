@@ -66,7 +66,7 @@ private object CreateLocalTrainingDocument : ActivityResultContracts.CreateDocum
         super.createIntent(context, input).putExtra(Intent.EXTRA_LOCAL_ONLY, true)
 }
 
-private const val CONNECTOR_GUIDE = "https://github.com/AlexMollard/Ironvellum/blob/main/tools/local_connector/README.md"
+private const val CONNECTOR_GUIDE = "https://github.com/AlexMollard/Ironvellum/blob/main/tools/local_connector/AGENT_SETUP.md"
 
 internal sealed interface LocalPage {
     data object Tools : LocalPage
@@ -515,6 +515,18 @@ private fun LocalTools(preview: () -> Unit, open: () -> Unit, paste: () -> Unit,
     }
     AiDisclosure(localText(R.string.local_ai_using_pc, R.string.local_ai_using_pc__t)) {
         AiDetail(localText(R.string.local_ai_pc_hint, R.string.local_ai_pc_hint__t))
+        val clipboard = LocalClipboard.current
+        val worker = rememberCoroutineScope()
+        var copied by remember { mutableStateOf(false) }
+        val label = localText(R.string.local_ai_pc_copy, R.string.local_ai_pc_copy__t)
+        val request = localText(R.string.local_ai_pc_request, R.string.local_ai_pc_request__t, CONNECTOR_GUIDE)
+        IronvellumButton(label, {
+            worker.launch {
+                clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(label, request)))
+                copied = true
+            }
+        }, Modifier.fillMaxWidth(), quiet = true)
+        if (copied) AiDetail(localText(R.string.local_ai_pc_copied, R.string.local_ai_pc_copied__t))
         IronvellumButton(stringResource(R.string.local_ai_guide), {
             try {
                 browser.openUri(CONNECTOR_GUIDE)
@@ -621,7 +633,7 @@ private fun RawExportActions(enabled: Boolean, share: () -> Unit, save: () -> Un
         AiDetail(localText(R.string.local_ai_names, R.string.local_ai_names__t))
         AiDetail(localText(R.string.local_ai_coverage, R.string.local_ai_coverage__t))
         AiDetail(localText(R.string.local_ai_private_hint, R.string.local_ai_private_hint__t))
-        AiDetail(stringResource(R.string.local_ai_transfer))
+        AiDetail(localText(R.string.local_ai_transfer, R.string.local_ai_transfer__t))
         IronvellumButton(localText(R.string.local_ai_raw_share, R.string.local_ai_raw_share__t),
             share, Modifier.fillMaxWidth(), enabled = enabled, quiet = true)
         IronvellumButton(localText(R.string.local_ai_raw_save, R.string.local_ai_raw_save__t),

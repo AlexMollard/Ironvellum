@@ -6056,7 +6056,8 @@
     <string name="local_ai_private">保留为私密数据</string>
     <string name="local_ai_private_hint">笔记、训练标签、健康和身体数据、个人资料、照片、社交活动、奖励、存档和未完成的训练。</string>
     <string name="local_ai_private_hint__t">笔记、训练标签、健康和身体数据、个人资料、照片、社交活动、奖励、存档和未完成的训练。</string>
-    <string name="local_ai_transfer">分享文件，或保存到“下载”后通过 USB 复制。要更新 AI 使用的数据，请将新文件传到电脑并重启连接器。</string>
+    <string name="local_ai_transfer">将训练文件传到电脑。如果已启用文件夹监控，请将新导出的文件放入所选文件夹。如果使用固定文件，请替换该文件并重新启动连接器。</string>
+    <string name="local_ai_transfer__t">将训练文件传到电脑。如果已启用文件夹监控，请将新导出的文件放入所选文件夹。如果使用固定文件，请替换该文件并重新启动连接器。</string>
     <string name="local_ai_file_saved">训练文件已保存到此设备。</string>
     <string name="local_ai_write_error">无法保存文件。请选择可用的位置并重试。</string>
     <string name="local_ai_share_error">无法打开分享菜单。请重试，或将文件保存到此设备。</string>
@@ -6198,6 +6199,12 @@
     <string name="local_ai_raw_save__t">保存副本</string>
     <string name="local_ai_using_pc">在电脑上使用 AI</string>
     <string name="local_ai_using_pc__t">在电脑上使用 AI</string>
-    <string name="local_ai_pc_hint">传输训练文件，然后按照桌面连接器指南操作。</string>
-    <string name="local_ai_pc_hint__t">传输训练文件，然后按照桌面连接器指南操作。</string>
+    <string name="local_ai_pc_hint">你的智能体可以在电脑上设置连接。</string>
+    <string name="local_ai_pc_hint__t">你的智能体可以在电脑上设置连接。</string>
+    <string name="local_ai_pc_copy">复制设置说明</string>
+    <string name="local_ai_pc_copy__t">复制设置说明</string>
+    <string name="local_ai_pc_copied">已复制设置说明</string>
+    <string name="local_ai_pc_copied__t">已复制设置说明</string>
+    <string name="local_ai_pc_request">请按 %1$s 设置我的 Ironvellum 个人连接器。在独立的 Python 环境中安装经过验证的源码，询问要使用哪些文件夹和 AI 客户端，并保留其他设置。验证 MCP 初始化、工具列表和只读训练状态。告诉我是否需要重新加载客户端或传输文件。</string>
+    <string name="local_ai_pc_request__t">请按 %1$s 设置我的 Ironvellum 个人连接器。在独立的 Python 环境中安装经过验证的源码，询问要使用哪些文件夹和 AI 客户端，并保留其他设置。验证 MCP 初始化、工具列表和只读训练状态。告诉我是否需要重新加载客户端或传输文件。</string>
 </resources>

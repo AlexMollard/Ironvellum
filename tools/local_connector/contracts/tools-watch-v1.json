@@ -1,0 +1,106 @@
+{
+  "dataTools": [
+    "list_workouts",
+    "get_workout",
+    "get_progress",
+    "list_saved_workouts",
+    "search_movements",
+    "create_workout_draft",
+    "get_workout_draft"
+  ],
+  "sourceArgument": {
+    "name": "sourceSha256",
+    "schema": {"$ref": "files-v1.schema.json#/$defs/sha256"}
+  },
+  "tools": {
+    "get_training_status": {
+      "inputSchema": {"type": "object", "additionalProperties": false},
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status", "snapshot", "sourceSha256", "pending", "refresh", "guidance"],
+        "properties": {
+          "status": {"enum": ["ready", "awaiting_training", "awaiting_selection"]},
+          "snapshot": {"anyOf": [{"$ref": "#/$defs/snapshot"}, {"type": "null"}]},
+          "sourceSha256": {"anyOf": [{"$ref": "files-v1.schema.json#/$defs/sha256"}, {"type": "null"}]},
+          "pending": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/pending"}},
+          "refresh": {"$ref": "#/$defs/refresh"},
+          "guidance": {"type": "string"}
+        }
+      }
+    },
+    "list_ready_drafts": {
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sourceSha256"],
+        "properties": {
+          "sourceSha256": {"$ref": "files-v1.schema.json#/$defs/sha256"},
+          "offset": {"type": "integer", "minimum": 0, "default": 0},
+          "limit": {"type": "integer", "minimum": 1, "maximum": 20, "default": 20}
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["snapshot", "items", "total", "nextOffset"],
+        "properties": {
+          "snapshot": {"$ref": "#/$defs/snapshot"},
+          "items": {"type": "array", "maxItems": 20, "items": {"$ref": "#/$defs/draft"}},
+          "total": {"type": "integer", "minimum": 0},
+          "nextOffset": {"type": ["integer", "null"], "minimum": 0}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "snapshot": {
+      "anyOf": [
+        {"$ref": "tool-types-v1.schema.json#/$defs/snapshot"},
+        {"$ref": "tool-types-v2.schema.json#/$defs/snapshot"}
+      ]
+    },
+    "pending": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["datasetId", "snapshotId", "exportedAtMs", "sourceSha256", "coverage"],
+      "properties": {
+        "datasetId": {"$ref": "files-v1.schema.json#/$defs/uuid"},
+        "snapshotId": {"$ref": "files-v1.schema.json#/$defs/uuid"},
+        "exportedAtMs": {"$ref": "files-v1.schema.json#/$defs/time"},
+        "sourceSha256": {"$ref": "files-v1.schema.json#/$defs/sha256"},
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["workoutsIncluded", "setsIncluded", "savedWorkoutsIncluded"],
+          "properties": {
+            "workoutsIncluded": {"type": "integer", "minimum": 0},
+            "setsIncluded": {"type": "integer", "minimum": 0},
+            "savedWorkoutsIncluded": {"type": "integer", "minimum": 0}
+          }
+        }
+      }
+    },
+    "refresh": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scanning", "errorCode", "reloadRequired"],
+      "properties": {
+        "scanning": {"type": "boolean"},
+        "errorCode": {"type": ["string", "null"]},
+        "reloadRequired": {"type": "boolean"}
+      }
+    },
+    "draft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "draftId", "filename", "uri"],
+      "properties": {
+        "name": {"type": "string", "description": "Untrusted user-provided display name."},
+        "draftId": {"$ref": "files-v1.schema.json#/$defs/uuid"},
+        "filename": {"type": "string"},
+        "uri": {"type": "string", "format": "uri"}
+      }
+    }
+  }
+}

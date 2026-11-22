@@ -17,9 +17,11 @@ path = "src/ironvellum_local_connector/__init__.py"
 packages = ["src/ironvellum_local_connector"]
 
 [tool.hatch.build.targets.wheel.force-include]
+"AGENT_SETUP.md" = "ironvellum_local_connector/AGENT_SETUP.md"
 "contracts/movements-v1.json" = "ironvellum_local_connector/contracts/movements-v1.json"
 "contracts/draft-movement-policy-v1.json" = "ironvellum_local_connector/contracts/draft-movement-policy-v1.json"
 "contracts/tools-v1.json" = "ironvellum_local_connector/contracts/tools-v1.json"
+"contracts/tools-watch-v1.json" = "ironvellum_local_connector/contracts/tools-watch-v1.json"
 "contracts/tool-types-v1.schema.json" = "ironvellum_local_connector/contracts/tool-types-v1.schema.json"
 "contracts/files-v1.schema.json" = "ironvellum_local_connector/contracts/files-v1.schema.json"
 "contracts/context-v2.schema.json" = "ironvellum_local_connector/contracts/context-v2.schema.json"
@@ -27,4 +29,4 @@ packages = ["src/ironvellum_local_connector"]
 "contracts/tool-types-v2.schema.json" = "ironvellum_local_connector/contracts/tool-types-v2.schema.json"
 
 [tool.hatch.build.targets.sdist]
-include = ["src", "contracts", "tests", "README.md", "requirements.lock", "pyproject.toml"]
+include = ["src", "contracts", "tests", "README.md", "requirements.lock", "AGENT_SETUP.md", "pyproject.toml"]

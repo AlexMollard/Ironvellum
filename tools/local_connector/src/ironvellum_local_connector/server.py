@@ -28,12 +28,50 @@ PAGE_HELP = {
 }
 
 
+def tool_request(params):
+    # BoundedInput wraps the entire arguments object, including any attempted wrapper key.
+    args = loads(params.arguments["wire"].encode(), MAX_FRAME)
+    now = time.time_ns() // 1_000_000
+    require(0 <= now <= MAX_TIME, "clock")
+    return args, now
+
+
+def tool_result(result):
+    raw = encode(result)
+    require(len(raw) <= MAX_RESULT, "result_limit")
+    return types.CallToolResult(content=[types.TextContent(type="text", text=raw.decode())],
+                                structuredContent=result)
+
+
+def tool_error(code):
+    return types.CallToolResult(content=[types.TextContent(type="text", text=code)], isError=True)
+
+
+def dispatch(source, journal, name, args, now, metadata, request_id):
+    inputs = INPUTS_V2 if source.version == 2 else INPUTS
+    require(name in inputs, "unknown_tool")
+    validate(inputs[name], args)
+    if "view" in args:
+        return source.collection(name, args, metadata, request_id)
+    if name == "list_workouts":
+        return source.page("workouts", args)
+    if name == "get_workout":
+        return source.workout_result(args["id"])
+    if name == "list_saved_workouts":
+        return source.page("savedWorkouts", args)
+    if name == "get_progress":
+        return {"progress": source.progress()}
+    if name == "search_movements":
+        return {"movements": source.search_movements(args["query"], int(args.get("limit", 20)))}
+    if name == "get_workout_draft":
+        return journal.get(args["draftId"])
+    return journal.create(args["idempotencyKey"], args["draft"], now)
+
 def create_server(files):
     source = Snapshot(files.context)
     journal = Journal(files, source)
     tools = TOOLS_V2 if source.version == 2 else TOOLS
 
-    inputs = INPUTS_V2 if source.version == 2 else INPUTS
     descriptions = dict(DESCRIPTIONS)
     if source.version == 2:
         for name, help_text in PAGE_HELP.items():
@@ -44,41 +82,15 @@ def create_server(files):
             types.Tool(name=name, description=descriptions[name], input_schema=schemas["inputSchema"],
                        output_schema=schemas["outputSchema"]) for name, schemas in tools.items()])
 
-    def dispatch(name, args, now, metadata, request_id):
-        require(name in inputs, "unknown_tool")
-        validate(inputs[name], args)
-        if "view" in args:
-            return source.collection(name, args, metadata, request_id)
-        if name == "list_workouts":
-            return source.page("workouts", args)
-        if name == "get_workout":
-            return source.workout_result(args["id"])
-        if name == "list_saved_workouts":
-            return source.page("savedWorkouts", args)
-        if name == "get_progress":
-            return {"progress": source.progress()}
-        if name == "search_movements":
-            return {"movements": source.search_movements(args["query"], int(args.get("limit", 20)))}
-        if name == "get_workout_draft":
-            return journal.get(args["draftId"])
-        return journal.create(args["idempotencyKey"], args["draft"], now)
-
     async def call_tool(ctx, params):
         try:
-            # BoundedInput wraps the *entire* wire arguments object, including any attempted wrapper key.
-            args = loads(params.arguments["wire"].encode(), MAX_FRAME)
-            now = time.time_ns() // 1_000_000
-            require(0 <= now <= MAX_TIME, "clock")
+            args, now = tool_request(params)
             metadata = source.metadata(now)
-            result = dict(snapshot=metadata, **dispatch(params.name, args, now, metadata, ctx.request_id))
-            raw = encode(result)
-            require(len(raw) <= MAX_RESULT, "result_limit")
-            return types.CallToolResult(content=[types.TextContent(type="text", text=raw.decode())],
-                                        structuredContent=result)
+            return tool_result(dict(snapshot=metadata, **dispatch(
+                source, journal, params.name, args, now, metadata, ctx.request_id)))
         except Refusal as error:
-            code = str(error)
+            return tool_error(str(error))
         except Exception:
-            code = "storage_unavailable"
-        return types.CallToolResult(content=[types.TextContent(type="text", text=code)], isError=True)
+            return tool_error("storage_unavailable")
 
     return Server("ironvellum-personal", version=__version__, on_list_tools=list_tools, on_call_tool=call_tool)

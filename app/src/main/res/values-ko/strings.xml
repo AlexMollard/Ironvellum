@@ -6056,7 +6056,8 @@
     <string name="local_ai_private">공유하지 않는 데이터</string>
     <string name="local_ai_private_hint">메모, 세션 이름, 건강 및 신체 데이터, 프로필, 사진, 소셜 활동, 보상, 보관 파일 및 미완료 운동.</string>
     <string name="local_ai_private_hint__t">메모, 세션 이름, 건강 및 신체 데이터, 프로필, 사진, 소셜 활동, 보상, 보관 파일 및 미완료 운동.</string>
-    <string name="local_ai_transfer">파일을 공유하거나 다운로드 폴더에 저장한 뒤 USB로 복사하세요. AI가 참조하는 데이터를 갱신하려면 새 파일을 컴퓨터로 옮기고 커넥터를 다시 시작하세요.</string>
+    <string name="local_ai_transfer">훈련 파일을 컴퓨터로 전송하세요. 폴더 감시가 켜져 있으면 새 내보내기 파일을 선택한 폴더에 넣으세요. 고정 파일을 사용한다면 파일을 교체하고 커넥터를 다시 시작하세요.</string>
+    <string name="local_ai_transfer__t">훈련 파일을 컴퓨터로 전송하세요. 폴더 감시가 켜져 있으면 새 내보내기 파일을 선택한 폴더에 넣으세요. 고정 파일을 사용한다면 파일을 교체하고 커넥터를 다시 시작하세요.</string>
     <string name="local_ai_file_saved">훈련 파일을 이 기기에 저장했습니다.</string>
     <string name="local_ai_write_error">파일을 저장할 수 없습니다. 저장할 수 있는 위치를 선택하고 다시 시도하세요.</string>
     <string name="local_ai_share_error">공유 메뉴를 열 수 없습니다. 다시 시도하거나 이 기기에 파일을 저장하세요.</string>
@@ -6198,6 +6199,12 @@
     <string name="local_ai_raw_save__t">사본 저장</string>
     <string name="local_ai_using_pc">PC에서 AI 사용</string>
     <string name="local_ai_using_pc__t">PC에서 AI 사용</string>
-    <string name="local_ai_pc_hint">훈련 파일을 전송하고 데스크톱 커넥터 가이드를 따르세요.</string>
-    <string name="local_ai_pc_hint__t">훈련 파일을 전송하고 데스크톱 커넥터 가이드를 따르세요.</string>
+    <string name="local_ai_pc_hint">에이전트가 컴퓨터에서 연결을 설정할 수 있습니다.</string>
+    <string name="local_ai_pc_hint__t">에이전트가 컴퓨터에서 연결을 설정할 수 있습니다.</string>
+    <string name="local_ai_pc_copy">설정 지침 복사</string>
+    <string name="local_ai_pc_copy__t">설정 지침 복사</string>
+    <string name="local_ai_pc_copied">설정 지침을 복사했습니다</string>
+    <string name="local_ai_pc_copied__t">설정 지침을 복사했습니다</string>
+    <string name="local_ai_pc_request">%1$s 안내에 따라 내 Ironvellum 개인 커넥터를 설정해 주세요. 검증된 소스를 격리된 Python 환경에 설치하고 사용할 폴더와 AI 클라이언트를 물어보세요. 다른 설정을 유지하고 MCP 초기화, 도구 목록, 읽기 전용 훈련 상태를 확인해 주세요. 클라이언트를 다시 로드하거나 파일을 전송해야 하는지 알려 주세요.</string>
+    <string name="local_ai_pc_request__t">%1$s 안내에 따라 내 Ironvellum 개인 커넥터를 설정해 주세요. 검증된 소스를 격리된 Python 환경에 설치하고 사용할 폴더와 AI 클라이언트를 물어보세요. 다른 설정을 유지하고 MCP 초기화, 도구 목록, 읽기 전용 훈련 상태를 확인해 주세요. 클라이언트를 다시 로드하거나 파일을 전송해야 하는지 알려 주세요.</string>
 </resources>

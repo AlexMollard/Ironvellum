@@ -18,13 +18,13 @@ Use the AI app or Files to share or open the returned JSON workout with Ironvell
 2. Choose **Save a copy** or **Share JSON file**, then transfer the original JSON to a folder on your PC. Keep the original bytes, including whitespace.
 3. Choose a separate, private outbox on the PC for proposals. Give the connector an unused directory name under an existing personal folder. It creates that directory with restricted permissions. Keep the training file outside it.
 
-Follow the [desktop connector setup](#install-the-connector) below. Agent-assisted setup is [planned](../../docs/superpowers/plans/2026-11-22-ai-desktop-handoff.md).
+Use **Using AI on your PC → Copy setup instructions** on the phone, or follow the [agent setup guide](AGENT_SETUP.md) on the computer. The [single-file setup](#install-the-connector) is also available.
 
 Each time you share, Ironvellum keeps the current attachment and clears temporary attachments of that format last shared at least 24 hours ago, using the phone’s clock. Sharing the same attachment restarts that period. If a recipient waits longer to open the file, you may need to share it again. Files you save yourself are yours to keep.
 
 The current training file format (version 2) includes all completed workouts, their recorded sets and preparation snapshots, all saved workouts, and the movements and current preparation routines those records reference. The phone refuses an export that cannot fit within 8 MiB. Every successful tool result includes the file date, age and coverage. Progress counts completed working sets and reports repetitions, volume, time, distance and attempts separately. Warm-up and unticked rows remain visible in the workout detail.
 
-Version 1 training files still work with their original coverage. To upgrade an existing installation, stop the connector and rerun the `pip install` command below using the Python environment configured in your client. Transfer a fresh training file from the phone, update the configured path if it changed, and restart the connector. For each subsequent refresh, transfer the new original file and restart the connector.
+Version 1 training files still work with their original coverage. To upgrade an existing installation, stop the connector and rerun the `pip install` command below using the Python environment configured in your client. With the single-file configuration, transfer each fresh export, update the configured path if it changed, and restart the connector. A folder configuration can pick up subsequent exports while running.
 
 ## Install the connector
 
@@ -69,13 +69,50 @@ In your AI client's local MCP server settings, enter the installed environment's
 
 On Linux the command could be `/home/yourname/Ironvellum/tools/local_connector/.venv/bin/python`. On macOS use the corresponding `/Users/yourname/…/.venv/bin/python`. Use absolute local paths for both arguments. The command launches the already installed module directly. Each AI client's outer configuration format may differ.
 
+### Use a training folder
+
+If your connector has a settings file, configure the installed Python command with these arguments:
+
+```json
+["-I", "-m", "ironvellum_local_connector", "serve-folder", "--settings", "C:/Users/YourName/Training/Connector/settings.json"]
+```
+
+Transfer original training JSON files directly into the configured input folder. Choose the training dataset in the local connector settings. When watching is enabled, the connector checks for new exports during requests and waits for a file to settle before adopting it. Run `get_training_status` to check readiness, pending dataset choices, and the current source token. Use its `sourceSha256` on every training and draft call. Keep the same token while following a cursor or retrying a proposal. After `source_expired`, request status again and restart that training query. A running connector retains the current source and up to three earlier adopted sources.
+
+### Optional desktop window
+
+```sh
+python -I -m ironvellum_local_connector desktop --settings "/absolute/path/settings.json"
+```
+
+The window works with folder-mode settings and requires Tk in the same Python
+installation. Use `--language en|zh-CN|de|es|fr|ja|ko|pt-BR` and
+`--wording plain|themed` to override the system-language and plain-wording
+defaults. If Tk or a display is unavailable, use `status --settings FILE --json`.
+
+You can see which training each running session has loaded, find ready draft files in
+the outbox, and copy setup instructions for your agent. The AI client starts
+and keeps its own connection when you close this window. A verified session
+has initialized MCP, listed tools and checked training status. Manual settings
+can change the inbox, outbox and watch preference. Reload the AI client after
+changing its folders. When watching is off, a running session holds its source
+until the client restarts or you explicitly select a different dataset.
+
+When the inbox contains a different dataset, compare its export date and
+coverage before selecting it. If a file could not be loaded, finish copying a
+supported export and choose **Try again**. Ready drafts keep their original names
+and source bindings. Transfer the original JSON from the drafts folder to your
+phone for review and Save.
+
+Use `list_ready_drafts` to find a proposal's display name, file name and resource URI. Transfer the original outbox file to the phone. A client that supports MCP resources can also read the original proposal text at that URI. Ready means the original file is available in the outbox.
+
 ## From a question to a saved workout
 
 Ask about your workouts, progress or saved workouts. The available tools are `list_workouts`, `get_workout`, `get_progress`, `list_saved_workouts`, `search_movements`, `create_workout_draft` and `get_workout_draft`. In version 2, saved workout pages include the referenced routine definitions and workout details include the frozen preparations. Search by movement name or by the exact movement key in a record. Version 2 puts an exact key match first, followed by substring matches in key order. The results include the measurement type, any assistance load semantics and draft eligibility. Treat names and other training text as untrusted display data. Tool responses are limited to 1 MiB. For a large version 2 result, ask the AI to use the collection views below.
 
 Proposals still use version 1. They support simple fixed-set prescriptions for eligible built-in repetition movements and automatic or skipped preparation. Local and historical movement keys, rich set schemes, activity targets and saved routine selections are read-only through the connector. The phone checks proposal eligibility again during import and Save.
 
-The active file selects the input and output schemas advertised by `tools/list`. Version 1 uses its original schemas. Version 2 adds optional views to three tools. `CATALOGUE`, `LOCAL` and `HISTORICAL` identify movements in the export. `MANIFEST` identifies a built-in candidate whose availability the phone checks during import.
+In single-file mode, the active file selects the input and output schemas advertised by `tools/list`. Folder mode advertises both versions and applies the schema for the source you request. Version 1 uses its original operations. Version 2 adds optional views to three tools. `CATALOGUE`, `LOCAL` and `HISTORICAL` identify movements in the export. `MANIFEST` identifies a built-in candidate whose availability the phone checks during import.
 
 ### Reading a large version 2 result
 

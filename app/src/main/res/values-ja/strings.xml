@@ -6056,7 +6056,8 @@
     <string name="local_ai_private">共有しないデータ</string>
     <string name="local_ai_private_hint">メモ、セッション名、健康・身体データ、プロフィール、写真、交流履歴、報酬、アーカイブ、未完了のワークアウト。</string>
     <string name="local_ai_private_hint__t">メモ、セッション名、健康・身体データ、プロフィール、写真、交流履歴、報酬、アーカイブ、未完了のワークアウト。</string>
-    <string name="local_ai_transfer">ファイルを共有するか、ダウンロードに保存してUSBでコピーします。AIが参照するデータを更新するには、新しいファイルをパソコンに移してコネクタを再起動してください。</string>
+    <string name="local_ai_transfer">トレーニングファイルをパソコンに転送してください。フォルダ監視が有効な場合は、新しいエクスポートを指定のフォルダに入れます。固定ファイルを使う場合は、そのファイルを置き換えてコネクタを再起動します。</string>
+    <string name="local_ai_transfer__t">トレーニングファイルをパソコンに転送してください。フォルダ監視が有効な場合は、新しいエクスポートを指定のフォルダに入れます。固定ファイルを使う場合は、そのファイルを置き換えてコネクタを再起動します。</string>
     <string name="local_ai_file_saved">トレーニングファイルをこのデバイスに保存しました。</string>
     <string name="local_ai_write_error">ファイルを保存できませんでした。利用できる保存先を選んで、もう一度お試しください。</string>
     <string name="local_ai_share_error">共有メニューを開けませんでした。やり直すか、このデバイスにファイルを保存してください。</string>
@@ -6198,6 +6199,12 @@
     <string name="local_ai_raw_save__t">コピーを保存</string>
     <string name="local_ai_using_pc">パソコンでAIを使う</string>
     <string name="local_ai_using_pc__t">パソコンでAIを使う</string>
-    <string name="local_ai_pc_hint">トレーニングファイルを転送し、デスクトップコネクタのガイドに従ってください。</string>
-    <string name="local_ai_pc_hint__t">トレーニングファイルを転送し、デスクトップコネクタのガイドに従ってください。</string>
+    <string name="local_ai_pc_hint">エージェントにパソコンの接続設定を依頼できます。</string>
+    <string name="local_ai_pc_hint__t">エージェントにパソコンの接続設定を依頼できます。</string>
+    <string name="local_ai_pc_copy">設定手順をコピー</string>
+    <string name="local_ai_pc_copy__t">設定手順をコピー</string>
+    <string name="local_ai_pc_copied">設定手順をコピーしました</string>
+    <string name="local_ai_pc_copied__t">設定手順をコピーしました</string>
+    <string name="local_ai_pc_request">%1$s に従って Ironvellum 個人用コネクタを設定してください。検証済みのソースを独立した Python 環境にインストールし、使用するフォルダと AI クライアントを確認してください。他の設定は保持し、MCP の初期化、ツール一覧、読み取り専用のトレーニング状態を確認してください。クライアントの再読み込みやファイル転送が必要なら教えてください。</string>
+    <string name="local_ai_pc_request__t">%1$s に従って Ironvellum 個人用コネクタを設定してください。検証済みのソースを独立した Python 環境にインストールし、使用するフォルダと AI クライアントを確認してください。他の設定は保持し、MCP の初期化、ツール一覧、読み取り専用のトレーニング状態を確認してください。クライアントの再読み込みやファイル転送が必要なら教えてください。</string>
 </resources>

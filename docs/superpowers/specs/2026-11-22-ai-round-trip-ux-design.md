@@ -1,12 +1,12 @@
 # AI handoffs: current journeys and proposed UX
 
-Status: direction and shown mockups accepted by the owner, 2026-11-22 ("That proposal seems like the step in the correct direction"). No product/UI code has changed for this design yet. The owner has confirmed: accept workouts from any AI, even without a prior training export; allow exercises, sets, reps and weights to be edited during review before saving; always require explicit Save; provide a small desktop window; expect most desktop users to have an agent set up the connection. Implementation details are specified in the linked mobile and desktop plans. New layouts still require real-app-based mockups before their UI code.
+Status: direction and shown mockups accepted by the owner, 2026-11-22 ("That proposal seems like the step in the correct direction"). The phone and desktop implementations and their reviews are complete at c3de5ee0; final verification and remaining limits are recorded in docs/RELEASE_CHECKLIST.md. The owner has confirmed: accept workouts from any AI, even without a prior training export; allow exercises, sets, reps and weights to be edited during review before saving; always require explicit Save; provide a small desktop window; expect most desktop users to have an agent set up the connection. Implementation details are specified in the linked mobile and desktop plans. New layouts still require real-app-based mockups before their UI code.
 
-## Why this needs another pass
+## Why this change was needed
 
-The individual AI screens now use native cards, but people still manage the handoff: choose files, find a recipient, invent instructions, move files back, and restart a desktop connector. Outbound sharing works on the owner's phone; the return journey has a functional gap as well as extra navigation.
+The individual AI screens used native cards, but people still managed the handoff: choose files, find a recipient, invent instructions, move files back, and restart a desktop connector. Outbound sharing worked on the owner's phone; the return journey had a functional gap as well as extra navigation.
 
-## Current journeys, step by step
+## Journeys observed before this change, step by step
 
 ### 1. Ironvellum to an AI app on the phone
 
@@ -153,3 +153,7 @@ The following preview-only mockups were shown inline. They use the actual app's 
 | AI hub, sharing and optional PC status | C:/Users/alexm/.codex/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-3f1c5763-8c1e-451c-bcf5-c400b1767d6c.png |
 | Paste, editable review and movement matching | C:/Users/alexm/.codex/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-93b9cebc-5c25-4b55-a7d0-b3fe060db07a.png |
 | PC settings, invalid refresh and source choice | C:/Users/alexm/.codex/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-973bc2d2-dd18-4a47-83c4-b9134b813606.png |
+
+## Implementation evidence
+
+Both implementation plans are complete with reviewed fixes. The final full local gate passed below 600 seconds; the earlier cold-start integration run passed correctness but missed the timing budget. See [release verification](../../RELEASE_CHECKLIST.md). Computer control stopped when the owner instructed it; remaining native desktop visual and interaction checks are explicitly unverified. No owner-phone install or live AI-provider ingestion is claimed.

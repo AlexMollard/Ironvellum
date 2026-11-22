@@ -6424,7 +6424,8 @@
     <string name="local_ai_private">Bleibt privat</string>
     <string name="local_ai_private_hint">Notizen, Sitzungstitel, Gesundheits- und Körperdaten, Profile, Fotos, soziale Aktivitäten, Belohnungen, Archive und laufende Trainings.</string>
     <string name="local_ai_private_hint__t">Notizen, Sitzungstitel, Gesundheits- und Körperdaten, Profile, Fotos, soziale Aktivitäten, Belohnungen, Archive und laufende Trainings.</string>
-    <string name="local_ai_transfer">Teile die Datei oder speichere sie in Downloads, um sie per USB zu kopieren. Übertrage zum Aktualisieren deiner KI die neue Datei auf deinen Computer und starte den Konnektor neu.</string>
+    <string name="local_ai_transfer">Übertrage die Trainingsdatei auf deinen Computer. Lege neue Exporte bei aktiver Ordnerüberwachung im gewählten Ordner ab. Ersetze bei einer festen Datei diese Datei und starte den Konnektor neu.</string>
+    <string name="local_ai_transfer__t">Übertrage die Trainingsdatei auf deinen Computer. Lege neue Exporte bei aktiver Ordnerüberwachung im gewählten Ordner ab. Ersetze bei einer festen Datei diese Datei und starte den Konnektor neu.</string>
     <string name="local_ai_file_saved">Trainingsdatei auf diesem Gerät gespeichert.</string>
     <string name="local_ai_write_error">Datei konnte nicht gespeichert werden. Wähle einen verfügbaren Speicherort und versuche es erneut.</string>
     <string name="local_ai_share_error">Das Teilen konnte nicht geöffnet werden. Versuche es erneut oder speichere die Datei auf diesem Gerät.</string>
@@ -6566,6 +6567,12 @@
     <string name="local_ai_raw_save__t">Kopie speichern</string>
     <string name="local_ai_using_pc">KI auf deinem PC nutzen</string>
     <string name="local_ai_using_pc__t">KI auf deinem PC nutzen</string>
-    <string name="local_ai_pc_hint">Übertrage eine Trainingsdatei und folge der Anleitung für den Desktop-Connector.</string>
-    <string name="local_ai_pc_hint__t">Übertrage eine Trainingsdatei und folge der Anleitung für den Desktop-Connector.</string>
+    <string name="local_ai_pc_hint">Dein Agent kann die Verbindung auf deinem Computer einrichten.</string>
+    <string name="local_ai_pc_hint__t">Dein Agent kann die Verbindung auf deinem Computer einrichten.</string>
+    <string name="local_ai_pc_copy">Einrichtungsanleitung kopieren</string>
+    <string name="local_ai_pc_copy__t">Einrichtungsanleitung kopieren</string>
+    <string name="local_ai_pc_copied">Einrichtungsanleitung kopiert</string>
+    <string name="local_ai_pc_copied__t">Einrichtungsanleitung kopiert</string>
+    <string name="local_ai_pc_request">Richte meinen persönlichen Ironvellum-Konnektor mit %1$s ein. Installiere den verifizierten Quellcode in einer isolierten Python-Umgebung. Frage nach den Ordnern und dem KI-Client. Behalte meine übrigen Einstellungen bei. Prüfe die MCP-Initialisierung, die Werkzeugliste und den Trainingsstatus mit Lesezugriff. Sage mir, ob ich den Client neu laden oder eine Datei übertragen muss.</string>
+    <string name="local_ai_pc_request__t">Richte meinen persönlichen Ironvellum-Konnektor mit %1$s ein. Installiere den verifizierten Quellcode in einer isolierten Python-Umgebung. Frage nach den Ordnern und dem KI-Client. Behalte meine übrigen Einstellungen bei. Prüfe die MCP-Initialisierung, die Werkzeugliste und den Trainingsstatus mit Lesezugriff. Sage mir, ob ich den Client neu laden oder eine Datei übertragen muss.</string>
 </resources>

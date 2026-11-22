@@ -73,11 +73,11 @@ def _open(path, access, share, disposition, attributes=None):
 
 
 class Directory:
-    def __init__(self, path, stack, private=False):
+    def __init__(self, path, stack, private=False, *, create=True):
         validate_path(path)
         self.ancestors = set()
         for ancestor in [*reversed(path.parents), path]:
-            if private and ancestor == path:
+            if create and private and ancestor == path:
                 try:
                     f.CreateDirectory(str(path), _private_attributes())
                 except pywintypes.error as e:
@@ -99,11 +99,15 @@ class Directory:
         self.identity = (info[4], info[8], info[9])
 
     def open(self, name, mode):
+        existing_lock = mode == "existing_lock"
+        if existing_lock:
+            mode = "rb"
         access = {"rb": c.GENERIC_READ, "xb": c.GENERIC_WRITE, "lock": c.GENERIC_READ | c.GENERIC_WRITE}[mode]
         disposition = {"rb": c.OPEN_EXISTING, "xb": c.CREATE_NEW, "lock": c.OPEN_ALWAYS}[mode]
         if self.private:
             access |= c.READ_CONTROL
-        handle = _open(self.path / name, access, c.FILE_SHARE_READ | (c.FILE_SHARE_WRITE if mode == "lock" else 0),
+        sharing = c.FILE_SHARE_READ | (c.FILE_SHARE_WRITE if mode == "lock" or existing_lock else 0)
+        handle = _open(self.path / name, access, sharing,
                        disposition, _private_attributes() if self.private and mode != "rb" else None)
         try:
             info = f.GetFileInformationByHandle(handle)
