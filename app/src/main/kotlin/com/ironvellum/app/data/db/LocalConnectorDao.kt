@@ -1,5 +1,6 @@
 package com.ironvellum.app.data.db
 
+import android.database.Cursor
 import androidx.room.*
 
 @Entity(tableName = "local_connector_identity")
@@ -17,22 +18,8 @@ internal data class LocalReceipt(val datasetId: String, val draftId: String, val
     val snapshotId: String, val localPresetId: Long, val savedAtMs: Long)
 
 internal data class WorkoutTimes(val id: Long, val startedAtMs: Long, val completedAtMs: Long)
-internal data class RepsRow(val exerciseId: Long, val reps: Int, val weightKg: Double?)
-internal data class SavedRow(val id: Long, val name: String, val warmup: String, val cooldown: String)
-internal data class EntryRow(val exerciseId: Long, val targetSets: Int, val targetReps: Int, val targetWeightKg: Double?)
-
-private const val SUPPORTED_SET = """exerciseId IN (:ids) AND kind='WORKING' AND modifiers='' AND durationSec IS NULL
-    AND distanceM IS NULL AND grade IS NULL AND reps BETWEEN 1 AND 1000 AND (weightKg IS NULL OR weightKg BETWEEN 0 AND 1000)"""
-
-private const val SUPPORTED_PRESET = """ FROM presets p WHERE length(p.name) BETWEEN 1 AND 80
-    AND instr(p.name,char(0))=0 AND p.name NOT GLOB ('*['||char(1)||'-'||char(31)||char(127)||'-'||char(159)||']*')
-    AND trim(p.name)=p.name
-    AND (SELECT count(*) FROM preset_entries e WHERE e.presetId=p.id) BETWEEN 1 AND 20
-    AND NOT EXISTS (SELECT 1 FROM preset_entries e WHERE e.presetId=p.id AND
-        (e.exerciseId NOT IN (:ids) OR e.targetSets NOT BETWEEN 1 AND 50 OR e.targetReps NOT BETWEEN 1 AND 1000
-        OR e.targetWeightKg NOT BETWEEN 0 AND 1000 OR e.modifiers!='' OR e.setScheme IS NOT NULL OR e.warmup!=0 OR e.supersetGroup IS NOT NULL))
-    AND NOT EXISTS (SELECT 1 FROM preset_preparations a WHERE a.presetId=p.id AND
-        (a.kind NOT IN ('WARMUP','COOLDOWN') OR a.mode NOT IN ('AUTO','NONE') OR a.routineId IS NOT NULL))"""
+internal data class ReadPresetRow(val id: Long, val name: String)
+internal data class ReadMovementRow(val id: Long, val name: String, val custom: Boolean, val metric: String)
 
 @Dao
 internal interface LocalConnectorDao {
@@ -52,22 +39,51 @@ internal interface LocalConnectorDao {
     @Query("DELETE FROM local_connector_exports") fun clearSnapshots()
     @Query("DELETE FROM local_connector_receipts") fun clearReceipts()
 
-    @Query("SELECT count(*) FROM sessions WHERE completedAtMs IS NOT NULL") fun completedCount(): Long
+    /** Provable lower bound for output bytes before Room materializes any training pages.
+     * Every serialized record has more than the fixed framing allowance. Text only grows when escaped. */
+    @Query("""SELECT
+        (SELECT total(80) FROM sessions WHERE completedAtMs IS NOT NULL) +
+        (SELECT total(120 + length(CAST(s.modifiers AS BLOB)) + coalesce(length(CAST(s.grade AS BLOB)),0))
+         FROM set_logs s JOIN sessions w ON w.id=s.sessionId WHERE w.completedAtMs IS NOT NULL) +
+        (SELECT total(80 + length(CAST(name AS BLOB))) FROM presets) +
+        (SELECT total(120 + length(CAST(modifiers AS BLOB)) + coalesce(length(CAST(setScheme AS BLOB)),0))
+         FROM preset_entries)""")
+    fun minimumOutputBytes(): Double
+
     @Query("""SELECT id,startedAtMs,completedAtMs FROM sessions WHERE completedAtMs IS NOT NULL
-        ORDER BY completedAtMs DESC,id DESC LIMIT 100""") fun completed(): List<WorkoutTimes>
-    @Query("SELECT count(*) FROM set_logs WHERE sessionId=:session AND done=1") fun doneCount(session: Long): Long
-    @Query("SELECT count(*) FROM set_logs WHERE sessionId=:session AND done=1 AND " + SUPPORTED_SET)
-    fun supportedSets(session: Long, ids: List<Long>): Long
-    @Query("SELECT exerciseId,reps,weightKg FROM set_logs WHERE sessionId=:session AND done=1 AND " + SUPPORTED_SET +
-        " ORDER BY exercisePosition,setIndex,id LIMIT 200")
-    fun sets(session: Long, ids: List<Long>): List<RepsRow>
-    @Query("SELECT count(*) FROM presets") fun presetCount(): Long
-    @Query("SELECT count(*)" + SUPPORTED_PRESET) fun supportedPresets(ids: List<Long>): Long
-    @Query("""SELECT id,name,
-        coalesce((SELECT mode FROM preset_preparations WHERE presetId=p.id AND kind='WARMUP'),'AUTO') AS warmup,
-        coalesce((SELECT mode FROM preset_preparations WHERE presetId=p.id AND kind='COOLDOWN'),'AUTO') AS cooldown""" +
-        SUPPORTED_PRESET + " ORDER BY p.id DESC LIMIT 50")
-    fun presets(ids: List<Long>): List<SavedRow>
-    @Query("""SELECT exerciseId,targetSets,targetReps,targetWeightKg FROM preset_entries
-        WHERE presetId=:preset ORDER BY position,id LIMIT 20""") fun entries(preset: Long): List<EntryRow>
+        ORDER BY id""") fun completed(): Cursor
+
+    @Query("""SELECT exerciseId,exercisePosition,setIndex,kind,modifiers,supersetGroup,rpe,done,warmupDone,
+        reps,weightKg,durationSec,distanceM,grade FROM set_logs WHERE sessionId=:session ORDER BY exercisePosition,setIndex,id""")
+    fun sets(session: Long): Cursor
+
+    @Query("SELECT id,name FROM presets ORDER BY id") fun presets(): Cursor
+
+    @Query("""SELECT exerciseId,targetSets,targetReps,targetWeightKg,modifiers,position,supersetGroup,setScheme,warmup
+        FROM preset_entries WHERE presetId=:preset ORDER BY position,id""") fun entries(preset: Long): Cursor
+
+    /** No complete, unreferenced name crosses the cursor window. Trim exactly the characters
+     * supplied by Kotlin, then take only a UTF-8 value small enough to be a seed key. */
+    @Query("""SELECT candidate FROM (SELECT trim(name,:padding) AS candidate FROM exercises)
+        WHERE length(CAST(candidate AS BLOB)) <= :maxBytes""")
+    fun candidateNames(padding: String, maxBytes: Int): Cursor
+    @Query("""SELECT id,CASE WHEN length(CAST(name AS BLOB)) <= :maxBytes THEN name END,custom,metric
+        FROM exercises WHERE id=:id""") fun movement(id: Long, maxBytes: Int): Cursor
+    @Query("SELECT kind,mode,routineId FROM preset_preparations WHERE presetId=:id ORDER BY kind LIMIT 3")
+    fun choices(id: Long): Cursor
+    @Query("""SELECT sessionId,kind,
+        CASE WHEN length(CAST(snapshotJson AS BLOB)) <= 262144 THEN CAST(snapshotJson AS BLOB) END,
+        CASE WHEN length(CAST(progressJson AS BLOB)) <= 262144 THEN CAST(progressJson AS BLOB) END
+        FROM session_preparations WHERE sessionId=:id ORDER BY kind""")
+    fun preparations(id: Long): Cursor
+    @Query("""SELECT id,kind,CASE WHEN length(CAST(name AS BLOB)) <= :maxBytes THEN name END,
+        CASE WHEN length(CAST(stepsJson AS BLOB)) <= 262144 AND length(CAST(name AS BLOB)) <= :maxBytes - 262144
+            THEN CAST(stepsJson AS BLOB) END FROM preparation_routines WHERE id=:id""") fun routine(id: Long, maxBytes: Int): Cursor
+
+    @Query("SELECT substr(CAST(stepsJson AS BLOB),:start,65536) FROM preparation_routines WHERE id=:id")
+    fun routineChunk(id: Long, start: Int): ByteArray
+    @Query("SELECT substr(CAST(snapshotJson AS BLOB),:start,65536) FROM session_preparations WHERE sessionId=:id AND kind=:kind")
+    fun snapshotChunk(id: Long, kind: String, start: Int): ByteArray
+    @Query("SELECT substr(CAST(progressJson AS BLOB),:start,65536) FROM session_preparations WHERE sessionId=:id AND kind=:kind")
+    fun progressChunk(id: Long, kind: String, start: Int): ByteArray
 }

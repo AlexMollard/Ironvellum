@@ -273,6 +273,7 @@ fun PresetsScreen(
             shareRefusal = null
             viewModel.shareRoutine(onRefused = { shareRefusal = it }) { code -> shareRoutineCode(context, code) }
         }
+        if (!expanded) musclesCard()
         importResult?.let { line ->
             Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = GROUP_GAP))
         }
@@ -286,7 +287,6 @@ fun PresetsScreen(
                 onForge = { showNewChooser = true },
             )
         }
-        draftEntry()
         if (ui.presets.isNotEmpty()) {
         Spacer(Modifier.height(SECTION_GAP))
         val sealedThisWeek = { preset: WorkoutPreset -> sessions.any { it.presetId == preset.id && (it.completedAtMs ?: 0L) >= weekStart } }
@@ -327,6 +327,8 @@ fun PresetsScreen(
             }
         }
 
+        draftEntry()
+
         if (trials.isNotEmpty()) {
             Spacer(Modifier.height(SECTION_GAP))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -353,7 +355,6 @@ fun PresetsScreen(
                 }
             }
         }
-        if (!expanded) musclesCard()
         Spacer(Modifier.height(END_GAP))
     }
         if (expanded) {

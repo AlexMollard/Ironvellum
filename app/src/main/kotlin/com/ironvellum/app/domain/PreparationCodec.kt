@@ -32,7 +32,7 @@ object PreparationCodec {
             },
         ).also {
             // Preserve positive legacy targets beyond today's editor bounds. Never accept an anonymous ID binding.
-            require(it.exerciseId > 0 && it.exerciseName.isNotBlank() && it.target > 0 && it.rounds > 0 && it.note.length <= 1000)
+            require(it.exerciseId > 0 && it.exerciseName.isNotBlank() && it.target > 0 && it.rounds > 0 && it.note.length <= PREPARATION_NOTE_MAX)
             require(it.weightKg == null || it.weightKg.isFinite() && it.weightKg >= 0)
             require(it.legacyTarget?.targetWeightKg?.let { weight -> weight.isFinite() && weight >= 0 } != false)
         }

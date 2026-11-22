@@ -1,0 +1,1145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/context",
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])"
+    },
+    "opaqueId": {
+      "type": "string",
+      "pattern": "^local:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])"
+    },
+    "key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "time": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 253402300799999
+    },
+    "metric": {
+      "enum": [
+        "REPS",
+        "HOLD",
+        "DURATION",
+        "DISTANCE_TIME",
+        "ATTEMPTS_GRADE"
+      ]
+    },
+    "kind": {
+      "enum": [
+        "WORKING",
+        "WARMUP",
+        "TOP",
+        "BACKOFF",
+        "DROP",
+        "FAILURE",
+        "REST_PAUSE"
+      ]
+    },
+    "catalogue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "count",
+        "sha256"
+      ],
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "count": {
+          "const": 584
+        },
+        "sha256": {
+          "const": "6b8bea45f8781884088d99fe8fc76c0df4c5755a8c2d1e9914629710bfa18a66"
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workoutsIncluded",
+        "workoutsTruncated",
+        "setsIncluded",
+        "setsTruncated",
+        "setsUnsupported",
+        "savedWorkoutsIncluded",
+        "savedWorkoutsTruncated",
+        "savedWorkoutsUnsupported"
+      ],
+      "properties": {
+        "workoutsIncluded": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "workoutsTruncated": {
+          "const": 0
+        },
+        "setsIncluded": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "setsTruncated": {
+          "const": 0
+        },
+        "setsUnsupported": {
+          "const": 0
+        },
+        "savedWorkoutsIncluded": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "savedWorkoutsTruncated": {
+          "const": 0
+        },
+        "savedWorkoutsUnsupported": {
+          "const": 0
+        }
+      }
+    },
+    "movement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "name",
+        "metric",
+        "custom",
+        "source",
+        "loadSemantics"
+      ],
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/key"
+        },
+        "name": {
+          "type": "string"
+        },
+        "metric": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/metric"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "custom": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source": {
+          "enum": [
+            "CATALOGUE",
+            "LOCAL",
+            "HISTORICAL"
+          ]
+        },
+        "loadSemantics": {
+          "enum": [
+            "EXTERNAL",
+            "ASSISTANCE",
+            "UNKNOWN"
+          ]
+        }
+      }
+    },
+    "set": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "order",
+        "exerciseKey",
+        "exercisePosition",
+        "setIndex",
+        "kind",
+        "modifiers",
+        "superset",
+        "rpe",
+        "done",
+        "warmupDone",
+        "recordedReps",
+        "weightKg",
+        "durationSec",
+        "distanceM",
+        "grade"
+      ],
+      "properties": {
+        "order": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "exerciseKey": {
+          "$ref": "#/$defs/key"
+        },
+        "exercisePosition": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "setIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "kind": {
+          "$ref": "#/$defs/kind"
+        },
+        "modifiers": {
+          "type": "string"
+        },
+        "superset": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rpe": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 10
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "done": {
+          "type": "boolean"
+        },
+        "warmupDone": {
+          "type": "boolean"
+        },
+        "recordedReps": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "weightKg": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "durationSec": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "distanceM": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "grade": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric",
+        "recordedTarget",
+        "unit",
+        "weightKg",
+        "distanceKm"
+      ],
+      "properties": {
+        "metric": {
+          "$ref": "#/$defs/metric"
+        },
+        "recordedTarget": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "unit": {
+          "enum": [
+            "REPS",
+            "SECONDS",
+            "MINUTES",
+            "UNUSED",
+            "ATTEMPTS"
+          ]
+        },
+        "weightKg": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "distanceKm": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min",
+        "max"
+      ],
+      "properties": {
+        "min": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        }
+      }
+    },
+    "scheme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "warmupRamp",
+        "workingRange",
+        "topRange",
+        "topRir",
+        "backoffSets",
+        "backoffRange",
+        "backoffFixedKg",
+        "backoffPercent",
+        "restAfterTopSec",
+        "dropSets",
+        "dropCount",
+        "dropPercent",
+        "customKinds"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "straight",
+            "top_backoff",
+            "drops",
+            "custom"
+          ]
+        },
+        "warmupRamp": {
+          "type": "boolean"
+        },
+        "workingRange": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/range"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "topRange": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/range"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "topRir": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/range"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "backoffSets": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "backoffRange": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/range"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "backoffFixedKg": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "backoffPercent": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "restAfterTopSec": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dropSets": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dropCount": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dropPercent": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "customKinds": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/kind"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "order",
+        "position",
+        "exerciseKey",
+        "sets",
+        "target",
+        "modifiers",
+        "superset",
+        "warmup",
+        "schemeRaw",
+        "scheme"
+      ],
+      "properties": {
+        "order": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "position": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "exerciseKey": {
+          "$ref": "#/$defs/key"
+        },
+        "sets": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "target": {
+          "$ref": "#/$defs/target"
+        },
+        "modifiers": {
+          "type": "string"
+        },
+        "superset": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "warmup": {
+          "type": "boolean"
+        },
+        "schemeRaw": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scheme": {
+          "$ref": "#/$defs/scheme"
+        }
+      }
+    },
+    "choice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "routineId"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "AUTO",
+            "NONE",
+            "SAVED"
+          ]
+        },
+        "routineId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/opaqueId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "preset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "warmup",
+        "cooldown",
+        "entries"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/opaqueId"
+        },
+        "name": {
+          "type": "string"
+        },
+        "warmup": {
+          "$ref": "#/$defs/choice"
+        },
+        "cooldown": {
+          "$ref": "#/$defs/choice"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entry"
+          }
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exerciseKey",
+        "name",
+        "measure",
+        "target",
+        "rounds",
+        "repeat",
+        "weightKg",
+        "legacyTarget"
+      ],
+      "properties": {
+        "exerciseKey": {
+          "$ref": "#/$defs/key"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "measure": {
+          "enum": [
+            "REPS",
+            "SECONDS"
+          ]
+        },
+        "target": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "rounds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "repeat": {
+          "enum": [
+            "ONCE",
+            "SIDES",
+            "DIRECTIONS"
+          ]
+        },
+        "weightKg": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "legacyTarget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/target"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "routine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "steps"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/opaqueId"
+        },
+        "kind": {
+          "enum": [
+            "WARMUP",
+            "COOLDOWN"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/step"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "prepProgress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "stepIndex",
+        "roundIndex",
+        "repeatIndex",
+        "legacyOnly",
+        "completedUnitKeys",
+        "skippedUnitKeys"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "OPEN",
+            "RUNNING",
+            "PAUSED",
+            "DONE",
+            "SKIPPED"
+          ]
+        },
+        "stepIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "roundIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "repeatIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "legacyOnly": {
+          "type": "boolean"
+        },
+        "completedUnitKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*):(0|[1-9][0-9]*):[01](?![\\s\\S])"
+          },
+          "uniqueItems": true
+        },
+        "skippedUnitKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*):(0|[1-9][0-9]*):[01](?![\\s\\S])"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "preparation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "name",
+        "sourceRoutineId",
+        "legacyStepCount",
+        "steps",
+        "progress"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "WARMUP",
+            "COOLDOWN"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "sourceRoutineId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/opaqueId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "legacyStepCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        },
+        "progress": {
+          "$ref": "#/$defs/prepProgress"
+        }
+      }
+    },
+    "workout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "startedAtMs",
+        "completedAtMs",
+        "sets",
+        "preparations"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/opaqueId"
+        },
+        "startedAtMs": {
+          "$ref": "#/$defs/time"
+        },
+        "completedAtMs": {
+          "$ref": "#/$defs/time"
+        },
+        "sets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/set"
+          }
+        },
+        "preparations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/preparation"
+          },
+          "maxItems": 2
+        }
+      }
+    },
+    "lift": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exerciseKey",
+        "completedSets",
+        "completedReps",
+        "externalVolumeKg",
+        "holdSeconds",
+        "activitySeconds",
+        "distanceM",
+        "attempts",
+        "maxReps",
+        "maxExternalLoadKg",
+        "maxAssistanceKg"
+      ],
+      "properties": {
+        "exerciseKey": {
+          "$ref": "#/$defs/key"
+        },
+        "completedSets": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "completedReps": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "externalVolumeKg": {
+          "type": "number",
+          "minimum": 0
+        },
+        "holdSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "activitySeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "distanceM": {
+          "type": "number",
+          "minimum": 0
+        },
+        "attempts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "maxReps": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maxExternalLoadKg": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maxAssistanceKg": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "progress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "scope",
+        "completedWorkouts",
+        "completedSets",
+        "completedReps",
+        "externalVolumeKg",
+        "holdSeconds",
+        "activitySeconds",
+        "distanceM",
+        "attempts",
+        "firstCompletedAtMs",
+        "lastCompletedAtMs",
+        "lifts"
+      ],
+      "properties": {
+        "version": {
+          "const": 2
+        },
+        "scope": {
+          "const": "completed-workouts"
+        },
+        "completedWorkouts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "completedSets": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "completedReps": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "externalVolumeKg": {
+          "type": "number",
+          "minimum": 0
+        },
+        "holdSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "activitySeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "distanceM": {
+          "type": "number",
+          "minimum": 0
+        },
+        "attempts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "firstCompletedAtMs": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lastCompletedAtMs": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lifts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/lift"
+          }
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "schemaVersion",
+        "datasetId",
+        "snapshotId",
+        "exportedAtMs",
+        "catalogue",
+        "coverage",
+        "movements",
+        "routines",
+        "workouts",
+        "savedWorkouts",
+        "progress"
+      ],
+      "properties": {
+        "type": {
+          "const": "ironvellum.training-context"
+        },
+        "schemaVersion": {
+          "const": 2
+        },
+        "datasetId": {
+          "$ref": "#/$defs/uuid"
+        },
+        "snapshotId": {
+          "$ref": "#/$defs/uuid"
+        },
+        "exportedAtMs": {
+          "$ref": "#/$defs/time"
+        },
+        "catalogue": {
+          "$ref": "#/$defs/catalogue"
+        },
+        "coverage": {
+          "$ref": "#/$defs/coverage"
+        },
+        "movements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/movement"
+          }
+        },
+        "routines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/routine"
+          }
+        },
+        "workouts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/workout"
+          }
+        },
+        "savedWorkouts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/preset"
+          }
+        },
+        "progress": {
+          "$ref": "#/$defs/progress"
+        }
+      }
+    }
+  }
+}

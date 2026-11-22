@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+internal const val PREPARATION_NOTE_MAX = 1000
+
 enum class PreparationKind { WARMUP, COOLDOWN }
 enum class PreparationMode { AUTO, SAVED, NONE }
 enum class PreparationMeasure { REPS, SECONDS }
@@ -28,7 +30,7 @@ data class PreparationStep(
     val repetitions: Int get() = if (repeat == PreparationRepeat.ONCE) 1 else 2
     fun validForEditor(): Boolean = exerciseId > 0 && exerciseName.isNotBlank() &&
         target in (if (measure == PreparationMeasure.REPS) 1..100 else 5..600) &&
-        rounds in 1..10 && note.length <= 1000 && (weightKg == null || weightKg.isFinite() && weightKg >= 0)
+        rounds in 1..10 && note.length <= PREPARATION_NOTE_MAX && (weightKg == null || weightKg.isFinite() && weightKg >= 0)
 }
 
 data class PreparationChoice(val mode: PreparationMode = PreparationMode.AUTO, val routineId: Long? = null)

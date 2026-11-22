@@ -7588,23 +7588,24 @@
     <string name="local_ai_contents">File contents</string>
     <string name="local_ai_completed">Completed workouts</string>
     <string name="local_ai_completed__t">Completed trials</string>
-    <string name="local_ai_recent">Most recent 100</string>
-    <string name="local_ai_sets">Completed sets</string>
-    <string name="local_ai_sets_hint">Built-in movements with rep counts, up to 200 sets per workout.</string>
-    <string name="local_ai_sets_hint__t">Built-in movements with rep counts, up to 200 sets per trial.</string>
+    <string name="local_ai_recent">All completed history</string>
+    <string name="local_ai_sets">Logged sets</string>
+    <string name="local_ai_sets_hint">Every movement, set kind and modifier, including warm-ups.</string>
+    <string name="local_ai_sets_hint__t">Every movement, set kind and modifier, including warm-ups.</string>
     <string name="local_ai_presets">Saved workouts</string>
     <string name="local_ai_presets__t">Saved rites</string>
-    <string name="local_ai_names">Includes names, movements, targets and preparation.</string>
+    <string name="local_ai_names">Names, targets, set schemes and preparation. Names of saved workouts, custom movements and routines can be personal.</string>
+    <string name="local_ai_names__t">Names, targets, set schemes and preparation. Names of saved rites, custom movements and routines can be personal.</string>
     <!-- The two independent totals use count-neutral labels. -->
     <string tools:ignore="PluralsCandidate" name="local_ai_count">%1$d included\n%2$d omitted</string>
     <string name="local_ai_set_omissions">Sets omitted · Beyond limit: %1$d. Unsupported: %2$d.</string>
     <string name="local_ai_preset_omissions">Saved workouts omitted · Beyond limit: %1$d. Unsupported: %2$d.</string>
     <string name="local_ai_preset_omissions__t">Saved rites omitted · Beyond limit: %1$d. Unsupported: %2$d.</string>
-    <string name="local_ai_coverage">Progress covers the included workouts and sets, with up to 20 lifts.</string>
-    <string name="local_ai_coverage__t">Progress covers the included trials and sets, with up to 20 lifts.</string>
+    <string name="local_ai_coverage">Progress counts completed work and reports reps, hold time, activity time, distance and attempts separately.</string>
+    <string name="local_ai_coverage__t">Progress counts completed work and reports reps, hold time, activity time, distance and attempts separately.</string>
     <string name="local_ai_private">Kept private</string>
-    <string name="local_ai_private_hint">Notes, session labels, custom movement names, modifiers, health and body data, profiles, photos, social activity, rewards, archives and unfinished workouts.</string>
-    <string name="local_ai_private_hint__t">Notes, session labels, custom movement names, modifiers, health and body data, profiles, photos, social activity, rewards, archives and unfinished trials.</string>
+    <string name="local_ai_private_hint">Notes, session labels, health and body data, profiles, photos, social activity, rewards, archives and unfinished workouts.</string>
+    <string name="local_ai_private_hint__t">Notes, session labels, health and body data, profiles, photos, social activity, rewards, archives and unfinished trials.</string>
     <string name="local_ai_transfer">Share the file, or save it to Downloads to copy by USB. To update your AI, transfer the new file to your computer and restart the connector.</string>
     <string name="local_ai_save_file">Save file on this device</string>
     <string name="local_ai_file_saved">Training file saved on this device.</string>

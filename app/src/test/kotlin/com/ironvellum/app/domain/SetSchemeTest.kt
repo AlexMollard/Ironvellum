@@ -19,6 +19,21 @@ class SetSchemeTest {
         backoffSets = 3, backoffFixedKg = 15.0, backoffReps = 4..5,
     )
 
+    @Test fun delimiterHeavyHistoricalTextKeepsTheLastFieldsWithinABoundedAllocation() {
+        val raw = "ck=drop;t=straight;" + ";ignored=x;tr=1".repeat(40_000) +
+            "; t = custom ;tr=4-6--ignored;ck=" + "warmup,".repeat(40_000) + "top,drop," + ",".repeat(50_000)
+        val allocator = java.lang.management.ManagementFactory.getPlatformMXBean(com.sun.management.ThreadMXBean::class.java)
+        SetScheme.decode("t=custom;ck=warmup,top")
+        val thread = Thread.currentThread().id
+        val before = allocator.getThreadAllocatedBytes(thread)
+        val scheme = SetScheme.decode(raw)
+        val allocated = allocator.getThreadAllocatedBytes(thread) - before
+        assertEquals(SchemeType.CUSTOM, scheme.type)
+        assertEquals(4..6, scheme.topReps)
+        assertEquals(listOf(SetKind.TOP, SetKind.DROP) + List(28) { SetKind.WORKING }, scheme.custom)
+        assertTrue("Allocated $allocated bytes decoding delimiter-heavy text", allocated in 0..1_048_576)
+    }
+
     // ---- the stored form
 
     @Test

@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -110,7 +112,7 @@ class LocalConnectorScreensTest {
         db.close()
     }
 
-    private fun open(light: Boolean = false, testContext: Context? = null) {
+    private fun open(light: Boolean = false, testContext: Context? = null, fontScale: Float? = null) {
         compose.activityRule.scenario.onActivity { activity ->
             Words.setThemed(context, light)
             ShotRecorder.darkWindow(activity)
@@ -120,7 +122,9 @@ class LocalConnectorScreensTest {
             }
         }
         compose.setContent {
+            val density = LocalDensity.current
             CompositionLocalProvider(
+                LocalDensity provides if (fontScale == null) density else Density(density.density, fontScale),
                 LocalActivityResultRegistryOwner provides picker,
                 LocalContext provides (testContext ?: LocalContext.current),
             ) {
@@ -172,9 +176,18 @@ class LocalConnectorScreensTest {
             setLocale(java.util.Locale.forLanguageTag(tag))
         }
         val localized = context.createConfigurationContext(configuration)
-        open(light = themed, testContext = localized)
+        open(light = themed, testContext = localized, fontScale = 2f)
         click(localized.getString(com.ironvellum.app.R.string.local_ai_share))
         compose.waitUntil(8_000) { compose.onAllNodesWithText(counts).fetchSemanticsNodes().isNotEmpty() }
+        find(localized.getString(com.ironvellum.app.R.string.local_ai_sets)).performScrollTo().assertIsDisplayed()
+        shot("v2_${tag}_sets_200")
+        val names = if (themed) com.ironvellum.app.R.string.local_ai_names__t else com.ironvellum.app.R.string.local_ai_names
+        find(localized.getString(names)).performScrollTo().assertIsDisplayed()
+        shot("v2_${tag}_names_200")
+        val privateText = if (themed) com.ironvellum.app.R.string.local_ai_private_hint__t
+            else com.ironvellum.app.R.string.local_ai_private_hint
+        find(localized.getString(privateText)).performScrollTo().assertIsDisplayed()
+        shot("v2_${tag}_privacy_200")
     }
 
     @Test fun spanishPlainPreviewShowsBothCoverageLabels() =

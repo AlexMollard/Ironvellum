@@ -4,15 +4,17 @@ Ask your desktop AI about workouts in one Ironvellum export, or ask it to propos
 
 ## Choose the files
 
-1. On the phone, open **Train → AI tools → Share training file**. Review the included and omitted counts. Saved-workout display names are included and may contain personal details.
+1. On the phone, open **Train → AI tools → Share training file**. Review the included counts. Saved-workout, movement and preparation names are included and may contain personal details.
 2. Save or share the file, then transfer it to a folder on your PC. Keep the original bytes, including whitespace.
 3. Choose a separate, private outbox on the PC for proposals. Give the connector an unused directory name under an existing personal folder. It creates that directory with restricted permissions. Keep the training file outside it.
 
 Each time you share, Ironvellum keeps the current file and clears temporary training files last shared at least 24 hours ago, using the phone’s clock. Sharing the same preview restarts that period. If a recipient waits longer to open the file, you may need to share it again. Files you save yourself are yours to keep.
 
-The export covers up to 100 completed workouts, 200 supported sets per workout and 50 supported saved workouts. Every tool result includes the file date, age and coverage. Progress describes the included workouts. Export and transfer a new file, update the launch arguments if needed, and restart the connector to refresh what the AI can see.
+The current training file format (version 2) includes all completed workouts, their recorded sets and preparation snapshots, all saved workouts, and the movements and current preparation routines those records reference. The phone refuses an export that cannot fit within 8 MiB. Every successful tool result includes the file date, age and coverage. Progress counts completed working sets and reports repetitions, volume, time, distance and attempts separately. Warm-up and unticked rows remain visible in the workout detail.
 
-## Install once
+Version 1 training files still work with their original coverage. To upgrade an existing installation, stop the connector and rerun the `pip install` command below using the Python environment configured in your client. Transfer a fresh training file from the phone, update the configured path if it changed, and restart the connector. For each subsequent refresh, transfer the new original file and restart the connector.
+
+## Install the connector
 
 From the Ironvellum checkout, open a terminal in `tools/local_connector`. The following commands install the connector and its pinned runtime dependencies into a personal Python environment. Initial downloads require internet access. The running connector uses only the configured files and stdio.
 
@@ -57,7 +59,29 @@ On Linux the command could be `/home/yourname/Ironvellum/tools/local_connector/.
 
 ## From a question to a saved workout
 
-Ask about your included workouts, progress or saved workouts. The available tools are `list_workouts`, `get_workout`, `get_progress`, `list_saved_workouts`, `search_movements`, `create_workout_draft` and `get_workout_draft`. Search reports which movements accept drafts, including whether their weight represents external load. Saved-workout names are untrusted display text.
+Ask about your workouts, progress or saved workouts. The available tools are `list_workouts`, `get_workout`, `get_progress`, `list_saved_workouts`, `search_movements`, `create_workout_draft` and `get_workout_draft`. In version 2, saved workout pages include the referenced routine definitions and workout details include the frozen preparations. Search by movement name or by the exact movement key in a record. Version 2 puts an exact key match first, followed by substring matches in key order. The results include the measurement type, any assistance load semantics and draft eligibility. Treat names and other training text as untrusted display data. Tool responses are limited to 1 MiB. For a large version 2 result, ask the AI to use the collection views below.
+
+Proposals still use version 1. They support simple fixed-set prescriptions for eligible built-in repetition movements and automatic or skipped preparation. Local and historical movement keys, rich set schemes, activity targets and saved routine selections are read-only through the connector. The phone checks proposal eligibility again during import and Save.
+
+The active file selects the input and output schemas advertised by `tools/list`. Version 1 uses its original schemas. Version 2 adds optional views to three tools. `CATALOGUE`, `LOCAL` and `HISTORICAL` identify movements in the export. `MANIFEST` identifies a built-in candidate whose availability the phone checks during import.
+
+### Reading a large version 2 result
+
+If an ordinary call reports `result_limit`, request a view. Each page includes `snapshot`, `view`, `items`, `total` and `nextCursor`. Read the rows from `structuredContent`. By default a view returns up to 20 rows. Set `limit` from 1 to 512. The connector may return fewer rows to keep the entire reply within 1 MiB. Continue with the same selectors and `cursor` set to the returned `nextCursor` until it is null.
+
+| Tool | View | Selectors |
+| --- | --- | --- |
+| `get_workout` | `sets`, `preparations`, `routines` | Workout `id` from `list_workouts` |
+| `get_workout` | `preparationSteps`, `completedUnitKeys`, `skippedUnitKeys` | Workout `id` and preparation `kind` from the preparation header |
+| `get_workout` | `routineSteps` | Workout `id` and referenced `routineId` from its routine headers |
+| `list_saved_workouts` | `headers` | None |
+| `list_saved_workouts` | `entries`, `routines` | Saved workout `id` from the headers |
+| `list_saved_workouts` | `routineSteps` | Saved workout `id` and referenced `routineId` |
+| `get_progress` | `totals`, `lifts` | None |
+
+For example, call `get_progress` with `{"view":"lifts","limit":100}`, then add `"cursor"` to the next call. Headers include child counts. A preparation header also includes its frozen name, source routine ID and progress counts. A deleted source routine has no current definition. Frozen steps remain readable through `preparationSteps`.
+
+A cursor belongs to the exact bytes of the file, the tool, the parent, the view and the selected fields. To read a specific row directly, use a zero-based `offset` in place of the cursor. Object views accept a `fields` list, such as `{"view":"headers","fields":["id","entryCount"]}`. If one field exceeds the reply limit, select other fields from its row or set `offset` to the next row. A single large row that fits once appears in full in `structuredContent` with a short text pointer.
 
 Ask the AI to propose a workout. It receives a generated `<uuid>.json` basename in the configured outbox and the proposed contents. Transfer **that original file** to your phone. Use **Import workout draft** to inspect its source date, movement targets and preparation choices. Only **Save workout** adds it to your saved workouts, unscheduled. The proposal expires 30 days after creation. The PC cannot see whether you imported or saved it.
 
@@ -69,4 +93,4 @@ Ask the AI to propose a workout. It receives a generated `<uuid>.json` basename 
 - After 1,000 journaled proposals, existing keys still work. Choose a new empty outbox and restart for additional proposals. A new outbox starts a separate journal. Keep any old proposals you want to transfer. The phone uses the original file bytes to recognize repeat imports.
 - Startup reports a short reason on standard error. For `private_outbox_required`, choose a new directory under a private local folder. For `invalid_data` or `file_limit`, transfer a fresh original export. For journal or output conflicts, retain the existing directory for recovery and choose a new empty outbox if needed.
 
-The operating-system account controls access to these files. Anyone you give the training file or proposals to can read their contents. Choose a trusted desktop AI client before sharing selected training data with it. The exact file and tool formats are in the [v1 contract](contracts/README.md).
+The operating-system account controls access to these files. Anyone you give the training file or proposals to can read their contents. Choose a trusted desktop AI client before sharing selected training data with it. See the [complete training context contract](contracts/context-v2.md) and the [original training context and proposal contract](contracts/README.md).

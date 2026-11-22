@@ -14,6 +14,8 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 import pytest
 
+from ironvellum_local_connector.contract import TOOLS as RESOLVED_V1_SCHEMAS
+
 FIXTURES = Path(__file__).resolve().parents[1] / "contracts" / "fixtures"
 CONTEXT = (FIXTURES / "context.json").read_bytes()
 PROPOSAL = json.loads((FIXTURES / "proposal.json").read_bytes())
@@ -49,7 +51,10 @@ def test_official_client_all_seven(paths, tmp_path):
         with (tmp_path / "stderr").open("w") as errors:
             async with stdio_client(params, errlog=errors) as streams, ClientSession(*streams) as client:
                 await client.initialize()
-                assert {t.name for t in (await client.list_tools()).tools} == set(TOOLS)
+                specs = {t.name: t.model_dump(by_alias=True) for t in (await client.list_tools()).tools}
+                assert set(specs) == set(TOOLS)
+                for name, schemas in RESOLVED_V1_SCHEMAS.items():
+                    assert {key: specs[name][key] for key in schemas} == schemas
 
                 async def call(name, arguments):
                     result = await client.call_tool(name, arguments)
@@ -65,6 +70,8 @@ def test_official_client_all_seven(paths, tmp_path):
                 assert (await call("list_saved_workouts", {}))["savedWorkouts"][0]["name"] == PROPOSAL["draft"]["name"]
                 matches = (await call("search_movements", {"query": "assisted dip"}))["movements"]
                 assert matches == [{"key": "assisted dip", "name": "Assisted Dip", "metric": "REPS", "draftable": False}]
+                legacy_order = (await call("search_movements", {"query": "plank", "limit": 3}))["movements"]
+                assert [row["key"] for row in legacy_order] == ["bear plank", "copenhagen plank", "plank"]
                 created = await call("create_workout_draft", {"idempotencyKey": "sdk", "draft": PROPOSAL["draft"]})
                 assert created["status"] == "proposed"
                 draft = created["proposal"]

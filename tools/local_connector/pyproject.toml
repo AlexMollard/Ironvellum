@@ -4,11 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ironvellum-local-connector"
-version = "1.0.0"
+dynamic = ["version"]
 description = "Personal offline Ironvellum training file connector"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = ["mcp==2.3.0", "pydantic==2.14.4", "simplejson==4.3.0", "jsonschema==4.26.0", "pywin32>=311; sys_platform == 'win32'"]
+
+[tool.hatch.version]
+path = "src/ironvellum_local_connector/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ironvellum_local_connector"]
@@ -19,6 +22,9 @@ packages = ["src/ironvellum_local_connector"]
 "contracts/tools-v1.json" = "ironvellum_local_connector/contracts/tools-v1.json"
 "contracts/tool-types-v1.schema.json" = "ironvellum_local_connector/contracts/tool-types-v1.schema.json"
 "contracts/files-v1.schema.json" = "ironvellum_local_connector/contracts/files-v1.schema.json"
+"contracts/context-v2.schema.json" = "ironvellum_local_connector/contracts/context-v2.schema.json"
+"contracts/tool-outputs-v2.json" = "ironvellum_local_connector/contracts/tool-outputs-v2.json"
+"contracts/tool-types-v2.schema.json" = "ironvellum_local_connector/contracts/tool-types-v2.schema.json"
 
 [tool.hatch.build.targets.sdist]
 include = ["src", "contracts", "tests", "README.md", "requirements.lock", "pyproject.toml"]

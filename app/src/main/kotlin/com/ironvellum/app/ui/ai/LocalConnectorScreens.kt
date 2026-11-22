@@ -306,7 +306,7 @@ private fun ExportPreview(page: LocalPage.Preview, enabled: Boolean, share: () -
         CoverageRow(stringResource(R.string.local_ai_sets), localText(R.string.local_ai_sets_hint, R.string.local_ai_sets_hint__t),
             coverage.setsIncluded, coverage.setsTruncated + coverage.setsUnsupported)
         InkDivider()
-        CoverageRow(localText(R.string.local_ai_presets, R.string.local_ai_presets__t), stringResource(R.string.local_ai_names),
+        CoverageRow(localText(R.string.local_ai_presets, R.string.local_ai_presets__t), localText(R.string.local_ai_names, R.string.local_ai_names__t),
             coverage.savedWorkoutsIncluded, coverage.savedWorkoutsTruncated + coverage.savedWorkoutsUnsupported)
     }
     Spacer(Modifier.height(8.dp))

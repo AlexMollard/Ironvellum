@@ -1,4 +1,4 @@
-"""Frozen v1 schemas and exact, bounded JSON encoding and validation."""
+"""Versioned schemas and exact, bounded JSON encoding and validation."""
 import hashlib
 from importlib.resources import files
 import json
@@ -8,6 +8,8 @@ from decimal import Decimal, InvalidOperation
 
 from jsonschema import Draft202012Validator, validators
 import simplejson
+
+from .page_contract import with_views
 
 
 MAX_CONTEXT = 8 << 20
@@ -113,7 +115,13 @@ def resource(name):
 
 
 FILES = resource("files-v1.schema.json")["$defs"]
-TOOL_TYPES = resource("tool-types-v1.schema.json")["$defs"]
+CONTEXT_V2 = resource("context-v2.schema.json")
+DEFINITIONS = {
+    "files-v1.schema.json": FILES,
+    "context-v2.schema.json": CONTEXT_V2["$defs"],
+    "tool-types-v1.schema.json": resource("tool-types-v1.schema.json")["$defs"],
+    "tool-types-v2.schema.json": resource("tool-types-v2.schema.json")["$defs"],
+}
 
 
 def _inline(schema, local):
@@ -123,19 +131,24 @@ def _inline(schema, local):
         return schema
     if "$ref" in schema:
         filename, key = schema["$ref"].split("#/$defs/")
-        definitions = {"": local, "files-v1.schema.json": FILES,
-                       "tool-types-v1.schema.json": TOOL_TYPES}[filename]
+        definitions = DEFINITIONS[filename] if filename else local
         return _inline(definitions[key], definitions)
     return {key: _inline(value, local) for key, value in schema.items()}
 
 
 TOOLS = _inline(resource("tools-v1.json"), FILES)
+TOOLS_V2 = {name: dict(TOOLS[name], outputSchema=output)
+            for name, output in _inline(resource("tool-outputs-v2.json"), {}).items()}
+TOOLS_V2 = with_views(TOOLS_V2, _inline(CONTEXT_V2["$defs"], CONTEXT_V2["$defs"]))
 INTEGER = Draft202012Validator.TYPE_CHECKER.redefine(
     "integer", lambda _, n: type(n) is int or isinstance(n, Decimal) and n == n.to_integral_value())
 Validator = validators.extend(Draft202012Validator, type_checker=INTEGER)
 CONTEXT_SCHEMA = Validator(_inline(FILES["context"], FILES))
+CONTEXT_SCHEMA_V2 = Validator(CONTEXT_V2)
+OPAQUE_ID_V2 = re.compile(CONTEXT_V2["$defs"]["opaqueId"]["pattern"])
 PROPOSAL_SCHEMA = Validator(_inline(FILES["proposal"], FILES))
 INPUTS = {name: Validator(tool["inputSchema"]) for name, tool in TOOLS.items()}
+INPUTS_V2 = {name: Validator(tool["inputSchema"]) for name, tool in TOOLS_V2.items()}
 
 
 def validate(schema, value):

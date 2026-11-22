@@ -45,7 +45,7 @@ internal object LocalConnectorFiles {
 }
 
 /** Read one RFC 8259 value, checking member uniqueness before building each object. */
-private class LocalJsonReader(private val input: String) {
+internal class LocalJsonReader(private val input: String) {
     private var pos = 0
     private fun space() { while (pos < input.length && input[pos] in " \t\r\n") pos++ }
     private fun take(c: Char): Boolean {

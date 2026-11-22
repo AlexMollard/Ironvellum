@@ -8,6 +8,7 @@ from mcp.server.stdio import stdio_server
 
 from .contract import MAX_FRAME, MAX_RESULT, Refusal, encode, loads, require
 from .server import create_server
+from .pages import STRUCTURED_PAGE_TEXT
 
 
 class BoundedInput:
@@ -48,6 +49,9 @@ class ExactOutput:
         if "error" in envelope:
             envelope["error"] = {"code": envelope["error"]["code"], "message": "invalid_request"}
         raw = encode(envelope)
+        if len(raw) > MAX_RESULT and isinstance(result, dict) and "view" in result.get("structuredContent", {}):
+            result["content"] = [{"type": "text", "text": STRUCTURED_PAGE_TEXT}]
+            raw = encode(envelope)
         if len(raw) > MAX_RESULT:
             raw = encode({"jsonrpc": "2.0", "id": envelope.get("id"),
                           "result": {"isError": True, "content": [{"type": "text", "text": "result_limit"}]}})
