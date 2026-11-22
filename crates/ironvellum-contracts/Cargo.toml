@@ -1,0 +1,13 @@
+[package]
+name = "ironvellum-contracts"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+serde_json = { version = "=1.0.145", features = ["preserve_order", "arbitrary_precision"] }
+bigdecimal = "=0.4.9"
+fancy-regex = "=0.16.2"
+sha2 = "=0.10.9"
+caseless = "=0.2.2"
