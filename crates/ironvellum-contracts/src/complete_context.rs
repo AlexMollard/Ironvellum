@@ -385,27 +385,29 @@ pub(crate) fn checked_progress(doc: &Value, v2: bool) -> Result<Value> {
         };
         items.push(v);
     }
-    let mut val = if v2 {
-        total.value()?
-    } else {
-        json!({"completedSets":total.sets,"completedReps":total.reps,"externalVolumeKg":rounded(&total.volume)?,"liftsTruncated":truncated})
-    };
-    val["version"] = json!(if v2 { 2 } else { 1 });
-    val["scope"] = json!(if v2 {
-        "completed-workouts"
-    } else {
-        "included-workouts"
-    });
-    val["completedWorkouts"] = json!(workouts.len());
-    val["firstCompletedAtMs"] = workouts
+    let first = workouts
         .last()
         .map(|x| x["completedAtMs"].clone())
         .unwrap_or_default();
-    val["lastCompletedAtMs"] = workouts
+    let last = workouts
         .first()
         .map(|x| x["completedAtMs"].clone())
         .unwrap_or_default();
-    val["lifts"] = json!(items);
+    // The MCP text result preserves the original layout of computed progress.
+    let val = if v2 {
+        let mut val = total.value()?;
+        val["version"] = json!(2);
+        val["scope"] = json!("completed-workouts");
+        val["completedWorkouts"] = json!(workouts.len());
+        val["firstCompletedAtMs"] = first;
+        val["lastCompletedAtMs"] = last;
+        val["lifts"] = Value::Array(items);
+        val
+    } else {
+        json!({"version":1,"scope":"included-workouts","completedWorkouts":workouts.len(),
+            "completedSets":total.sets,"completedReps":total.reps,"externalVolumeKg":rounded(&total.volume)?,
+            "lifts":items,"liftsTruncated":truncated,"firstCompletedAtMs":first,"lastCompletedAtMs":last})
+    };
     let mut claim = doc["progress"].clone();
     let round_claim = |c: &mut Value| -> Result<()> {
         for field in ["externalVolumeKg", "distanceM"] {
