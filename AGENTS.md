@@ -22,7 +22,47 @@ turn developer device-control tools into a consumer dependency.
 
 The owner has authorised agents to `git commit` and `git push` to `main` as work
 progresses (2026-09-23). Commit each coherent unit once it is verified, using the
-house commit style, and push it.
+house commit style, and push it. A coherent unit is a completed concern, not each
+file edit or agent handoff.
+
+### Commit message format
+
+Use a plain imperative subject, a blank line, then explanatory bullet points.
+Follow `b5932e8f2305edd4add1d0f2009c0b4da4592fe1` as the reference. Do not use
+Conventional Commit prefixes such as `feat:`, `fix:` or `docs:`.
+
+Use exactly one blank line between the subject and body, and single newlines
+between bullet points: no blank lines between bullets. Write the complete message
+to a UTF-8 file and use `git commit --file <path>` (also when amending). Do not
+pass each bullet as a separate `-m` argument: Git inserts paragraph breaks between
+those arguments. Before pushing, inspect `git log -1 --format=%B` and verify the
+actual stored message has the required spacing.
+
+```text
+Improve notification headings and privacy
+
+- Describe friend request updates with specific headings
+- Keep private message details off the lock screen
+- Cover notification wording and privacy regressions
+```
+
+Describe the completed change and why it matters. Mention verification only when
+it was actually performed.
+
+### Group changes by concern
+
+Include related code, tests, documentation and agent instructions in the same
+verified commit. Do not create separate commits for a single small documentation
+update, typo, progress note, plan update or review follow-up. Collect those changes
+with the next related substantive commit; do not commit merely because an agent
+finished a step. Keep unrelated concerns separate.
+
+A standalone documentation commit is appropriate for a substantial, complete
+documentation deliverable or when the owner explicitly requests one. A request to
+edit documentation alone does not require an immediate standalone commit. Leave
+small documentation-only edits uncommitted until they can be grouped, and report
+that clearly. Do not amend or rewrite pushed commits to group follow-ups without
+the owner's explicit authorisation.
 
 Still the owner's call, every time: force-push, history rewrites (`rebase` of
 pushed commits, `filter-repo`, `reset` of pushed work), tags and GitHub
