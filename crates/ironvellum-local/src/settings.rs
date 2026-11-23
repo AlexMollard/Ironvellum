@@ -258,7 +258,7 @@ fn persist(
     old: Option<&Settings>,
 ) -> Result<()> {
     let raw = value.encode()?;
-    if old == Some(value) {
+    if old.is_some_and(|old| equivalent(old, value)) {
         return Ok(());
     }
     guard.write(
@@ -273,25 +273,76 @@ fn persist(
 }
 
 pub fn save_settings(path: &Selected, value: &Settings) -> Result<()> {
+    save(path, value.clone(), None).map(|_| ())
+}
+
+fn equivalent(a: &Settings, b: &Settings) -> bool {
+    same_paths(a.endpoints(), b.endpoints())
+        && a.watch_enabled == b.watch_enabled
+        && a.selected_dataset_id == b.selected_dataset_id
+}
+
+/// Configure explicitly selected directories, preserving omitted preferences
+/// from the most recent settings read under the directory lock.
+pub(crate) fn configure_settings(
+    path: &Selected,
+    directories: Settings,
+    dataset: Option<&str>,
+    watch: Option<bool>,
+) -> Result<Settings> {
+    let dataset = dataset.filter(|id| !id.is_empty());
+    if dataset.is_some_and(|id| !valid_dataset_id(id)) {
+        return Err(LocalError::InvalidSettings);
+    }
+    save(path, directories, Some((dataset, watch)))
+}
+
+fn save(
+    path: &Selected,
+    mut value: Settings,
+    setup: Option<(Option<&str>, Option<bool>)>,
+) -> Result<Settings> {
     value.validate(path)?;
     let (parent, n) = location(path)?;
     let folder = match PrivateFolder::open(&parent, LocklessOpen::Existing) {
         Ok(folder) => folder,
         Err(LocalError::Missing) => {
             let ancestor = Directory::open_parent(&parent)?;
-            check_existing_location(&ancestor, value, LocationCheck::Proposed)?;
+            check_existing_location(&ancestor, &value, LocationCheck::Proposed)?;
             PrivateFolder::open(&parent, LocklessOpen::CreateLeaf)?
         }
         Err(err) => return Err(err),
     };
-    check_existing_location(folder.dir(), value, LocationCheck::Proposed)?;
+    check_existing_location(folder.dir(), &value, LocationCheck::Proposed)?;
     let guard = settings_lock(&folder, path, &n, false)?;
     let old = read_existing(&folder, path, &n, false)?;
+    if let Some((dataset, watch)) = setup {
+        value.selected_dataset_id = dataset
+            .map(str::to_owned)
+            .or_else(|| old.as_ref().and_then(|s| s.selected_dataset_id.clone()));
+        value.watch_enabled =
+            watch.unwrap_or_else(|| old.as_ref().is_some_and(|s| s.watch_enabled));
+        match Directory::open(&value.input_directory, OpenDir::InputExisting) {
+            Ok(_) => (),
+            Err(LocalError::Missing) => {
+                Directory::open(&value.input_directory, OpenDir::PrivateCreateLeaf)?;
+            }
+            Err(err) => return Err(err),
+        }
+    }
     let pinned = open_endpoints(value.endpoints(), LocklessOpen::CreateLeaf)?;
     for endpoint in &pinned[..2] {
         check_location(folder.dir(), endpoint)?;
     }
-    persist(&guard, &n, value, old.as_ref())
+    persist(&guard, &n, &value, old.as_ref())?;
+    if setup.is_some() {
+        let stored = load_settings(path)?;
+        if !equivalent(&value, &stored) {
+            return Err(LocalError::SettingsVerifyFailed);
+        }
+        return Ok(stored);
+    }
+    Ok(value)
 }
 
 pub fn update_settings(

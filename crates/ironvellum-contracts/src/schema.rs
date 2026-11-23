@@ -279,9 +279,9 @@ fn supported_schema(s: &Value) -> bool {
             "pattern" => value
                 .as_str()
                 .is_some_and(|pattern| PATTERNS.contains_key(pattern)),
-            "$schema" | "title" | "description" | "const" | "enum" | "type" | "minimum"
-            | "maximum" | "minLength" | "maxLength" | "minItems" | "maxItems" | "uniqueItems"
-            | "minProperties" | "required" => true,
+            "$schema" | "title" | "description" | "default" | "const" | "enum" | "type"
+            | "minimum" | "maximum" | "minLength" | "maxLength" | "minItems" | "maxItems"
+            | "uniqueItems" | "minProperties" | "required" => true,
             _ => false,
         })
     })
@@ -294,7 +294,7 @@ fn accepts(s: &Value, v: &Value) -> bool {
         return false;
     };
     schema.iter().all(|(key, c)| match key.as_str() {
-        "title" | "description" | "$schema" => true,
+        "title" | "description" | "default" | "$schema" => true,
         "type" => match c {
             Value::String(t) => kind(t, v),
             Value::Array(a) => a.iter().any(|t| t.as_str().is_some_and(|t| kind(t, v))),

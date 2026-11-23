@@ -12,7 +12,8 @@ fn token(scope: &[Value; 7], offset: usize) -> Result<String, Refusal> {
     Ok(format!("{offset}:{digest:x}"))
 }
 
-fn count(value: &Value) -> Option<usize> {
+/// Return a nonnegative integral JSON number if it fits a native page index.
+pub fn exact_index(value: &Value) -> Option<usize> {
     let number = value.as_number()?;
     if let Some(integer) = number.as_u64() {
         return usize::try_from(integer).ok();
@@ -86,7 +87,7 @@ where
     } else {
         let offset = args
             .get("offset")
-            .map_or(Some(0), count)
+            .map_or(Some(0), exact_index)
             .ok_or(Refusal::InvalidOffset)?;
         if offset > total {
             return Err(Refusal::InvalidOffset);
@@ -95,7 +96,7 @@ where
     };
     let limit = args
         .get("limit")
-        .map_or(Some(20), count)
+        .map_or(Some(20), exact_index)
         .filter(|limit| (1..=512).contains(limit))
         .ok_or(Refusal::InvalidData)?;
 

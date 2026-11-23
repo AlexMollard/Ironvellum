@@ -7,6 +7,68 @@ use std::{fs, path::PathBuf};
 
 struct Fixture(PathBuf);
 
+fn configure_settings(
+    path: &Selected,
+    dirs: Settings,
+    dataset: Option<&str>,
+    watch: Option<bool>,
+) -> Result<Settings, LocalError> {
+    use ironvellum_local::setup::{Client, SetupOptions, configure};
+    Ok(configure(SetupOptions {
+        settings: path.clone(),
+        input: dirs.input_directory,
+        outbox: dirs.outbox_directory,
+        state: dirs.state_directory,
+        dataset: dataset.map(str::to_owned),
+        watch,
+        client: Client::ConfigOnly,
+        executable: selected(&std::env::current_exe().unwrap())?,
+    })?
+    .status
+    .settings)
+}
+
+#[cfg(windows)]
+#[test]
+fn equivalent_endpoint_case_and_separators_keep_settings_bytes() {
+    let f = Fixture::new();
+    let target = f.target();
+    configure_settings(&target, f.settings(), None, None).unwrap();
+    let original = f.original();
+    f.existing(original.as_bytes());
+    let alternate = |s: &Selected| {
+        selected(std::path::Path::new(
+            &s.as_path()
+                .to_str()
+                .unwrap()
+                .to_uppercase()
+                .replace('\\', "/"),
+        ))
+        .unwrap()
+    };
+    let [a, b, c] = f.settings().endpoints().map(alternate);
+    configure_settings(&target, Settings::new(a, b, c), None, None).unwrap();
+    assert_eq!(fs::read(target.as_path()).unwrap(), original.as_bytes());
+}
+
+#[test]
+fn first_setup_creates_input_and_retains_omitted_preferences() {
+    let f = Fixture::new();
+    let target = f.target();
+    let id = "01234567-89ab-4def-8123-456789abcdef";
+    configure_settings(&target, f.settings(), Some(id), Some(true)).unwrap();
+    let original = fs::read(target.as_path()).unwrap();
+    let repeated = configure_settings(&target, f.settings(), None, None).unwrap();
+    assert_eq!(repeated.selected_dataset_id.as_deref(), Some(id));
+    assert!(repeated.watch_enabled);
+    assert_eq!(fs::read(target.as_path()).unwrap(), original);
+    assert!(
+        !configure_settings(&target, f.settings(), None, Some(false))
+            .unwrap()
+            .watch_enabled
+    );
+}
+
 #[test]
 fn ordinary_updates_and_saves_can_repair_a_former_input_which_is_now_a_file() {
     let f = Fixture::new();

@@ -5,6 +5,8 @@ mod files;
 #[cfg(any(windows, target_os = "linux", target_os = "macos"))]
 mod journal;
 #[cfg(any(windows, target_os = "linux", target_os = "macos"))]
+pub mod setup;
+#[cfg(any(windows, target_os = "linux", target_os = "macos"))]
 pub use journal::{ArchiveItem, Journal, ReadyArchive, ReadyPage};
 #[cfg(unix)]
 pub mod posix;

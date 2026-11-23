@@ -289,6 +289,18 @@ impl<W: AsyncWrite + Unpin + Send + 'static> BoundedTransport<W> {
                             }
                             continue;
                         }
+                        // rmcp represents a known method with untyped parameters
+                        // as a custom request. Watched resource reads distinguish
+                        // invalid parameters from a well-formed, refused URI.
+                        if output.folder
+                            && method == "resources/read"
+                            && !value.pointer("/params/uri").is_some_and(Value::is_string)
+                        {
+                            if output.reject(id, -32602).await.is_err() {
+                                return;
+                            }
+                            continue;
+                        }
                         let permit = match capacity.clone().try_acquire_owned() {
                             Ok(permit) => permit,
                             Err(tokio::sync::TryAcquireError::NoPermits) => {
@@ -391,17 +403,25 @@ impl<W: AsyncWrite + Unpin + Send + 'static> Transport<RoleServer> for BoundedTr
             if let Some(error) = envelope.get_mut("error") {
                 let code = error["code"].as_i64().unwrap_or(-32600);
                 let message = error["message"].as_str().unwrap_or_default();
+                let known_resource_error = matches!(
+                    message,
+                    "invalid_resource"
+                        | "not_found"
+                        | "source_expired"
+                        | "outbox_conflict"
+                        | "journal_conflict"
+                        | "storage_unavailable"
+                );
+                // rmcp translates RESOURCE_NOT_FOUND to INVALID_PARAMS for
+                // modern clients. Restore this connector's frozen resource
+                // code only for a correlated read and its public refusals.
+                let modern_read = receipt
+                    .as_ref()
+                    .is_some_and(|r| r.modern && r.method == "resources/read");
                 let allowed = output.folder
-                    && code == -32002
-                    && matches!(
-                        message,
-                        "invalid_resource"
-                            | "not_found"
-                            | "source_expired"
-                            | "outbox_conflict"
-                            | "journal_conflict"
-                            | "storage_unavailable"
-                    );
+                    && known_resource_error
+                    && (code == -32002 || (modern_read && code == -32602));
+                let code = if allowed { -32002 } else { code };
                 *error =
                     json!({"code":code,"message": if allowed {message} else {"invalid_request"}});
                 receipt = None;

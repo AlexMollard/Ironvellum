@@ -11,7 +11,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 pub const NAME: &str = "ironvellum-personal";
 pub const VERSION: &str = "1.1.0";
-const TOOLS: [(&str, &str, &str); 7] = [
+pub(crate) const TOOLS: [(&str, &str, &str); 7] = [
     (
         "list_workouts",
         "Page completed workouts in the selected training file.",
@@ -55,7 +55,7 @@ pub struct Personal {
     tools: Vec<Tool>,
 }
 
-type ResultCode<T> = Result<T, &'static str>;
+pub(crate) type ResultCode<T> = Result<T, &'static str>;
 
 impl Personal {
     pub fn new(files: LocalFiles) -> ResultCode<Self> {
@@ -90,61 +90,79 @@ impl Personal {
 
     fn call(&self, name: &str, request: &OriginalRequest) -> ResultCode<CallToolResult> {
         let args = request.tool_arguments().map_err(|e| e.code())?;
-        let now: u64 = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .ok()
-            .and_then(|d| d.as_millis().try_into().ok())
-            .filter(|n| *n <= MAX_TIME)
-            .ok_or("clock")?;
-        let metadata = self.source.metadata(now);
-        let spec = schema::tool(self.source.version(), name).ok_or("unknown_tool")?;
-        schema::validate(&spec["inputSchema"], &args).map_err(|e| e.code())?;
-        let string = |key: &str| args[key].as_str().ok_or("invalid_data");
-        let journal = Journal::new(self.files.outbox(), &self.source);
-        let fields = if args.get("view").is_some() {
-            self.source
-                .collection(name, &args, &metadata, &request.id)
-                .map_err(|e| e.code())?
-        } else {
-            match name {
-                "list_workouts" => self.source.page("workouts", &args).map_err(|e| e.code())?,
-                "get_workout" => self
-                    .source
-                    .workout_result(string("id")?)
-                    .map_err(|e| e.code())?,
-                "get_progress" => json!({"progress": self.source.progress()}),
-                "list_saved_workouts" => self
-                    .source
-                    .page("savedWorkouts", &args)
-                    .map_err(|e| e.code())?,
-                "search_movements" => {
-                    // The input schema bounds this integer to a small positive value.
-                    let limit = args["limit"].as_f64().unwrap_or(20.0) as usize;
-                    json!({"movements": self.source.search_movements(string("query")?, limit)})
-                }
-                "create_workout_draft" => journal
-                    .create(string("idempotencyKey")?, &args["draft"], now)
-                    .map_err(|e| e.code())?,
-                "get_workout_draft" => journal.get(string("draftId")?).map_err(|e| e.code())?,
-                _ => return Err("unknown_tool"),
-            }
-        };
-        let Value::Object(fields) = fields else {
-            return Err("storage_unavailable");
-        };
-        let mut result = serde_json::Map::new();
-        result.insert("snapshot".into(), metadata);
-        result.extend(fields);
-        let value = Value::Object(result);
-        let bytes = encode(&value).map_err(|e| e.code())?;
-        if bytes.len() > MAX_RESULT {
-            return Err("result_limit");
-        }
-        let text = String::from_utf8(bytes).map_err(|_| "storage_unavailable")?;
-        let mut response = CallToolResult::success(vec![ContentBlock::text(text)]);
-        response.structured_content = Some(value);
-        Ok(response)
+        dispatch(
+            &self.source,
+            self.files.outbox(),
+            name,
+            &args,
+            &request.id,
+            now_ms()?,
+        )
     }
+}
+
+pub(crate) fn now_ms() -> ResultCode<u64> {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .ok()
+        .and_then(|d| d.as_millis().try_into().ok())
+        .filter(|n| *n <= MAX_TIME)
+        .ok_or("clock")
+}
+
+pub(crate) fn dispatch(
+    source: &Snapshot,
+    outbox: &ironvellum_local::PrivateFolder,
+    name: &str,
+    args: &Value,
+    id: &Value,
+    now: u64,
+) -> ResultCode<CallToolResult> {
+    let journal = Journal::new(outbox, source);
+    let metadata = source.metadata(now);
+    let spec = schema::tool(source.version(), name).ok_or("unknown_tool")?;
+    schema::validate(&spec["inputSchema"], args).map_err(|e| e.code())?;
+    let string = |key: &str| args[key].as_str().ok_or("invalid_data");
+    let fields = if args.get("view").is_some() {
+        source
+            .collection(name, args, &metadata, id)
+            .map_err(|e| e.code())?
+    } else {
+        match name {
+            "list_workouts" => source.page("workouts", args).map_err(|e| e.code())?,
+            "get_workout" => source.workout_result(string("id")?).map_err(|e| e.code())?,
+            "get_progress" => json!({"progress": source.progress()}),
+            "list_saved_workouts" => source.page("savedWorkouts", args).map_err(|e| e.code())?,
+            "search_movements" => {
+                // The input schema bounds this integer to a small positive value.
+                let limit = args["limit"].as_f64().unwrap_or(20.0) as usize;
+                json!({"movements": source.search_movements(string("query")?, limit)})
+            }
+            "create_workout_draft" => journal
+                .create(string("idempotencyKey")?, &args["draft"], now)
+                .map_err(|e| e.code())?,
+            "get_workout_draft" => journal.get(string("draftId")?).map_err(|e| e.code())?,
+            _ => return Err("unknown_tool"),
+        }
+    };
+    let Value::Object(fields) = fields else {
+        return Err("storage_unavailable");
+    };
+    let mut result = serde_json::Map::new();
+    result.insert("snapshot".into(), metadata);
+    result.extend(fields);
+    tool_result(Value::Object(result))
+}
+
+pub(crate) fn tool_result(value: Value) -> ResultCode<CallToolResult> {
+    let bytes = encode(&value).map_err(|e| e.code())?;
+    if bytes.len() > MAX_RESULT {
+        return Err("result_limit");
+    }
+    let text = String::from_utf8(bytes).map_err(|_| "storage_unavailable")?;
+    let mut response = CallToolResult::success(vec![ContentBlock::text(text)]);
+    response.structured_content = Some(value);
+    Ok(response)
 }
 
 impl ServerHandler for Personal {

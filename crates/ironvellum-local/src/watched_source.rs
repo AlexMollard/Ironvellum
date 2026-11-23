@@ -10,7 +10,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-const INTERVAL: Duration = Duration::from_secs(2);
+pub(crate) const INTERVAL: Duration = Duration::from_secs(2);
 const SCAN_BYTES: u64 = 32 << 20;
 
 #[derive(Clone, Debug, Eq, PartialEq)]

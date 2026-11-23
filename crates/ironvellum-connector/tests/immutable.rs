@@ -753,7 +753,6 @@ async fn startup_and_complete_input_frame_boundaries() {
     assert_eq!(output.stderr, b"invalid_data\n");
     for argv in [
         vec!["--context", "private-canary"],
-        vec!["serve-folder", "private-canary"],
         vec!["--con", "private-canary", "--outbox", "private-canary"],
     ] {
         let output = Command::new(BINARY).args(argv).output().unwrap();
@@ -764,7 +763,13 @@ async fn startup_and_complete_input_frame_boundaries() {
             b"Expected --context FILE and --outbox DIRECTORY.\n"
         );
     }
-    for path in ["relative-private-canary", "-1", "-.5"] {
+    for path in [
+        "relative-private-canary",
+        "-1",
+        "-.5",
+        "-local export",
+        "-٤.٢",
+    ] {
         let output = Command::new(BINARY)
             .args(["--context", path, "--outbox", "elsewhere"])
             .output()

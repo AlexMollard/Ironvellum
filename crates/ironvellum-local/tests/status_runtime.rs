@@ -211,7 +211,13 @@ fn all_handshake_orders_and_failed_publish_recovery() {
         assert!(!r.initialized && !r.tools_listed && !r.status_checked);
         fs::write(&lock, []).unwrap();
         hb.tick(&st, WALL);
-        for (n, index) in order.into_iter().enumerate() {
+        let report = reader.read(Instant::now(), WALL).unwrap();
+        let r = &report.sessions[0].record;
+        assert_eq!(
+            [r.initialized, r.tools_listed, r.status_checked],
+            [0, 1, 2].map(|index| index == order[0])
+        );
+        for (n, index) in order.into_iter().enumerate().skip(1) {
             hb.evidence(events[index], &st, WALL);
             assert_eq!(
                 reader.read(Instant::now(), WALL).unwrap().sessions[0]
