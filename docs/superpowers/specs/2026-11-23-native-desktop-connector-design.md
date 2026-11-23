@@ -42,5 +42,6 @@ Untrusted names are literal text. Multiple live sessions show distinct actual lo
 
 - [Approved overview boards](../../design-previews/2026-11-23-rust-desktop/overview.png).
 - [Approved settings and recovery boards](../../design-previews/2026-11-23-rust-desktop/settings-and-recovery.png).
+- [Implemented view, captures and reproduction commands](../../design-previews/2026-11-23-rust-desktop/implemented/README.md).
 
 Validation uses synthetic settings, training files, journals and sessions. Existing user data and installed connectors are not test fixtures. Offscreen rendering qualifies the shared view on Windows and Linux; native operating-system dialogs, clipboard interaction, assistive technology and macOS require their own platform evidence. Computer control and owner desktop screenshots are excluded.

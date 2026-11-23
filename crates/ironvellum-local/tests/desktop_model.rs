@@ -232,6 +232,48 @@ fn independent_failures_keep_truthful_evidence_and_recover() {
 }
 
 #[test]
+fn ready_action_refuses_a_new_valid_publication_under_the_observed_filename() {
+    let f = Fixture::new();
+    f.configure();
+    let out = &f.settings.outbox_directory;
+    let folder = PrivateFolder::open(out, LocklessOpen::Existing).unwrap();
+    let snapshot = Snapshot::from_bytes(RAW).unwrap();
+    let proposal: serde_json::Value = serde_json::from_slice(PROPOSAL).unwrap();
+    Journal::new(&folder, &snapshot)
+        .create("ready", &proposal["draft"], WALL)
+        .unwrap();
+    let mut reader = DesktopObserver::new(f.file.clone());
+    let observed = reader.read(Instant::now(), WALL).drafts.remove(0);
+    use ironvellum_local::desktop_model::resolve_observed_draft as resolve;
+    let original = resolve(&observed).unwrap();
+    assert_eq!(original, out.as_path().join(&observed.filename));
+    // Restore a different valid publication with the same UUID, source and title.
+    // Changing both archived and published bytes keeps this a genuinely ready row.
+    let mut value: serde_json::Value =
+        serde_json::from_slice(&fs::read(&original).unwrap()).unwrap();
+    value["createdAtMs"] = serde_json::json!(value["createdAtMs"].as_u64().unwrap() + 1);
+    let newer = serde_json::to_vec(&value).unwrap();
+    {
+        let db = rusqlite::Connection::open(out.as_path().join(".ironvellum-proposals-v1.sqlite"))
+            .unwrap();
+        assert_eq!(
+            db.execute(
+                "UPDATE proposals SET proposal=?1 WHERE id=?2",
+                rusqlite::params![newer, observed.draft_id]
+            )
+            .unwrap(),
+            1
+        );
+    }
+    fs::write(&original, &newer).unwrap();
+    let current = reader.read(Instant::now(), WALL).drafts.remove(0);
+    assert_eq!(current.filename, observed.filename);
+    assert_eq!(resolve(&observed), Err(LocalError::SourceChanged));
+    assert_eq!(resolve(&current).unwrap(), original);
+    assert_eq!(fs::read(original).unwrap(), newer);
+}
+
+#[test]
 fn archived_drafts_survive_their_source_and_resolve_only_exact_ready_files() {
     let f = Fixture::new();
     f.configure();

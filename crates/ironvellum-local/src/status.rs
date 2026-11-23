@@ -129,6 +129,25 @@ impl LoadedSource {
     pub fn value(&self) -> &Value {
         &self.0
     }
+    /// Typed coverage and identity of the export actually loaded by this session.
+    pub fn summary(&self) -> Result<SourceSummary, LocalError> {
+        let v = &self.0;
+        Ok(SourceSummary {
+            dataset_id: v["datasetId"].as_str().expect("validated dataset").into(),
+            snapshot_id: v["snapshotId"].as_str().expect("validated snapshot").into(),
+            sha256: v["sourceSha256"].as_str().expect("validated hash").into(),
+            exported_at_ms: v["exportedAtMs"].as_u64().expect("validated export time"),
+            workouts_included: v["coverage"]["workoutsIncluded"]
+                .as_u64()
+                .ok_or(InvalidSession)?,
+            sets_included: v["coverage"]["setsIncluded"]
+                .as_u64()
+                .ok_or(InvalidSession)?,
+            saved_workouts_included: v["coverage"]["savedWorkoutsIncluded"]
+                .as_u64()
+                .ok_or(InvalidSession)?,
+        })
+    }
     fn parse(v: Value) -> Result<Self, LocalError> {
         fields(
             &v,

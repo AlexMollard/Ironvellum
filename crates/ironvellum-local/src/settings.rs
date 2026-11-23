@@ -282,6 +282,12 @@ fn equivalent(a: &Settings, b: &Settings) -> bool {
         && a.selected_dataset_id == b.selected_dataset_id
 }
 
+#[derive(Clone, Copy, PartialEq)]
+pub(crate) enum SetupMode {
+    Configure,
+    FirstSave,
+}
+
 /// Configure explicitly selected directories, preserving omitted preferences
 /// from the most recent settings read under the directory lock.
 pub(crate) fn configure_settings(
@@ -289,18 +295,19 @@ pub(crate) fn configure_settings(
     directories: Settings,
     dataset: Option<&str>,
     watch: Option<bool>,
+    mode: SetupMode,
 ) -> Result<Settings> {
     let dataset = dataset.filter(|id| !id.is_empty());
     if dataset.is_some_and(|id| !valid_dataset_id(id)) {
         return Err(LocalError::InvalidSettings);
     }
-    save(path, directories, Some((dataset, watch)))
+    save(path, directories, Some((dataset, watch, mode)))
 }
 
 fn save(
     path: &Selected,
     mut value: Settings,
-    setup: Option<(Option<&str>, Option<bool>)>,
+    setup: Option<(Option<&str>, Option<bool>, SetupMode)>,
 ) -> Result<Settings> {
     value.validate(path)?;
     let (parent, n) = location(path)?;
@@ -316,7 +323,10 @@ fn save(
     check_existing_location(folder.dir(), &value, LocationCheck::Proposed)?;
     let guard = settings_lock(&folder, path, &n, false)?;
     let old = read_existing(&folder, path, &n, false)?;
-    if let Some((dataset, watch)) = setup {
+    if let Some((dataset, watch, mode)) = setup {
+        if mode == SetupMode::FirstSave && old.is_some() {
+            return Err(LocalError::ReloadRequired);
+        }
         value.selected_dataset_id = dataset
             .map(str::to_owned)
             .or_else(|| old.as_ref().and_then(|s| s.selected_dataset_id.clone()));

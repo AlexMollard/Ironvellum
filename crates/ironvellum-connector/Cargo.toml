@@ -24,3 +24,6 @@ rmcp = { version = "=3.11.0", default-features = false, features = ["client", "t
 [[test]]
 name = "session"
 harness = false
+[[test]]
+name = "desktop_dispatch"
+harness = false

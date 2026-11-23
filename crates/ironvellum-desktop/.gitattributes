@@ -1,0 +1,4 @@
+# Source-license and reference digests are byte-exact on every platform.
+assets/fonts/OFL-*.txt -text -whitespace
+assets/fonts/*.ttf binary
+tests/reference/*.gray binary

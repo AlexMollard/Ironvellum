@@ -8,6 +8,7 @@ use ironvellum_contracts::{
 };
 use rusqlite::{Connection, MAIN_DB, Row, limits::Limit, params, types::ValueRef};
 use serde_json::json;
+use sha2::{Digest, Sha256};
 
 const DB: &str = ".ironvellum-proposals-v1.sqlite";
 const IMAGE_LIMIT: usize = 32 << 20;
@@ -308,6 +309,7 @@ pub struct ArchiveItem {
     pub snapshot_id: String,
     pub source_sha256: String,
     pub filename: String,
+    pub(crate) publication_sha256: [u8; 32],
 }
 impl<'a> ReadyArchive<'a> {
     pub fn new(files: &'a PrivateFolder) -> Self {
@@ -348,6 +350,7 @@ impl<'a> ReadyArchive<'a> {
                         .expect("validated hash")
                         .to_owned(),
                     filename: p.filename(),
+                    publication_sha256: Sha256::digest(&p.bytes).into(),
                 })
             }
         }

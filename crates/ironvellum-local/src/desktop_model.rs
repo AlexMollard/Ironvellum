@@ -1,6 +1,6 @@
 use crate::{
-    Directory, EndpointBinding, InventoryStatus, LocalError, LocklessOpen, OpenDir, PrivateFolder,
-    ReadyArchive, Selected, Settings, load_settings, name,
+    ArchiveItem, Directory, EndpointBinding, Identity, InventoryStatus, LocalError, LocklessOpen,
+    OpenDir, PrivateFolder, ReadyArchive, Selected, Settings, load_settings, name,
     settings::update_existing_settings,
     status::{SessionRow, StatusReader},
     update_bound_settings, valid_dataset_id,
@@ -27,6 +27,9 @@ pub struct ReadyDraft {
     pub dataset_id: String,
     pub snapshot_id: String,
     pub source_sha256: String,
+    outbox: Selected,
+    outbox_identity: Identity,
+    publication_sha256: [u8; 32],
 }
 
 #[derive(Clone, Debug, Default)]
@@ -240,7 +243,13 @@ fn read_archive(outbox: &Selected) -> Result<Vec<ReadyDraft>> {
     Ok(ReadyArchive::new(&folder)
         .list_ready()?
         .into_iter()
-        .map(|item| ReadyDraft {
+        .map(|item| ReadyDraft::observed(item, outbox, folder.dir().identity()))
+        .collect())
+}
+
+impl ReadyDraft {
+    fn observed(item: ArchiveItem, outbox: &Selected, outbox_identity: Identity) -> Self {
+        Self {
             draft_id: item.draft_id,
             display_name: display_literal(&item.name),
             display_filename: display_literal(&item.filename),
@@ -248,8 +257,11 @@ fn read_archive(outbox: &Selected) -> Result<Vec<ReadyDraft>> {
             dataset_id: item.dataset_id,
             snapshot_id: item.snapshot_id,
             source_sha256: item.source_sha256,
-        })
-        .collect())
+            outbox: outbox.clone(),
+            outbox_identity,
+            publication_sha256: item.publication_sha256,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -301,7 +313,8 @@ impl Editor {
         Some(SaveAction { generation, edit })
     }
 
-    fn complete(&mut self, action: SaveAction, result: Result<()>) {
+    /// Accept a serialized worker result on the thread which owns the editor.
+    pub fn complete(&mut self, action: SaveAction, result: Result<()>) {
         if self
             .active
             .as_ref()
@@ -351,6 +364,25 @@ pub fn resolve_ready_draft(outbox: &Selected, filename: &str) -> Result<PathBuf>
             .list_ready()?
             .iter()
             .any(|row| row.filename == filename))
+    })
+}
+
+/// Reveal only the exact ready publication represented by the observed row.
+pub fn resolve_observed_draft(observed: &ReadyDraft) -> Result<PathBuf> {
+    resolve_archive_file(&observed.outbox, &observed.filename, |folder| {
+        let identity = folder.dir().identity();
+        if identity != observed.outbox_identity {
+            return Err(LocalError::SourceChanged);
+        }
+        let current = ReadyArchive::new(folder)
+            .list_ready()?
+            .into_iter()
+            .find(|item| item.filename == observed.filename)
+            .ok_or(LocalError::NotFound)?;
+        if ReadyDraft::observed(current, &observed.outbox, identity) != *observed {
+            return Err(LocalError::SourceChanged);
+        }
+        Ok(true)
     })
 }
 

@@ -1,5 +1,5 @@
 //! Explicit personal connector configuration and client installation.
-use crate::settings::configure_settings;
+use crate::settings::{SetupMode, configure_settings};
 use crate::status::{StatusReader, StatusReport};
 use crate::{
     Directory, EndpointBinding, Install, LocalError, LockMode, LocklessOpen, Name, OpenDir,
@@ -156,7 +156,11 @@ fn outside(parent: &Directory, endpoints: &[&Selected]) -> Result<()> {
     Ok(())
 }
 
-fn preflight_directories(settings: &Selected, dirs: &Settings) -> Result<()> {
+fn preflight_directories(
+    settings: &Selected,
+    dirs: &Settings,
+    setup_mode: SetupMode,
+) -> Result<()> {
     let paths = dirs.endpoints();
     let mut existing = Vec::new();
     let mut parents = Vec::new();
@@ -168,7 +172,20 @@ fn preflight_directories(settings: &Selected, dirs: &Settings) -> Result<()> {
         };
         match Directory::open(path, mode) {
             Ok(directory) => existing.push(directory),
-            Err(LocalError::Missing) => parents.push(Directory::open_parent(path)?),
+            Err(LocalError::Missing) => match Directory::open_parent(path) {
+                Err(LocalError::Missing)
+                    if setup_mode == SetupMode::FirstSave
+                        && index == 2
+                        && path.as_path().parent() == settings.as_path().parent() =>
+                {
+                    // The locked settings operation creates its private parent
+                    // before creating the adjacent derived state directory.
+                    let parent =
+                        selected(settings.as_path().parent().ok_or(LocalError::InvalidPath)?)?;
+                    parents.push(Directory::open_parent(&parent)?);
+                }
+                other => parents.push(other?),
+            },
             Err(e) => return Err(e),
         }
     }
@@ -376,6 +393,19 @@ impl ClientFile {
 }
 
 pub fn configure(options: SetupOptions) -> Result<SetupResult> {
+    configure_with(options, SetupMode::Configure)
+}
+
+/// Save manual folder choices only if the settings file is still absent.
+/// Installing a named client is a separate, explicitly requested operation.
+pub fn configure_initial(options: SetupOptions) -> Result<SetupResult> {
+    if !matches!(options.client, Client::ConfigOnly) {
+        return Err(LocalError::InvalidClientOption);
+    }
+    configure_with(options, SetupMode::FirstSave)
+}
+
+fn configure_with(options: SetupOptions, mode: SetupMode) -> Result<SetupResult> {
     let dirs = Settings::new(options.input, options.outbox, options.state);
     dirs.validate(&options.settings)?;
     if dirs
@@ -394,7 +424,7 @@ pub fn configure(options: SetupOptions) -> Result<SetupResult> {
         return Err(LocalError::InvalidSettings);
     }
     let entry = json!({"command":text(&options.executable)?,"args":["serve-folder","--settings",text(&options.settings)?]});
-    preflight_directories(&options.settings, &dirs)?;
+    preflight_directories(&options.settings, &dirs, mode)?;
     let (client, prepared) = match options.client {
         Client::ConfigOnly => ("config-only", None),
         Client::ClaudeDesktop {
@@ -423,6 +453,7 @@ pub fn configure(options: SetupOptions) -> Result<SetupResult> {
         dirs.clone(),
         options.dataset.as_deref(),
         options.watch,
+        mode,
     )?;
     let changed = prepared.as_ref().is_some_and(|file| file.updated.is_some());
     let backup_path = match prepared {

@@ -52,6 +52,46 @@ fn equivalent_endpoint_case_and_separators_keep_settings_bytes() {
 }
 
 #[test]
+fn initial_desktop_save_preserves_a_configuration_that_appeared_after_observation() {
+    use ironvellum_local::desktop_model::DesktopObserver;
+    use ironvellum_local::setup::{Client, SetupOptions, configure_initial};
+    let f = Fixture::new();
+    let target = f.target();
+    let mut desktop = DesktopObserver::new(target.clone());
+    assert!(
+        desktop
+            .read(std::time::Instant::now(), 1)
+            .settings
+            .is_none()
+    );
+    let id = "01234567-89ab-4def-8123-456789abcdef";
+    configure_settings(&target, f.settings(), Some(id), Some(true)).unwrap();
+    let prior = fs::read(target.as_path()).unwrap();
+    let paths = ["desktop-input", "desktop-drafts", "desktop-state"].map(|p| f.leaf(p));
+    let save = || {
+        configure_initial(SetupOptions {
+            settings: target.clone(),
+            input: paths[0].clone(),
+            outbox: paths[1].clone(),
+            state: paths[2].clone(),
+            dataset: None,
+            watch: Some(false),
+            client: Client::ConfigOnly,
+            executable: selected(&std::env::current_exe().unwrap()).unwrap(),
+        })
+    };
+    assert_eq!(save().err(), Some(LocalError::ReloadRequired));
+    assert_eq!(fs::read(target.as_path()).unwrap(), prior);
+    assert!(paths.iter().all(|p| !p.as_path().exists()));
+    fs::write(target.as_path(), b"{").unwrap();
+    assert!(save().is_err());
+    assert_eq!(fs::read(target.as_path()).unwrap(), b"{");
+    assert!(paths.iter().all(|p| !p.as_path().exists()));
+    fs::remove_file(target.as_path()).unwrap();
+    assert_eq!(save().unwrap().status.settings.state_directory, paths[2]);
+}
+
+#[test]
 fn first_setup_creates_input_and_retains_omitted_preferences() {
     let f = Fixture::new();
     let target = f.target();

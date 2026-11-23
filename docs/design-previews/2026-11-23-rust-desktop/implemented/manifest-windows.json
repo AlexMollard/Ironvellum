@@ -1,0 +1,2317 @@
+{
+  "format_version": 1,
+  "command": "cargo run --locked --offline -p ironvellum-desktop --example render_desktop -- OUTPUT [--measure-only]",
+  "os": "windows",
+  "adapter": {
+    "name": "AMD Radeon RX 9060 XT",
+    "backend": "Vulkan",
+    "device_type": "DiscreteGpu",
+    "driver": "AMD proprietary driver",
+    "driver_info": "26.10.44 (LLPC)"
+  },
+  "render_target": "Rgba8Unorm",
+  "view": "ironvellum_desktop::window::DesktopWindow::render",
+  "fonts": "Packaged Chakra Petch Medium/Semibold/Bold; regional Noto Sans JP/KR/SC Regular; egui symbol fallbacks. See crates/ironvellum-desktop/assets/fonts/PROVENANCE.md.",
+  "captures": [
+    {
+      "case": "overview-dark-en-plain",
+      "fixture": "overview",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": "overview-dark-en-plain.png",
+      "rgba_sha256": "86ad82724def6840d4bf82e15a61fa0264a69ce1a10939b839d8877e0c8b9ddd",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 7,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "companion",
+          "connected",
+          "loaded",
+          "drafts"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 228269,
+        "card": 250298,
+        "ink": 5111,
+        "emerald": 14741,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "manual-long-dark-en-plain",
+      "fixture": "overview",
+      "points": [
+        395,
+        380
+      ],
+      "pixels": [
+        593,
+        570
+      ],
+      "scale": 1.5,
+      "png": null,
+      "rgba_sha256": "adaa192133f1cf2f148f8a335e7b8b2f301a6398de9f96fa484203402f76c2b4",
+      "layout": {
+        "visible_controls": 7,
+        "painted_chamfers": 2,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "manual",
+          "exports",
+          "save_changes"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 278765,
+        "card": 15978,
+        "ink": 10162,
+        "emerald": 10439,
+        "opaque_pixels": 338010
+      }
+    },
+    {
+      "case": "manual-dark-en-plain",
+      "fixture": "overview",
+      "points": [
+        780,
+        470
+      ],
+      "pixels": [
+        780,
+        470
+      ],
+      "scale": 1.0,
+      "png": "manual-dark-en-plain.png",
+      "rgba_sha256": "c5f14273ae798a9762a9265386e32c1a45ba9810ab92091daddd64ac89b8c544",
+      "layout": {
+        "visible_controls": 7,
+        "painted_chamfers": 2,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "manual",
+          "exports",
+          "save_changes"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 312876,
+        "card": 18392,
+        "ink": 3529,
+        "emerald": 15947,
+        "opaque_pixels": 366600
+      }
+    },
+    {
+      "case": "unconfigured-dark-en-plain",
+      "fixture": "unconfigured",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "d6c8193def1275233cf75cef8606fd4e489b8243d98921451c1485ad87c1426d",
+      "layout": {
+        "visible_controls": 2,
+        "painted_chamfers": 4,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "unconfigured",
+          "agent_hint"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 382421,
+        "card": 97964,
+        "ink": 2906,
+        "emerald": 14411,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "awaiting-dark-en-plain",
+      "fixture": "awaiting",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "c97a150b97d1daa6d752f0deb5c2c931a17e2fd604c1d5daa04ae7ded678e09d",
+      "layout": {
+        "visible_controls": 2,
+        "painted_chamfers": 4,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "ready_to_connect",
+          "no_training"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 337885,
+        "card": 151017,
+        "ink": 3844,
+        "emerald": 14411,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "detached-dark-en-plain",
+      "fixture": "detached",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "7fe142bad884bf19b6dad4f1beddba1dcf84e589c28e9e7472e91a3544498861",
+      "layout": {
+        "visible_controls": 2,
+        "painted_chamfers": 4,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "disconnected",
+          "available"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 274376,
+        "card": 212924,
+        "ink": 4277,
+        "emerald": 14411,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "recovery-dark-en-plain",
+      "fixture": "recovery",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": "recovery-dark-en-plain.png",
+      "rgba_sha256": "be982727f1c1f437e3df6954f3512713ae0412b6075eb6dbff04955e3978e5c8",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 6,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "last_valid",
+          "unreadable",
+          "retry"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 238975,
+        "card": 243679,
+        "ink": 6114,
+        "emerald": 9760,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "choice-dark-en-plain",
+      "fixture": "choice",
+      "points": [
+        780,
+        470
+      ],
+      "pixels": [
+        780,
+        470
+      ],
+      "scale": 1.0,
+      "png": "choice-dark-en-plain.png",
+      "rgba_sha256": "72b2acc50a072353835a1998f6537ec198ac7a215601eeaa4e82fefbce3cddb7",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 4,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "source_heading",
+          "keep",
+          "other_archive",
+          "confirm"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 153526,
+        "card": 172007,
+        "ink": 4282,
+        "emerald": 14893,
+        "opaque_pixels": 366600,
+        "unselected_outline_min_contrast": 6.877655147522784
+      }
+    },
+    {
+      "case": "choice-switched-dark-en-plain",
+      "fixture": "choice",
+      "points": [
+        780,
+        470
+      ],
+      "pixels": [
+        780,
+        470
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "97c932157a4641c7c4d9aeb1fe771ace0f3ea4b5d6fc56b0f3b8d9cc0291f101",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 4,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "source_heading",
+          "keep",
+          "other_archive",
+          "confirm"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 151794,
+        "card": 171987,
+        "ink": 5854,
+        "emerald": 16439,
+        "opaque_pixels": 366600,
+        "unselected_outline_min_contrast": 6.877655147522784
+      }
+    },
+    {
+      "case": "choice-focus-dark-en-plain",
+      "fixture": "choice",
+      "points": [
+        780,
+        470
+      ],
+      "pixels": [
+        780,
+        470
+      ],
+      "scale": 1.0,
+      "png": "choice-focus-dark-en-plain.png",
+      "rgba_sha256": "420578c5b20410b3739dcaab6537352780a8ca5842aaca08ebfb560ae25e81bb",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 4,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "source_heading",
+          "keep",
+          "other_archive",
+          "confirm"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 153526,
+        "card": 171933,
+        "ink": 4404,
+        "emerald": 14887,
+        "opaque_pixels": 366600,
+        "unselected_outline_min_contrast": 14.612600032763545
+      }
+    },
+    {
+      "case": "keep-dark-en-plain",
+      "fixture": "keep",
+      "points": [
+        780,
+        470
+      ],
+      "pixels": [
+        780,
+        470
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "72b2acc50a072353835a1998f6537ec198ac7a215601eeaa4e82fefbce3cddb7",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 4,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "source_heading",
+          "keep",
+          "other_archive",
+          "confirm"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 153526,
+        "card": 172007,
+        "ink": 4282,
+        "emerald": 14893,
+        "opaque_pixels": 366600
+      }
+    },
+    {
+      "case": "busy-dark-en-plain",
+      "fixture": "overview",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "a95f4c826ac17e075f74bf679664fac83b33036b58c59674b0f101f4c1ed7c4f",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 7,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "working"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 227382,
+        "card": 237998,
+        "ink": 4247,
+        "emerald": 80,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "stale-dark-en-plain",
+      "fixture": "stale",
+      "points": [
+        850,
+        900
+      ],
+      "pixels": [
+        850,
+        900
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "4885ffad128c44fa958e456cf0703bcb8b4a79a4fa19f2915800f8bb2dcedde6",
+      "layout": {
+        "visible_controls": 1,
+        "painted_chamfers": 12,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "session_problem",
+          "last_observed"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 174619,
+        "card": 533725,
+        "ink": 10483,
+        "emerald": 80,
+        "opaque_pixels": 765000
+      }
+    },
+    {
+      "case": "mixed-dark-en-plain",
+      "fixture": "mixed",
+      "points": [
+        850,
+        900
+      ],
+      "pixels": [
+        850,
+        900
+      ],
+      "scale": 1.0,
+      "png": "mixed-dark-en-plain.png",
+      "rgba_sha256": "38a451c367c3cb4e30359d9d4aa24c8854903b27873d2d664167480f02cc1079",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 273797,
+        "card": 437270,
+        "ink": 9190,
+        "emerald": 579,
+        "opaque_pixels": 765000
+      }
+    },
+    {
+      "case": "draft-error-dark-en-plain",
+      "fixture": "draft-error",
+      "points": [
+        850,
+        900
+      ],
+      "pixels": [
+        850,
+        900
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "d082b0005a041163cfec2a58d89cdb8658de844c5a4e6e24147545fdefc2c281",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "drafts_problem"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 256747,
+        "card": 451409,
+        "ink": 7461,
+        "emerald": 80,
+        "opaque_pixels": 765000
+      }
+    },
+    {
+      "case": "observer-error-dark-en-plain",
+      "fixture": "overview",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "1525d3a214a42f56c78041c862ac181737e58106eb01f60a3ab894db2fb24443",
+      "layout": {
+        "visible_controls": 5,
+        "painted_chamfers": 7,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "session_problem",
+          "last_observed"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 287116,
+        "card": 178263,
+        "ink": 5226,
+        "emerald": 14411,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "restored-dark-en-plain",
+      "fixture": "overview",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "86ad82724def6840d4bf82e15a61fa0264a69ce1a10939b839d8877e0c8b9ddd",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 7,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "companion",
+          "connected",
+          "loaded",
+          "drafts"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 228269,
+        "card": 250298,
+        "ink": 5111,
+        "emerald": 14741,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "focus-dark-en-plain",
+      "fixture": "overview",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": "focus-dark-en-plain.png",
+      "rgba_sha256": "4ebbb7b8c904a3a08aa3b199ab3f85fb2b444af611d1b0724ce43694a15293cb",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 7,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "companion",
+          "connected",
+          "loaded",
+          "drafts"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 226537,
+        "card": 250262,
+        "ink": 6683,
+        "emerald": 16293,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "short-dark-en-plain",
+      "fixture": "overview",
+      "points": [
+        690,
+        270
+      ],
+      "pixels": [
+        1035,
+        405
+      ],
+      "scale": 1.5,
+      "png": null,
+      "rgba_sha256": "5b7f2e9aac33506078c77b2b895121b8d5c002d73b1a1bd2c0650332fcbceb9f",
+      "layout": {
+        "visible_controls": 0,
+        "painted_chamfers": 7,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "companion"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 216583,
+        "card": 178553,
+        "ink": 6873,
+        "emerald": 180,
+        "opaque_pixels": 419175
+      }
+    },
+    {
+      "case": "narrow-dark-en-plain",
+      "fixture": "mixed",
+      "points": [
+        330,
+        560
+      ],
+      "pixels": [
+        495,
+        840
+      ],
+      "scale": 1.5,
+      "png": null,
+      "rgba_sha256": "3a8b3240dc439136c40fffcd8c1131d49d7688a2d929f41c5e131a09c4d34158",
+      "layout": {
+        "visible_controls": 0,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "companion"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 107943,
+        "card": 267742,
+        "ink": 11462,
+        "emerald": 180,
+        "opaque_pixels": 415800
+      }
+    },
+    {
+      "case": "localized-dark-en-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "c0492199f629ed3a82eddcc6f88297d5932ac18c70a734fea1508b35aa155d1c",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 381332,
+        "card": 644459,
+        "ink": 14571,
+        "emerald": 867,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-dark-en-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "13524d6e8734ca70e6aee033da74a7b4e7effdb7bde7000450c4002d139343a5",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 381338,
+        "card": 643272,
+        "ink": 15455,
+        "emerald": 867,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-dark-de-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "28b8aba3c5503d3a4f6ed82e02a1ac60c1dd3c873a8771fad944c6abebe08cc0",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 380704,
+        "card": 637674,
+        "ink": 14992,
+        "emerald": 964,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-dark-de-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "bbbdc96b42e646e87c2c22f298d5641606927e81d3f49dee5ee709e4d73c0052",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 380704,
+        "card": 638936,
+        "ink": 14791,
+        "emerald": 964,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-dark-es-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "db8f5c5bd388f485082a4d117ea934e7777e134de96cac7ad26ffe8fea89e69c",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 378760,
+        "card": 634691,
+        "ink": 17563,
+        "emerald": 876,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-dark-es-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "5b49cf56e174a31f2ea4252fd24b7b809f51b0289329bc32decab29fdcd75c40",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 378766,
+        "card": 634288,
+        "ink": 18908,
+        "emerald": 876,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-dark-fr-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "7ddb2ce7f1a0baae790574e6c95786f5b0185d130354d0f3f88295a44a77ed42",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 378855,
+        "card": 636948,
+        "ink": 16738,
+        "emerald": 948,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-dark-fr-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "22d43a0e2a6bb430ea18c7f4dddde9edacd036ca24a88161617101d6c3f7b88a",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 378861,
+        "card": 634870,
+        "ink": 18223,
+        "emerald": 948,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-dark-ja-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": "localized-dark-ja-plain.png",
+      "rgba_sha256": "e17b40e1ab35e98d22b20db33b1b722a6a67dab05bf1b7cd88a051907b131674",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 382938,
+        "card": 639744,
+        "ink": 12873,
+        "emerald": 554,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-dark-ja-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "64026bfd40c4f35eb8098c63c98d60138453521d9e9bd96a5dca8e4e4bcaeb61",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 382944,
+        "card": 637980,
+        "ink": 13613,
+        "emerald": 554,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-dark-ko-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "34af179e96c748493b0457f9ddb131d23607937e5c939da9f052bdd9918018b5",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 382997,
+        "card": 643546,
+        "ink": 12312,
+        "emerald": 443,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-dark-ko-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "22af395547a3bec172e69f15c34f49786abcb0e2de09e5fe0068eebdc196bc73",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 382997,
+        "card": 643982,
+        "ink": 12290,
+        "emerald": 443,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-dark-pt-BR-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "8613610aeee7ae4043c019ceff92fc1ed02c2e4b4e8c2d70f80ad2a0cbf85f34",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 380517,
+        "card": 636934,
+        "ink": 16854,
+        "emerald": 958,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-dark-pt-BR-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "682526de5aba81b8c02a2dbebb20d8fae04588b181466241b06d558359e2e92c",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 380517,
+        "card": 637412,
+        "ink": 16799,
+        "emerald": 958,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-dark-zh-CN-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "9c539c0d951394a5cb4bed672b27caeb14c29ba47f06b2c1bc80d29ffde41b16",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 383113,
+        "card": 641163,
+        "ink": 12757,
+        "emerald": 541,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-dark-zh-CN-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": "localized-dark-zh-CN-themed.png",
+      "rgba_sha256": "83d648177596e57db41792769d3031647b58ee5338e32050144dfc7845e23e18",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 383113,
+        "card": 641399,
+        "ink": 12741,
+        "emerald": 541,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "overview-vellum-en-plain",
+      "fixture": "overview",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": "overview-vellum-en-plain.png",
+      "rgba_sha256": "3c21cc573d6099d461bbae77a90271c61587cc2a902e36f294a7396b5f24a504",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 7,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "companion",
+          "connected",
+          "loaded",
+          "drafts"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 227966,
+        "card": 249967,
+        "ink": 3834,
+        "emerald": 14538,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "manual-long-vellum-en-plain",
+      "fixture": "overview",
+      "points": [
+        395,
+        380
+      ],
+      "pixels": [
+        593,
+        570
+      ],
+      "scale": 1.5,
+      "png": null,
+      "rgba_sha256": "be95f777eb68293d8ae218935b7cd06c04bf7a5a86bc1776e03aa99653ac88ed",
+      "layout": {
+        "visible_controls": 7,
+        "painted_chamfers": 2,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "manual",
+          "exports",
+          "save_changes"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 249084,
+        "card": 15217,
+        "ink": 7987,
+        "emerald": 10441,
+        "opaque_pixels": 338010
+      }
+    },
+    {
+      "case": "manual-vellum-en-plain",
+      "fixture": "overview",
+      "points": [
+        780,
+        470
+      ],
+      "pixels": [
+        780,
+        470
+      ],
+      "scale": 1.0,
+      "png": "manual-vellum-en-plain.png",
+      "rgba_sha256": "dbce4b40212e03c98510097ce14ae1b15fba96e275a93b1dbbf159ea21effbe5",
+      "layout": {
+        "visible_controls": 7,
+        "painted_chamfers": 2,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "manual",
+          "exports",
+          "save_changes"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 287905,
+        "card": 18198,
+        "ink": 2505,
+        "emerald": 15956,
+        "opaque_pixels": 366600
+      }
+    },
+    {
+      "case": "unconfigured-vellum-en-plain",
+      "fixture": "unconfigured",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "8a5115c49515be99a8824d3250b9925838004adad40cd0ed7772a8c70bf15d90",
+      "layout": {
+        "visible_controls": 2,
+        "painted_chamfers": 4,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "unconfigured",
+          "agent_hint"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 382046,
+        "card": 96295,
+        "ink": 2338,
+        "emerald": 14420,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "awaiting-vellum-en-plain",
+      "fixture": "awaiting",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "8d732fdd320d16eedbd7ae317babb720a38950368df37ebf37d062c3af3b460b",
+      "layout": {
+        "visible_controls": 2,
+        "painted_chamfers": 4,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "ready_to_connect",
+          "no_training"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 337525,
+        "card": 150903,
+        "ink": 2956,
+        "emerald": 14418,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "detached-vellum-en-plain",
+      "fixture": "detached",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "e54a054165760e477a08ef1472f0a17c22560d5e34a62131a5c73d212be89bee",
+      "layout": {
+        "visible_controls": 2,
+        "painted_chamfers": 4,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "disconnected",
+          "available"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 274026,
+        "card": 212784,
+        "ink": 3285,
+        "emerald": 14417,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "recovery-vellum-en-plain",
+      "fixture": "recovery",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": "recovery-vellum-en-plain.png",
+      "rgba_sha256": "f0ef278d5296fc67fef3460afca1dd1fcc3552941c4bea5d2397e3734f7e21a6",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 6,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "last_valid",
+          "unreadable",
+          "retry"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 238970,
+        "card": 243559,
+        "ink": 4434,
+        "emerald": 9763,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "choice-vellum-en-plain",
+      "fixture": "choice",
+      "points": [
+        780,
+        470
+      ],
+      "pixels": [
+        780,
+        470
+      ],
+      "scale": 1.0,
+      "png": "choice-vellum-en-plain.png",
+      "rgba_sha256": "373298d2f789d1d6c85939ae58c1c4bbfa1c90822febcf4fa02e2eb0fb792fb2",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 4,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "source_heading",
+          "keep",
+          "other_archive",
+          "confirm"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 153363,
+        "card": 171888,
+        "ink": 3285,
+        "emerald": 14896,
+        "opaque_pixels": 366600,
+        "unselected_outline_min_contrast": 6.658245179269018
+      }
+    },
+    {
+      "case": "choice-switched-vellum-en-plain",
+      "fixture": "choice",
+      "points": [
+        780,
+        470
+      ],
+      "pixels": [
+        780,
+        470
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "1829f6c9008aca6eddd41bfef6321ff2d99b0ffe2bdd28590246212a8b1a3231",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 4,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "source_heading",
+          "keep",
+          "other_archive",
+          "confirm"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 151631,
+        "card": 171902,
+        "ink": 4857,
+        "emerald": 16444,
+        "opaque_pixels": 366600,
+        "unselected_outline_min_contrast": 6.658245179269018
+      }
+    },
+    {
+      "case": "choice-focus-vellum-en-plain",
+      "fixture": "choice",
+      "points": [
+        780,
+        470
+      ],
+      "pixels": [
+        780,
+        470
+      ],
+      "scale": 1.0,
+      "png": "choice-focus-vellum-en-plain.png",
+      "rgba_sha256": "3e24a044f98083d531a8886423a7f7f045accced8c43157509dbda5f78f3e389",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 4,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "source_heading",
+          "keep",
+          "other_archive",
+          "confirm"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 153363,
+        "card": 171812,
+        "ink": 3407,
+        "emerald": 14892,
+        "opaque_pixels": 366600,
+        "unselected_outline_min_contrast": 16.361903312472347
+      }
+    },
+    {
+      "case": "keep-vellum-en-plain",
+      "fixture": "keep",
+      "points": [
+        780,
+        470
+      ],
+      "pixels": [
+        780,
+        470
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "373298d2f789d1d6c85939ae58c1c4bbfa1c90822febcf4fa02e2eb0fb792fb2",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 4,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "source_heading",
+          "keep",
+          "other_archive",
+          "confirm"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 153363,
+        "card": 171888,
+        "ink": 3285,
+        "emerald": 14896,
+        "opaque_pixels": 366600
+      }
+    },
+    {
+      "case": "busy-vellum-en-plain",
+      "fixture": "overview",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "fed74767d773fbeae06ab1051f6be2aae2de7e5d3d60a4423b4ee95decfcdbc0",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 7,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "working"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 227756,
+        "card": 235410,
+        "ink": 3203,
+        "emerald": 80,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "stale-vellum-en-plain",
+      "fixture": "stale",
+      "points": [
+        850,
+        900
+      ],
+      "pixels": [
+        850,
+        900
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "5daea35a7af9468b48404ebfdefe42dd8b10e5f5ade7ff88db64fa904c0838a5",
+      "layout": {
+        "visible_controls": 1,
+        "painted_chamfers": 12,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "session_problem",
+          "last_observed"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 174809,
+        "card": 533794,
+        "ink": 7316,
+        "emerald": 80,
+        "opaque_pixels": 765000
+      }
+    },
+    {
+      "case": "mixed-vellum-en-plain",
+      "fixture": "mixed",
+      "points": [
+        850,
+        900
+      ],
+      "pixels": [
+        850,
+        900
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "8cac91b4fef0f007a5950bac9a782f5339d7bbb337211a97019b0f54296da2a0",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 274084,
+        "card": 437027,
+        "ink": 6660,
+        "emerald": 258,
+        "opaque_pixels": 765000
+      }
+    },
+    {
+      "case": "draft-error-vellum-en-plain",
+      "fixture": "draft-error",
+      "points": [
+        850,
+        900
+      ],
+      "pixels": [
+        850,
+        900
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "52934727f953fc3740279aa443a4e7e7a49a05bd36ece97aaf9b4ac00b063bf0",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "drafts_problem"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 257354,
+        "card": 451162,
+        "ink": 5448,
+        "emerald": 80,
+        "opaque_pixels": 765000
+      }
+    },
+    {
+      "case": "observer-error-vellum-en-plain",
+      "fixture": "overview",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "cfe604c62a9033041b5d52975b3aedff46681470125df72f97292990f7305d0b",
+      "layout": {
+        "visible_controls": 5,
+        "painted_chamfers": 7,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "session_problem",
+          "last_observed"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 286973,
+        "card": 176418,
+        "ink": 3875,
+        "emerald": 14421,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "restored-vellum-en-plain",
+      "fixture": "overview",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "3c21cc573d6099d461bbae77a90271c61587cc2a902e36f294a7396b5f24a504",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 7,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "companion",
+          "connected",
+          "loaded",
+          "drafts"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 227966,
+        "card": 249967,
+        "ink": 3834,
+        "emerald": 14538,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "focus-vellum-en-plain",
+      "fixture": "overview",
+      "points": [
+        780,
+        680
+      ],
+      "pixels": [
+        780,
+        680
+      ],
+      "scale": 1.0,
+      "png": null,
+      "rgba_sha256": "ce504273042836f8ce9b15cf7ac40b8290e09acab5454ab743d86e3f3505e6e7",
+      "layout": {
+        "visible_controls": 4,
+        "painted_chamfers": 7,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "companion",
+          "connected",
+          "loaded",
+          "drafts"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 226234,
+        "card": 249967,
+        "ink": 5406,
+        "emerald": 16090,
+        "opaque_pixels": 530400
+      }
+    },
+    {
+      "case": "short-vellum-en-plain",
+      "fixture": "overview",
+      "points": [
+        690,
+        270
+      ],
+      "pixels": [
+        1035,
+        405
+      ],
+      "scale": 1.5,
+      "png": null,
+      "rgba_sha256": "14bb75281aff112b7f17ea44bc5c16ceb1b21ca6fe437916675b31233894bcf8",
+      "layout": {
+        "visible_controls": 0,
+        "painted_chamfers": 7,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "companion"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 216693,
+        "card": 178546,
+        "ink": 6033,
+        "emerald": 180,
+        "opaque_pixels": 419175
+      }
+    },
+    {
+      "case": "narrow-vellum-en-plain",
+      "fixture": "mixed",
+      "points": [
+        330,
+        560
+      ],
+      "pixels": [
+        495,
+        840
+      ],
+      "scale": 1.5,
+      "png": "narrow-vellum-en-plain.png",
+      "rgba_sha256": "b667761202497454ed8c3b9142d94781c60f208c1e60556485f0f0011464c6fc",
+      "layout": {
+        "visible_controls": 0,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "companion"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 108169,
+        "card": 267815,
+        "ink": 9855,
+        "emerald": 180,
+        "opaque_pixels": 415800
+      }
+    },
+    {
+      "case": "localized-vellum-en-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "b89d0f294824b46bb7976dee04a1bbe007daf10dc7d9ec7ff1a110ff07238fce",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 387524,
+        "card": 643694,
+        "ink": 11791,
+        "emerald": 661,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-vellum-en-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "273d0fe62e9afe7376878a76c774533e13123dbfc700bebd41d1d9b3935e16d9",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 388034,
+        "card": 642901,
+        "ink": 12603,
+        "emerald": 661,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-vellum-de-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "7f7fba9499f8cba9bb1d849f4218ec910402ef709a988655d8034eea4f45e6eb",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 386870,
+        "card": 636949,
+        "ink": 12152,
+        "emerald": 734,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-vellum-de-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "5d618e8102153a15d3a9cd2ee5e3f52f4fb5ce4d67f3374b14ee070ef08ea3b7",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 386874,
+        "card": 638200,
+        "ink": 12023,
+        "emerald": 734,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-vellum-es-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "3ed9b45a3b835abc7f1d1379ad34cdf3f9ab2c8d110160a1941d8d668dcf8afb",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 384950,
+        "card": 634017,
+        "ink": 14442,
+        "emerald": 689,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-vellum-es-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "b3b8de678b226c07373f6e750f41da84ac883eac73b377413b99e28af3955ab5",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 385440,
+        "card": 633959,
+        "ink": 15544,
+        "emerald": 689,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-vellum-fr-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "797a5c248ff1e68daa28a4771e25e070eefa9cd7f4b6ec294c4e02269bcb47da",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 385085,
+        "card": 636176,
+        "ink": 13686,
+        "emerald": 654,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-vellum-fr-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "85bf99d571e7a1483f49625312802029f8305c9f1afb0148b1ef3cebe5135ad7",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 385604,
+        "card": 634456,
+        "ink": 14902,
+        "emerald": 654,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-vellum-ja-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "d4e8cae3e976a9e88452fa21150b5507ee0117e3acc5dded10d7946a2aa2d694",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 389162,
+        "card": 639475,
+        "ink": 9978,
+        "emerald": 375,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-vellum-ja-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "9249bbb92e902350982b0ae64e9d4c5f47ead567afedbe9ea0dcc58ea450be74",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 389717,
+        "card": 637683,
+        "ink": 10587,
+        "emerald": 375,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-vellum-ko-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "55b83892dedc56203ba1af86b4f5c6d907ae6d7d54c0df55adb58b92abab3e4b",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 389712,
+        "card": 643073,
+        "ink": 9701,
+        "emerald": 342,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-vellum-ko-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": "localized-vellum-ko-themed.png",
+      "rgba_sha256": "784c69f35fdc5e27a7b73cc38df11794ee78e3bd10a72eeb2f825fd409eedf4b",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 389707,
+        "card": 643502,
+        "ink": 9657,
+        "emerald": 342,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-vellum-pt-BR-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "b12f51a650463db4134f042a9556cd45a0467cfabd3f0cef79a2d02aa359955b",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 387195,
+        "card": 636568,
+        "ink": 13616,
+        "emerald": 710,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-vellum-pt-BR-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "b18dfa464fd9e04914b35c7949eb0e66ac67cd7bc9d3aae377417e85d36055a7",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 387208,
+        "card": 637024,
+        "ink": 13574,
+        "emerald": 710,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-vellum-zh-CN-plain",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "4a370133633dd3ae40fbca971b688fad2676831bbfaf5fc1f32f618fc67a6dbd",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 389842,
+        "card": 640743,
+        "ink": 10060,
+        "emerald": 333,
+        "opaque_pixels": 1101875
+      }
+    },
+    {
+      "case": "localized-vellum-zh-CN-themed",
+      "fixture": "mixed",
+      "points": [
+        860,
+        820
+      ],
+      "pixels": [
+        1075,
+        1025
+      ],
+      "scale": 1.25,
+      "png": null,
+      "rgba_sha256": "d1d610098988252b99a3a24aab33d4966dd6e9f8f9729b2016f6270cba28799b",
+      "layout": {
+        "visible_controls": 3,
+        "painted_chamfers": 10,
+        "horizontal_text_clip_failures": 0,
+        "expected_semantics": [
+          "connected",
+          "available",
+          "reload"
+        ]
+      },
+      "pixels_checked": {
+        "paper": 389849,
+        "card": 640973,
+        "ink": 10035,
+        "emerald": 333,
+        "opaque_pixels": 1101875
+      }
+    }
+  ]
+}

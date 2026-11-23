@@ -19,6 +19,7 @@ const UNAVAILABLE: &str = "connector_unavailable";
 const HELP: &str = "Usage: ironvellum-connector --context FILE --outbox DIRECTORY
        ironvellum-connector serve-folder --settings FILE
        ironvellum-connector {setup|status|select-source} --help
+       ironvellum-connector desktop --settings FILE [--language LANG] [--wording MODE] [--appearance THEME]
 
 Serve an Ironvellum training export or an explicitly configured folder over local stdio.
 
@@ -168,6 +169,23 @@ fn run() -> Result<(), &'static str> {
 }
 
 fn main() -> ExitCode {
+    let mut args = env::args_os().skip(1);
+    if args.next().as_deref() == Some(OsStr::new("desktop")) {
+        let status = env::current_exe().and_then(|exe| {
+            let sibling =
+                exe.with_file_name(format!("ironvellum-desktop{}", env::consts::EXE_SUFFIX));
+            std::process::Command::new(sibling).args(args).status()
+        });
+        match status {
+            Ok(status) => std::process::exit(status.code().unwrap_or(2)),
+            Err(_) => {
+                eprintln!(
+                    "desktop_unavailable — install ironvellum-desktop beside ironvellum-connector, or use status --help."
+                );
+                return ExitCode::from(2);
+            }
+        }
+    }
     let mut args = env::args_os().skip(1);
     if let Some(command) = args.next()
         && let Some(command @ ("setup" | "status" | "select-source")) = command.to_str()
