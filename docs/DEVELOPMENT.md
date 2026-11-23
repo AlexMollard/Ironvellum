@@ -75,6 +75,34 @@ Web development and rebuilding exercise art do: run
 
 Two flavours share one application id. `foss` is the F-Droid and GitHub build and shows support links. `play` adds Google sign-in and shows none; build it with `assemblePlayDebug`. The app needs Android 10 (API 29) or newer.
 
+## Portable Android tooling
+
+Run commands from the repository root. Scripts derive checkout paths from their
+own location; no particular checkout directory, username or drive is required.
+
+The device helper and gate share SDK discovery: `ANDROID_HOME`, the legacy
+`ANDROID_SDK_ROOT`, the checkout's ignored `local.properties` (`sdk.dir`), an ADB
+installation on `PATH`, then the current user's standard Android Studio SDK
+location on Windows, macOS or Linux. `IRONVELLUM_ADB` and
+`IRONVELLUM_EMULATOR` can explicitly select executable paths.
+
+AVD directories follow the emulator's existing `ANDROID_AVD_HOME`,
+`ANDROID_EMULATOR_HOME` and `ANDROID_USER_HOME` settings and current-user defaults.
+The helper does not inject a cached directory from another computer. See the
+[Android environment variable reference](https://developer.android.com/tools/variables).
+
+When exactly one AVD is installed, it can be selected automatically. If several
+are installed, set `IRONVELLUM_AVD` to the disposable test AVD you intend to use
+before cold booting. Set it only in your terminal or private machine setup; do
+not commit a workstation's choice. A missing configured AVD fails immediately.
+An already-running emulator can still be used by serial. Tests never fall back
+to a physical phone. The shared emulator lock and ten-minute gate budget apply.
+
+Use the ordinary `python tools/gate.py` command; machine-specific import wrappers
+are unnecessary. `python tools/test_android_paths.py` checks discovery with
+temporary fixtures, and `python tools/test_portable_paths.py` checks tracked files
+for workstation paths. Both checks also run in the gate.
+
 ## Build without a default backend
 
 `./gradlew -PlocalOnly=true :app:assembleFossRelease` builds the FOSS app with empty Supabase URL, public key and Google web client ID, including when release signing or custom cloud credentials are configured. Use `gradlew.bat` on Windows. The APK appears under `app/build/outputs/apk/foss/release/`. Standard release signing still applies. An unsigned build needs signing before installation. The app retains its application ID, so an in-place update requires the same signing key.

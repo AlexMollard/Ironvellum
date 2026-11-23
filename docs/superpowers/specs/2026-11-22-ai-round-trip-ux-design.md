@@ -1,5 +1,10 @@
 # AI handoffs: current journeys and proposed UX
 
+Historical design: the desktop connector described below is preserved on
+[archive-personal-connector](https://github.com/AlexMollard/Ironvellum/tree/archive-personal-connector)
+and is no longer shipped on main. Phone sharing/import remains supported.
+Use [production MCP](../../../server/production_mcp/README.md) for hosted integration.
+
 Status: direction and shown mockups accepted by the owner, 2026-11-22 ("That proposal seems like the step in the correct direction"). The phone and desktop implementations and their reviews are complete at c3de5ee0; final verification and remaining limits are recorded in docs/RELEASE_CHECKLIST.md. The owner has confirmed: accept workouts from any AI, even without a prior training export; allow exercises, sets, reps and weights to be edited during review before saving; always require explicit Save; provide a small desktop window; expect most desktop users to have an agent set up the connection. Implementation details are specified in the linked mobile and desktop plans. New layouts still require real-app-based mockups before their UI code.
 
 ## Why this change was needed
@@ -150,9 +155,9 @@ The following preview-only mockups were shown inline. They use the actual app's 
 
 | Board | Preview path |
 |---|---|
-| AI hub, sharing and optional PC status | C:/Users/alexm/.codex/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-3f1c5763-8c1e-451c-bcf5-c400b1767d6c.png |
-| Paste, editable review and movement matching | C:/Users/alexm/.codex/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-93b9cebc-5c25-4b55-a7d0-b3fe060db07a.png |
-| PC settings, invalid refresh and source choice | C:/Users/alexm/.codex/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-973bc2d2-dd18-4a47-83c4-b9134b813606.png |
+| AI hub, sharing and optional PC status | $CODEX_HOME/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-3f1c5763-8c1e-451c-bcf5-c400b1767d6c.png |
+| Paste, editable review and movement matching | $CODEX_HOME/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-93b9cebc-5c25-4b55-a7d0-b3fe060db07a.png |
+| PC settings, invalid refresh and source choice | $CODEX_HOME/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-973bc2d2-dd18-4a47-83c4-b9134b813606.png |
 
 ## Implementation evidence
 

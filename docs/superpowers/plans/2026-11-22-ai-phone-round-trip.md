@@ -1,5 +1,10 @@
 # AI Phone Round Trip Implementation Plan
 
+Historical plan: PC connector paths below refer to the
+[archive-personal-connector branch](https://github.com/AlexMollard/Ironvellum/tree/archive-personal-connector).
+Phone sharing, import and review remain supported; current hosted integration
+lives in [production MCP](../../../server/production_mcp/README.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Share useful training instructions with phone AI apps, and receive, edit and explicitly save a workout from any AI without requiring a prior export.

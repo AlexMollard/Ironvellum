@@ -6,11 +6,14 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 import time
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
 PROBE = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT / "tools"))
+from device import ADB
 PACKAGE = "com.ironvellum.watchprobe.phone"
 
 
@@ -20,8 +23,7 @@ def main() -> None:
     args = parser.parse_args()
     if not args.serial.startswith("emulator-") or os.environ.get("ANDROID_SERIAL") != args.serial:
         parser.error("require an explicit emulator serial matching the device-lock helper's ANDROID_SERIAL")
-    sdk = Path(os.environ.get("ANDROID_HOME") or Path(os.environ["LOCALAPPDATA"]) / "Android/Sdk")
-    adb = sdk / "platform-tools/adb.exe"
+    adb = ADB
 
     def run(*command: str, binary: bool = False) -> str | bytes:
         result = subprocess.run([str(adb), "-s", args.serial, *command], capture_output=True, timeout=30, check=True)

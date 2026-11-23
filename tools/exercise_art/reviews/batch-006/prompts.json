@@ -11,7 +11,7 @@
       "sourceArt": "ek_0061",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-ff531191-2404-499c-b4e6-0d21cfc3d7e2.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-ff531191-2404-499c-b4e6-0d21cfc3d7e2.png",
       "sha256": "80b1b3b384cb8f439b2f6087d9793c88f3a6b11336ed0df8cfbe404803001ba3",
       "updatedAt": "2026-10-12T23:25:41.905934+00:00"
     },
@@ -23,7 +23,7 @@
       "sourceArt": "ek_0062",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-c9a1645c-2c3d-4707-9b15-f37a87c4772b.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-c9a1645c-2c3d-4707-9b15-f37a87c4772b.png",
       "sha256": "85260ee2aac2a67d7d756445fbf72ab3ce1c445fc7acd03195b9380115b9630d",
       "updatedAt": "2026-10-12T23:26:23.852526+00:00"
     },
@@ -35,7 +35,7 @@
       "sourceArt": "ek_0063",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-f8ea9877-6ac1-4166-a813-09941216b8e9.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-f8ea9877-6ac1-4166-a813-09941216b8e9.png",
       "sha256": "a5022278baac20afc785347a66eb2deb4ded06781bbf229d0dd25fa9ca23fdba",
       "updatedAt": "2026-10-12T23:27:38.540520+00:00"
     },
@@ -47,7 +47,7 @@
       "sourceArt": "ek_0064",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-e4ea552d-a00e-46de-8c34-125edd5f7f85.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-e4ea552d-a00e-46de-8c34-125edd5f7f85.png",
       "sha256": "0456da3fb28678a998d0fc35b6f82013f8a8f1b3165656954364b72043d2e5ee",
       "updatedAt": "2026-10-12T23:28:51.115938+00:00"
     },
@@ -59,7 +59,7 @@
       "sourceArt": "ek_0066",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-3cc666f4-6e58-4eeb-975d-4d711ca11695.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-3cc666f4-6e58-4eeb-975d-4d711ca11695.png",
       "sha256": "d9770e91e0553be5c83786580bd32171e7e643b4c22cae323676cbf897fb6fd5",
       "updatedAt": "2026-10-12T23:30:53.981655+00:00"
     },
@@ -71,7 +71,7 @@
       "sourceArt": "ek_0067",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-d9a81654-fc58-4298-9276-607cd3a79b2e.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-d9a81654-fc58-4298-9276-607cd3a79b2e.png",
       "sha256": "e7893e514e0a2c3111a0f09ef8cc7ff7451230a3460b53f9cba01f2b623fdf5a",
       "updatedAt": "2026-10-12T23:26:22.358706+00:00"
     },
@@ -83,7 +83,7 @@
       "sourceArt": "ek_0068",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-a80cf0a7-c6ad-47f4-bedf-32dafd4341a8.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-a80cf0a7-c6ad-47f4-bedf-32dafd4341a8.png",
       "sha256": "97c75f04126465e815619aefb1949dfc588a47ec7ea2a6b4cba148083c226475",
       "updatedAt": "2026-10-12T23:27:01.411164+00:00"
     },
@@ -95,7 +95,7 @@
       "sourceArt": "ek_0069",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-633e23d3-bfbb-4ec8-b563-ee57231b37bf.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-633e23d3-bfbb-4ec8-b563-ee57231b37bf.png",
       "sha256": "bb5976b455263618f45ed545bf101480705c4538465727db0c3ccec4d4e721e8",
       "updatedAt": "2026-10-12T23:28:15.948930+00:00"
     },
@@ -107,7 +107,7 @@
       "sourceArt": "ek_0070",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-45df8d1e-6bda-4680-8933-e1ff66aa385b.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-45df8d1e-6bda-4680-8933-e1ff66aa385b.png",
       "sha256": "5b97f7b1a979eedb88742971c1d54b6518b8659d9e7814025c7b0a6e302f0489",
       "updatedAt": "2026-10-12T23:29:29.467763+00:00"
     },
@@ -119,7 +119,7 @@
       "sourceArt": "ek_0071",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-b2c71c59-501c-45d4-9edd-4eefad4f9d46.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-b2c71c59-501c-45d4-9edd-4eefad4f9d46.png",
       "sha256": "e3e9f315904e3c7c1d5f333c264404babe855923edcb5925dd8259cbbdff1e9a",
       "updatedAt": "2026-10-12T23:30:08.672711+00:00"
     },
@@ -131,7 +131,7 @@
       "sourceArt": "ek_0072",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-206be7be-8653-44b6-8dd9-a3777df8826d.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-206be7be-8653-44b6-8dd9-a3777df8826d.png",
       "sha256": "7b67f8f3fcef605766b3cb49998b73f16f4f613d1ef8c097959d57a6df92c6b6",
       "updatedAt": "2026-10-12T23:31:24.893009+00:00"
     },
@@ -143,7 +143,7 @@
       "sourceArt": "ek_0076",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-8b0f45ea-ed11-4818-8ad8-decbcb285a54.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-8b0f45ea-ed11-4818-8ad8-decbcb285a54.png",
       "sha256": "7f626c7e6a60b35b4a39b1aeb7f0f64852891ff02f40aedcaa5f48b13501dc80",
       "updatedAt": "2026-10-12T23:32:11.372278+00:00"
     },
@@ -155,7 +155,7 @@
       "sourceArt": "ek_0077",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-9b8f9d93-64a0-4d69-ba75-fd1cfd826930.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-9b8f9d93-64a0-4d69-ba75-fd1cfd826930.png",
       "sha256": "805003a6fa44d41aa88ef3763e5b2a941cb76273f90cd5ebb1e4f143cd017824",
       "updatedAt": "2026-10-12T23:32:45.177382+00:00"
     },
@@ -167,7 +167,7 @@
       "sourceArt": "ek_0078",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-18ab660c-9f08-4034-8736-72f8c6e5da8b.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-18ab660c-9f08-4034-8736-72f8c6e5da8b.png",
       "sha256": "16563a9878cdc11d29beae7a83ecb6aed8b31bedb855b59b3f67943cd97598ae",
       "updatedAt": "2026-10-12T23:33:32.318929+00:00"
     },
@@ -179,12 +179,12 @@
       "sourceArt": "ek_0079",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-41ab3215-0660-4305-95df-df78307776ce.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-41ab3215-0660-4305-95df-df78307776ce.png",
       "sha256": "a38c011b07096dd636530ade28346d3031844e2f49684be7a694e96a3b38196c",
       "updatedAt": "2026-10-13T00:13:42.794023+00:00",
       "previousAttempts": [
         {
-          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-fe30b32b-5e61-4290-ba1d-805ef28de2d9.png",
+          "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-fe30b32b-5e61-4290-ba1d-805ef28de2d9.png",
           "sha256": "0610a8367bda19f1f5be7370af3ab85412568171121c385e07b86e690625491f",
           "updatedAt": "2026-10-12T23:34:14.521545+00:00"
         }
@@ -200,7 +200,7 @@
             "updatedAt": "2026-10-13T00:05:19.388Z"
           },
           "correctionPrompt": "Edit the supplied dumbbell pullover illustration. Preserve exactly the pose, bench, two arms, one dumbbell, two planted feet, plain shorts, muscular figure and blank EAR-FREE oval head. REMOVE ALL THE GREY FILL from the entire athlete, shorts, dumbbell and bench. Draw only pure WHITE clean single contour lines. Every enclosed interior must be genuinely TRANSPARENT empty space, same alpha=0 as background, including head, chest, arms, legs, shorts, weights and bench. No grey or white filled regions, no shading, hatching, glow or opaque silhouette. Keep the full body and bench within square canvas.",
-          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-41ab3215-0660-4305-95df-df78307776ce.png",
+          "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-41ab3215-0660-4305-95df-df78307776ce.png",
           "sha256": "a38c011b07096dd636530ade28346d3031844e2f49684be7a694e96a3b38196c"
         }
       ],
@@ -214,7 +214,7 @@
       "sourceArt": "ek_0081",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-c4081163-f283-426b-9752-4c1142a34a7d.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-c4081163-f283-426b-9752-4c1142a34a7d.png",
       "sha256": "8d1fac1d3eabd6f2e8a251536f33ec33a50731af0ac26fe2ed72380fa7e00725",
       "updatedAt": "2026-10-12T23:34:55.101255+00:00"
     },
@@ -226,7 +226,7 @@
       "sourceArt": "ek_0082",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-ec1412f7-676b-4de3-bc0f-7582e3aa37f5.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-ec1412f7-676b-4de3-bc0f-7582e3aa37f5.png",
       "sha256": "20dc6e592bde75d656ea5b4a5f82323620381bb2226dbbade70807027b53cd61",
       "updatedAt": "2026-10-12T23:35:36.789154+00:00"
     },
@@ -238,7 +238,7 @@
       "sourceArt": "ek_0083",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-9aa894ba-c0f4-4a35-b52e-3033f4fdd37b.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-9aa894ba-c0f4-4a35-b52e-3033f4fdd37b.png",
       "sha256": "7e151d239438c31ed9a5eb26741653b26be169cd9ccbb0de34ef37ae6dfd35e2",
       "updatedAt": "2026-10-12T23:35:38.880395+00:00"
     },
@@ -250,7 +250,7 @@
       "sourceArt": "ek_0085",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-be04d434-2b7f-4f28-9817-353438e66ebd.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-be04d434-2b7f-4f28-9817-353438e66ebd.png",
       "sha256": "2ae352ff89d4f69132ded11f62b1998c14d54e8a1af3394e7ed9163482dc7385",
       "updatedAt": "2026-10-12T23:36:58.228267+00:00"
     },
@@ -262,7 +262,7 @@
       "sourceArt": "ek_0086",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-8126fdf5-0d41-48d9-ab84-a3d27c56c7bb.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-8126fdf5-0d41-48d9-ab84-a3d27c56c7bb.png",
       "sha256": "4bfab29db7c73c8a947ce0e689dafb0a11b5d24547c2767f859933aa5fc48d86",
       "updatedAt": "2026-10-12T23:37:37.653803+00:00"
     },
@@ -274,7 +274,7 @@
       "sourceArt": "ek_0087",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-e0394064-12b8-4258-a499-c2d264120ea8.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-e0394064-12b8-4258-a499-c2d264120ea8.png",
       "sha256": "cb9b1bb4bc22cff6f2959b80b71fd8613c9fbbb1b018b66504452fbce4dfa87d",
       "updatedAt": "2026-10-12T23:38:20.857588+00:00"
     },
@@ -286,7 +286,7 @@
       "sourceArt": "ek_0090",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-c35cb492-e511-4542-abb1-033e0287c86a.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-c35cb492-e511-4542-abb1-033e0287c86a.png",
       "sha256": "3b2406884250fd1fc4d5af3907d2f6ad87e240d155454d156d3f4d879610736a",
       "updatedAt": "2026-10-12T23:39:04.007936+00:00"
     },
@@ -298,7 +298,7 @@
       "sourceArt": "ek_0091",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-075de9f7-3fc5-464c-a0cf-a95b60308370.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-075de9f7-3fc5-464c-a0cf-a95b60308370.png",
       "sha256": "7e23d4781fd1a8be42cb93e986b46b68f0f50ef5f9bed0f2831d90536d403530",
       "updatedAt": "2026-10-12T23:39:45.307293+00:00"
     },
@@ -310,7 +310,7 @@
       "sourceArt": "ek_0092",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-d09bd02d-b936-41c9-b960-99803bbdcad6.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-d09bd02d-b936-41c9-b960-99803bbdcad6.png",
       "sha256": "59ac9baffaab314f7aa80fd965751e4959003cd500e852675ed792db1ced8b4f",
       "updatedAt": "2026-10-12T23:40:26.800236+00:00"
     },
@@ -322,7 +322,7 @@
       "sourceArt": "ek_0093",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-046eb307-ed41-4dae-9a0c-1ecfc654a6e0.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-046eb307-ed41-4dae-9a0c-1ecfc654a6e0.png",
       "sha256": "60e300384996bf72c46c7972f6f00f0e6beee25dd31d82847c5515a919c84dbc",
       "updatedAt": "2026-10-12T23:41:10.670963+00:00"
     },
@@ -334,7 +334,7 @@
       "sourceArt": "ek_0094",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-d66439fa-3554-41d8-a501-de23e2b34b4d.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-d66439fa-3554-41d8-a501-de23e2b34b4d.png",
       "sha256": "f5ef72ae9a14e7bdd9760d231408ffd66b286613f2b82b3fcf3f953db1a5f983",
       "updatedAt": "2026-10-12T23:41:53.202589+00:00"
     },
@@ -346,7 +346,7 @@
       "sourceArt": "ek_0096",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-0c25dc9d-f1be-4b31-b873-e2d5f7f9b810.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-0c25dc9d-f1be-4b31-b873-e2d5f7f9b810.png",
       "sha256": "56b6a62773c60b82eda8196996f7916e9a9e872049c7b9fe3e5c21e1757adc04",
       "updatedAt": "2026-10-12T23:42:37.098704+00:00"
     },
@@ -358,7 +358,7 @@
       "sourceArt": "ek_0098",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:/Users/alex.mollard/.codex/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-1e757e2f-c64a-4685-abea-1b88e4a54226.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-1e757e2f-c64a-4685-abea-1b88e4a54226.png",
       "sha256": "0f83ce703a687281b6d0bcb5ab805aba1786d42b950f24f31df26bcb77c910f4",
       "updatedAt": "2026-10-12T23:55:50.058209+00:00",
       "initialPrompt": "Generate ONE exercise illustration in the attached approved house style. First reference STYLE ONLY: muscular adult male bare chest, plain shorts, bare feet, smooth completely featureless oval head, ABSOLUTELY NO EARS or ear bumps, no hair/face. Pure WHITE single clean contour strokes on genuinely transparent background AND transparent enclosed interiors. Consistent line weight about0.8% drawing width, no fills/shading/grey/hatching/glow/text. Square full body+essential equipment with8%clear margins. Exactly two arms attached continuously at shoulders, two legs, accurate hands/grips and feet oriented with lower legs. Second reference is pose/equipment ONLY; correct its anatomy and obey the exercise description if source mismatches. Simplify equipment to make contact points clear: rollers touch externally, never intersect limbs. Choose readable side or three-quarter camera. Exercise: stability ball pullover. Required representative pose: STABILITY BALL PULLOVER: supine upper back on a large ball, hips lifted, knees bent feet planted. TWO hands hold ONE dumbbell over/behind head, no pulldown machine. Source picture is incorrectly labelled: IGNORE its pose entirely. Additional movement context: Grasp a Barbell or Dumbbell and sit on a Ball with your feet firmly placed on the floor. Lower your body so your upper abs are the only part of your body supported on the Ball. Bring the Barbell or Dumbbell to your chest with your arms extend. In an arcing motion raise the Barbell or Dumbbell over and behind your head towards the floor. Return to starting position. Repeat. ",
@@ -378,7 +378,7 @@
       "sourceArt": "ek_0099",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-7b1c1e9d-ec49-4165-8a2b-8f81a3058124.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-7b1c1e9d-ec49-4165-8a2b-8f81a3058124.png",
       "sha256": "f09b0f57f036d2947b55f360edc5cec8fc6e3e53a06d1e366d850a749917098b",
       "updatedAt": "2026-10-12T23:44:13.027327+00:00"
     },
@@ -390,7 +390,7 @@
       "sourceArt": "ek_0100",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-1501af82-defa-49c7-b19b-12c411d2e86b.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-1501af82-defa-49c7-b19b-12c411d2e86b.png",
       "sha256": "ed6fa3c9ead70963360e77e801877a0d12233e71f1e9ef747ca561d093a6e3db",
       "updatedAt": "2026-10-12T23:43:17.743268+00:00"
     },
@@ -402,7 +402,7 @@
       "sourceArt": "ek_0101",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-66be5b77-b9bf-4ed8-98e6-2642411cef0c.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-66be5b77-b9bf-4ed8-98e6-2642411cef0c.png",
       "sha256": "d2a3daf1cc3ada0551bbaa50a8dd3e4bd3b4d0f9a15381673b5696284921175f",
       "updatedAt": "2026-10-12T23:44:57.760940+00:00"
     },
@@ -414,7 +414,7 @@
       "sourceArt": "ek_0102",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-8796ec91-1a74-46a4-8a70-f07151c7fc0f.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-8796ec91-1a74-46a4-8a70-f07151c7fc0f.png",
       "sha256": "00148f6c11bd72a025cc98da335396213ff8a792a1c6629961728d6ea95ab518",
       "updatedAt": "2026-10-12T23:45:31.787264+00:00"
     },
@@ -426,7 +426,7 @@
       "sourceArt": "ek_0103",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-0b7f59b5-728c-4c4a-9c33-20dfeeec68d8.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-0b7f59b5-728c-4c4a-9c33-20dfeeec68d8.png",
       "sha256": "bd4051ff31f362419b015fa305407c5c63888ff9a0bec82bd5e0137933d41c7c",
       "updatedAt": "2026-10-12T23:46:16.504479+00:00"
     },
@@ -438,7 +438,7 @@
       "sourceArt": "ek_0104",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-8897b86d-6c00-4239-ba2d-51b7bc08b3e1.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-8897b86d-6c00-4239-ba2d-51b7bc08b3e1.png",
       "sha256": "98e3322fe06599fb0bc9f1a4c2b9b7058c7b7c07a9a053fd1471c44ae00e6596",
       "updatedAt": "2026-10-12T23:47:02.526573+00:00"
     },
@@ -450,7 +450,7 @@
       "sourceArt": "ek_0107",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-eff73057-944e-46ec-87a3-20e0cd5570db.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-eff73057-944e-46ec-87a3-20e0cd5570db.png",
       "sha256": "f2c569cec5d0ee08ca9a9495ec296375a3a2a792cc31def63cf64a91d29693b8",
       "updatedAt": "2026-10-12T23:47:42.434604+00:00"
     },
@@ -462,7 +462,7 @@
       "sourceArt": "ek_0109",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-6fe7b4b0-deb3-4772-b6b4-162c1d18f2c1.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-6fe7b4b0-deb3-4772-b6b4-162c1d18f2c1.png",
       "sha256": "109cd5b2d3eee2ff420905f6c296b6c2ae4afc46cddcfa57a67f596f994fcae5",
       "updatedAt": "2026-10-12T23:48:26.204989+00:00"
     },
@@ -474,7 +474,7 @@
       "sourceArt": "ek_0111",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-6c375aa2-cb8e-4a91-83e3-c9014e40408e.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-6c375aa2-cb8e-4a91-83e3-c9014e40408e.png",
       "sha256": "153098138fb56a731ccc4673321288c299bdc7d0f351e39b8793fdcac1ee6101",
       "updatedAt": "2026-10-12T23:48:41.846815+00:00"
     },
@@ -486,7 +486,7 @@
       "sourceArt": "ek_0112",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-aa79e1f3-9f10-42c3-8c65-f8e944d0f243.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-aa79e1f3-9f10-42c3-8c65-f8e944d0f243.png",
       "sha256": "ee17ede75604d3d5649852e72d3b1051c7bb4a5a7ff266a8344d1115162acdbd",
       "updatedAt": "2026-10-12T23:50:00.757521+00:00"
     },
@@ -498,7 +498,7 @@
       "sourceArt": "ek_0113",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-158ccc0b-bc99-4ef1-8d83-a0f59642f896.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-158ccc0b-bc99-4ef1-8d83-a0f59642f896.png",
       "sha256": "2cf5274d538c36888272970bd9d4cb070e184f4ee05d9ec4fc8b3798a23e5f98",
       "updatedAt": "2026-10-12T23:51:21.382017+00:00"
     },
@@ -510,7 +510,7 @@
       "sourceArt": "ek_0114",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-f06e7475-e5c3-44bf-9bb4-3995cd39c37a.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-f06e7475-e5c3-44bf-9bb4-3995cd39c37a.png",
       "sha256": "4530d5cff920d27dceb7f4dba03ca8e0af2d6e38311cf732fde4c9afb80cbfd2",
       "updatedAt": "2026-10-12T23:52:01.949970+00:00"
     },
@@ -522,7 +522,7 @@
       "sourceArt": "ek_0115",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-950f9573-6626-4264-8c5e-e74424ffcbd7.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-950f9573-6626-4264-8c5e-e74424ffcbd7.png",
       "sha256": "5c22fc7308c3169a5c7cc6985bd9b87a187567cd518ce81e157ddf00ccb39444",
       "updatedAt": "2026-10-12T23:52:45.732825+00:00"
     },
@@ -534,7 +534,7 @@
       "sourceArt": "ek_0117",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-90b9e778-6812-4009-ae52-5e755d9b031a.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-90b9e778-6812-4009-ae52-5e755d9b031a.png",
       "sha256": "2deb590131110f646959e23318e94c0a08c91acdefffa03bc75d5caad9dce409",
       "updatedAt": "2026-10-12T23:53:34.066831+00:00"
     },
@@ -546,7 +546,7 @@
       "sourceArt": "ek_0118",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-3f40f532-f972-46dc-89ea-fd5762a34a96.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-3f40f532-f972-46dc-89ea-fd5762a34a96.png",
       "sha256": "39fc98fd61e670b1d86ca0ec175f60773f93c2c54eef7fe34b0439ab70911bc5",
       "updatedAt": "2026-10-12T23:53:39.635436+00:00"
     },
@@ -558,12 +558,12 @@
       "sourceArt": "ek_0119",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-1350c1ec-8e5d-4f69-a901-21b3af92332a.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-1350c1ec-8e5d-4f69-a901-21b3af92332a.png",
       "sha256": "03ce98e1a81e12b9023a65b2ea7c5f76ae704fafd8ff8e3036a056821250cdcb",
       "updatedAt": "2026-10-13T00:13:42.794023+00:00",
       "previousAttempts": [
         {
-          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-73680e77-1d35-4daf-a446-b59df1a0236e.png",
+          "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-73680e77-1d35-4daf-a446-b59df1a0236e.png",
           "sha256": "cf4f013ea41654a27720fd42b38e6abedb82585700ff6f87aa96f75f04f98d73",
           "updatedAt": "2026-10-12T23:54:11.277157+00:00"
         }
@@ -579,7 +579,7 @@
             "updatedAt": "2026-10-13T00:06:38.820Z"
           },
           "correctionPrompt": "Correct the supplied seated leg curl exercise illustration, retaining muscular adult man with plain shorts, blank smooth oval head WITHOUT EARS, white outline house style and simple seated curl machine. Redraw the lower legs and roller contact accurately. Use a clear SIDE THREE-QUARTER VIEW so the roller touches the BACKS OF THE LOWER CALVES ABOVE the ankles externally. The padded cylinder is BEHIND the lower calves, NOT surrounding them and NEVER passing through an ankle or foot. Both ankles and both entire bare feet extend beyond and BELOW the roller; show continuous unbroken shin-to-ankle-to-foot silhouettes, toes pointing forward naturally. Knees bent slightly, thighs secured under the separate thigh pad, back on backrest, hands on side handles. Both feet remain unobscured, no rail crosses or attaches to ankles. Exactly two legs and arms. White clean single contour lines ONLY on truly transparent background AND transparent interiors, no fill anywhere, no shading, no text. Full figure and equipment fit square canvas with margins.",
-          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-1350c1ec-8e5d-4f69-a901-21b3af92332a.png",
+          "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-1350c1ec-8e5d-4f69-a901-21b3af92332a.png",
           "sha256": "03ce98e1a81e12b9023a65b2ea7c5f76ae704fafd8ff8e3036a056821250cdcb"
         }
       ],
@@ -593,22 +593,22 @@
       "sourceArt": "ek_0120",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-449a801c-2129-4598-a8d0-20f0cdc17baf.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-449a801c-2129-4598-a8d0-20f0cdc17baf.png",
       "sha256": "0eec466d96f9826a918e043e373df8e701cc5534c0cc5ab6acb5db3ae79124af",
       "updatedAt": "2026-10-13T00:32:42.344952+00:00",
       "previousAttempts": [
         {
-          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-6597cc87-ad21-4a6f-aa80-1c1a8dd243bc.png",
+          "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-6597cc87-ad21-4a6f-aa80-1c1a8dd243bc.png",
           "sha256": "16c950d4da4ff5f4b1ddf41b9983bcd9a584b156bf8c194a8bbc0815e165e8d3",
           "updatedAt": "2026-10-12T23:54:55.457023+00:00"
         },
         {
-          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-00789132-4592-487e-8278-8d99a9429d7e.png",
+          "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-00789132-4592-487e-8278-8d99a9429d7e.png",
           "sha256": "5aca52fc55e52fdfad7a68530c2c865ac267a0a6ea93dae3ae69112a0945aba9",
           "updatedAt": "2026-10-13T00:13:42.794023+00:00"
         },
         {
-          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-dd6ea0df-82a4-4920-81cf-df4e4d4c2073.png",
+          "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-dd6ea0df-82a4-4920-81cf-df4e4d4c2073.png",
           "sha256": "e64cf19f8815a2468e80dea86634465f96b12006eda48d7a800f828685635a93",
           "updatedAt": "2026-10-13T00:17:45.366395+00:00"
         }
@@ -624,12 +624,12 @@
             "updatedAt": "2026-10-13T00:06:45.392Z"
           },
           "correctionPrompt": "Edit this standing leg curl illustration, changing ONLY the bent leg's ankle area and roller support. Remove the extra U-shaped tube/bar protruding LEFT from the padded roller above the hanging foot. There must be NO machine tube, rod, ring or bar anywhere above or around the ankle or foot. The roller has just ONE support arm leading RIGHT to the machine, attached at its RIGHT end; it must NOT extend to the left past the pad. Move the entire padded roller slightly RIGHT toward the bent knee to touch the middle of the calf instead of the ankle. Show an unobstructed continuous outline from exposed calf to narrow ankle to hanging bare foot, with clear empty transparent space between ankle and all equipment. Keep the bent knee, planted other leg, hands gripping front handles, ear-free featureless oval head, plain shorts, full body, and clean WHITE outline style. Transparent background and interiors; no fills/shading.",
-          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-00789132-4592-487e-8278-8d99a9429d7e.png",
+          "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-00789132-4592-487e-8278-8d99a9429d7e.png",
           "sha256": "5aca52fc55e52fdfad7a68530c2c865ac267a0a6ea93dae3ae69112a0945aba9",
           "rejectedAttempt": {
             "slug": "standing-leg-curl",
             "prompt": "Correct the supplied standing leg curl exercise illustration. Preserve muscular adult man in plain shorts, featureless smooth oval head with NO EARS, one leg standing with foot planted, both hands on machine handles, other knee flexed lifting heel behind. Change camera slightly toward clean SIDE VIEW to show contact correctly. Padded roller rests externally against BACK OF THE LOWER CALF, clearly several inches ABOVE the ankle. It must NOT cross through the calf or enclose the ankle. The flexed leg's lower calf ends in a continuous visible ankle BELOW AND BEYOND the pad and a fully visible bare foot hanging naturally downward, toes pointing down/back coherently with shin. Make a clearly visible gap between ankle/foot and all machine bars; only the calf touches roller. No ring around foot, no bar at ankle, no reversed feet. Exactly two anatomically continuous legs and two arms. Pure WHITE clean single contour line art, genuine transparent background AND all transparent enclosed interiors. No fill, gray, shading or text. Full body/equipment fit square canvas margins.",
-            "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-5a47a3cc-311d-4e71-9ecb-067e4a81803b.png"
+            "path": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-5a47a3cc-311d-4e71-9ecb-067e4a81803b.png"
           },
           "reason": "Support bar remained too close to ankle"
         },
@@ -643,7 +643,7 @@
             "updatedAt": "2026-10-13T00:14:57.394Z"
           },
           "correctionPrompt": "Edit this exact standing leg curl drawing. The user's remaining correction is: 'The bar is between his legs'. REMOVE the long diagonal/horizontal machine linkage bar that runs from the bent-leg calf roller through the gap between the two legs to the right-hand machine pivot. That bar must no longer be visible anywhere between or across the athlete's legs. Redesign the support so the roller is held by a short arm on the FAR SIDE of the working leg, behind the athlete and occluded by his leg, with any visible support routed outside the body silhouette toward the rear LEFT. Keep a clean open transparent gap between the legs, with absolutely no equipment stroke across it. Preserve the anatomically correct bent leg, exposed clear ankle, hanging natural foot and planted standing foot. Keep the roller externally touching the calf away from ankle; no bar intersects any limb. Preserve hands on handles, simple machine to right, muscular adult in plain shorts, blank smooth oval NO EARS, square full body framing. White single contour lines only, genuine transparency background and interiors; no fills or shading.",
-          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-dd6ea0df-82a4-4920-81cf-df4e4d4c2073.png",
+          "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-dd6ea0df-82a4-4920-81cf-df4e4d4c2073.png",
           "sha256": "e64cf19f8815a2468e80dea86634465f96b12006eda48d7a800f828685635a93"
         },
         {
@@ -656,7 +656,7 @@
             "updatedAt": "2026-10-13T00:30:30.165Z"
           },
           "correctionPrompt": "Redraw this standing leg curl educational exercise illustration, fixing the support mechanism, in the SAME muscular adult male WHITE OUTLINE art style. Use a very clear orthographic SIDE VIEW, athlete faces RIGHT. Smooth completely blank oval head, ABSOLUTELY NO EARS, plain shorts, barefoot. One leg stands vertically on floor. Working thigh hangs vertically and knee is flexed 90 degrees, lower calf extends horizontally LEFT and bare foot hangs naturally beyond it. An external padded roller touches the upper/back side of the middle calf, several inches away from the ankle, with ankle and foot fully unobstructed. CRITICAL MACHINE LAYOUT: put weight tower BEHIND athlete on the LEFT, not in front on right. Roller support and its linkage are wholly to LEFT/REAR of the body and standing leg, connected to the LEFT tower. All mechanism remains outside the two leg silhouettes. NO equipment lines in the gap between legs, NO bar crosses behind or in front of the standing leg, NO shaft through ankles, NO floating pad. Hands hold a simple vertical support post on the RIGHT, connected to the machine only along the FLOOR beneath the planted foot. Clear mechanically coherent standing leg curl machine with rear tower, rear roller arm and front handhold. Exactly two arms continuously connected to shoulders, two legs, natural feet. Full body and machine comfortably inside square canvas. Pure white clean single contour lines about0.8%image width. Genuinely transparent background AND empty transparent interiors of body, shorts and machine. NO FILLED regions, grey, shading, glow, hatching or text. Use attached image for STYLE and exercise only; entirely replace the bar layout. The open gap between the legs must contain absolutely zero machine strokes.",
-          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-449a801c-2129-4598-a8d0-20f0cdc17baf.png",
+          "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-449a801c-2129-4598-a8d0-20f0cdc17baf.png",
           "sha256": "0eec466d96f9826a918e043e373df8e701cc5534c0cc5ab6acb5db3ae79124af"
         }
       ],
@@ -670,7 +670,7 @@
       "sourceArt": "ek_0121",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-95b0aed2-4e12-41bc-ba39-930dc55a091b.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-95b0aed2-4e12-41bc-ba39-930dc55a091b.png",
       "sha256": "b38ef24ff63affb072262755729dea2bce1935e4178f437c651805ab18c8b00f",
       "updatedAt": "2026-10-12T23:55:02.629802+00:00"
     },
@@ -682,7 +682,7 @@
       "sourceArt": "ek_0122",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-800b38e4-468c-49c7-92b0-81498a7ff394.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-800b38e4-468c-49c7-92b0-81498a7ff394.png",
       "sha256": "0327ef0c2b257b7f785250dfbc0f85a523aff2f05560b88afcede53a66171a5d",
       "updatedAt": "2026-10-12T23:55:13.994803+00:00"
     },
@@ -694,7 +694,7 @@
       "sourceArt": "ek_0123",
       "sourceFrame": 1,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-0e29ff75-0ad5-4dec-abcf-c5559998a4a6.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-0e29ff75-0ad5-4dec-abcf-c5559998a4a6.png",
       "sha256": "489ce7f341a666e60692b4cdc01e5d37c4d2c313699554b9511749b548a838dc",
       "updatedAt": "2026-10-12T23:55:08.130406+00:00"
     },
@@ -706,7 +706,7 @@
       "sourceArt": "ek_0124",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-3f19d551-d169-4273-a720-b81b7490963f.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-3f19d551-d169-4273-a720-b81b7490963f.png",
       "sha256": "45d88c935a575846f8083a9ec278514870943f3b5b2ab64700bd4f15bc872b85",
       "updatedAt": "2026-10-12T23:55:18.826218+00:00"
     },
@@ -718,7 +718,7 @@
       "sourceArt": "ek_0125",
       "sourceFrame": 0,
       "status": "generated",
-      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-c7d6b9ec-0be8-4602-b182-0541f98e3491.png",
+      "source": "$CODEX_HOME/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-c7d6b9ec-0be8-4602-b182-0541f98e3491.png",
       "sha256": "9475850190cc2b032e7631d2de722f3e52a44e6fd824cbb0daba9825c8a79561",
       "updatedAt": "2026-10-12T23:55:40.438998+00:00"
     }

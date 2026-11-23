@@ -17,7 +17,7 @@ Commands run from the repo root on Windows with `.\gradlew.bat <task>`.
    reads env vars first, then these keys — absent keys yield an unsigned APK,
    never a configuration failure):
    ```
-   ironvellum.keystore.path=D:/path/to/ironvellum-release.jks
+   ironvellum.keystore.path=<absolute-path-to-your-private-keystore>
    ironvellum.keystore.password=...
    ironvellum.key.alias=ironvellum
    ironvellum.key.password=...

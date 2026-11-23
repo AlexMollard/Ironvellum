@@ -1,5 +1,10 @@
 # Complete Local Training Read Implementation Plan
 
+Historical plan: PC connector paths below refer to the
+[archive-personal-connector branch](https://github.com/AlexMollard/Ironvellum/tree/archive-personal-connector).
+Training export and reusable schemas remain on main; current contracts live in
+[training-contracts](../../training-contracts/README.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make all valid training readable by the personal connector, including the owner's missing 149 sets and seven saved workouts.

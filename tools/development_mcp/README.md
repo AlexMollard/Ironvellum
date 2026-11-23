@@ -42,8 +42,8 @@ your checkout's absolute path in both places. The Windows example uses JSON
 {
   "mcpServers": {
     "ironvellum": {
-      "command": "C:/src/Ironvellum/tools/development_mcp/.venv/Scripts/python.exe",
-      "args": ["-m", "ironvellum_mcp", "--repo-root", "C:/src/Ironvellum"]
+      "command": "<absolute-checkout-path>/tools/development_mcp/.venv/Scripts/python.exe",
+      "args": ["-m", "ironvellum_mcp", "--repo-root", "<absolute-checkout-path>"]
     }
   }
 }
@@ -55,8 +55,8 @@ The macOS and Linux entry uses the virtual environment's `bin/python`.
 {
   "mcpServers": {
     "ironvellum": {
-      "command": "/home/alex/src/Ironvellum/tools/development_mcp/.venv/bin/python",
-      "args": ["-m", "ironvellum_mcp", "--repo-root", "/home/alex/src/Ironvellum"]
+      "command": "<absolute-checkout-path>/tools/development_mcp/.venv/bin/python",
+      "args": ["-m", "ironvellum_mcp", "--repo-root", "<absolute-checkout-path>"]
     }
   }
 }
@@ -66,7 +66,9 @@ For Codex, register the stdio server with the CLI. Substitute your absolute
 checkout path, and use `bin/python` on macOS or Linux:
 
 ```powershell
-codex mcp add ironvellum-dev --env PYTHONUTF8=1 -- "C:/src/Ironvellum/tools/development_mcp/.venv/Scripts/python.exe" -m ironvellum_mcp --repo-root "C:/src/Ironvellum"
+$repo = (Get-Location).Path
+$python = Join-Path $repo 'tools/development_mcp/.venv/Scripts/python.exe'
+codex mcp add ironvellum-dev --env PYTHONUTF8=1 -- $python -m ironvellum_mcp --repo-root $repo
 ```
 
 Set `tool_timeout_sec = 120.0` inside the resulting

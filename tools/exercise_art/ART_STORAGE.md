@@ -13,6 +13,10 @@ git submodule `art/`; there are no copies of the PNGs here.
   there is no `APPROVED` list.
 - `reviews/batch-NNN/`: batch prompts, feedback and exported approval reports; JSON records only, no image copies.
 - `reviews/history/`: earlier review and pose-selection metadata, retained without the old images.
+  External generation references use `$CODEX_HOME/generated_images/...` instead
+  of a workstation's absolute path. Set `CODEX_HOME` to your own copied Codex
+  data directory to resolve those historical references. They are provenance,
+  not build inputs, and do not imply the original private files are bundled.
 - `review-decisions.json`: the review site's record of past decisions, bound to the hashes of the images they judged.
   It is history; the build does not read it.
 - `generation-review.json`: generation status and batch membership. Its style reference is `art/png/banded-donkey-kick.png`.

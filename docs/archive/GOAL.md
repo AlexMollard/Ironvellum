@@ -4,7 +4,7 @@
 > retired; the app's words now come from [docs/GLOSSARY.md](../GLOSSARY.md).
 
 Solo Leveling-themed Android fitness app for weighted + bodyweight calisthenics.
-Repo: D:\Ironvellum.
+Repo: <repository-root>.
 Stack: Kotlin + Jetpack Compose + Room. Fully custom dark Solo-Leveling-style theme.
 Gamified: XP, levels, unlockable titles.
 
@@ -42,7 +42,7 @@ on the S25 Ultra, verifiable via adb.
   where practical; screenshots as visual proof.
 
 ## Boundaries
-- All work stays inside D:\Ironvellum.
+- All work stays inside <repository-root>.
 - Local-only data: no backend, no accounts (schema structured so sync can be
   added later).
 - adb is used only to install, launch, screenshot, and read logcat on your phone.

@@ -107,7 +107,7 @@ rtk proxy python tools/device.py lock --label preparation-card-management -- .\g
 rtk proxy python tools/gate.py
 ```
 
-The last command expresses the normal repository gate. This machine lacks its configured `D:` AVD; use a temporary import wrapper that sets `device.AVD = "Ironvellum_Art_API35"` before `gate.main()` and sets `ANDROID_AVD_HOME` to `C:/Users/alexm/.android/avd`. Keep the same gate/lock, emulator port 5554 and all phases; do not change committed device defaults or silently substitute `--no-device`. See `.tmp/refinement-planning-report.md` for exact wrapper guidance.
+The last command runs the normal repository gate. Configure your installed test AVD through `IRONVELLUM_AVD` when necessary; SDK and AVD directories follow the portable discovery documented in `docs/DEVELOPMENT.md`. Keep the same gate/lock, emulator port 5554 and all phases; do not substitute `--no-device`.
 
 ## Self-review and handoff
 
@@ -119,21 +119,7 @@ Execution commit `b2235657` and management commit `1c632f98` are pushed to main.
 
 The full local gate on exact implementation source exited zero: 2783 JVM cases (zero failures, one existing opt-in CatalogueExport skip), 726 instrumented cases (zero failures/skips, no retry), release lint zero errors and 1127 inherited warnings (delta zero), four art tests, 358 Vitest tests in 35 files, both Android flavours and production web build. Wall clock was 421.203 seconds, displayed as 7m01s: **1.203 seconds over the unchanged seven-minute target**. This is a recorded benchmark miss; correctness checks passed. Existing Node engine advisories remain. No assertions, lint baselines or gate thresholds were weakened.
 
-For this machine's installed SDK/AVD, the equivalent temporary wrapper is below. Run it from the repository root through `rtk proxy python <wrapper.py>`. It invokes the real gate, including its emulator lock, source-count checks and every phase; it does not change committed device defaults. The installed emulator rejects the historical `angle_indirect` mode. Disabling its file-backed quickboot feature prevents a generated 2.7GB RAM cache from exhausting host disk space, even when launched with `-no-snapshot`.
-
-```python
-import os
-import sys
-
-os.environ['ANDROID_AVD_HOME'] = 'C:/Users/alexm/.android/avd'
-os.environ['ANDROID_EMULATOR_FEATURES'] = '-QuickbootFileBacked'
-os.environ['IRONVELLUM_GPU'] = 'auto'
-sys.path.insert(0, 'tools')
-import device
-device.AVD = 'Ironvellum_Art_API35'
-import gate
-raise SystemExit(gate.main())
-```
+That historical run used a temporary machine-specific wrapper. Current sessions should use the normal gate with SDK/AVD discovery and documented environment overrides; the wrapper is no longer needed. The recorded results above remain evidence for that dated source.
 
 Focused instrumented selections were run one class at a time with the entire dotted `-Pandroid.testInstrumentationRunnerArguments.class=...` argument quoted. On this Windows invocation, the comma-separated examples above selected only their first class; fresh XML counts, rather than command appearance, establish coverage. Screenshots were opt-in and verified off during the final gate.
 

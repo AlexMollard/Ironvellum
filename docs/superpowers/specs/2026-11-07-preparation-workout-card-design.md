@@ -2,7 +2,7 @@
 
 The owner chose **Workout card** and approved agent-driven implementation on 2026-11-07 after reviewing all 14 prototype states alongside real app captures. This is the approved presentation refinement of the completed warmup/cooldown feature, not a replacement of its data model or rules. No further design approval is required.
 
-Reference: `C:/Users/alexm/.codex/visualizations/2026/11/06/01a1b040-5ebf-7c93-99d9-bd3f90d65578/warmup-cooldown-refinement.html`. The owner's explicit Workout card choice overrides any persisted widget selection of Focused movement. The HTML is a visual reference, not application source; use existing Compose components, gallery art and guides.
+Reference: `$CODEX_HOME/visualizations/2026/11/06/01a1b040-5ebf-7c93-99d9-bd3f90d65578/warmup-cooldown-refinement.html`. The owner's explicit Workout card choice overrides any persisted widget selection of Focused movement. The HTML is a visual reference, not application source; use existing Compose components, gallery art and guides.
 
 ## Intent and boundaries
 

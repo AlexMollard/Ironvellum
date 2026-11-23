@@ -20,7 +20,7 @@
 - No XP for a rank-up.
 - New files use CRLF line endings. Edited files keep the line endings they already have (`Rank.kt`, `GLOSSARY.md` are CRLF; `DashboardScreen.kt` is LF).
 - Commit style: one-line imperative subject, capitalized, no prefix, no trailing period, no attribution trailer. Commit and push to `main` after each task.
-- Unit tests: `cmd /c gradlew.bat :app:testFossDebugUnitTest --tests "<class>" --console=plain` from `D:\Monarch`.
+- Unit tests: `cmd /c gradlew.bat :app:testFossDebugUnitTest --tests "<class>" --console=plain` from `<repository-root>`.
 - Never run instrumented tests against the phone `R5GL14GXV3J`. Installing on it (`:app:installFossDebug`) is allowed.
 
 ## File map

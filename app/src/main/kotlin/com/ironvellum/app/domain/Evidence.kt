@@ -5,7 +5,7 @@ package com.ironvellum.app.domain
  * improve pass lean on, in one place so a `why` string and a KDoc can never
  * drift from the paper behind them.
  *
- * Entries carry only what the evidence brief (D:/Monarch/.tmp/evidence-brief.md)
+ * Entries carry only what the historical evidence brief (.tmp/evidence-brief.md)
  * marks verified: each DOI was checked against the Crossref registry, and the
  * retracted Barbalho single-joint studies are deliberately absent - rule 19
  * forbids citing them. [label] is the short form used inside user-facing

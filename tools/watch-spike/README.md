@@ -29,7 +29,7 @@ python tools/watch-spike/verify.py
 
 The runner uses the repository's Gradle wrapper and version catalog, points at this independent build and selects both `phone` and `wear` debug variants. It builds, lints, runs actual JVM cryptographic/protocol tests, checks expected executed test counts and inspects both resulting APKs for proprietary/production classes and internet permission.
 
-The runner accepts `ANDROID_HOME` or `ANDROID_SDK_ROOT`, otherwise the standard Windows/macOS/Linux SDK location. It selects the host's Gradle wrapper and `aapt2` executable. The build/phone smoke was exercised on Windows; other host operating systems still need their first actual build. The shared `tools/device.py` emulator workflow below remains workstation-specific; it is not required for compiling or the manual physical-device experiment.
+The runner accepts `ANDROID_HOME` or `ANDROID_SDK_ROOT`, otherwise the standard Windows/macOS/Linux SDK location. It selects the host's Gradle wrapper and `aapt2` executable. The build and phone smoke were exercised on Windows. The shared emulator workflow below follows the [portable Android tooling setup](../../docs/DEVELOPMENT.md#portable-android-tooling).
 
 Do not overlap this with the main local gate. To queue behind the shared emulator/build run and then smoke only the disposable phone package:
 

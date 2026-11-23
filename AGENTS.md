@@ -117,8 +117,10 @@ How it stays fast, so nobody undoes it by accident:
 - `tools/device.py up` boots the emulator even with the phone plugged in (only
   emulators count).
 
-Emulator settings (the AVD config is outside the repo:
-`D:\caches\android-avd\IronvellumEmu.avd\config.ini`):
+Emulator settings live in the selected AVD's `config.ini`, outside the repository.
+Use Android's configured AVD directory, not a directory from another computer.
+Set `IRONVELLUM_AVD` to your installed test AVD name when more than one is
+available; see [portable Android setup](docs/DEVELOPMENT.md#portable-android-tooling).
 
 |Key|Value|
 |---|---|
@@ -179,3 +181,14 @@ ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedFossDebugAndroidTest
 
 Installing a build on the phone (`:app:installFossDebug`) is safe and is how visual
 changes get verified.
+
+## Paths must work across computers
+
+Never commit a developer's username, checkout location or drive letter as a
+runtime/test dependency. Derive repository paths from the script location or
+Git checkout, respect SDK and AVD environment settings, and use temporary
+directories for test fixtures. Fail with an actionable configuration error when
+discovery is ambiguous; do not silently choose a phone or another test AVD.
+Documentation uses repository-relative paths, environment variables or clearly
+marked placeholders. Private external artwork provenance uses `$CODEX_HOME`
+references; those records do not imply the original private assets are bundled.

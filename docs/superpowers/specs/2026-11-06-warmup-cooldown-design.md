@@ -1,6 +1,6 @@
 # Warmup and cooldown routines
 
-Issue #4. Approved interaction reference: `C:/Users/alexm/.codex/visualizations/2026/11/06/01a1b040-5ebf-7c93-99d9-bd3f90d65578/warmup-cooldown.html`. The reference is a visual specification, not application source. User approved the complete flow and agent-driven implementation. Subsequent scope clarification requires every starter movement to be a real gallery exercise with its normal image, guide, muscles and metric.
+Issue #4. Approved interaction reference: `$CODEX_HOME/visualizations/2026/11/06/01a1b040-5ebf-7c93-99d9-bd3f90d65578/warmup-cooldown.html`. The reference is a visual specification, not application source. User approved the complete flow and agent-driven implementation. Subsequent scope clarification requires every starter movement to be a real gallery exercise with its normal image, guide, muscles and metric.
 
 ## User experience
 

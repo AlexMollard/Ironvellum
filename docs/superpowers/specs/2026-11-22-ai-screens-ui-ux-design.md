@@ -16,11 +16,11 @@ These are proposed layouts derived from actual app screenshots, not screenshots 
 
 | Coverage | Image |
 |---|---|
-| Hub and training-file preview | C:/Users/alexm/.codex/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-55f06277-8821-4c00-890e-f8360319af28.png |
-| Draft review and saved result | C:/Users/alexm/.codex/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-fa914ee7-cfb8-4149-844a-cd43b4e27607.png |
-| Loading, invalid file, already imported and later-deleted states | C:/Users/alexm/.codex/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-7499e0bf-08c0-41b0-9742-527812bab1cc.png |
-| Optional connections, draft inbox and sign-in gate | C:/Users/alexm/.codex/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-d8296c11-9fce-4974-9b2a-4fb78db04905.png |
-| Vellum/themed review and empty inbox | C:/Users/alexm/.codex/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-d1812e66-6fbc-48a5-b316-ad7d699f3ef9.png |
+| Hub and training-file preview | $CODEX_HOME/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-55f06277-8821-4c00-890e-f8360319af28.png |
+| Draft review and saved result | $CODEX_HOME/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-fa914ee7-cfb8-4149-844a-cd43b4e27607.png |
+| Loading, invalid file, already imported and later-deleted states | $CODEX_HOME/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-7499e0bf-08c0-41b0-9742-527812bab1cc.png |
+| Optional connections, draft inbox and sign-in gate | $CODEX_HOME/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-d8296c11-9fce-4974-9b2a-4fb78db04905.png |
+| Vellum/themed review and empty inbox | $CODEX_HOME/generated_images/01a1b040-5ebf-7c93-99d9-bd3f90d65578/exec-d1812e66-6fbc-48a5-b316-ad7d699f3ef9.png |
 
 ## Screen and interaction design
 

@@ -38,16 +38,73 @@ import time
 from collections.abc import Callable
 from uuid import uuid4
 
-SDK = pathlib.Path(os.path.expandvars(r"%LOCALAPPDATA%\Android\Sdk"))
-ADB = SDK / "platform-tools" / "adb.exe"
-EMULATOR = SDK / "emulator" / "emulator.exe"
-AVD = "IronvellumEmu"
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+
+def sdk_path(environment=None, *, repo_root=None, home=None, platform=None):
+    """Resolve this computer's SDK without depending on another checkout or drive."""
+    env = os.environ if environment is None else environment
+    repo = ROOT if repo_root is None else pathlib.Path(repo_root)
+    home = pathlib.Path.home() if home is None else pathlib.Path(home)
+    platform = sys.platform if platform is None else platform
+    configured = env.get("ANDROID_HOME") or env.get("ANDROID_SDK_ROOT")
+    if configured:
+        return pathlib.Path(configured).expanduser()
+    try:
+        properties = (repo / "local.properties").read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeError):
+        properties = ""
+    if match := re.search(r"^\s*sdk\.dir\s*[:=]\s*(.+)$", properties, re.MULTILINE):
+        configured = pathlib.Path(re.sub(r"\\([\\:= #!])", r"\1", match.group(1).strip())).expanduser()
+        return configured if configured.is_absolute() else repo / configured
+    adb_name = "adb.exe" if platform == "win32" else "adb"
+    found = shutil.which(adb_name, path=env.get("PATH", ""))
+    if found:
+        platform_tools = pathlib.Path(found).resolve().parent
+        if platform_tools.name == "platform-tools":
+            return platform_tools.parent
+    if platform == "win32":
+        return pathlib.Path(env.get("LOCALAPPDATA", home / "AppData/Local")) / "Android/Sdk"
+    return home / ("Library/Android/sdk" if platform == "darwin" else "Android/Sdk")
+
+
+def tool_path(sdk: pathlib.Path, directory: str, name: str) -> pathlib.Path:
+    """Find the executable independently of how the SDK directory was selected."""
+    if override := os.environ.get(f"IRONVELLUM_{name.upper()}"):
+        return pathlib.Path(override).expanduser()
+    executable = name + (".exe" if os.name == "nt" else "")
+    sdk_tool = sdk / directory / executable
+    if sdk_tool.is_file() and os.access(sdk_tool, os.X_OK):
+        return sdk_tool
+    if found := shutil.which(executable):
+        return pathlib.Path(found).absolute()
+    return sdk_tool
+
+
+def choose_avd(available, requested=None):
+    """Never guess which disposable emulator to wipe when more than one exists."""
+    names = sorted(set(available))
+    if requested:
+        if requested in names:
+            return requested
+        sys.exit("Configured AVD is not installed; check IRONVELLUM_AVD and Android's AVD directory settings")
+    if len(names) == 1:
+        return names[0]
+    if not names:
+        sys.exit("No AVD is installed; create a disposable test AVD in Android Studio")
+    sys.exit("Multiple AVDs are installed; set IRONVELLUM_AVD to your disposable test AVD name")
+
+
+SDK = sdk_path()
+ADB = tool_path(SDK, "platform-tools", "adb")
+EMULATOR = tool_path(SDK, "emulator", "emulator")
+AVD = os.environ.get("IRONVELLUM_AVD")
 PORT = "5554"
 # Host GLES exceeded the full-suite watchdog; use the SDK's software GLES path.
 GPU = os.environ.get("IRONVELLUM_GPU", "swangle")
-APK = pathlib.Path("app/build/outputs/apk/foss/debug/app-foss-debug.apk")  # :app:assembleFossDebug
+APK = ROOT / "app/build/outputs/apk/foss/debug/app-foss-debug.apk"  # :app:assembleFossDebug
 PKG = "com.ironvellum.app"
-SHOTS = pathlib.Path(".tmp/shots")
+SHOTS = ROOT / ".tmp/shots"
 
 
 def adb(*args: str, serial: str | None = None, binary: bool = False):
@@ -72,6 +129,30 @@ def target() -> str:
 def emulators() -> list[str]:
     """Emulator serials only: a phone on the cable must never count as "an emulator is up"."""
     return [d for d in attached() if d.startswith("emulator-")]
+
+
+def running_avd(serial: str) -> str | None:
+    """Read the AVD name from the emulator console, even when Android is offline."""
+    try:
+        result = subprocess.run(
+            [str(ADB), "-s", serial, "emu", "avd", "name"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            timeout=5, check=True,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    if len(lines) == 2 and lines[0] and lines[1] == "OK":
+        return lines[0]
+    return None
+
+
+def valid_emulator_port(port: str) -> bool:
+    """Android emulator console ports are even so ADB reliably detects them."""
+    if not re.fullmatch(r"[0-9]{4}", port):
+        return False
+    number = int(port)
+    return 5554 <= number <= 5682 and number % 2 == 0
 
 
 def shell_ok(serial: str, timeout: float = 10) -> float | None:
@@ -112,32 +193,42 @@ def kill(serial: str) -> None:
     port = serial.split("-", 1)[1]
     adb("emu", "kill", serial=serial)
     time.sleep(2)
-    subprocess.run(
-        ["powershell", "-NoProfile", "-Command",
-         "Get-CimInstance Win32_Process -Filter \"Name like 'qemu-system%' or Name='emulator.exe'\""
-         f" | Where-Object {{ $_.CommandLine -match '-port {port}( |$)' }}"
-         " | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"],
-        capture_output=True, timeout=60,
-    )
+    if os.name == "nt":
+        subprocess.run(
+            ["powershell", "-NoProfile", "-Command",
+             "Get-CimInstance Win32_Process -Filter \"Name like 'qemu-system%' or Name='emulator.exe'\""
+             f" | Where-Object {{ $_.CommandLine -match '-port {port}( |$)' }}"
+             " | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"],
+            capture_output=True, timeout=60,
+        )
     time.sleep(2)
 
 
-def boot(timeout: int = 300) -> str:
+def boot(timeout: int = 300, *, port: str = PORT) -> str:
     """Cold boot the emulator: no snapshot is loaded or saved, so every boot starts clean."""
-    serial = f"emulator-{PORT}"
+    if not valid_emulator_port(port):
+        sys.exit("Use an even Android emulator port between 5554 and 5682")
+    serial = f"emulator-{port}"
     env = dict(os.environ)
-    env.setdefault("ANDROID_AVD_HOME", r"D:\caches\android-avd")
+    try:
+        installed = subprocess.run([str(EMULATOR), "-list-avds"], env=env,
+                                   capture_output=True, text=True, timeout=15, check=True)
+    except (OSError, subprocess.SubprocessError):
+        sys.exit("Cannot list Android AVDs; check your SDK and IRONVELLUM_EMULATOR settings")
+    avd = choose_avd([name.strip() for name in installed.stdout.splitlines() if name.strip()], AVD)
     # SDK tooling can rewrite the cached AVD defaults; keep the measured gate profile.
     subprocess.Popen(
-        [str(EMULATOR), "-avd", AVD, "-no-window", "-no-audio", "-no-boot-anim",
-         "-gpu", GPU, "-port", PORT, "-no-snapshot", "-camera-back", "none",
+        [str(EMULATOR), "-avd", avd, "-no-window", "-no-audio", "-no-boot-anim",
+         "-gpu", GPU, "-port", port, "-no-snapshot", "-camera-back", "none",
          "-cores", "8", "-memory", "8192"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env,
-        creationflags=0x00000008 | 0x00000200,  # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+        creationflags=(0x00000008 | 0x00000200) if os.name == "nt" else 0,
     )
     deadline = time.time() + timeout
     while time.time() < deadline:
         if serial in emulators() and shell_ok(serial, 5) is not None:
+            if running_avd(serial) != avd:
+                sys.exit(f"Cannot confirm {serial} is the selected AVD {avd!r}; check the running emulator")
             tune(serial)
             return serial
         time.sleep(2)
@@ -203,12 +294,13 @@ def crashes(serial: str) -> int:
     return adb("logcat", "-d", "-b", "crash", serial=serial).count("FATAL EXCEPTION")
 
 
-def apk_age(apk: pathlib.Path, src: pathlib.Path = pathlib.Path("app/src/main")) -> tuple[float, float | None]:
+def apk_age(apk: pathlib.Path, src: pathlib.Path | None = None) -> tuple[float, float | None]:
     """Seconds since the APK was built, and how far it trails the newest source file.
 
     The second value is None when the APK is at least as new as every file under
     `src`, otherwise the gap in seconds, so a stale build can be called out.
     """
+    src = ROOT / "app/src/main" if src is None else src
     built = apk.stat().st_mtime
     newest = max((f.stat().st_mtime for f in src.rglob("*") if f.is_file()), default=0.0)
     return time.time() - built, (newest - built) if newest > built else None

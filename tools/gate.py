@@ -35,6 +35,7 @@ import glob
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import threading
@@ -53,9 +54,7 @@ def within_budget(elapsed: float) -> bool:
     return elapsed < BUDGET_S
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ADB = os.path.join(
-    os.environ.get("LOCALAPPDATA", ""), "Android", "Sdk", "platform-tools", "adb.exe"
-)
+ADB = str(device.ADB)
 
 
 def run(cmd: list[str] | str, env: dict | None = None, shell: bool = False) -> int:
@@ -167,17 +166,36 @@ def revive(serial: str, force: bool = False) -> bool:
     """
     if not serial.startswith("emulator-"):
         return responsive(serial)
-    reason = "restart requested" if force else stale(serial)
+    port = serial.removeprefix("emulator-")
+    if not device.valid_emulator_port(port):
+        print(f"!! {serial} must use an even Android emulator port between 5554 and 5682")
+        return False
+    if force:
+        reason = "restart requested" if serial in devices() else "not running"
+    else:
+        reason = stale(serial)
+    stop_running = True
+    if device.AVD:
+        actual = device.running_avd(serial)
+        stop_running = actual is not None
+        if actual != device.AVD and (stop_running or reason != "not running"):
+            found = repr(actual) if stop_running else "unidentified"
+            print(f"!! {serial} is {found}; start the configured IRONVELLUM_AVD {device.AVD!r}")
+            return False
     if reason is None:
         device.tune(serial)
         return True
     started = time.time()
     print(f"-- {serial}: {reason}; cold booting")
-    device.kill(serial)
+    if stop_running:
+        device.kill(serial)
     try:
-        device.boot()
+        booted = device.boot(port=port)
     except SystemExit as exc:
         print(f"!! {exc}")
+        return False
+    if booted != serial:
+        print(f"!! Expected {serial} after cold boot, but received {booted}")
         return False
     print(f"-- {serial}: booted in {time.time() - started:.0f}s")
     return True
@@ -232,7 +250,13 @@ GRADLE_LIMIT = 15 * 60  # seconds before a Gradle run is treated as hung and kil
 
 
 def kill_tree(proc: subprocess.Popen) -> None:
-    subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True)
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True)
+    else:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
 
 
 def failed_tasks(log: str) -> list[str]:
@@ -253,10 +277,13 @@ def gradle(tasks: list[str], serial: str | None, label: str, watch: bool = False
     # find it by bare name when NoDefaultCurrentDirectoryInExePath=1, so call it
     # by absolute path and drop the variable from the child env.
     env.pop("NoDefaultCurrentDirectoryInExePath", None)
-    gradlew = os.path.join(ROOT, "gradlew.bat")
+    windows = os.name == "nt"
+    gradlew = os.path.join(ROOT, "gradlew.bat" if windows else "gradlew")
     log = os.path.join(ROOT, ".tmp", f"gate-{label}.log")
     os.makedirs(os.path.dirname(log), exist_ok=True)
-    cmd = f'cmd /c ""{gradlew}" {" ".join(tasks)} --configuration-cache --continue --console=plain"'
+    flags = ["--configuration-cache", "--continue", "--console=plain"]
+    cmd = (f'cmd /c ""{gradlew}" {" ".join(tasks + flags)}"' if windows
+           else ["sh", gradlew, *tasks, *flags])
     started = time.time()
     done = threading.Event()
     dropped = threading.Event()
@@ -271,7 +298,8 @@ def gradle(tasks: list[str], serial: str | None, label: str, watch: bool = False
                 return
 
     with open(log, "w", encoding="utf-8") as handle:
-        proc = subprocess.Popen(cmd, cwd=ROOT, env=env, shell=True, stdout=handle, stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(cmd, cwd=ROOT, env=env, shell=windows,
+                                start_new_session=not windows, stdout=handle, stderr=subprocess.STDOUT)
         watcher = threading.Thread(target=probe, daemon=True)
         if watch and serial:
             watcher.start()
@@ -394,7 +422,7 @@ def backend() -> int:
         subprocess.run(["docker", "rm", "-f", name], capture_output=True)
 
 
-def retry_instrumented(serial: str, fl: str) -> None:
+def retry_instrumented(serial: str, fl: str) -> bool:
     """Restart the emulator and rerun the whole instrumented suite, once.
 
     The emulator can die under load (system_server killed, adb dropped), which fails whichever test was
@@ -405,12 +433,21 @@ def retry_instrumented(serial: str, fl: str) -> None:
     can fail for a reason the full order does not.
     """
     print("-- retrying the instrumented suite once")
-    if revive(serial, force=True):
-        gradle([f":app:connected{fl}DebugAndroidTest"], serial, "retry", watch=True)
+    if not revive(serial, force=True):
+        return False
+    code, dropped, log = gradle([f":app:connected{fl}DebugAndroidTest"], serial, "retry", watch=True)
+    if code or dropped:
+        print_failure(log)
+        return False
+    return True
 
 
 def web_and_backend(include_backend: bool) -> list[str]:
     failures = []
+    print("-- tooling: portable paths and Android discovery")
+    for script in ("tools/test_android_paths.py", "tools/test_portable_paths.py"):
+        if run([sys.executable, script]):
+            failures.append("tooling: " + script)
     if include_backend:
         print("-- backend: supabase migrations + assertions")
         if backend():
@@ -510,7 +547,8 @@ def main() -> int:
             first_failed = first
             for name in first:
                 print(f"   FAILED {name}")
-            retry_instrumented(serial, fl)
+            if not retry_instrumented(serial, fl):
+                failures.append("instrumented retry")
         elif code2 and not others:
             failures.append("gradle")  # a non-zero exit with no failed task named: say so rather than pass
         if code2 and (failures or inst_bad):
@@ -535,7 +573,7 @@ def main() -> int:
     if serial:
         print(f"  instrumented  {inst_total:>4} tests, {inst_failed} failed" + (f"  !! {inst_short}" if inst_short else ""))
         if retried:
-            print("  retried       the instrumented suite ran twice: the first run failed or lost the device")
+            print("  retried       requested after the first run failed or lost the device")
             for name in first_failed:
                 print(f"                first attempt failed: {name}  (results in .tmp/gate-first-attempt)")
     print(f"  lint          {lint_summary(fl)}")
