@@ -25,7 +25,7 @@ Social permissions still follow server-side profile, workout and relationship ru
 | Optional cloud and social backend | Local Docker Compose stack or your managed project | Your backend's database and Auth |
 | Optional hosted production MCP | Separate HTTPS deployment for compatible online AI clients | Permissions granted for synced data |
 
-Android file sharing and workout import work offline after installation. The signed-in viewer uses the backend selected on its sign-in page. [Private backend setup](../tools/self_host/README.md) · [Hosted production MCP](../server/production_mcp/README.md). The former personal PC connector is preserved on [archive-personal-connector](https://github.com/AlexMollard/Ironvellum/tree/archive-personal-connector).
+Android file sharing and workout import work offline after installation. The signed-in viewer uses the backend selected on its sign-in page. See [private backend setup](../tools/self_host/README.md) and [hosted MCP deployment](../server/production_mcp/DEPLOYMENT.md). The former personal PC connector is preserved on [archive-personal-connector](https://github.com/AlexMollard/Ironvellum/tree/archive-personal-connector).
 
 ## Local development
 
@@ -51,12 +51,38 @@ Regenerate the app-derived assets with `./gradlew :app:testFossDebugUnitTest --t
 generated build output: `npm run dev` and `npm run build` prepare it from the
 pinned submodule. Do not add these copies to git. Vite packages them into `dist/`.
 
-Deploy from GitHub's **Actions → Deploy website → Run workflow** on `main`,
-or run `gh workflow run pages.yml --ref main`. This is manual-only; pushing
-does not deploy. The workflow's `build` job (read-only token) tests and builds `web/` and uploads
-`web/dist` as a Pages artifact retained for one day; a separate `deploy` job
-(the only one with `pages: write`) publishes it. It uploads no test
-reports or dependency caches.
+## Public website and dashboard
+
+The public landing page lives in `site/` at the repository root. Preview the
+exact static files that will be published:
+
+```bash
+python tools/build_landing.py
+python -m http.server 8843 --bind 127.0.0.1 --directory .tmp/landing
+```
+
+Keep the existing dashboard at `https://ironvellum.org/` until the new hostname
+passes the cutover checks:
+
+1. From `web/`, run `npm test` and then `npm run build`. Upload
+   **`web/dist`** to a static host and attach `app.ironvellum.org` there before
+   adding its DNS record in Squarespace. For example, [Cloudflare Pages Direct
+   Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/)
+   [supports an external CNAME](https://developers.cloudflare.com/pages/configuration/custom-domains/#add-a-custom-subdomain)
+   without moving the domain's nameservers.
+2. With an approved test account, verify email/password sign-in and the synced
+   dashboard at `https://app.ironvellum.org/`. If the build enables Google
+   sign-in, add the exact new URL to Supabase's redirect allowlist and verify
+   that flow too. Do not change the default backend URL. Browser sessions and
+   custom backend settings do not carry over to the new origin.
+3. On `main`, manually run **Actions → Deploy website** with **Publish the
+   landing page** checked. Verify the existing apex serves the landing page and
+   its dashboard link reaches the new login. Then update the public README and
+   feature docs to use the new dashboard URL. An unchecked dispatch publishes
+   the dashboard back to the apex if the cutover needs to be rolled back.
+
+Pushing does not deploy. The workflow uploads only the selected Pages artifact
+for one day, not test reports or dependency caches.
 
 ## Clickable boxes
 

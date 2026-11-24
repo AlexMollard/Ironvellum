@@ -2,6 +2,12 @@
 
 An operator needs an approved Linux/amd64 container host, a DNS name and certificate for its canonical HTTPS origin, an HTTPS Supabase backend at schema 36, a secret store and a private scheduled-job facility. Allocate one service origin per backend. Record the source revision, image ID/digest, schema migration, catalogue fingerprint and secret **version references** in the deployment record. The public client address becomes the chosen origin plus `/mcp`.
 
+For the planned Ironvellum-operated service, use
+`IRONVELLUM_MCP_ISSUER=https://mcp.ironvellum.org`; the client URL is
+`https://mcp.ironvellum.org/mcp`. This is separate from the website and the
+dashboard. Do not publish the client URL until the HTTPS smoke and an approved
+client sign-in pass. Self-hosted operators use their own issuer.
+
 ## Build and provision
 
 From `server/production_mcp`, on a Docker-compatible Linux builder:

@@ -5,6 +5,11 @@ name: Deploy website
 
 on:
   workflow_dispatch:
+    inputs:
+      landing:
+        description: Publish the landing page (only after app.ironvellum.org is verified)
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -22,34 +27,43 @@ jobs:
       - name: Check out sources and pinned exercise art
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          submodules: true
+          submodules: ${{ !inputs.landing }}
           persist-credentials: false
 
       - name: Set up Node.js
+        if: ${{ !inputs.landing }}
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
           package-manager-cache: false
 
       - name: Install pinned browser dependencies
+        if: ${{ !inputs.landing }}
         working-directory: web
         run: npm ci --ignore-scripts
 
       - name: Test viewer
+        if: ${{ !inputs.landing }}
         working-directory: web
         run: npm test
 
       - name: Build viewer and generate art from the submodule
+        if: ${{ !inputs.landing }}
         working-directory: web
         run: npm run build
 
       - name: Verify generated exercise art
+        if: ${{ !inputs.landing }}
         run: python tools/web_art.py --check
+
+      - name: Stage the public landing site
+        if: ${{ inputs.landing }}
+        run: python tools/build_landing.py
 
       - name: Upload temporary Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: web/dist
+          path: ${{ inputs.landing && '.tmp/landing' || 'web/dist' }}
           retention-days: 1
 
   deploy:

@@ -1,0 +1,70 @@
+:root {
+  color-scheme: dark;
+  --page: #0c0c0b;
+  --ink: #e8e8e4;
+  --muted: #a3a099;
+  --rule: #32302b;
+  --action: #34d399;
+  --link: #8bc6a6;
+  font: 100%/1.55 system-ui, sans-serif;
+  background: var(--page);
+  color: var(--ink);
+}
+
+* { box-sizing: border-box; }
+body, figure, dl, dd { margin: 0; }
+img { display: block; max-width: 100%; height: auto; }
+a { color: var(--link); text-underline-offset: .25em; }
+a:hover { color: var(--ink); }
+:focus-visible { outline: 2px solid var(--action); outline-offset: 5px; }
+::selection { color: var(--page); background: var(--action); }
+
+.page { width: min(100% - 2.5rem, 70rem); margin-inline: auto; }
+.masthead, footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .75rem 1.25rem;
+  padding-block: 1rem;
+}
+.masthead { border-bottom: 1px solid var(--rule); }
+.brand { display: flex; gap: .65rem; align-items: center; font-weight: 750; }
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 22rem);
+  align-items: center;
+  gap: clamp(2.5rem, 8vw, 7rem);
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+h1, h2 { line-height: 1.04; text-wrap: balance; }
+h1 { max-width: 11ch; margin: 0; font-size: clamp(3rem, 7.7vw, 6rem); letter-spacing: -.04em; }
+h2 { margin: 0 0 1.25rem; font-size: clamp(1.75rem, 3.5vw, 3rem); letter-spacing: -.035em; }
+.intro { max-width: 38ch; margin-block: 1.35rem 1.75rem; font-size: clamp(1.1rem, 2vw, 1.35rem); }
+.download {
+  display: inline-block;
+  padding: .8rem 1.25rem;
+  border-radius: .25rem;
+  background: var(--action);
+  color: var(--page);
+  font-weight: 750;
+  text-decoration: none;
+}
+.download:hover { background: #87e7bd; color: var(--page); text-decoration: underline; }
+.requirements, figcaption { margin-top: .75rem; font-size: .9rem; }
+.requirements, figcaption, dd, .ownership p { color: var(--muted); }
+.workout img { border: 1px solid var(--rule); border-radius: .4rem; }
+.workout figcaption { text-align: center; }
+
+.training, .ownership { border-top: 1px solid var(--rule); padding-block: clamp(2rem, 5vw, 4rem); }
+.training dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem 2.5rem; }
+dt { font-size: 1.125rem; font-weight: 700; }
+dd { margin-top: .3rem; }
+.ownership p { max-width: 65ch; }
+footer { border-top: 1px solid var(--rule); justify-content: flex-start; }
+
+@media (max-width: 44rem) {
+  .hero, .training dl { grid-template-columns: 1fr; }
+  .workout { max-width: 21rem; justify-self: center; }
+}
