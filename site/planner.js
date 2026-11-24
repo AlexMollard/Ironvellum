@@ -12,6 +12,7 @@ function showPlan() {
   loadValue.textContent = topSet.textContent = load.value;
   for (const set of backSets) set.textContent = backoff;
   load.setAttribute('aria-valuetext', `${kg} kg; two back-off sets at ${backoff} kg each`);
+  load.style.setProperty('--fill', `${100 * (kg - Number(load.min)) / (Number(load.max) - Number(load.min))}%`);
   lighter.disabled = kg <= Number(load.min);
   heavier.disabled = kg >= Number(load.max);
 }

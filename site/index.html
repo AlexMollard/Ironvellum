@@ -15,42 +15,53 @@
 <body>
   <header class="mast wrap">
     <a class="brand" href="./" aria-label="Ironvellum home"><img src="./icon.png" alt="" width="44" height="44">Ironvellum</a>
-    <nav aria-label="Main"><a class="outline" href="https://app.ironvellum.org/">Open dashboard</a></nav>
+    <nav aria-label="Main"><a class="nav-demo" href="#inside">Inside the app</a><a class="outline" href="https://app.ironvellum.org/">Open dashboard</a></nav>
   </header>
   <main>
-    <section class="hero wrap" aria-labelledby="headline">
-      <div class="lead">
-        <h1 id="headline">Know your<br>next set.</h1>
-        <p>A strength training log for Android. Bring last session’s numbers to the rack, log today’s sets, and see what’s getting stronger.</p>
-        <div class="hero-actions"><a class="action" href="https://f-droid.org/packages/com.ironvellum.app/">Get it on F-Droid</a><a href="#planner">Explore the set planner</a></div>
-        <small>Free &amp; open source <b aria-hidden="true">/</b> Android 10+</small>
-      </div>
-      <figure class="lift">
-        <div class="plate">
-          <div class="plate-title"><strong>Back squat</strong><span>Barbell / Legs</span></div>
-          <svg class="athlete" viewBox="620 0 280 200" role="img" aria-label="Lifter at the bottom of a barbell back squat">
-            <image href="./lifts.svg" width="1520" height="200"/>
-          </svg>
-          <span class="scale" aria-hidden="true"></span>
+    <section class="campaign" aria-labelledby="headline">
+      <div class="hero wrap">
+        <div class="lead">
+          <h1 id="headline">Know your<br><em>next set.</em></h1>
+          <p>A strength training log for Android. Bring last session’s numbers to the rack and leave with a plan for the next one.</p>
+          <a class="action" href="https://f-droid.org/packages/com.ironvellum.app/">Get Ironvellum for Android</a>
+          <small>Free &amp; open source <b aria-hidden="true">/</b> Android 10+</small>
         </div>
-        <figcaption>
-          <div><span>Previous session</span><strong>95 <i>kg</i> × 5</strong></div>
-          <div><span class="record-label">Personal record</span><strong>100 <i>kg</i> × 4</strong></div>
-          <small>Example training log</small>
-        </figcaption>
-      </figure>
+        <figure class="squat">
+          <svg viewBox="620 0 280 200" role="img" aria-label="Lifter at the bottom of a barbell back squat"><image href="./lifts.svg" width="1520" height="200"/></svg>
+          <figcaption><span>Back squat</span><span>Barbell / Legs</span></figcaption>
+        </figure>
+      </div>
     </section>
-    <section id="planner" class="planner wrap" aria-labelledby="planner-title">
+    <section class="product wrap" aria-labelledby="product-title">
+      <header class="product-intro"><h2 id="product-title">From first rep<br>to weekly recap.</h2>
+        <p>Look up a movement, plan the working sets, then see where the week took you.</p>
+        <a href="#planner">Try the bench planner</a>
+      </header>
+      <fieldset id="inside" class="tour">
+        <legend class="sr-only">Explore Ironvellum screens</legend>
+        <div class="switcher">
+          <label><input type="radio" name="screen" value="guide" aria-controls="guide">Lift guide</label>
+          <label><input type="radio" name="screen" value="sets" aria-controls="sets" checked>Set planner</label>
+          <label><input type="radio" name="screen" value="recap" aria-controls="recap">Recap</label>
+        </div>
+        <figure id="guide"><figcaption><small>Pull-up</small><h2>Learn the lift.</h2><p>Grip, equipment and muscles worked, before you reach for the bar.</p></figcaption><a href="./pull-up.webp" aria-label="Open full-size pull-up guide"><img src="./pull-up.webp" width="1080" height="2400" alt="Pull-up illustration and exercise guidance"></a></figure>
+        <figure id="sets"><figcaption><small>Bench press</small><h2>Set the load.</h2><p>One heavy top set. Two lighter back-offs. See all three before you lift.</p></figcaption><a href="./bench-sets.webp" aria-label="Open full-size bench press setup"><img src="./bench-sets.webp" width="1080" height="2400" alt="Bench press editor showing a 100 kg top set and two 90 kg back-offs"></a></figure>
+        <figure id="recap"><figcaption><small>Weekly recap</small><h2>See the gains.</h2><p>Four workouts and three new records. See which lifts moved this week.</p></figcaption><a href="./weekly-recap.webp" aria-label="Open full-size weekly recap"><img src="./weekly-recap.webp" width="1080" height="2400" alt="Weekly training volume, personal records and best set"></a></figure>
+        <small class="tour-note">Actual app screens · Example training data</small>
+      </fieldset>
+    </section>
+    <section id="planner" class="planner" aria-labelledby="planner-title"><div class="wrap planner-layout">
       <div class="workbench">
         <h2 id="planner-title">Plan your<br>bench sets.</h2>
         <p>Choose a top set. Ironvellum takes 10% off for the next two sets, rounding down to the nearest 2.5 kg you can load.</p>
         <div id="load-controls" hidden>
-          <label for="load">Top set <strong><span id="load-value">100</span> kg</strong></label>
+          <label for="load">Top set load <strong aria-hidden="true"><span id="load-value">100</span> kg</strong></label>
           <div class="load-rail">
             <button id="lighter" type="button" aria-label="Decrease by 2.5 kg">−</button>
             <input id="load" type="range" min="40" max="160" step="2.5" value="100">
             <button id="heavier" type="button" aria-label="Increase by 2.5 kg">+</button>
           </div>
+          <div class="range-limits" aria-hidden="true"><span>40 kg</span><span>160 kg</span></div>
           <button type="button" id="reset-load">Reset to 100 kg</button>
         </div>
       </div>
@@ -66,35 +77,12 @@
         </table>
         <small>Example session · Nothing is saved</small>
       </div>
-    </section>
-    <section id="inside" class="showcase" aria-labelledby="inside-title">
-      <div class="wrap">
-        <header class="section-head">
-          <h2 id="inside-title">Inside the app</h2>
-          <p>Explore the exercise guide, set planner, and weekly recap.</p>
-        </header>
-        <div class="gallery">
-          <figure>
-            <figcaption><h3>Learn the lift</h3><p>Check the grip, equipment, and muscles worked before you step up to the pull-up bar.</p></figcaption>
-            <a class="capture" href="./pull-up.webp" aria-label="View full screen: pull-up guide"><img src="./pull-up.webp" width="1080" height="2400" loading="lazy" alt="Pull-up guide with a movement illustration and equipment notes."><span>View full screen</span></a>
-          </figure>
-          <figure>
-            <figcaption><h3>Plan the sets</h3><p>Start at 100 kg on bench. Drop 10% for the next two sets. See the whole scheme before you lift.</p></figcaption>
-            <a class="capture" href="./bench-sets.webp" aria-label="View full screen: bench press setup"><img src="./bench-sets.webp" width="1080" height="2400" loading="lazy" alt="Bench press set editor showing a top set at 100 kg and two back-off sets at 90 kg."><span>View full screen</span></a>
-          </figure>
-          <figure>
-            <figcaption><h3>Read the week</h3><p>Four workouts, three new records. See which lifts moved and how your volume compares with last week.</p></figcaption>
-            <a class="capture" href="./weekly-recap.webp" aria-label="View full screen: weekly recap"><img src="./weekly-recap.webp" width="1080" height="2400" loading="lazy" alt="Weekly recap with training volume, three personal records, and a 105 kg squat for five reps."><span>View full screen</span></a>
-          </figure>
-        </div>
-        <p class="credit">Captured on Android with example training data.</p>
-      </div>
-    </section>
-    <section class="ownership wrap" aria-labelledby="ownership-title">
-      <h2 id="ownership-title">Your log.<br> Your call.</h2>
-      <div><p>Train without an account or signal. Your log lives on your phone. Export it, sync it to the web, or run your own backend.</p>
-        <a href="https://github.com/AlexMollard/Ironvellum/blob/main/tools/self_host/README.md">Self-hosting guide</a></div>
-    </section>
+    </div></section>
+    <section class="ownership" aria-labelledby="ownership-title"><div class="wrap closing">
+      <h2 id="ownership-title">Your log.<br><em>Your call.</em></h2>
+      <div><p>Train without an account or signal. Keep your log on your phone, export it, or sync it to a backend you choose.</p>
+        <div class="hero-actions"><a class="action" href="https://f-droid.org/packages/com.ironvellum.app/">Get Ironvellum</a><a href="https://github.com/AlexMollard/Ironvellum/blob/main/tools/self_host/README.md">Self-hosting guide</a></div></div>
+    </div></section>
   </main>
   <footer class="wrap">
     <div><strong>Ironvellum</strong><a href="https://github.com/AlexMollard/Ironvellum">Source code</a><a href="https://github.com/AlexMollard/Ironvellum/blob/main/PRIVACY.md">Privacy</a></div>

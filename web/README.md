@@ -65,7 +65,8 @@ The bench demo runs in the browser without storage or network calls. It takes
 10% off the selected load and rounds down to the 2.5 kg step, matching the
 barbell branch in `SchemePlan.backoff`. Without JavaScript the example remains readable.
 
-The gallery in `site/screens/` uses uncropped, lossless WebP captures from
+The product tour uses native radio controls to switch screens without
+JavaScript. `site/screens/` contains uncropped, lossless WebP captures from
 the disposable Android emulator, not store artwork or personal data. Its
 three sample screens come from `ExerciseInfoSheetFitsTest.aboutKeepsFactsAndActionsReachableWithItsWhyAtTheCaps`,
 `SetsSheetShotsTest.topAndBackoffsBench`, and `RecapShotsTest.fullWeekDark`.
