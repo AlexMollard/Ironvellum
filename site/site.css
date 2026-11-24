@@ -20,7 +20,8 @@ a { color: inherit; text-underline-offset: .25em; }
 a:hover { text-decoration: underline; }
 :focus-visible { outline: 3px solid var(--green); outline-offset: 4px; }
 ::selection { color: var(--night); background: var(--green); }
-.wrap { width: min(75rem, 90%); margin-inline: auto; }
+:root { --gutter: clamp(1rem, 4vw, 7rem); }
+.wrap { padding-inline: var(--gutter); }
 .mast, nav, footer div, .brand { display: flex; align-items: center; }
 .mast { min-height: 5rem; justify-content: space-between; gap: .6rem; border-bottom: 1px solid var(--line); }
 .brand { gap: .5rem; font-weight: 700; font-size: clamp(1.25rem, 3vw, 1.6rem); text-decoration: none; }
@@ -98,12 +99,25 @@ p { font: 400 clamp(1.05rem, 1.45vw, 1.22rem)/1.6 system-ui, sans-serif; max-wid
 .compare-intro p { margin-block: 1rem 1.5rem; }
 .reasons { margin: 0; }
 .reasons dt { border-top: 1px solid #547461; padding-top: 1rem; font-size: 1.25rem; font-weight: 700; }
-.reasons dd { margin: .4rem 0 1.5rem; color: #d0ded3; font: 400 1rem/1.6 system-ui,sans-serif; }
-.reasons dd:last-child { margin-bottom: 0; }
+.reasons dd { max-width: 65ch; margin: .4rem 0 0; color: #d0ded3; font: 400 1rem/1.6 system-ui,sans-serif; }
+.reasons > div + div { margin-top: 1.5rem; }
 footer { border-top: 1px solid var(--line); padding-block: 1.5rem; }
 footer div { flex-wrap: wrap; gap: 1.5rem; }
 footer strong { margin-right: auto; }
 footer small { display: block; margin-top: .8rem; color: var(--muted); }
+@media (min-width: 90rem) {
+  .hero { grid-template-columns: minmax(0,2fr) minmax(0,3fr); }
+  .tour figure { grid-template-columns: minmax(16rem, .9fr) minmax(0, 1fr); }
+  .tour figure > a { width: min(100%, clamp(16rem,15vw,20rem)); justify-self: start; }
+  .tour p { max-width: 36ch; }
+  .planner-layout { grid-template-columns: repeat(3,minmax(0,1fr)); gap: clamp(2rem,4vw,5rem); }
+  .workbench { display: contents; }
+  #load-controls { max-width: none; margin: 0; }
+  .set-slip { grid-column: 3; }
+  .closing { grid-template-columns: minmax(0,1fr) minmax(0,3fr); gap: 4vw; }
+  .reasons { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 2.5vw; }
+  .reasons > div + div { margin: 0; }
+}
 @media (prefers-reduced-motion: no-preference) {
   .tour figure { animation: show-screen 220ms var(--settle); }
   @keyframes show-screen { from { opacity: .45; transform: translateY(5px); } }
