@@ -61,6 +61,13 @@ python tools/build_landing.py
 python -m http.server 8843 --bind 127.0.0.1 --directory .tmp/landing
 ```
 
+The gallery in `site/screens/` uses uncropped, lossless WebP captures from
+the disposable Android emulator, not store artwork or personal data. Its
+three sample screens come from `ExerciseInfoSheetFitsTest.aboutKeepsFactsAndActionsReachableWithItsWhyAtTheCaps`,
+`SetsSheetShotsTest.topAndBackoffsBench`, and `RecapShotsTest.fullWeekDark`.
+Run those cases with the repository emulator lock and `shots=true`; use
+`pullup-dark-about`, `sets_top_bench_a`, and `recap_full_dark_a` respectively.
+
 Keep the existing dashboard at `https://ironvellum.org/` until the new hostname
 passes the cutover checks:
 

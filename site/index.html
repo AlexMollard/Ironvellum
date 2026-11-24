@@ -14,14 +14,14 @@
 <body>
   <header class="mast wrap">
     <a class="brand" href="./" aria-label="Ironvellum home"><img src="./icon.png" alt="" width="44" height="44">Ironvellum</a>
-    <nav aria-label="Main"><a class="log-link" href="#log">The training log</a><a class="outline" href="https://app.ironvellum.org/">Open dashboard</a></nav>
+    <nav aria-label="Main"><a class="outline" href="https://app.ironvellum.org/">Open dashboard</a></nav>
   </header>
   <main>
     <section class="hero wrap" aria-labelledby="headline">
       <div class="lead">
         <h1 id="headline">Know your<br>next set.</h1>
-        <p>Walk up to the rack with your last lift in front of you. Ironvellum keeps your sets, rest timer and records together on Android.</p>
-        <a class="action" href="https://f-droid.org/packages/com.ironvellum.app/">Get it on F-Droid <span aria-hidden="true">↗</span></a>
+        <p>A strength training log for Android. Bring last session’s numbers to the rack, log today’s sets, and see what’s getting stronger.</p>
+        <div class="hero-actions"><a class="action" href="https://f-droid.org/packages/com.ironvellum.app/">Get it on F-Droid</a><a href="#inside">See the app</a></div>
         <small>Free &amp; open source <b aria-hidden="true">/</b> Android 10+</small>
       </div>
       <figure class="lift">
@@ -39,22 +39,27 @@
         </figcaption>
       </figure>
     </section>
-    <section id="log" class="log" aria-labelledby="log-title">
-      <div class="wrap log-grid">
-        <div class="log-copy">
-          <h2 id="log-title">Between sets.</h2>
-          <p>Last time: five reps at 95 kg. Today: four at 100. Log the top set, take your rest, then drop to 90 kg for the back-offs.</p>
-          <p>The lift history keeps more than the best number: see how often you squat, how much weight you’ve moved and how your estimated max changes.</p>
+    <section id="inside" class="showcase" aria-labelledby="inside-title">
+      <div class="wrap">
+        <header class="section-head">
+          <h2 id="inside-title">Inside the app</h2>
+          <p>From choosing a lift to looking back on the week. Select a screen to see it at full size.</p>
+        </header>
+        <div class="gallery">
+          <figure>
+            <figcaption><h3>Learn the lift</h3><p>Check the grip, equipment, and muscles worked before you step up to the pull-up bar.</p></figcaption>
+            <a class="capture" href="./pull-up.webp" aria-label="View the full pull-up guide"><img src="./pull-up.webp" width="1080" height="2400" loading="lazy" alt="Pull-up guide with a movement illustration and equipment notes."></a>
+          </figure>
+          <figure>
+            <figcaption><h3>Plan the sets</h3><p>Start at 100 kg on bench. Drop 10% for the next two sets. See the whole scheme before you lift.</p></figcaption>
+            <a class="capture" href="./bench-sets.webp" aria-label="View the full bench press setup"><img src="./bench-sets.webp" width="1080" height="2400" loading="lazy" alt="Bench press set editor showing a top set at 100 kg and two back-off sets at 90 kg."></a>
+          </figure>
+          <figure>
+            <figcaption><h3>Read the week</h3><p>Four workouts, three new records. See which lifts moved and how your volume compares with last week.</p></figcaption>
+            <a class="capture" href="./weekly-recap.webp" aria-label="View the full weekly recap"><img src="./weekly-recap.webp" width="1080" height="2400" loading="lazy" alt="Weekly recap with training volume, three personal records, and a 105 kg squat for five reps."></a>
+          </figure>
         </div>
-        <fieldset class="viewer">
-          <legend>Inside Ironvellum <span>Example screens</span></legend>
-          <input type="radio" id="session" name="screen" checked><label for="session">Workout log</label>
-          <input type="radio" id="history" name="screen"><label for="history">Lift history</label>
-          <div class="screens">
-            <img class="session" loading="lazy" width="1080" height="1920" src="./workout.png" alt="Back squat workout log: top set 100 kg × 4 and two back-off sets of 90 kg × 7.">
-            <img class="history" loading="lazy" width="1080" height="1920" src="./progress.png" alt="Back squat history before today's workout: 95 kg × 5 personal record and a strength chart across 16 workouts.">
-          </div>
-        </fieldset>
+        <p class="credit">Captured on Android with example training data.</p>
       </div>
     </section>
     <section class="ownership wrap" aria-labelledby="ownership-title">
