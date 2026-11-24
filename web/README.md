@@ -77,28 +77,32 @@ three sample screens come from `ExerciseInfoSheetFitsTest.aboutKeepsFactsAndActi
 Run those cases with the repository emulator lock and `shots=true`; use
 `pullup-dark-about`, `sets_top_bench_a`, and `recap_full_dark_a` respectively.
 
-Keep the existing dashboard at `https://ironvellum.org/` until the new hostname
-passes the cutover checks:
+### Publish both sites
 
-1. From `web/`, run `npm test` and then `npm run build`. Upload
-   **`web/dist`** to a static host and attach `app.ironvellum.org` there before
-   adding its DNS record in Squarespace. For example, [Cloudflare Pages Direct
-   Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/)
-   [supports an external CNAME](https://developers.cloudflare.com/pages/configuration/custom-domains/#add-a-custom-subdomain)
-   without moving the domain's nameservers.
-2. With an approved test account, verify email/password sign-in and the synced
-   dashboard at `https://app.ironvellum.org/`. If the build enables Google
-   sign-in, add the exact new URL to Supabase's redirect allowlist and verify
-   that flow too. Do not change the default backend URL. Browser sessions and
-   custom backend settings do not carry over to the new origin.
-3. On `main`, manually run **Actions → Deploy website** with **Publish the
-   landing page** checked. Verify the existing apex serves the landing page and
-   its dashboard link reaches the new login. Then update the public README and
-   feature docs to use the new dashboard URL. An unchecked dispatch publishes
-   the dashboard back to the apex if the cutover needs to be rolled back.
+From [Actions → Deploy website](https://github.com/AlexMollard/Ironvellum/actions/workflows/pages.yml),
+select `main` and click **Run workflow**. There is no site selector. The workflow
+tests and builds the dashboard, then publishes `web/dist` to the `ironvellum`
+Cloudflare Pages project at `https://app.ironvellum.org/`. Only after Cloudflare
+reports a production deployment does GitHub Pages publish `.tmp/landing` to
+`https://ironvellum.org/`. If that second deployment fails, the updated dashboard
+stays live; rerun the failed job to finish publishing the landing page.
 
-Pushing does not deploy. The workflow uploads only the selected Pages artifact
-for one day, not test reports or dependency caches.
+One-time setup:
+
+1. In Cloudflare Pages, check that `app.ironvellum.org` belongs to project
+   `ironvellum` and its production branch is `main`. If Git integration also
+   deploys on push, disable automatic branch deployments to avoid two publishers.
+2. Under [GitHub Actions repository secrets](https://github.com/AlexMollard/Ironvellum/settings/secrets/actions),
+   set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. Use a token with
+   **Account → Cloudflare Pages → Edit** restricted to the account hosting the
+   project, not a Global API Key. See [Cloudflare's token instructions](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/#generate-an-api-token).
+3. If the dashboard already enables Google sign-in, set the GitHub Actions
+   **variable** `VITE_GOOGLE_SIGNIN=true` to preserve that build setting.
+   Email/password sign-in needs no extra variable. Keep existing Supabase and DNS settings.
+
+Pushing to GitHub does not trigger this workflow. Only the landing page is
+uploaded as a temporary GitHub Pages artifact (one day); the dashboard is
+uploaded directly to Cloudflare.
 
 ## Clickable boxes
 

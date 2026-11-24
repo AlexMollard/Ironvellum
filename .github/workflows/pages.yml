@@ -5,11 +5,6 @@ name: Deploy website
 
 on:
   workflow_dispatch:
-    inputs:
-      landing:
-        description: Publish the landing page (only after app.ironvellum.org is verified)
-        type: boolean
-        default: false
 
 permissions: {}
 
@@ -19,6 +14,8 @@ concurrency:
 
 jobs:
   build:
+    name: Build both sites and publish the dashboard
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -27,46 +24,58 @@ jobs:
       - name: Check out sources and pinned exercise art
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          submodules: ${{ !inputs.landing }}
+          submodules: true
           persist-credentials: false
 
       - name: Set up Node.js
-        if: ${{ !inputs.landing }}
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
           package-manager-cache: false
 
       - name: Install pinned browser dependencies
-        if: ${{ !inputs.landing }}
         working-directory: web
         run: npm ci --ignore-scripts
 
       - name: Test viewer
-        if: ${{ !inputs.landing }}
         working-directory: web
         run: npm test
 
       - name: Build viewer and generate art from the submodule
-        if: ${{ !inputs.landing }}
         working-directory: web
+        env:
+          VITE_GOOGLE_SIGNIN: ${{ vars.VITE_GOOGLE_SIGNIN }}
         run: npm run build
 
       - name: Verify generated exercise art
-        if: ${{ !inputs.landing }}
         run: python tools/web_art.py --check
 
       - name: Stage the public landing site
-        if: ${{ inputs.landing }}
         run: python tools/build_landing.py
 
       - name: Upload temporary Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: ${{ inputs.landing && '.tmp/landing' || 'web/dist' }}
+          path: .tmp/landing
           retention-days: 1
 
+      - name: Publish dashboard to app.ironvellum.org
+        id: dashboard
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.168.0'
+          command: pages deploy web/dist --project-name=ironvellum --branch=main
+
+      - name: Require a production dashboard deployment
+        if: steps.dashboard.outputs.pages-environment != 'production'
+        run: |
+          echo "::error::Check that main is the production branch of the ironvellum Cloudflare Pages project."
+          exit 1
+
   deploy:
+    name: Publish landing page to ironvellum.org
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
