@@ -23,7 +23,7 @@
 
 <p align="center">
   <a href="https://f-droid.org/packages/com.ironvellum.app/">Get it on F-Droid</a> ·
-  <a href="https://ironvellum.org/">Web dashboard</a> ·
+  <a href="https://app.ironvellum.org/">Web dashboard</a> ·
   <a href="docs/FEATURES.md">Features</a> ·
   <a href="#documentation">Documentation</a>
 </p>
@@ -67,7 +67,7 @@ For optional sync and social features, choose your own managed backend or [run S
   <img src="docs/images/web-routines.png" width="45%" alt="The web routines page with example data: the week's plan, one routine's exercises and the muscles the week covers">
 </p>
 
-Signed-in lifters can read their synced training on a computer at **[ironvellum.org](https://ironvellum.org/)**: overview, workouts, lifts, trends and routines, plus your friends' feed with reactions and comments, the inbox, boards and your group. Your private training pages are visible only to you; workout sharing follows your audience settings. Logging and editing training stay in the app.
+Signed-in lifters can read their synced training on a computer at **[app.ironvellum.org](https://app.ironvellum.org/)**: overview, workouts, lifts, trends and routines, plus your friends' feed with reactions and comments, the inbox, boards and your group. Your private training pages are visible only to you; workout sharing follows your audience settings. Logging and editing training stay in the app.
 
 ## Install
 

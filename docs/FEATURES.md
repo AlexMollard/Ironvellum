@@ -122,5 +122,5 @@ Optional, and only with an account.
   session. Re-importing skips existing history and previously imported workouts.
 - Save any completed workout as a new editable workout. This copies its
   exercises and supported targets without changing history or awarding XP.
-- Read your training on a computer in the [web dashboard](https://alexmollard.github.io/Ironvellum/), read-only and private to you.
+- Read your training on a computer in the [web dashboard](https://app.ironvellum.org/), read-only and private to you.
 - Delete your cloud account from inside the app at any time.
