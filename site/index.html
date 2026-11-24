@@ -5,49 +5,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Ironvellum is a free, open-source strength training app for Android. Plan your week, log every set, and track what gets stronger. No account required.">
   <meta name="color-scheme" content="dark">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
   <link rel="canonical" href="https://ironvellum.org/">
   <link rel="icon" href="./icon.png">
   <link rel="stylesheet" href="./site.css">
   <title>Ironvellum — Strength training for Android</title>
 </head>
 <body>
-  <div class="page">
-    <header class="masthead">
-      <span class="brand"><img src="./icon.png" width="36" height="36" alt="">Ironvellum</span>
-      <a href="https://app.ironvellum.org/">Open dashboard</a>
-    </header>
-    <main>
-      <section class="hero" aria-labelledby="headline">
-        <div>
-          <h1 id="headline">Make every set count.</h1>
-          <p class="intro">Plan your week, log every lift, and see what gets stronger. Ironvellum is a free, open-source strength training app for Android.</p>
-          <a class="download" href="https://f-droid.org/packages/com.ironvellum.app/">Get it on F-Droid</a>
-          <p class="requirements">Android 10+. No account or connection required to train.</p>
+  <header class="mast wrap">
+    <a class="brand" href="./" aria-label="Ironvellum home"><img src="./icon.png" alt="" width="44" height="44">Ironvellum</a>
+    <nav aria-label="Main"><a class="log-link" href="#log">The training log</a><a class="outline" href="https://app.ironvellum.org/">Open dashboard</a></nav>
+  </header>
+  <main>
+    <section class="hero wrap" aria-labelledby="headline">
+      <div class="lead">
+        <h1 id="headline">Know your<br>next set.</h1>
+        <p>Walk up to the rack with your last lift in front of you. Ironvellum keeps your sets, rest timer and records together on Android.</p>
+        <a class="action" href="https://f-droid.org/packages/com.ironvellum.app/">Get it on F-Droid <span aria-hidden="true">↗</span></a>
+        <small>Free &amp; open source <b aria-hidden="true">/</b> Android 10+</small>
+      </div>
+      <figure class="lift">
+        <div class="plate">
+          <div class="plate-title"><strong>Back squat</strong><span>Barbell / Legs</span></div>
+          <svg class="athlete" viewBox="620 0 280 200" role="img" aria-label="Lifter at the bottom of a barbell back squat">
+            <image href="./lifts.svg" width="1520" height="200"/>
+          </svg>
+          <span class="scale" aria-hidden="true"></span>
         </div>
-        <figure class="workout">
-          <img src="./workout.png" width="1080" height="1920" alt="A workout in progress. Ironvellum logs a 100 kg squat personal record, tracks the rest timer, and suggests weight for the next set.">
-          <figcaption>Ironvellum on Android · Example workout</figcaption>
-        </figure>
-      </section>
-      <section class="training" aria-labelledby="training-title">
-        <h2 id="training-title">From training plan to personal best</h2>
-        <dl>
-          <div><dt>Plan the week</dt><dd>Build routines around your lifts and leave time for each muscle group to recover.</dd></div>
-          <div><dt>Log at the rack</dt><dd>Track top sets, back-off sets and rest without losing your place in the workout.</dd></div>
-          <div><dt>See what&rsquo;s working</dt><dd>Track personal records and score effort with bodyweight factored in, from pull-ups to deadlifts.</dd></div>
-        </dl>
-      </section>
-      <section class="ownership" aria-labelledby="ownership-title">
-        <h2 id="ownership-title">Your training stays yours</h2>
-        <p>Keep your training on your phone, export it when you want, or opt into sync to see it on the web. You can run your own backend.</p>
-        <a href="https://github.com/AlexMollard/Ironvellum/blob/main/tools/self_host/README.md">Self-hosting guide</a>
-      </section>
-    </main>
-    <footer>
-      <a href="https://github.com/AlexMollard/Ironvellum">Source on GitHub</a>
-      <a href="https://github.com/AlexMollard/Ironvellum/blob/main/PRIVACY.md">Privacy</a>
-    </footer>
-  </div>
+        <figcaption>
+          <div><span>Previous session</span><strong>95 <i>kg</i> × 5</strong></div>
+          <div><span>Personal record</span><strong>100 <i>kg</i> × 4</strong></div>
+          <small>Example training log</small>
+        </figcaption>
+      </figure>
+    </section>
+    <section id="log" class="log" aria-labelledby="log-title">
+      <div class="wrap log-grid">
+        <div class="log-copy">
+          <h2 id="log-title">Between sets.</h2>
+          <p>Last time: five reps at 95 kg. Today: four at 100. Log the top set, take your rest, then drop to 90 kg for the back-offs.</p>
+          <p>The lift history keeps more than the best number: see how often you squat, how much weight you’ve moved and how your estimated max changes.</p>
+        </div>
+        <fieldset class="viewer">
+          <legend>Inside Ironvellum <span>Example screens</span></legend>
+          <input type="radio" id="session" name="screen" checked><label for="session">Workout log</label>
+          <input type="radio" id="history" name="screen"><label for="history">Lift history</label>
+          <div class="screens">
+            <img class="session" loading="lazy" width="1080" height="1920" src="./workout.png" alt="Back squat workout log: top set 100 kg × 4 and two back-off sets of 90 kg × 7.">
+            <img class="history" loading="lazy" width="1080" height="1920" src="./progress.png" alt="Back squat history before today's workout: 95 kg × 5 personal record and a strength chart across 16 workouts.">
+          </div>
+        </fieldset>
+      </div>
+    </section>
+    <section class="ownership wrap" aria-labelledby="ownership-title">
+      <h2 id="ownership-title">Your log.<br> Your call.</h2>
+      <div><p>Train without an account or signal. Your log lives on your phone. Export it, sync it to the web, or run your own backend.</p>
+        <a href="https://github.com/AlexMollard/Ironvellum/blob/main/tools/self_host/README.md">Self-hosting guide</a></div>
+    </section>
+  </main>
+  <footer class="wrap">
+    <div><strong>Ironvellum</strong><a href="https://github.com/AlexMollard/Ironvellum">Source code</a><a href="https://github.com/AlexMollard/Ironvellum/blob/main/PRIVACY.md">Privacy</a></div>
+    <small>Exercise illustration adapted from <a href="https://github.com/AlexMollard/Open-Exercise-Art">Open Exercise Art</a> by Alex Mollard · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></small>
+  </footer>
 </body>
 </html>
