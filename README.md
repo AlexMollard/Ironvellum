@@ -23,7 +23,7 @@
 
 <p align="center">
   <a href="https://f-droid.org/packages/com.ironvellum.app/">Get it on F-Droid</a> ·
-  <a href="https://alexmollard.github.io/Ironvellum/">Web dashboard</a> ·
+  <a href="https://ironvellum.org/">Web dashboard</a> ·
   <a href="docs/FEATURES.md">Features</a> ·
   <a href="#documentation">Documentation</a>
 </p>
