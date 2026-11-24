@@ -65,6 +65,10 @@ The bench demo runs in the browser without storage or network calls. It takes
 10% off the selected load and rounds down to the 2.5 kg step, matching the
 barbell branch in `SchemePlan.backoff`. Without JavaScript the example remains readable.
 
+The exercise wall is generated from the Android app’s `own_*.paths` assets
+at build time; it needs neither the art submodule nor a network connection.
+It displays two SVG sheets at a time and stays still with reduced motion.
+
 The product tour uses native radio controls to switch screens without
 JavaScript. `site/screens/` contains uncropped, lossless WebP captures from
 the disposable Android emulator, not store artwork or personal data. Its

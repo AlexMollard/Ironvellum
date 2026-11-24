@@ -10,6 +10,7 @@
   <link rel="icon" href="./icon.png">
   <link rel="stylesheet" href="./site.css">
   <script src="./planner.js" defer></script>
+  <script src="./art-wall.js" defer></script>
   <title>Ironvellum — Strength training for Android</title>
 </head>
 <body>
@@ -68,16 +69,27 @@
         <small>Example session · Nothing is saved</small>
       </div>
     </div></section>
+    <section class="art-wall" id="art" aria-labelledby="art-title" data-sheets="{{art_sheets}}">
+      <div class="art-strip" aria-hidden="true">
+        <img src="./exercise-wall/0.svg" alt="" loading="lazy" width="960" height="480">
+        <img src="./exercise-wall/1.svg" alt="" loading="lazy" width="960" height="480">
+      </div>
+      <div class="art-card">
+        <h2 id="art-title">An illustrated<br>exercise library.</h2>
+        <p>Explore {{art_count}} exercise illustrations, from barbell squats to bodyweight holds. The same drawings appear in Ironvellum’s exercise guides.</p>
+        <a href="https://alexmollard.github.io/Open-Exercise-Art/">Browse the full collection</a>
+        <button type="button" class="art-pause" hidden>Pause motion</button>
+      </div>
+    </section>
     <section class="ownership" aria-labelledby="ownership-title"><div class="wrap closing">
       <div><h2 id="ownership-title">Your log.<br><em>Your call.</em></h2>
         <p>Train without an account or signal. Keep your log on your phone, export it, or sync it to a backend you choose.</p>
         <div class="hero-actions"><a class="action" href="https://f-droid.org/packages/com.ironvellum.app/">Get Ironvellum</a><a href="https://github.com/AlexMollard/Ironvellum/blob/main/tools/self_host/README.md">Self-hosting guide</a></div></div>
-      <svg class="closing-art" viewBox="620 0 280 200" aria-hidden="true"><image href="./lifts.svg" width="1520" height="200"/></svg>
     </div></section>
   </main>
   <footer class="wrap">
     <div><strong>Ironvellum</strong><a href="https://github.com/AlexMollard/Ironvellum">Source code</a><a href="https://github.com/AlexMollard/Ironvellum/blob/main/PRIVACY.md">Privacy</a></div>
-    <small>Exercise illustration adapted from <a href="https://github.com/AlexMollard/Open-Exercise-Art">Open Exercise Art</a> by Alex Mollard · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></small>
+    <small>Exercise wall adapted from <a href="https://github.com/AlexMollard/Open-Exercise-Art">Open Exercise Art</a> by Alex Mollard · Drawings resized, recoloured and arranged in a grid under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.</small>
   </footer>
 </body>
 </html>
