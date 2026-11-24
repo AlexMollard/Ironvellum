@@ -61,6 +61,10 @@ python tools/build_landing.py
 python -m http.server 8843 --bind 127.0.0.1 --directory .tmp/landing
 ```
 
+The bench demo runs in the browser without storage or network calls. It takes
+10% off the selected load and rounds down to the 2.5 kg step, matching the
+barbell branch in `SchemePlan.backoff`. Without JavaScript the example remains readable.
+
 The gallery in `site/screens/` uses uncropped, lossless WebP captures from
 the disposable Android emulator, not store artwork or personal data. Its
 three sample screens come from `ExerciseInfoSheetFitsTest.aboutKeepsFactsAndActionsReachableWithItsWhyAtTheCaps`,

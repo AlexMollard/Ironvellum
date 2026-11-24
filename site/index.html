@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Ironvellum is a free, open-source strength training app for Android. Plan your week, log every set, and track what gets stronger. No account required.">
   <meta name="color-scheme" content="dark">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
   <link rel="canonical" href="https://ironvellum.org/">
   <link rel="icon" href="./icon.png">
   <link rel="stylesheet" href="./site.css">
+  <script src="./planner.js" defer></script>
   <title>Ironvellum — Strength training for Android</title>
 </head>
 <body>
@@ -21,7 +22,7 @@
       <div class="lead">
         <h1 id="headline">Know your<br>next set.</h1>
         <p>A strength training log for Android. Bring last session’s numbers to the rack, log today’s sets, and see what’s getting stronger.</p>
-        <div class="hero-actions"><a class="action" href="https://f-droid.org/packages/com.ironvellum.app/">Get it on F-Droid</a><a href="#inside">See the app</a></div>
+        <div class="hero-actions"><a class="action" href="https://f-droid.org/packages/com.ironvellum.app/">Get it on F-Droid</a><a href="#planner">Explore the set planner</a></div>
         <small>Free &amp; open source <b aria-hidden="true">/</b> Android 10+</small>
       </div>
       <figure class="lift">
@@ -38,6 +39,33 @@
           <small>Example training log</small>
         </figcaption>
       </figure>
+    </section>
+    <section id="planner" class="planner wrap" aria-labelledby="planner-title">
+      <div class="workbench">
+        <h2 id="planner-title">Plan your<br>bench sets.</h2>
+        <p>Choose a top set. Ironvellum takes 10% off for the next two sets, rounding down to the nearest 2.5 kg you can load.</p>
+        <div id="load-controls" hidden>
+          <label for="load">Top set <strong><span id="load-value">100</span> kg</strong></label>
+          <div class="load-rail">
+            <button id="lighter" type="button" aria-label="Decrease by 2.5 kg">−</button>
+            <input id="load" type="range" min="40" max="160" step="2.5" value="100">
+            <button id="heavier" type="button" aria-label="Increase by 2.5 kg">+</button>
+          </div>
+          <button type="button" id="reset-load">Reset to 100 kg</button>
+        </div>
+      </div>
+      <div class="set-slip">
+        <table aria-label="Example bench press session">
+          <caption>Bench press <small>Session plan</small></caption>
+          <thead><tr><th scope="col">Set</th><th scope="col">Reps</th><th scope="col">Load</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">01 · Top set</th><td>4–6</td><td><strong id="top-kg">100</strong> kg</td></tr>
+            <tr><th scope="row">02 · Back-off</th><td>6–8</td><td><strong class="back-kg">90</strong> kg</td></tr>
+            <tr><th scope="row">03 · Back-off</th><td>6–8</td><td><strong class="back-kg">90</strong> kg</td></tr>
+          </tbody>
+        </table>
+        <small>Example session · Nothing is saved</small>
+      </div>
     </section>
     <section id="inside" class="showcase" aria-labelledby="inside-title">
       <div class="wrap">

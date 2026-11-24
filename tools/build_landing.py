@@ -11,6 +11,7 @@ def main() -> None:
     for source, name in (
         (root / "site/index.html", "index.html"),
         (root / "site/site.css", "site.css"),
+        (root / "site/planner.js", "planner.js"),
         (images / "icon.png", "icon.png"),
         (root / "site/screens/pull-up.webp", "pull-up.webp"),
         (root / "site/screens/bench-sets.webp", "bench-sets.webp"),
