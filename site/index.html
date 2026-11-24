@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Ironvellum is a free, open-source strength training app for Android. Plan your week, log every set, and track what gets stronger. No account required.">
+  <meta name="description" content="Ironvellum plans your training week around hard sets per muscle, calculates back-off weights for your plates, and tracks bodyweight lifts. Free on Android, no account required.">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
   <link rel="canonical" href="https://ironvellum.org/">
@@ -16,16 +16,16 @@
 <body>
   <header class="mast wrap">
     <a class="brand" href="./" aria-label="Ironvellum home"><img src="./icon.png" alt="" width="44" height="44">Ironvellum</a>
-    <nav aria-label="Main"><a class="nav-demo" href="#planner">Try the bench planner</a><a class="outline" href="https://app.ironvellum.org/">Open dashboard</a></nav>
+    <nav aria-label="Main"><a class="nav-demo" href="#compare">Compare with Hevy</a><a class="outline" href="https://app.ironvellum.org/">Open dashboard</a></nav>
   </header>
   <main>
     <section class="campaign" aria-labelledby="headline">
       <div class="hero wrap">
         <div class="lead">
-          <h1 id="headline">Know your<br><em>next set.</em></h1>
-          <p>A strength training log for Android. Plan your sets, record your lifts, and see what’s getting stronger.</p>
-          <a class="action" href="https://f-droid.org/packages/com.ironvellum.app/">Get Ironvellum for Android</a>
-          <small>Free &amp; open source <b aria-hidden="true">/</b> Android 10+</small>
+          <h1 id="headline">See which muscles your plan misses.</h1>
+          <p>Ironvellum counts hard sets per muscle across your week. If your back is short on work, the planner suggests lifts that fit your equipment and the time you have.</p>
+          <a class="action" href="https://f-droid.org/packages/com.ironvellum.app/">Get Ironvellum on F-Droid</a>
+          <small>Android 10+ <b aria-hidden="true">/</b> No account or subscription</small>
         </div>
       <fieldset id="inside" class="tour">
         <legend class="sr-only">Explore Ironvellum screens</legend>
@@ -34,17 +34,17 @@
           <label><input type="radio" name="screen" value="sets" aria-controls="sets" checked>Set planner</label>
           <label><input type="radio" name="screen" value="recap" aria-controls="recap">Recap</label>
         </div>
-        <figure id="guide"><figcaption><small>Pull-up</small><h2>Learn the lift.</h2><p>Grip, equipment and muscles worked, before you reach for the bar.</p></figcaption><a href="./pull-up.webp" aria-label="Open full-size pull-up guide"><img src="./pull-up.webp" width="1080" height="2400" alt="Pull-up illustration and exercise guidance"></a></figure>
-        <figure id="sets"><figcaption><small>Bench press</small><h2>Set the load.</h2><p>One heavy top set. Two lighter back-offs. See all three before you lift.</p></figcaption><a href="./bench-sets.webp" aria-label="Open full-size bench press setup"><img src="./bench-sets.webp" width="1080" height="2400" alt="Bench press editor showing a 100 kg top set and two 90 kg back-offs"></a></figure>
-        <figure id="recap"><figcaption><small>Weekly recap</small><h2>See the gains.</h2><p>Four workouts and three new records. See which lifts moved this week.</p></figcaption><a href="./weekly-recap.webp" aria-label="Open full-size weekly recap"><img src="./weekly-recap.webp" width="1080" height="2400" alt="Weekly training volume, personal records and best set"></a></figure>
+        <figure id="guide"><figcaption><h2>Weighted pull-ups</h2><p>A 10 kg plate isn’t the whole lift. Ironvellum factors in your bodyweight when it estimates pull-up strength.</p></figcaption><a href="./pull-up.webp" aria-label="Open full-size pull-up guide"><img src="./pull-up.webp" width="1080" height="2400" alt="Pull-up guide with a grip illustration, equipment and muscles worked"></a></figure>
+        <figure id="sets"><figcaption><h2>Bench back-offs</h2><p>Press 100 kg for your top set. At 10% lighter, your next two sets come out to 90 kg each.</p><a class="tour-link" href="#planner">Try a different weight</a></figcaption><a href="./bench-sets.webp" aria-label="Open full-size bench press setup"><img src="./bench-sets.webp" width="1080" height="2400" alt="Bench press editor showing a 100 kg top set and two 90 kg back-offs"></a></figure>
+        <figure id="recap"><figcaption><h2>Three new records</h2><p>In this sample week, bench press, weighted pull-up and back squat all improved. The recap shows how much your estimated max changed on each.</p></figcaption><a href="./weekly-recap.webp" aria-label="Open full-size weekly recap"><img src="./weekly-recap.webp" width="1080" height="2400" alt="Weekly training volume, personal records and best set"></a></figure>
         <small class="tour-note">Actual app screens · Example training data</small>
       </fieldset>
       </div>
     </section>
     <section id="planner" class="planner" aria-labelledby="planner-title"><div class="wrap planner-layout">
       <div class="workbench">
-        <h2 id="planner-title">Plan your<br>bench sets.</h2>
-        <p>Choose a top set. Ironvellum takes 10% off for the next two sets, rounding down to the nearest 2.5 kg you can load.</p>
+        <h2 id="planner-title">What goes on the bar after your top set?</h2>
+        <p>Change the bench weight below. The two back-off sets drop by 10%, rounded down to a weight you can load in 2.5 kg steps.</p>
         <div id="load-controls" hidden>
           <label for="load">Top set load <strong aria-hidden="true"><span id="load-value">100</span> kg</strong></label>
           <div class="load-rail">
@@ -75,16 +75,24 @@
         <img src="./exercise-wall/1.svg" alt="" loading="lazy" width="960" height="480">
       </div>
       <div class="art-card">
-        <h2 id="art-title">An illustrated<br>exercise library.</h2>
-        <p>Explore {{art_count}} exercise illustrations, from barbell squats to bodyweight holds. The same drawings appear in Ironvellum’s exercise guides.</p>
-        <a href="https://alexmollard.github.io/Open-Exercise-Art/">Browse the full collection</a>
+        <h2 id="art-title">{{art_count}} exercise drawings</h2>
+        <p>Open a lift in Ironvellum to check the setup, see which muscles it works, and read when to pick it over another movement.</p>
+        <a href="https://alexmollard.github.io/Open-Exercise-Art/">Browse Open Exercise Art</a>
         <button type="button" class="art-pause" hidden>Pause motion</button>
       </div>
     </section>
-    <section class="ownership" aria-labelledby="ownership-title"><div class="wrap closing">
-      <div><h2 id="ownership-title">Your log.<br><em>Your call.</em></h2>
-        <p>Train without an account or signal. Keep your log on your phone, export it, or sync it to a backend you choose.</p>
-        <div class="hero-actions"><a class="action" href="https://f-droid.org/packages/com.ironvellum.app/">Get Ironvellum</a><a href="https://github.com/AlexMollard/Ironvellum/blob/main/tools/self_host/README.md">Self-hosting guide</a></div></div>
+    <section id="compare" class="ownership" aria-labelledby="compare-title"><div class="wrap closing">
+      <div class="compare-intro"><h2 id="compare-title">Why choose Ironvellum over Hevy?</h2>
+        <p>Choose Ironvellum if you want to build your own program, track weighted and bodyweight lifts together, and keep the training log on your phone.</p>
+        <a class="action" href="https://f-droid.org/packages/com.ironvellum.app/">Get Ironvellum on F-Droid</a></div>
+      <dl class="reasons">
+        <dt>Muscle coverage without a Pro plan</dt>
+        <dd>Hevy puts set counts per muscle group and its warm-up calculator in <a href="https://help.hevyapp.com/hc/en-us/articles/35119778922263-Hevy-Pro-Subscription-How-to-get-Pro-and-What-Does-It-Include">Hevy Pro</a>. Ironvellum includes both for free. Its planner also shows where you’re below your weekly target and suggests exercises to cover the gap.</dd>
+        <dt>Separate records for different lifts</dt>
+        <dd>A pull-up, an assisted pull-up and an archer pull-up each keep their own progression. You can change variations without overwriting the mark you’re chasing.</dd>
+        <dt>A log you can keep offline</dt>
+        <dd>Train and export your history without signing in. If you want a web dashboard, turn on sync or <a href="https://github.com/AlexMollard/Ironvellum/blob/main/tools/self_host/README.md">run your own backend</a>. Progress photos stay on your phone.</dd>
+      </dl>
     </div></section>
   </main>
   <footer class="wrap">
